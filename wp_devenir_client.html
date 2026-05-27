@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phil-Mobile – Devenir Client</title>
+</head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#faf8f4;color:#2c2418;">
+
+<!-- NAV -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#ffffff;border-bottom:2px solid #dd9933;">
+  <a href="https://phil-mobile-app.netlify.app/wp_home.html" style="font-size:13px;color:#7a6a50;text-decoration:none;">← Retour</a>
+  <span style="font-weight:700;font-size:16px;color:#1a1612;">Phil<span style="color:#dd9933">-</span>Mobile</span>
+  <span style="width:60px;"></span>
+</div>
+
+<!-- HEADER -->
+<div style="padding:28px 16px 20px;background:#ffffff;text-align:center;">
+  <div style="font-size:36px;margin-bottom:12px;">🤝</div>
+  <div style="font-size:22px;font-weight:700;color:#1a1612;margin-bottom:6px;">Devenir client</div>
+  <div style="font-size:13px;color:#7a6a50;line-height:1.6;">Philippe vous contacte rapidement pour analyser vos besoins et vous proposer la meilleure offre.</div>
+</div>
+
+<div style="border-top:1px solid #e8d9b8;"></div>
+
+<!-- SERVICES CHECKBOXES -->
+<div style="padding:20px 16px 0;background:#ffffff;">
+  <div style="font-size:12px;font-weight:600;color:#2c2418;margin-bottom:10px;">Je suis intéressé(e) par :</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
+    <label id="lbl-mobile" style="display:flex;align-items:center;gap:8px;background:#faf8f4;border:1.5px solid #e8d9b8;border-radius:10px;padding:11px 12px;cursor:pointer;">
+      <input type="checkbox" id="chk-mobile" onchange="toggleCard('lbl-mobile','chk-mobile')" style="accent-color:#dd9933;width:16px;height:16px;">
+      <span style="font-size:12px;font-weight:600;color:#1a1612;">📱 Mobile Orange</span>
+    </label>
+    <label id="lbl-energie" style="display:flex;align-items:center;gap:8px;background:#faf8f4;border:1.5px solid #e8d9b8;border-radius:10px;padding:11px 12px;cursor:pointer;">
+      <input type="checkbox" id="chk-energie" onchange="toggleCard('lbl-energie','chk-energie')" style="accent-color:#dd9933;width:16px;height:16px;">
+      <span style="font-size:12px;font-weight:600;color:#1a1612;">⚡ Énergie Eneco</span>
+    </label>
+    <label id="lbl-internet" style="display:flex;align-items:center;gap:8px;background:#faf8f4;border:1.5px solid #e8d9b8;border-radius:10px;padding:11px 12px;cursor:pointer;">
+      <input type="checkbox" id="chk-internet" onchange="toggleCard('lbl-internet','chk-internet')" style="accent-color:#dd9933;width:16px;height:16px;">
+      <span style="font-size:12px;font-weight:600;color:#1a1612;">🌐 Internet &amp; packs</span>
+    </label>
+    <label id="lbl-tous" style="display:flex;align-items:center;gap:8px;background:#faf8f4;border:1.5px solid #e8d9b8;border-radius:10px;padding:11px 12px;cursor:pointer;">
+      <input type="checkbox" id="chk-tous" onchange="toggleCard('lbl-tous','chk-tous')" style="accent-color:#dd9933;width:16px;height:16px;">
+      <span style="font-size:12px;font-weight:600;color:#1a1612;">✨ Tout analyser</span>
+    </label>
+  </div>
+</div>
+
+<!-- FORMULAIRE -->
+<div style="margin:0 16px 16px;background:#ffffff;border:1px solid #e8d9b8;border-radius:14px;padding:20px;">
+
+  <div style="font-size:14px;font-weight:700;color:#1a1612;margin-bottom:16px;">Vos coordonnées</div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">Vous êtes</div>
+    <select id="type-client" style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;appearance:none;">
+      <option>Particulier</option>
+      <option>Indépendant</option>
+      <option>Société</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">Prénom &amp; Nom *</div>
+    <input type="text" id="nom" placeholder="Jean Dupont" style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">Téléphone (WhatsApp) *</div>
+    <input type="tel" id="tel" placeholder="+32 4XX XX XX XX" style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">E-mail</div>
+    <input type="email" id="email" placeholder="votre@email.be" style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">Opérateur mobile actuel</div>
+    <select style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;appearance:none;">
+      <option>-- Sélectionner --</option>
+      <option>Proximus</option>
+      <option>Base</option>
+      <option>Voo</option>
+      <option>Orange</option>
+      <option>Autre</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">Fournisseur énergie actuel</div>
+    <select style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;appearance:none;">
+      <option>-- Sélectionner --</option>
+      <option>Engie</option>
+      <option>Luminus</option>
+      <option>TotalEnergies</option>
+      <option>Mega</option>
+      <option>Octa+</option>
+      <option>Eneco</option>
+      <option>Autre</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:600;color:#2c2418;margin-bottom:5px;">Message (optionnel)</div>
+    <textarea id="message" placeholder="Décrivez votre situation ou vos questions…" style="width:100%;padding:11px 13px;font-size:13px;border:1px solid #e8d9b8;border-radius:8px;background:#faf8f4;color:#2c2418;box-sizing:border-box;outline:none;resize:vertical;min-height:80px;"></textarea>
+  </div>
+
+  <div style="background:#fdf3e0;border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:11px;color:#a87020;line-height:1.6;">
+    📋 En soumettant ce formulaire, j'accepte d'être recontacté(e) par Phil-Mobile concernant ma demande.
+  </div>
+
+  <button onclick="submitClient()" style="display:block;width:100%;background:#dd9933;color:#1a1612;text-align:center;padding:14px;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer;">
+    ✅ Envoyer ma demande
+  </button>
+</div>
+
+<!-- CONTACT DIRECT -->
+<div style="margin:0 16px 24px;text-align:center;">
+  <div style="font-size:12px;color:#7a6a50;margin-bottom:10px;">Ou contactez Philippe directement :</div>
+  <a href="https://wa.me/32475240205" style="display:block;background:#25d366;color:#ffffff;text-align:center;padding:12px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+    💬 WhatsApp Philippe
+  </a>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:16px;font-size:11px;color:#7a6a50;border-top:1px solid #e8d9b8;background:#ffffff;">
+  <a href="https://phil-mobile-app.netlify.app/wp_home.html" style="color:#a87020;text-decoration:none;">← Retour à l'accueil</a>
+</div>
+
+<script>
+function toggleCard(lblId, chkId) {
+  const lbl = document.getElementById(lblId);
+  const chk = document.getElementById(chkId);
+  lbl.style.borderColor = chk.checked ? '#dd9933' : '#e8d9b8';
+  lbl.style.background = chk.checked ? '#fdf3e0' : '#faf8f4';
+}
+
+function submitClient() {
+  const nom = document.getElementById('nom').value.trim();
+  const tel = document.getElementById('tel').value.trim();
+  if (!nom || !tel) {
+    alert('Veuillez renseigner votre nom et votre téléphone.');
+    return;
+  }
+  const msg = encodeURIComponent(
+    'Bonjour Philippe ! Je souhaite devenir client Phil-Mobile.\n\n' +
+    'Nom : ' + nom + '\n' +
+    'Tél : ' + tel + '\n' +
+    'Message : ' + (document.getElementById('message').value || 'Aucun message')
+  );
+  window.open('https://wa.me/32475240205?text=' + msg, '_blank');
+}
+</script>
+</body>
+</html>

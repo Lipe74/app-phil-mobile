@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phil-Mobile – Hub Consultants</title>
+</head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#1a1612;color:#f5e8c8;">
+
+<!-- NAV -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#261e14;border-bottom:1px solid #3a2d18;position:sticky;top:0;z-index:100;">
+  <span style="font-weight:700;font-size:16px;color:#dd9933;">Phil-Mobile</span>
+  <a href="https://phil-mobile-app.netlify.app/wp_consultant_login.html" style="font-size:11px;color:#7a6040;text-decoration:none;padding:5px 10px;border:1px solid #3a2d18;border-radius:6px;">Déconnexion</a>
+</div>
+
+<!-- HEADER -->
+<div style="background:#261e14;padding:20px 16px;border-bottom:1px solid #3a2d18;">
+  <div style="display:inline-block;background:rgba(221,153,51,0.12);color:#f5c96a;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid rgba(221,153,51,0.25);margin-bottom:10px;">🔒 Espace consultant</div>
+  <div style="font-size:20px;font-weight:700;color:#f5e8c8;margin-bottom:4px;">Hub Consultants</div>
+  <div style="font-size:12px;color:#a89070;">Ressources, simulateurs et outils de vente</div>
+</div>
+
+<!-- ONGLETS -->
+<div style="padding:20px 16px 0;">
+  <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">🧮 Outils &amp; simulateurs</div>
+
+  <div style="display:flex;background:#261e14;border:1px solid #3a2d18;border-radius:12px;overflow:hidden;margin-bottom:0;">
+    <button id="tab-btn-mobile" onclick="switchTab('mobile')" style="flex:1;padding:12px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:#dd9933;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #dd9933;font-family:Arial,sans-serif;">📱 Mobile</button>
+    <button id="tab-btn-energie" onclick="switchTab('energie')" style="flex:1;padding:12px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:#7a6040;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">⚡ Énergie</button>
+    <button id="tab-btn-rem" onclick="switchTab('rem')" style="flex:1;padding:12px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:#7a6040;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">💰 Rémunérations</button>
+  </div>
+
+  <!-- CONTAINER IFRAME -->
+  <div id="embed-container" style="border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;background:#261e14;min-height:300px;">
+    <div id="embed-loading" style="text-align:center;padding:40px 16px;color:#a89070;font-size:13px;">
+      <div style="font-size:28px;margin-bottom:10px;">⏳</div>Chargement...
+    </div>
+    <iframe id="embed-frame" src="" style="width:100%;border:none;min-height:500px;display:none;" onload="frameLoaded()" scrolling="yes"></iframe>
+  </div>
+</div>
+
+<!-- VERROU REMUNERATION (masqué par défaut) -->
+<div id="rem-lock" style="display:none;margin:0 0 0;border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;background:#1a1612;padding:24px 16px;text-align:center;">
+  <div style="font-size:28px;margin-bottom:12px;">🔐</div>
+  <div style="font-size:15px;font-weight:700;color:#f5e8c8;margin-bottom:6px;">Accès restreint</div>
+  <div style="font-size:12px;color:#a89070;margin-bottom:16px;">Entrez le code d'accès pour consulter les rémunérations.</div>
+  <input type="password" id="rem-code" placeholder="Code d'accès" style="width:100%;max-width:220px;padding:11px 14px;font-size:14px;border:1px solid #3a2d18;border-radius:8px;background:#261e14;color:#f5e8c8;box-sizing:border-box;outline:none;text-align:center;letter-spacing:3px;display:block;margin:0 auto 12px;">
+  <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Code incorrect. Réessayez.</div>
+  <button onclick="checkCode()" style="background:#dd9933;color:#1a1612;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Valider</button>
+</div>
+
+<div style="border-top:1px solid #3a2d18;margin:24px 0 0;"></div>
+
+<!-- RESSOURCES -->
+<div style="padding:20px 16px;">
+  <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">📁 Documents &amp; ressources</div>
+
+  <a href="https://forms.gle/FtWtDvEtigLpft4J7" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🟠</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Formulaire client Orange/Eneco</div>
+      <div style="font-size:11px;color:#7a6040;">À envoyer aux nouveaux clients</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↗</span>
+  </a>
+
+  <a href="https://docs.google.com/forms/d/e/1FAIpQLSelwkhcSIuMnQ9YVWBU2-TRcWtZ3kOQzAm7onrc8T3EhShJbQ/viewform" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🚀</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Recrutement Smart SN</div>
+      <div style="font-size:11px;color:#7a6040;">Formulaire d'inscription consultant</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↗</span>
+  </a>
+</div>
+
+<div style="border-top:1px solid #3a2d18;"></div>
+
+<!-- SCRIPTS -->
+<div style="padding:20px 16px;">
+  <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">💬 Scripts de vente</div>
+
+  <div style="background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:16px;margin-bottom:8px;">
+    <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:8px;">📱 Accroche mobile Orange</div>
+    <div id="script1" style="font-size:12px;color:#a89070;line-height:1.7;font-style:italic;padding:10px 12px;background:#1a1612;border-radius:8px;border-left:3px solid #dd9933;">"Bonjour ! Je suis Philippe de Phil-Mobile, revendeur officiel Orange à Beaufays. En 5 minutes, j'analyse votre facture actuelle et je vous propose le forfait Orange le plus adapté. Souvent mes clients économisent 20 à 30% par mois, sans changer de numéro. Ça vous intéresse ?"</div>
+    <button onclick="copyText('script1',this)" style="margin-top:8px;padding:6px 12px;background:transparent;border:1px solid #3a2d18;border-radius:6px;color:#a89070;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
+  </div>
+
+  <div style="background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:16px;margin-bottom:8px;">
+    <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:8px;">⚡ Accroche énergie Eneco</div>
+    <div id="script2" style="font-size:12px;color:#a89070;line-height:1.7;font-style:italic;padding:10px 12px;background:#1a1612;border-radius:8px;border-left:3px solid #dd9933;">"Avec Eneco, vous optez pour un fournisseur belge fiable et transparent. Je fais une simulation gratuite sans engagement : on compare vos factures et je vous montre combien vous pouvez économiser. C'est rapide et sans mauvaises surprises."</div>
+    <button onclick="copyText('script2',this)" style="margin-top:8px;padding:6px 12px;background:transparent;border:1px solid #3a2d18;border-radius:6px;color:#a89070;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
+  </div>
+
+  <div style="background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:16px;margin-bottom:8px;">
+    <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:8px;">🚀 Accroche recrutement</div>
+    <div id="script3" style="font-size:12px;color:#a89070;line-height:1.7;font-style:italic;padding:10px 12px;background:#1a1612;border-radius:8px;border-left:3px solid #dd9933;">"Je cherche des personnes motivées pour développer une activité indépendante dans les télécoms et l'énergie. Avec Smart SN, la création est prise en charge. Formation, produits reconnus, revenus récurrents. Ça vous intéresse d'en savoir plus ?"</div>
+    <button onclick="copyText('script3',this)" style="margin-top:8px;padding:6px 12px;background:transparent;border:1px solid #3a2d18;border-radius:6px;color:#a89070;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
+  </div>
+</div>
+
+<div style="border-top:1px solid #3a2d18;"></div>
+
+<!-- CONTACT -->
+<div style="padding:20px 16px 24px;">
+  <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">📞 Contacter Philippe</div>
+  <div style="background:rgba(221,153,51,0.08);border:1px solid rgba(221,153,51,0.2);border-radius:14px;padding:16px;text-align:center;">
+    <div style="font-size:12px;color:#a89070;line-height:1.6;margin-bottom:14px;">Disponible du lundi au vendredi de 9h à 19h</div>
+    <a href="https://wa.me/32475240205" style="display:block;background:#25d366;color:#ffffff;text-align:center;padding:12px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">💬 WhatsApp Philippe</a>
+    <a href="tel:+32475240205" style="display:block;background:#dd9933;color:#1a1612;text-align:center;padding:12px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📞 +32 475 24 02 05</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:16px;font-size:11px;color:#5a4a30;border-top:1px solid #3a2d18;background:#261e14;">
+  <a href="https://phil-mobile-app.netlify.app/wp_consultant_login.html" style="color:#dd9933;text-decoration:none;">← Déconnexion</a>
+  &nbsp;·&nbsp;
+  <a href="https://phil-mobile-app.netlify.app/wp_home.html" style="color:#dd9933;text-decoration:none;">Accueil</a>
+  &nbsp;·&nbsp; Phil-Mobile © 2026
+</div>
+
+<script>
+const URLS = {
+  mobile:  'https://phil-mobile-app.netlify.app/wp_orange.html',
+  energie: 'https://phil-mobile-app.netlify.app/wp_eneco.html',
+  rem:     'https://phil-mobile-app.netlify.app/wp_rem.html'
+};
+const CODE = 'Philmobile2026';
+let remUnlocked = false;
+let currentTab = '';
+
+function frameLoaded() {
+  document.getElementById('embed-loading').style.display = 'none';
+  document.getElementById('embed-frame').style.display = 'block';
+  try {
+    const h = document.getElementById('embed-frame').contentWindow.document.body.scrollHeight;
+    if (h > 200) document.getElementById('embed-frame').style.minHeight = h + 'px';
+  } catch(e) {}
+}
+
+function switchTab(tab) {
+  ['mobile','energie','rem'].forEach(t => {
+    const btn = document.getElementById('tab-btn-' + t);
+    if (t === tab) {
+      btn.style.color = '#dd9933';
+      btn.style.background = 'rgba(221,153,51,0.1)';
+      btn.style.borderBottom = '3px solid #dd9933';
+    } else {
+      btn.style.color = '#7a6040';
+      btn.style.background = 'transparent';
+      btn.style.borderBottom = '3px solid transparent';
+    }
+  });
+  currentTab = tab;
+
+  // Onglet rémunérations : vérifier code
+  if (tab === 'rem' && !remUnlocked) {
+    document.getElementById('embed-loading').style.display = 'none';
+    document.getElementById('embed-frame').style.display = 'none';
+    document.getElementById('rem-lock').style.display = 'block';
+    document.getElementById('embed-container').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('rem-lock').style.display = 'none';
+  document.getElementById('embed-container').style.display = 'block';
+  document.getElementById('embed-loading').style.display = 'block';
+  document.getElementById('embed-frame').style.display = 'none';
+  document.getElementById('embed-frame').src = URLS[tab];
+  document.getElementById('embed-container').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function checkCode() {
+  const val = document.getElementById('rem-code').value;
+  if (val === CODE) {
+    remUnlocked = true;
+    document.getElementById('rem-lock').style.display = 'none';
+    document.getElementById('rem-error').style.display = 'none';
+    document.getElementById('embed-container').style.display = 'block';
+    document.getElementById('embed-loading').style.display = 'block';
+    document.getElementById('embed-frame').style.display = 'none';
+    document.getElementById('embed-frame').src = URLS['rem'];
+    document.getElementById('embed-container').scrollIntoView({behavior:'smooth', block:'start'});
+  } else {
+    document.getElementById('rem-error').style.display = 'block';
+    document.getElementById('rem-code').value = '';
+  }
+}
+
+// Permettre validation avec Enter
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('rem-lock').style.display !== 'none') {
+    checkCode();
+  }
+});
+
+function copyText(id, btn) {
+  const text = document.getElementById(id).textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copié !';
+    setTimeout(() => btn.textContent = '📋 Copier', 2000);
+  });
+}
+
+// Charger Mobile par défaut
+switchTab('mobile');
+</script>
+</body>
+</html>

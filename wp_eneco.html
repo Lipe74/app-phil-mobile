@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Energie Phil-Mobile</title>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background:#f5f7fb;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:20px;
+}
+
+.app{
+  max-width:950px;
+  margin:auto;
+}
+
+.header{
+  background:linear-gradient(135deg,#ff6600,#ff8533);
+  color:white;
+  border-radius:22px;
+  padding:20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:16px;
+}
+
+.logo{
+  width:60px;
+  height:60px;
+  background:white;
+  border-radius:14px;
+  padding:6px;
+  object-fit:contain;
+}
+
+.header-title{
+  font-size:24px;
+  font-weight:700;
+}
+
+.header-sub{
+  margin-top:4px;
+  opacity:0.9;
+}
+
+.card{
+  background:white;
+  border-radius:20px;
+  padding:18px;
+  margin-bottom:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,0.06);
+}
+
+.card-title{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:18px;
+}
+
+.row{
+  margin-bottom:14px;
+}
+
+label{
+  display:block;
+  margin-bottom:6px;
+  font-size:14px;
+  font-weight:600;
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  font-size:15px;
+}
+
+.switch{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:10px;
+}
+
+.switch input{
+  width:auto;
+}
+
+.summary{
+  background:#ff6600;
+  color:white;
+  border-radius:22px;
+  padding:20px;
+}
+
+.sum-line{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+
+.total{
+  font-size:34px;
+  font-weight:700;
+}
+
+.eco{
+  color:#b9ffb9;
+  font-weight:700;
+}
+
+.btn{
+  width:100%;
+  border:none;
+  padding:14px;
+  border-radius:14px;
+  background:#222;
+  color:white;
+  margin-top:16px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">
+
+    <img
+      src="https://phil-mobile-app.netlify.app/logo.png"
+      class="logo"
+    >
+
+    <div>
+      <div class="header-title">
+        Simulateur Energie
+      </div>
+
+      <div class="header-sub">
+        Eneco Belgique — Phil-Mobile
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="card-title">
+      ⚡ Electricité
+    </div>
+
+    <div class="row">
+
+      <label>Tarif Eneco</label>
+
+      <select id="tarif">
+
+        <option value="flex">
+          Eneco Flex
+        </option>
+
+        <option value="fixe">
+          Eneco Fixe
+        </option>
+
+      </select>
+
+    </div>
+
+    <div class="row">
+
+      <label>Type de compteur</label>
+
+      <select id="compteur" onchange="toggleCompteur()">
+
+        <option value="simple">
+          Simple
+        </option>
+
+        <option value="double">
+          Bi-horaire
+        </option>
+
+      </select>
+
+    </div>
+
+    <!-- SIMPLE -->
+
+    <div id="simpleBox">
+
+      <div class="row">
+
+        <label>Consommation annuelle (kWh)</label>
+
+        <input type="number" id="simpleKwh" value="4500">
+
+      </div>
+
+    </div>
+
+    <!-- DOUBLE -->
+
+    <div id="doubleBox" style="display:none;">
+
+      <div class="row">
+
+        <label>Consommation Jour (kWh/an)</label>
+
+        <input type="number" id="jour" value="3500">
+
+      </div>
+
+      <div class="row">
+
+        <label>Consommation Nuit (kWh/an)</label>
+
+        <input type="number" id="nuit" value="1500">
+
+      </div>
+
+    </div>
+
+    <div class="switch">
+
+      <input type="checkbox" id="solaire" onchange="toggleSolaire()">
+
+      <label for="solaire">
+        Panneaux solaires
+      </label>
+
+    </div>
+
+    <div id="injectBox" style="display:none;margin-top:14px;">
+
+      <div class="row">
+
+        <label>Injection annuelle (kWh)</label>
+
+        <input type="number" id="inject" value="2000">
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="card-title">
+      🔥 Gaz Naturel
+    </div>
+
+    <div class="switch">
+
+      <input type="checkbox" id="gazCheck" onchange="toggleGaz()">
+
+      <label for="gazCheck">
+        Ajouter le gaz
+      </label>
+
+    </div>
+
+    <div id="gazBox" style="display:none;margin-top:14px;">
+
+      <div class="row">
+
+        <label>Tarif Gaz</label>
+
+        <select id="gazTarif">
+
+          <option value="flex">
+            Gaz Flex
+          </option>
+
+          <option value="fixe">
+            Gaz Fixe
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="row">
+
+        <label>Consommation Gaz (kWh/an)</label>
+
+        <input type="number" id="gaz" value="12000">
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <div class="card-title">
+      💶 Fournisseur actuel
+    </div>
+
+    <div class="row">
+
+      <label>Mensualité actuelle (€)</label>
+
+      <input type="number" id="actuel" value="250">
+
+    </div>
+
+  </div>
+
+  <div class="summary">
+
+    <div class="sum-line">
+
+      <span>Mensuel actuel</span>
+
+      <span id="actuelPrix">
+        250 €
+      </span>
+
+    </div>
+
+    <div class="sum-line">
+
+      <span>Estimation Eneco</span>
+
+      <span id="enecoPrix">
+        0 €
+      </span>
+
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.3);margin:14px 0;">
+
+    <div class="sum-line">
+
+      <span>Economie mensuelle</span>
+
+      <span class="eco" id="eco">
+        0 €
+      </span>
+
+    </div>
+
+    <div class="sum-line">
+
+      <span>Economie annuelle</span>
+
+      <span class="eco" id="ecoYear">
+        0 €
+      </span>
+
+    </div>
+
+    <div style="margin-top:18px;">
+
+      <div>Total Eneco estimé</div>
+
+      <div class="total" id="finalTotal">
+        0 €
+      </div>
+
+    </div>
+
+  </div>
+
+  <button class="btn" onclick="calcul()">
+    Calculer
+  </button>
+
+</div>
+
+<script>
+
+function toggleCompteur(){
+
+  let compteur =
+      document.getElementById("compteur").value;
+
+  document.getElementById("simpleBox").style.display =
+      compteur === "simple"
+      ? "block"
+      : "none";
+
+  document.getElementById("doubleBox").style.display =
+      compteur === "double"
+      ? "block"
+      : "none";
+}
+
+function toggleSolaire(){
+
+  document.getElementById("injectBox").style.display =
+      document.getElementById("solaire").checked
+      ? "block"
+      : "none";
+}
+
+function toggleGaz(){
+
+  document.getElementById("gazBox").style.display =
+      document.getElementById("gazCheck").checked
+      ? "block"
+      : "none";
+}
+
+function calcul(){
+
+  let tarif =
+      document.getElementById("tarif").value;
+
+  let compteur =
+      document.getElementById("compteur").value;
+
+  let actuel =
+      parseFloat(document.getElementById("actuel").value) || 0;
+
+  let abonnementElec = 65;
+
+  let totalElec = 0;
+
+  // SIMPLE
+
+  if(compteur === "simple"){
+
+      let simpleKwh =
+          parseFloat(document.getElementById("simpleKwh").value) || 0;
+
+      let prixSimple = 0;
+
+      if(tarif === "flex"){
+
+          prixSimple = 0.1406;
+
+      }else{
+
+          prixSimple = 0.1690;
+      }
+
+      totalElec =
+          simpleKwh * prixSimple;
+  }
+
+  // DOUBLE
+
+  else{
+
+      let jour =
+          parseFloat(document.getElementById("jour").value) || 0;
+
+      let nuit =
+          parseFloat(document.getElementById("nuit").value) || 0;
+
+      let prixJour = 0;
+      let prixNuit = 0;
+
+      if(tarif === "flex"){
+
+          prixJour = 0.1406;
+          prixNuit = 0.1406;
+
+      }else{
+
+          prixJour = 0.1872;
+          prixNuit = 0.1532;
+      }
+
+      totalElec =
+          (jour * prixJour) +
+          (nuit * prixNuit);
+  }
+
+  // PANNEAUX
+
+  if(document.getElementById("solaire").checked){
+
+      let inject =
+          parseFloat(document.getElementById("inject").value) || 0;
+
+      totalElec -=
+          inject * 0.049;
+  }
+
+  totalElec += abonnementElec;
+
+  // GAZ
+
+  let totalGaz = 0;
+
+  if(document.getElementById("gazCheck").checked){
+
+      let gaz =
+          parseFloat(document.getElementById("gaz").value) || 0;
+
+      let gazTarif =
+          document.getElementById("gazTarif").value;
+
+      let prixGaz = 0;
+
+      if(gazTarif === "flex"){
+
+          prixGaz = 0.057;
+
+      }else{
+
+          prixGaz = 0.0662;
+      }
+
+      totalGaz =
+          (gaz * prixGaz) + 65;
+  }
+
+  // TOTAL
+
+  let annuel =
+      totalElec + totalGaz;
+
+  let mensuel =
+      annuel / 12;
+
+  let economie =
+      actuel - mensuel;
+
+  document.getElementById("actuelPrix").innerHTML =
+      actuel.toFixed(2) + " €";
+
+  document.getElementById("enecoPrix").innerHTML =
+      mensuel.toFixed(2) + " €";
+
+  document.getElementById("eco").innerHTML =
+      economie.toFixed(2) + " €";
+
+  document.getElementById("ecoYear").innerHTML =
+      (economie * 12).toFixed(2) + " €";
+
+  document.getElementById("finalTotal").innerHTML =
+      mensuel.toFixed(2) + " €";
+}
+
+calcul();
+
+</script>
+
+</body>
+</html>
