@@ -22,31 +22,54 @@
 
 <!-- ONGLETS -->
 <div style="padding:20px 16px 0;">
-  <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">🧮 Outils &amp; simulateurs</div>
+  <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">🧮 Outils &amp; accès</div>
 
-  <div style="display:flex;background:#261e14;border:1px solid #3a2d18;border-radius:12px;overflow:hidden;margin-bottom:0;">
-    <button id="tab-btn-mobile" onclick="switchTab('mobile')" style="flex:1;padding:12px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:#dd9933;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #dd9933;font-family:Arial,sans-serif;">📱 Mobile</button>
-    <button id="tab-btn-energie" onclick="switchTab('energie')" style="flex:1;padding:12px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:#7a6040;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">⚡ Énergie</button>
-    <button id="tab-btn-rem" onclick="switchTab('rem')" style="flex:1;padding:12px 6px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;color:#7a6040;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">💰 Rémunérations</button>
+  <div style="display:flex;background:#261e14;border:1px solid #3a2d18;border-radius:12px;overflow:hidden;">
+    <button id="tab-btn-contact" onclick="switchTab('contact')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#dd9933;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #dd9933;font-family:Arial,sans-serif;">📩 Phil-Mobile</button>
+    <button id="tab-btn-rem" onclick="switchTab('rem')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#7a6040;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">💰 Rémunérations</button>
+    <button id="tab-btn-smartsn" onclick="switchTab('smartsn')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#7a6040;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">🏢 Smart SN</button>
   </div>
 
-  <!-- CONTAINER IFRAME -->
-  <div id="embed-container" style="border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;background:#261e14;min-height:300px;">
-    <div id="embed-loading" style="text-align:center;padding:40px 16px;color:#a89070;font-size:13px;">
-      <div style="font-size:28px;margin-bottom:10px;">⏳</div>Chargement...
-    </div>
+  <!-- CARTE CONTACT PHIL-MOBILE -->
+  <div id="contact-form" style="border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;background:#261e14;padding:24px 16px;text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">😊</div>
+    <div style="font-size:16px;font-weight:700;color:#f5e8c8;margin-bottom:4px;">Philippe</div>
+    <div style="font-size:12px;color:#a89070;margin-bottom:20px;">Phil-Mobile · Votre upline</div>
+    <a href="https://wa.me/32475240205" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25d366;color:#ffffff;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      WhatsApp · +32 475 24 02 05
+    </a>
+    <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#dd9933;color:#1a1612;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+      📧 infos@phil-mobile.be
+    </a>
+  </div>
+
+  <!-- VERROU + IFRAME RÉMUNÉRATIONS -->
+  <div id="rem-lock" style="display:none;border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;background:#1a1612;padding:24px 16px;text-align:center;">
+    <div style="font-size:28px;margin-bottom:12px;">🔐</div>
+    <div style="font-size:15px;font-weight:700;color:#f5e8c8;margin-bottom:6px;">Accès restreint</div>
+    <div style="font-size:12px;color:#a89070;margin-bottom:16px;">Entrez le code d'accès pour consulter les rémunérations.</div>
+    <input type="password" id="rem-code" placeholder="Code d'accès" style="width:100%;max-width:220px;padding:11px 14px;font-size:14px;border:1px solid #3a2d18;border-radius:8px;background:#261e14;color:#f5e8c8;box-sizing:border-box;outline:none;text-align:center;letter-spacing:3px;display:block;margin:0 auto 12px;">
+    <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Code incorrect. Réessayez.</div>
+    <button onclick="checkCode()" style="background:#dd9933;color:#1a1612;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Valider</button>
+  </div>
+  <div id="embed-container" style="display:none;border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;background:#261e14;min-height:300px;">
+    <div id="embed-loading" style="text-align:center;padding:40px 16px;color:#a89070;font-size:13px;"><div style="font-size:28px;margin-bottom:10px;">⏳</div>Chargement...</div>
     <iframe id="embed-frame" src="" style="width:100%;border:none;min-height:500px;display:none;" onload="frameLoaded()" scrolling="yes"></iframe>
   </div>
-</div>
 
-<!-- VERROU REMUNERATION (masqué par défaut) -->
-<div id="rem-lock" style="display:none;margin:0 0 0;border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;background:#1a1612;padding:24px 16px;text-align:center;">
-  <div style="font-size:28px;margin-bottom:12px;">🔐</div>
-  <div style="font-size:15px;font-weight:700;color:#f5e8c8;margin-bottom:6px;">Accès restreint</div>
-  <div style="font-size:12px;color:#a89070;margin-bottom:16px;">Entrez le code d'accès pour consulter les rémunérations.</div>
-  <input type="password" id="rem-code" placeholder="Code d'accès" style="width:100%;max-width:220px;padding:11px 14px;font-size:14px;border:1px solid #3a2d18;border-radius:8px;background:#261e14;color:#f5e8c8;box-sizing:border-box;outline:none;text-align:center;letter-spacing:3px;display:block;margin:0 auto 12px;">
-  <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Code incorrect. Réessayez.</div>
-  <button onclick="checkCode()" style="background:#dd9933;color:#1a1612;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Valider</button>
+  <!-- CARTE CONTACT SMART SN -->
+  <div id="smartsn-form" style="display:none;border:1px solid #3a2d18;border-top:none;border-radius:0 0 12px 12px;background:#261e14;padding:24px 16px;text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">🏢</div>
+    <div style="font-size:16px;font-weight:700;color:#f5e8c8;margin-bottom:4px;">Smart SN</div>
+    <div style="font-size:12px;color:#a89070;margin-bottom:20px;">Support consultant</div>
+    <a href="tel:+3200077170" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#261e14;color:#f5e8c8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid #3a2d18;margin-bottom:10px;">
+      📞 +32 200 77 17
+    </a>
+    <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#dd9933;color:#1a1612;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+      📧 support@smartsn.be
+    </a>
+  </div>
 </div>
 
 <div style="border-top:1px solid #3a2d18;margin:24px 0 0;"></div>
@@ -55,22 +78,74 @@
 <div style="padding:20px 16px;">
   <div style="font-size:13px;font-weight:700;color:#c8b080;margin-bottom:12px;">📁 Documents &amp; ressources</div>
 
-  <a href="https://forms.gle/FtWtDvEtigLpft4J7" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-    <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🟠</div>
+  <!-- MY SMART -->
+  <a href="https://smartservicesnetwork.my.site.com/" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏢</div>
     <div style="flex:1;">
-      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Formulaire client Orange/Eneco</div>
-      <div style="font-size:11px;color:#7a6040;">À envoyer aux nouveaux clients</div>
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Se connecter à My Smart</div>
+      <div style="font-size:11px;color:#7a6040;">smartservicesnetwork.my.site.com</div>
     </div>
     <span style="color:#7a6040;font-size:14px;">↗</span>
   </a>
 
-  <a href="https://docs.google.com/forms/d/e/1FAIpQLSelwkhcSIuMnQ9YVWBU2-TRcWtZ3kOQzAm7onrc8T3EhShJbQ/viewform" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🚀</div>
+  <!-- MANUEL SALES FORCE -->
+  <a href="https://app.phil-mobile.be/wp_salesforce.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🟠</div>
     <div style="flex:1;">
-      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Recrutement Smart SN</div>
-      <div style="font-size:11px;color:#7a6040;">Formulaire d'inscription consultant</div>
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Manuel Sales Force</div>
+      <div style="font-size:11px;color:#7a6040;">Guide d'utilisation Orange · By Phil-Mobile</div>
     </div>
-    <span style="color:#7a6040;font-size:14px;">↗</span>
+    <span style="color:#7a6040;font-size:14px;">↓</span>
+  </a>
+
+  <!-- MANUEL MY SMART -->
+  <a href="https://app.phil-mobile.be/wp_mysmart.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📘</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Manuel My Smart SN</div>
+      <div style="font-size:11px;color:#7a6040;">Guide d'utilisation Smart SN · By Phil-Mobile</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↓</span>
+  </a>
+
+  <!-- PRESENTATION BOM -->
+  <a href="https://app.phil-mobile.be/wp_bom.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏛️</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Présentation de société</div>
+      <div style="font-size:11px;color:#7a6040;">Document BOM · Smart SN</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↓</span>
+  </a>
+
+  <!-- COMMISSIONS -->
+  <a href="https://app.phil-mobile.be/wp_commissions.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💶</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Les commissions</div>
+      <div style="font-size:11px;color:#7a6040;">Détail des commissions consultant</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↓</span>
+  </a>
+
+  <!-- SMART PLAN -->
+  <a href="https://app.phil-mobile.be/wp_smartPlan.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📊</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Plan de commissions</div>
+      <div style="font-size:11px;color:#7a6040;">Smart Plan · Structure de rémunération</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↓</span>
+  </a>
+
+  <!-- PRODUITS ORANGE -->
+  <a href="https://app.phil-mobile.be/wp_orangeproduits.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#261e14;border:1px solid #3a2d18;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🟠</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:600;color:#f5e8c8;margin-bottom:2px;">Les produits Orange</div>
+      <div style="font-size:11px;color:#7a6040;">Catalogue produits &amp; offres Orange</div>
+    </div>
+    <span style="color:#7a6040;font-size:14px;">↓</span>
   </a>
 </div>
 
@@ -120,26 +195,16 @@
 </div>
 
 <script>
-const URLS = {
-  mobile:  'https://app.phil-mobile.be/wp_orange.html',
-  energie: 'https://app.phil-mobile.be/wp_eneco.html',
-  rem:     'https://app.phil-mobile.be/wp_rem.html'
-};
 const CODE = 'Philmobile2026';
 let remUnlocked = false;
-let currentTab = '';
 
 function frameLoaded() {
   document.getElementById('embed-loading').style.display = 'none';
   document.getElementById('embed-frame').style.display = 'block';
-  try {
-    const h = document.getElementById('embed-frame').contentWindow.document.body.scrollHeight;
-    if (h > 200) document.getElementById('embed-frame').style.minHeight = h + 'px';
-  } catch(e) {}
 }
 
 function switchTab(tab) {
-  ['mobile','energie','rem'].forEach(t => {
+  ['contact','rem','smartsn'].forEach(t => {
     const btn = document.getElementById('tab-btn-' + t);
     if (t === tab) {
       btn.style.color = '#dd9933';
@@ -151,23 +216,22 @@ function switchTab(tab) {
       btn.style.borderBottom = '3px solid transparent';
     }
   });
-  currentTab = tab;
-
-  // Onglet rémunérations : vérifier code
-  if (tab === 'rem' && !remUnlocked) {
-    document.getElementById('embed-loading').style.display = 'none';
-    document.getElementById('embed-frame').style.display = 'none';
-    document.getElementById('rem-lock').style.display = 'block';
-    document.getElementById('embed-container').style.display = 'none';
-    return;
-  }
-
+  document.getElementById('contact-form').style.display = 'none';
   document.getElementById('rem-lock').style.display = 'none';
-  document.getElementById('embed-container').style.display = 'block';
-  document.getElementById('embed-loading').style.display = 'block';
-  document.getElementById('embed-frame').style.display = 'none';
-  document.getElementById('embed-frame').src = URLS[tab];
-  document.getElementById('embed-container').scrollIntoView({behavior:'smooth', block:'start'});
+  document.getElementById('embed-container').style.display = 'none';
+  document.getElementById('smartsn-form').style.display = 'none';
+
+  if (tab === 'contact') {
+    document.getElementById('contact-form').style.display = 'block';
+  } else if (tab === 'rem') {
+    if (!remUnlocked) {
+      document.getElementById('rem-lock').style.display = 'block';
+    } else {
+      document.getElementById('embed-container').style.display = 'block';
+    }
+  } else if (tab === 'smartsn') {
+    document.getElementById('smartsn-form').style.display = 'block';
+  }
 }
 
 function checkCode() {
@@ -179,7 +243,7 @@ function checkCode() {
     document.getElementById('embed-container').style.display = 'block';
     document.getElementById('embed-loading').style.display = 'block';
     document.getElementById('embed-frame').style.display = 'none';
-    document.getElementById('embed-frame').src = URLS['rem'];
+    document.getElementById('embed-frame').src = 'https://app.phil-mobile.be/wp_rem.html';
     document.getElementById('embed-container').scrollIntoView({behavior:'smooth', block:'start'});
   } else {
     document.getElementById('rem-error').style.display = 'block';
@@ -187,12 +251,39 @@ function checkCode() {
   }
 }
 
-// Permettre validation avec Enter
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && document.getElementById('rem-lock').style.display !== 'none') {
     checkCode();
   }
 });
+
+function sendUpline() {
+  const nom = document.getElementById('up-nom').value.trim();
+  const email = document.getElementById('up-email').value.trim();
+  const message = document.getElementById('up-message').value.trim();
+  if (!nom || !email || !message) { alert('Veuillez renseigner votre nom, e-mail et message.'); return; }
+  const sujet = document.getElementById('up-sujet').value;
+  const tel = document.getElementById('up-tel').value;
+  const mailto = 'mailto:infos@phil-mobile.be'
+    + '?subject=' + encodeURIComponent('[Consultant] ' + sujet)
+    + '&body=' + encodeURIComponent('Nom : ' + nom + '\nTéléphone : ' + (tel||'Non renseigné') + '\nEmail : ' + email + '\n\nMessage :\n' + message);
+  window.location.href = mailto;
+}
+
+function sendSmartSN() {
+  const nom = document.getElementById('sn-nom').value.trim();
+  const id = document.getElementById('sn-id').value.trim();
+  const email = document.getElementById('sn-email').value.trim();
+  const message = document.getElementById('sn-message').value.trim();
+  if (!nom || !id || !email || !message) { alert('Veuillez renseigner votre nom, ID Smart SN, e-mail et message.'); return; }
+  const sujet = document.getElementById('sn-sujet').value;
+  const tel = document.getElementById('sn-tel').value;
+  const mailto = 'mailto:support@smartsn.be'
+    + '?cc=infos@phil-mobile.be'
+    + '&subject=' + encodeURIComponent('[Support Smart SN] ' + sujet)
+    + '&body=' + encodeURIComponent('Nom : ' + nom + '\nID Smart SN : ' + id + '\nTéléphone : ' + (tel||'Non renseigné') + '\nEmail : ' + email + '\n\nMessage :\n' + message);
+  window.location.href = mailto;
+}
 
 function copyText(id, btn) {
   const text = document.getElementById(id).textContent.trim();
@@ -202,8 +293,18 @@ function copyText(id, btn) {
   });
 }
 
-// Charger Mobile par défaut
-switchTab('mobile');
+switchTab('contact');
+
+function copyText(id, btn) {
+  const text = document.getElementById(id).textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copié !';
+    setTimeout(() => btn.textContent = '📋 Copier', 2000);
+  });
+}
+
+// Charger Rémunérations par défaut
+switchTab('rem');
 </script>
 </body>
 </html>
