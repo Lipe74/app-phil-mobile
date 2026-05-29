@@ -376,7 +376,10 @@ function toggleGaz(){
   document.getElementById('transportGaz').closest('.row-2').querySelector('div:last-child').style.opacity = document.getElementById('gazCheck').checked ? '1':'0.4';
 }
 
+var currentMode = 'annuelle'; // mode par défaut
+
 function setMode(mode){
+  currentMode = mode;
   document.getElementById('mode-annuelle').style.display = mode==='annuelle'?'block':'none';
   document.getElementById('mode-mensuelle').style.display = mode==='mensuelle'?'block':'none';
   document.getElementById('btn-annuelle').style.background = mode==='annuelle'?'#27ae60':'#f0f0f0';
@@ -510,8 +513,8 @@ function comparer(){
   const flex = calcEneco('flex');
   const fixe = calcEneco('fixe');
 
-  // Détecter le mode actif
-  const modeAnnuelle = document.getElementById('mode-annuelle').style.display !== 'none';
+  // Détecter le mode actif via variable globale
+  const modeAnnuelle = (currentMode === 'annuelle');
   const tarifElecActuel = parseFloat(document.getElementById(modeAnnuelle?'tarifElecActuel':'tarifElecActuel2').value)||0.28;
   const tarifNuitActuel = parseFloat(document.getElementById(modeAnnuelle?'tarifNuitActuel':'tarifNuitActuel2').value)||0.22;
   const tarifGazActuel = parseFloat(document.getElementById(modeAnnuelle?'tarifGazActuel':'tarifGazActuel2').value)||0.095;
