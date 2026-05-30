@@ -37,7 +37,7 @@
   </div>
 
   <!-- CARTE CONTACT PHIL-MOBILE -->
-  <div id="contact-form" style="border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;background:#0c1f3d;padding:24px 16px;text-align:center;">
+  <div id="contact-form" style="display:none;border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;background:#0c1f3d;padding:24px 16px;text-align:center;">
     <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">😊</div>
     <div style="font-size:16px;font-weight:700;color:#e8f0ff;margin-bottom:4px;">Philippe</div>
     <div style="font-size:12px;color:#8aaedf;margin-bottom:20px;">Phil-Mobile · Votre upline</div>
@@ -50,36 +50,11 @@
     </a>
   </div>
 
-  <!-- VERROU + IFRAME RÉMUNÉRATIONS -->
-  <div id="rem-lock" style="display:none;border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;background:#0a1628;padding:24px 16px;text-align:center;">
-    <div style="font-size:28px;margin-bottom:12px;">🔐</div>
-    <div style="font-size:15px;font-weight:700;color:#e8f0ff;margin-bottom:6px;">Accès restreint</div>
-    <div style="font-size:12px;color:#8aaedf;margin-bottom:16px;">Entrez le code d'accès pour consulter les rémunérations.</div>
-    <input type="password" id="rem-code" placeholder="Code d'accès" style="width:100%;max-width:220px;padding:11px 14px;font-size:14px;border:1px solid #1a3060;border-radius:8px;background:#0c1f3d;color:#e8f0ff;box-sizing:border-box;outline:none;text-align:center;letter-spacing:3px;display:block;margin:0 auto 12px;">
-    <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Code incorrect. Réessayez.</div>
-    <button onclick="checkCode()" style="background:#dd9933;color:#0a1628;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Valider</button>
-  </div>
+  <!-- IFRAME RÉMUNÉRATIONS -->
   <div id="embed-container" style="display:none;border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;overflow:hidden;background:#0c1f3d;min-height:300px;">
     <div id="embed-loading" style="text-align:center;padding:40px 16px;color:#8aaedf;font-size:13px;"><div style="font-size:28px;margin-bottom:10px;">⏳</div>Chargement...</div>
     <iframe id="embed-frame" src="" style="width:100%;border:none;height:100vh;min-height:800px;display:none;" onload="frameLoaded()" scrolling="yes"></iframe>
   </div>
-
-  <!-- CARTE CONTACT SMART SN -->
-  <div id="smartsn-form" style="display:none;border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;background:#0c1f3d;padding:24px 16px;text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">🏢</div>
-    <div style="font-size:16px;font-weight:700;color:#e8f0ff;margin-bottom:4px;">Smart SN</div>
-    <div style="font-size:12px;color:#8aaedf;margin-bottom:20px;">Support consultant</div>
-    <a href="tel:+3200077170" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#0c1f3d;color:#e8f0ff;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid #1a3060;margin-bottom:10px;">
-      📞 +32 200 77 17
-    </a>
-    <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#dd9933;color:#0a1628;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
-      📧 support@smartsn.be
-    </a>
-    <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#dd9933;color:#0a1628;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
-      📧 rem@smartsn.be
-    </a>
-  </div>
-</div>
 
   <!-- ONGLET DOCUMENTS -->
   <div id="docs-form" style="display:none;border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;background:#0c1f3d;padding:16px;">
@@ -148,12 +123,26 @@
 
   </div>
 
+  <!-- CARTE CONTACT SMART SN -->
+  <div id="smartsn-form" style="display:none;border:1px solid #1a3060;border-top:none;border-radius:0 0 12px 12px;background:#0c1f3d;padding:24px 16px;text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">🏢</div>
+    <div style="font-size:16px;font-weight:700;color:#e8f0ff;margin-bottom:4px;">Smart SN</div>
+    <div style="font-size:12px;color:#8aaedf;margin-bottom:20px;">Support consultant</div>
+    <a href="tel:+3200077170" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#0c1f3d;color:#e8f0ff;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid #1a3060;margin-bottom:10px;">
+      📞 +32 200 77 17
+    </a>
+    <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#dd9933;color:#0a1628;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
+      📧 support@smartsn.be
+    </a>
+    <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#dd9933;color:#0a1628;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+      📧 rem@smartsn.be
+    </a>
+  </div>
 
-
-
+</div><!-- fin padding principal -->
 
 <!-- FOOTER -->
-<div style="text-align:center;padding:16px;font-size:11px;color:#3a5a90;border-top:1px solid #1a3060;background:#0c1f3d;">
+<div style="text-align:center;padding:16px;font-size:11px;color:#3a5a90;border-top:1px solid #1a3060;background:#0c1f3d;margin-top:20px;">
   <a href="https://app.phil-mobile.be/wp_consultant_login.html" style="color:#dd9933;text-decoration:none;">← Déconnexion</a>
   &nbsp;·&nbsp;
   <a href="https://app.phil-mobile.be/wp_home.html" style="color:#dd9933;text-decoration:none;">Accueil</a>
@@ -161,9 +150,6 @@
 </div>
 
 <script>
-const CODE = 'philmobile2026';
-let remUnlocked = false;
-
 function frameLoaded() {
   document.getElementById('embed-loading').style.display = 'none';
   document.getElementById('embed-frame').style.display = 'block';
@@ -182,8 +168,8 @@ function switchTab(tab) {
       btn.style.borderBottom = '3px solid transparent';
     }
   });
+
   document.getElementById('contact-form').style.display = 'none';
-  document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('embed-container').style.display = 'none';
   document.getElementById('docs-form').style.display = 'none';
   document.getElementById('smartsn-form').style.display = 'none';
@@ -191,10 +177,10 @@ function switchTab(tab) {
   if (tab === 'contact') {
     document.getElementById('contact-form').style.display = 'block';
   } else if (tab === 'rem') {
-    if (!remUnlocked) {
-      document.getElementById('rem-lock').style.display = 'block';
-    } else {
-      document.getElementById('embed-container').style.display = 'block';
+    document.getElementById('embed-container').style.display = 'block';
+    const frame = document.getElementById('embed-frame');
+    if (!frame.src || frame.src === window.location.href) {
+      frame.src = 'https://app.phil-mobile.be/wp_rem.html';
     }
   } else if (tab === 'docs') {
     document.getElementById('docs-form').style.display = 'block';
@@ -203,57 +189,6 @@ function switchTab(tab) {
   }
 }
 
-function checkCode() {
-  const val = document.getElementById('rem-code').value;
-  if (val === CODE) {
-    remUnlocked = true;
-    document.getElementById('rem-lock').style.display = 'none';
-    document.getElementById('rem-error').style.display = 'none';
-    document.getElementById('embed-container').style.display = 'block';
-    document.getElementById('embed-loading').style.display = 'block';
-    document.getElementById('embed-frame').style.display = 'none';
-    document.getElementById('embed-frame').src = 'https://app.phil-mobile.be/wp_rem.html';
-    document.getElementById('embed-container').scrollIntoView({behavior:'smooth', block:'start'});
-  } else {
-    document.getElementById('rem-error').style.display = 'block';
-    document.getElementById('rem-code').value = '';
-  }
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && document.getElementById('rem-lock').style.display !== 'none') {
-    checkCode();
-  }
-});
-
-function sendUpline() {
-  const nom = document.getElementById('up-nom').value.trim();
-  const email = document.getElementById('up-email').value.trim();
-  const message = document.getElementById('up-message').value.trim();
-  if (!nom || !email || !message) { alert('Veuillez renseigner votre nom, e-mail et message.'); return; }
-  const sujet = document.getElementById('up-sujet').value;
-  const tel = document.getElementById('up-tel').value;
-  const mailto = 'mailto:infos@phil-mobile.be'
-    + '?subject=' + encodeURIComponent('[Consultant] ' + sujet)
-    + '&body=' + encodeURIComponent('Nom : ' + nom + '\nTéléphone : ' + (tel||'Non renseigné') + '\nEmail : ' + email + '\n\nMessage :\n' + message);
-  window.location.href = mailto;
-}
-
-function sendSmartSN() {
-  const nom = document.getElementById('sn-nom').value.trim();
-  const id = document.getElementById('sn-id').value.trim();
-  const email = document.getElementById('sn-email').value.trim();
-  const message = document.getElementById('sn-message').value.trim();
-  if (!nom || !id || !email || !message) { alert('Veuillez renseigner votre nom, ID Smart SN, e-mail et message.'); return; }
-  const sujet = document.getElementById('sn-sujet').value;
-  const tel = document.getElementById('sn-tel').value;
-  const mailto = 'mailto:support@smartsn.be'
-    + '?cc=infos@phil-mobile.be'
-    + '&subject=' + encodeURIComponent('[Support Smart SN] ' + sujet)
-    + '&body=' + encodeURIComponent('Nom : ' + nom + '\nID Smart SN : ' + id + '\nTéléphone : ' + (tel||'Non renseigné') + '\nEmail : ' + email + '\n\nMessage :\n' + message);
-  window.location.href = mailto;
-}
-
 function copyText(id, btn) {
   const text = document.getElementById(id).textContent.trim();
   navigator.clipboard.writeText(text).then(() => {
@@ -262,18 +197,8 @@ function copyText(id, btn) {
   });
 }
 
+// Onglet par défaut
 switchTab('contact');
-
-function copyText(id, btn) {
-  const text = document.getElementById(id).textContent.trim();
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = '✅ Copié !';
-    setTimeout(() => btn.textContent = '📋 Copier', 2000);
-  });
-}
-
-// Charger Rémunérations par défaut
-switchTab('rem');
 </script>
 </body>
 </html>
