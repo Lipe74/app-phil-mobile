@@ -21,13 +21,19 @@
       "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
       "src": "splash.png",
-      "sizes": "1024x1536",
+      "sizes": "853x1844",
       "type": "image/png",
       "form_factor": "narrow"
     }
