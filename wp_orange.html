@@ -45,11 +45,6 @@
 .active-line { background: #fff8f4; border-radius: 6px; }
 </style>
 
-<!-- NAV -->
-<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#1a1108;border-bottom:2px solid #dd9933;">
-  <span style="font-weight:700;font-size:15px;color:#dd9933;">Phil-Mobile</span>
-  <a href="https://app.phil-mobile.be/wp_home.html" style="font-size:11px;color:#dd9933;text-decoration:none;padding:5px 12px;border:1px solid #dd9933;border-radius:6px;">🏠 Accueil</a>
-</div>
 <div class="app">
   <div class="header">
     <img class="header-logo" id="logo-img" src="" alt="Phil-Mobile logo" />
@@ -91,12 +86,17 @@
   </div>
 
   <div class="section">
-    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> Promotions (manuelles)</div>
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS JUIN 2026</div>
     <div id="promos-rows"></div>
+    <div style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
+      ⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.
+    </div>
   </div>
 
   <div class="summary">
     <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet, TV & Acc.</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
     <div class="sum-row"><span class="sum-label">Options</span><span class="sum-val" id="s-options">+ 0,00 €</span></div>
     <div class="sum-row"><span class="sum-label">Remises Love (à vie)</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
     <div class="sum-row"><span class="sum-label">Promotions actives</span><span class="sum-val" id="s-promos"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
@@ -153,11 +153,14 @@ const options = [
 ];
 
 const promos = [
-  { id:'pr_wallonie', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet</span>', sub:'6 mois',           price:10,  perAbo:false },
-  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'Promotion à vie',      price:10,  perAbo:false },
-  { id:'pr_fibre',    name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Fibre</span>',    sub:'12 mois',          price:15,  perAbo:false },
-  { id:'pr_medium',   name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium</span>',     sub:'6 mois — par abo', price:5,   perAbo:true, mobileId:'mob_medium' },
-  { id:'pr_install',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Installation offerte</span>', sub:'Frais d\'installation', price:39,  perAbo:false },
+  { id:'pr_wallonie',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet Start & Zen</span>', sub:'- 11€ par internet · Valable 6 mois', price:11, perAbo:true, mobileId:'_internet' },
+  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'- 10€ · Valable à vie', price:10, perAbo:false },
+  { id:'pr_fibre',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet Fibre</span>', sub:'- 15€ · Valable 1 an', price:15, perAbo:false },
+  { id:'pr_install',   name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Installation Internet offerte</span>', sub:'- 39€ · Remise unique', price:39, perAbo:false },
+  { id:'pr_medium',    name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Medium</span>', sub:'- 5€ · Uniquement si ajout d\'un abonnement Child (cumulable)', price:5, perAbo:true, mobileId:'mob_medium', requiresChild:true },
+  { id:'pr_large',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Large</span>', sub:'- 5€ · Valable 12 mois', price:5, perAbo:true, mobileId:'mob_large' },
+  { id:'pr_netflix_zen',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'- 5,99€ · Valable 6 mois', price:5.99, perAbo:false },
+  { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'- 5,99€ · À vie', price:5.99, perAbo:false },
 ];
 
 const loveRates = {
@@ -228,18 +231,45 @@ function calcOptions() {
 }
 function calcPromos() {
   let t = 0;
+  const inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
+  const hasChild = (qtyMap['mob_child'] || 0) > 0;
   promos.forEach(p => {
     if (!togMap[p.id]) return;
-    t += p.perAbo && p.mobileId ? p.price * Math.max(1, qtyMap[p.mobileId] || 0) : p.price;
+    if (p.mobileId === '_internet') {
+      t += p.price * Math.max(1, inetCount);
+    } else if (p.requiresChild) {
+      if (hasChild) t += p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else if (p.perAbo && p.mobileId) {
+      t += p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else {
+      t += p.price;
+    }
   });
+  return t;
+}
+
+function calcMobiles() {
+  let t = 0;
+  (productList.mobile || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+
+function calcInternet() {
+  let t = 0;
+  (productList.internet || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.tv || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.netflix || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
   return t;
 }
 
 function render() {
   const prod = calcProducts(), opts = calcOptions(), love = calcLove(), prom = calcPromos();
+  const mob = calcMobiles(), inet = calcInternet();
   const total = Math.max(0, prod + opts - love - prom);
   const after = Math.max(0, prod + opts - love);
   document.getElementById('s-products').textContent = fmt(prod);
+  document.getElementById('s-mobiles').textContent = fmt(mob);
+  document.getElementById('s-internet').textContent = fmt(inet);
   document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts));
   document.getElementById('s-love').textContent = '- ' + fmt(love);
   document.getElementById('s-promos').textContent = '- ' + fmt(prom);
