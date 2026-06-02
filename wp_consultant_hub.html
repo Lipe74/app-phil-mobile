@@ -621,14 +621,14 @@ function checkCode() {
   }
 }
 
+switchTab('contact');
+
 // Au chargement : vérifier si session encore valide (< 60 min)
 (function checkSession() {
-  const TIMEOUT = 60 * 60 * 1000; // 60 minutes
+  const TIMEOUT = 60 * 60 * 1000;
   const saved = localStorage.getItem('pm_outils_auth');
   if (saved && (Date.now() - parseInt(saved)) < TIMEOUT) {
-    // Session encore valide → déverrouiller automatiquement
     unlockOutils();
-    // Rafraîchir le timestamp
     localStorage.setItem('pm_outils_auth', Date.now());
   }
 })();
@@ -645,8 +645,6 @@ function copyText(id, btn) {
     setTimeout(() => btn.textContent = '📋 Copier le script complet', 2000);
   });
 }
-
-switchTab('contact');
 </script>
 </body>
 </html>
