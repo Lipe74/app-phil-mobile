@@ -6,28 +6,33 @@
 <title>Phil-Mobile – Hub Consultants</title>
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
+<style>
+.menu-item {
+  display:block;width:100%;text-align:left;padding:9px 12px;
+  background:#fff;border:1px solid #f97316;border-radius:8px;
+  color:#1a1a1a;font-size:12px;font-weight:600;cursor:pointer;
+  font-family:Arial,sans-serif;transition:all .15s;
+}
+.menu-item:hover { background:#fff3e8; }
+.active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
+@media(max-width:600px){
+  #outils-unlocked > div { flex-direction:column !important; }
+  #outils-unlocked > div > div:first-child { width:100% !important; }
+  #iframe-panel { height:60vh !important;min-height:350px !important; }
+}
+</style>
 
-<!-- NAV -->
-<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#f8f8f8;border-bottom:1px solid #f97316;position:sticky;top:0;z-index:100;">
-  <span style="font-weight:700;font-size:16px;color:#f97316;">Phil-Mobile</span>
+<!-- HEADER compact -->
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #f97316;position:sticky;top:0;z-index:100;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
+    <span style="font-weight:700;font-size:14px;color:#f97316;">Hub Consultants</span>
+  </div>
   <a href="https://app.phil-mobile.be/wp_consultant_login.html" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">Déconnexion</a>
 </div>
 
-<!-- HEADER -->
-<div style="background:#f8f8f8;padding:20px 16px;border-bottom:1px solid #f97316;">
-  <div style="display:inline-block;background:rgba(221,153,51,0.12);color:#fb923c;font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid rgba(221,153,51,0.25);margin-bottom:10px;">🔒 Espace consultant</div>
-  <div style="display:flex;align-items:center;gap:14px;margin-bottom:4px;">
-    <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:#fff;padding:3px;">
-    <div>
-      <div style="font-size:20px;font-weight:700;color:#1a1a1a;">Hub Consultants</div>
-      <div style="font-size:12px;color:#f97316;">Ressources, simulateurs et outils de vente</div>
-    </div>
-  </div>
-</div>
-
 <!-- ONGLETS -->
-<div style="padding:20px 16px 0;">
-  <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:12px;">🧮 Outils &amp; accès</div>
+<div style="padding:12px 16px 0;">
 
   <div style="display:flex;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;overflow:hidden;">
     <button id="tab-btn-contact" onclick="switchTab('contact')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #f97316;font-family:Arial,sans-serif;">📩 Contacter Phil-Mobile</button>
@@ -51,11 +56,10 @@
     </a>
   </div>
 
-  <!-- ONGLET OUTILS (Documents + Simulateur) -->
+  <!-- ONGLET OUTILS : layout 2 colonnes -->
   <div id="outils-form" style="display:none;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
 
-    <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:10px;">🔒 Accès Outils</div>
-
+    <!-- VERROU -->
     <div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
       <div style="font-size:28px;margin-bottom:12px;">🔐</div>
       <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">Accès restreint</div>
@@ -64,84 +68,66 @@
       <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Code incorrect. Réessayez.</div>
       <button onclick="checkCode()" style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Valider</button>
     </div>
-    <!-- Tout le contenu est visible uniquement après le code -->
+
+    <!-- LAYOUT 2 COLONNES (visible après le code) -->
     <div id="outils-unlocked" style="display:none;">
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
 
-    <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:10px;">🧮 Simulateur de commissions</div>
+        <!-- COLONNE GAUCHE : menu -->
+        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
 
-    <div id="embed-container" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#f8f8f8;min-height:300px;margin-bottom:16px;">
-      <div id="embed-loading" style="text-align:center;padding:40px 16px;color:#f97316;font-size:13px;"><div style="font-size:28px;margin-bottom:10px;">⏳</div>Chargement...</div>
-      <iframe id="embed-frame" src="" style="width:100%;border:none;height:100vh;min-height:800px;display:none;" onload="frameLoaded()" scrolling="yes"></iframe>
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-left:4px;">🧮 Simulateur</div>
+          <button onclick="loadFrame('https://app.phil-mobile.be/wp_rem.html',this)" class="menu-item active-item" id="menu-sim">
+            💶 Calculateur de commissions
+          </button>
+
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📁 Documents</div>
+          <button onclick="loadFrame('https://smartservicesnetwork.my.site.com/',this)" class="menu-item">🏢 My Smart</button>
+          <button onclick="loadFrame('https://obe.my.site.com',this)" class="menu-item">☁️ Sales Force</button>
+          <button onclick="loadFrame('https://app.phil-mobile.be/wp_salesforce.pdf',this)" class="menu-item">🟠 Manuel Sales Force</button>
+          <button onclick="loadFrame('https://app.phil-mobile.be/wp_mysmart.pdf',this)" class="menu-item">📘 Manuel My Smart SN</button>
+          <button onclick="loadFrame('https://app.phil-mobile.be/wp_commissions.pdf',this)" class="menu-item">💶 Les commissions</button>
+          <button onclick="loadFrame('https://app.phil-mobile.be/wp_smartPlan.pdf',this)" class="menu-item">📊 Plan de commissions</button>
+          <button onclick="loadFrame('https://app.phil-mobile.be/wp_orangeproduits.pdf',this)" class="menu-item">🟠 Produits Orange</button>
+
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">💬 Scripts de vente</div>
+          <button onclick="showScript('script-mobile')" class="menu-item">📱 Accroche Orange</button>
+          <button onclick="showScript('script-eneco')" class="menu-item">⚡ Accroche Eneco</button>
+          <button onclick="showScript('script-recrut')" class="menu-item">🚀 Accroche recrutement</button>
+        </div>
+
+        <!-- COLONNE DROITE : contenu -->
+        <div style="flex:1;min-width:280px;">
+          <!-- Iframe panel -->
+          <div id="iframe-panel" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#fff;height:80vh;min-height:500px;display:flex;flex-direction:column;">
+            <div id="iframe-loading" style="display:flex;align-items:center;justify-content:center;height:100%;color:#f97316;font-size:13px;flex-direction:column;gap:8px;">
+              <div style="font-size:28px;">⏳</div>Chargement...
+            </div>
+            <iframe id="embed-frame" src="https://app.phil-mobile.be/wp_rem.html" style="width:100%;flex:1;border:none;display:none;" onload="frameLoaded()"></iframe>
+          </div>
+
+          <!-- Script panels (cachés par défaut) -->
+          <div id="script-mobile" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;">
+            <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:12px;">📱 Accroche mobile Orange</div>
+            <div id="sc1" style="font-size:13px;color:#f97316;line-height:1.8;font-style:italic;padding:12px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">"Bonjour ! Je suis Philippe de Phil-Mobile, revendeur officiel Orange à Beaufays. En 5 minutes, j'analyse votre facture actuelle et je vous propose le forfait Orange le plus adapté. Souvent mes clients économisent 20 à 30% par mois, sans changer de numéro. Ça vous intéresse ?"</div>
+            <button onclick="copyText('sc1',this)" style="margin-top:10px;padding:7px 14px;background:transparent;border:1px solid #f97316;border-radius:6px;color:#f97316;font-size:12px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
+          </div>
+          <div id="script-eneco" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;">
+            <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:12px;">⚡ Accroche énergie Eneco</div>
+            <div id="sc2" style="font-size:13px;color:#f97316;line-height:1.8;font-style:italic;padding:12px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">"Avec Eneco, vous optez pour un fournisseur belge fiable et transparent. Je fais une simulation gratuite sans engagement : on compare vos factures et je vous montre combien vous pouvez économiser. C'est rapide et sans mauvaises surprises."</div>
+            <button onclick="copyText('sc2',this)" style="margin-top:10px;padding:7px 14px;background:transparent;border:1px solid #f97316;border-radius:6px;color:#f97316;font-size:12px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
+          </div>
+          <div id="script-recrut" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;">
+            <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:12px;">🚀 Accroche recrutement</div>
+            <div id="sc3" style="font-size:13px;color:#f97316;line-height:1.8;font-style:italic;padding:12px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">"Je cherche des personnes motivées pour développer une activité indépendante dans les télécoms et l'énergie. Avec Smart SN, la création est prise en charge. Formation, produits reconnus, revenus récurrents. Ça vous intéresse d'en savoir plus ?"</div>
+            <button onclick="copyText('sc3',this)" style="margin-top:10px;padding:7px 14px;background:transparent;border:1px solid #f97316;border-radius:6px;color:#f97316;font-size:12px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
+          </div>
+        </div>
+
+      </div>
     </div>
-
-    <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:10px;">📁 Documents &amp; accès</div>
-
-    <a href="https://smartservicesnetwork.my.site.com/" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏢</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Se connecter à My Smart</div><div style="font-size:11px;color:#f97316;">Votre login@smartsn.be, pour la connexion</div></div>
-      <span style="color:#f97316;font-size:14px;">↗</span>
-    </a>
-
-    <a href="https://obe.my.site.com" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">☁️</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Se connecter à Sales Force</div><div style="font-size:11px;color:#f97316;">Uniquement pour ceux qui ont reçu les accès par Smart SN</div></div>
-      <span style="color:#f97316;font-size:14px;">↗</span>
-    </a>
-
-    <a href="https://app.phil-mobile.be/wp_salesforce.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🟠</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Manuel Sales Force</div><div style="font-size:11px;color:#f97316;">Guide d'utilisation Orange · By Phil-Mobile</div></div>
-      <span style="color:#f97316;font-size:14px;">↓</span>
-    </a>
-
-    <a href="https://app.phil-mobile.be/wp_mysmart.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📘</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Manuel My Smart SN</div><div style="font-size:11px;color:#f97316;">Guide d'utilisation Smart SN · By Phil-Mobile</div></div>
-      <span style="color:#f97316;font-size:14px;">↓</span>
-    </a>
-
-    <a href="https://app.phil-mobile.be/wp_commissions.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💶</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Les commissions</div><div style="font-size:11px;color:#f97316;">Détail des commissions consultant</div></div>
-      <span style="color:#f97316;font-size:14px;">↓</span>
-    </a>
-
-    <a href="https://app.phil-mobile.be/wp_smartPlan.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(221,153,51,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📊</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Plan de commissions</div><div style="font-size:11px;color:#f97316;">Smart Plan · Structure de rémunération</div></div>
-      <span style="color:#f97316;font-size:14px;">↓</span>
-    </a>
-
-    <a href="https://app.phil-mobile.be/wp_orangeproduits.pdf" target="_blank" style="display:flex;align-items:center;gap:14px;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:14px 16px;margin-bottom:8px;text-decoration:none;">
-      <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,100,20,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🟠</div>
-      <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:2px;">Les produits Orange</div><div style="font-size:11px;color:#f97316;">Catalogue produits &amp; offres Orange</div></div>
-      <span style="color:#f97316;font-size:14px;">↓</span>
-    </a>
-
-    <div style="font-size:13px;font-weight:700;color:#f97316;margin:16px 0 10px;">💬 Scripts de vente</div>
-
-    <div style="background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:8px;">
-      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:8px;">📱 Accroche mobile Orange</div>
-      <div id="script1" style="font-size:12px;color:#f97316;line-height:1.7;font-style:italic;padding:10px 12px;background:#f8f8f8;border-radius:8px;border-left:3px solid #f97316;">"Bonjour ! Je suis Philippe de Phil-Mobile, revendeur officiel Orange à Beaufays. En 5 minutes, j'analyse votre facture actuelle et je vous propose le forfait Orange le plus adapté. Souvent mes clients économisent 20 à 30% par mois, sans changer de numéro. Ça vous intéresse ?"</div>
-      <button onclick="copyText('script1',this)" style="margin-top:8px;padding:6px 12px;background:transparent;border:1px solid #f97316;border-radius:6px;color:#f97316;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
-    </div>
-
-    <div style="background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:8px;">
-      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:8px;">⚡ Accroche énergie Eneco</div>
-      <div id="script2" style="font-size:12px;color:#f97316;line-height:1.7;font-style:italic;padding:10px 12px;background:#f8f8f8;border-radius:8px;border-left:3px solid #f97316;">"Avec Eneco, vous optez pour un fournisseur belge fiable et transparent. Je fais une simulation gratuite sans engagement : on compare vos factures et je vous montre combien vous pouvez économiser. C'est rapide et sans mauvaises surprises."</div>
-      <button onclick="copyText('script2',this)" style="margin-top:8px;padding:6px 12px;background:transparent;border:1px solid #f97316;border-radius:6px;color:#f97316;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
-    </div>
-
-    <div style="background:#f8f8f8;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:8px;">
-      <div style="font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:8px;">🚀 Accroche recrutement</div>
-      <div id="script3" style="font-size:12px;color:#f97316;line-height:1.7;font-style:italic;padding:10px 12px;background:#f8f8f8;border-radius:8px;border-left:3px solid #f97316;">"Je cherche des personnes motivées pour développer une activité indépendante dans les télécoms et l'énergie. Avec Smart SN, la création est prise en charge. Formation, produits reconnus, revenus récurrents. Ça vous intéresse d'en savoir plus ?"</div>
-      <button onclick="copyText('script3',this)" style="margin-top:8px;padding:6px 12px;background:transparent;border:1px solid #f97316;border-radius:6px;color:#f97316;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier</button>
-    </div>
-
-    </div><!-- fin outils-unlocked -->
 
   </div>
-
   <!-- CARTE CONTACT SMART SN -->
   <div id="smartsn-form" style="display:none;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:24px 16px;text-align:center;">
     <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">🏢</div>
@@ -161,20 +147,40 @@
 </div>
 
 <!-- FOOTER -->
-<div style="text-align:center;padding:16px;font-size:11px;color:#f97316;border-top:1px solid #f97316;background:#f8f8f8;margin-top:20px;">
-  <a href="https://app.phil-mobile.be/wp_consultant_login.html" style="color:#f97316;text-decoration:none;">← Déconnexion</a>
-  &nbsp;·&nbsp;
-  <a href="https://app.phil-mobile.be/wp_home.html" style="color:#f97316;text-decoration:none;">Accueil</a>
-  &nbsp;·&nbsp; Phil-Mobile © 2026
+<div style="text-align:center;padding:10px;font-size:11px;color:#f97316;border-top:1px solid #f97316;background:#f8f8f8;margin-top:16px;">
+  Phil-Mobile © 2026
 </div>
 
 <script>
 const CODE = 'Philmobile2026';
-let remUnlocked = false;
 
 function frameLoaded() {
-  document.getElementById('embed-loading').style.display = 'none';
+  document.getElementById('iframe-loading').style.display = 'none';
   document.getElementById('embed-frame').style.display = 'block';
+}
+
+function loadFrame(url, btn) {
+  // Deactivate all menu items
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  // Hide all script panels
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  // Show iframe panel
+  const panel = document.getElementById('iframe-panel');
+  panel.style.display = 'flex';
+  document.getElementById('iframe-loading').style.display = 'flex';
+  document.getElementById('embed-frame').style.display = 'none';
+  document.getElementById('embed-frame').src = url;
+}
+
+function showScript(id) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  event.currentTarget.classList.add('active-item');
+  // Hide iframe panel
+  document.getElementById('iframe-panel').style.display = 'none';
+  // Hide all scripts then show the right one
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
 }
 
 function switchTab(tab) {
@@ -182,11 +188,9 @@ function switchTab(tab) {
     const btn = document.getElementById('tab-btn-' + t);
     if (!btn) return;
     if (t === tab) {
-      btn.style.color = '#f97316';
       btn.style.background = 'rgba(221,153,51,0.1)';
       btn.style.borderBottom = '3px solid #f97316';
     } else {
-      btn.style.color = '#f97316';
       btn.style.background = 'transparent';
       btn.style.borderBottom = '3px solid transparent';
     }
@@ -194,27 +198,20 @@ function switchTab(tab) {
   document.getElementById('contact-form').style.display = 'none';
   document.getElementById('outils-form').style.display = 'none';
   document.getElementById('smartsn-form').style.display = 'none';
-
-  if (tab === 'contact') {
-    document.getElementById('contact-form').style.display = 'block';
-  } else if (tab === 'outils') {
-    document.getElementById('outils-form').style.display = 'block';
-  } else if (tab === 'smartsn') {
-    document.getElementById('smartsn-form').style.display = 'block';
-  }
+  if (tab === 'contact') document.getElementById('contact-form').style.display = 'block';
+  else if (tab === 'outils') document.getElementById('outils-form').style.display = 'block';
+  else if (tab === 'smartsn') document.getElementById('smartsn-form').style.display = 'block';
 }
 
 function checkCode() {
   const val = document.getElementById('rem-code').value;
   if (val === CODE) {
-    remUnlocked = true;
     document.getElementById('rem-lock').style.display = 'none';
     document.getElementById('rem-error').style.display = 'none';
     document.getElementById('outils-unlocked').style.display = 'block';
-    document.getElementById('embed-loading').style.display = 'block';
+    // Auto-load the simulator
+    document.getElementById('iframe-loading').style.display = 'flex';
     document.getElementById('embed-frame').style.display = 'none';
-    document.getElementById('embed-frame').src = 'https://app.phil-mobile.be/wp_rem.html';
-    document.getElementById('embed-container').scrollIntoView({behavior:'smooth', block:'start'});
   } else {
     document.getElementById('rem-error').style.display = 'block';
     document.getElementById('rem-code').value = '';
@@ -222,9 +219,8 @@ function checkCode() {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && document.getElementById('rem-lock').style.display !== 'none') {
-    checkCode();
-  }
+  const lock = document.getElementById('rem-lock');
+  if (e.key === 'Enter' && lock && lock.style.display !== 'none') checkCode();
 });
 
 function copyText(id, btn) {

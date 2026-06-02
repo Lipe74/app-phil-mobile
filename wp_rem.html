@@ -10,19 +10,16 @@
     --orange: #FF6B00;
     --orange-light: #FF8C35;
     --orange-pale: #FFF3E8;
-    --dark: #1A1108;
-    --mid: #3D2E1A;
-    --text: #2C1F0E;
-    --muted: #8A7260;
-    --bg: #FAF6F1;
+    --dark: #f97316;
+    --mid: #6b7280;
+    --text: #1f2937;
+    --muted: #9ca3af;
+    --bg: #f9fafb;
     --white: #FFFFFF;
     --blue: #1E3A8A;
-    --blue-light: #3B5BA5;
-    --green: #14532D;
     --green-light: #166534;
-    --yellow: #CA8A04;
-    --border: #E8DDD3;
-    --shadow: 0 4px 24px rgba(26,17,8,0.10);
+    --border: #e5e7eb;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
     --radius: 12px;
   }
 
@@ -36,52 +33,20 @@
     padding: 0 0 60px;
   }
 
-  header {
-    background: var(--dark);
-    color: var(--white);
-    padding: 28px 40px 24px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    border-bottom: 4px solid var(--orange);
-  }
-
-  .logo {
-    width: 44px; height: 44px;
-    background: var(--orange);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-  }
-
-  header h1 {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-  }
-  header p {
-    font-size: 0.82rem;
-    color: #B8A99A;
-    font-weight: 400;
-    margin-top: 2px;
-  }
-
   .container {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 36px 24px 0;
+    padding: 16px 16px 0;
   }
 
   .instructions {
     background: var(--orange-pale);
     border-left: 4px solid var(--orange);
     border-radius: var(--radius);
-    padding: 14px 20px;
-    margin-bottom: 28px;
-    font-size: 0.88rem;
-    color: var(--mid);
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #92400e;
     line-height: 1.6;
   }
   .instructions strong { color: var(--orange); }
@@ -94,23 +59,32 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     overflow: hidden;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
   }
 
   thead th {
-    background: var(--dark);
+    background: #f97316;
     color: var(--white);
     font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    font-weight: 500;
+    font-size: 0.68rem;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 12px 14px;
+    padding: 10px 10px;
     text-align: center;
     white-space: nowrap;
   }
-  thead th:first-child { text-align: left; padding-left: 20px; }
-  thead th.col-total { background: var(--orange); color: white; }
+  thead th:first-child { text-align: left; padding-left: 16px; background: #ea6a0a; }
+  thead th.col-total { background: #c2510a; color: white; }
+
+  .group-header {
+    background: #fb923c !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.1em !important;
+    color: #fff !important;
+    padding: 6px 8px !important;
+    border-bottom: 2px solid #fff !important;
+  }
 
   tbody tr { transition: background 0.15s; }
   tbody tr:hover { background: var(--orange-pale); }
@@ -123,62 +97,70 @@
   tbody tr:last-child td { border-bottom: none; }
 
   .row-label {
-    padding: 12px 14px 12px 20px;
+    padding: 10px 12px 10px 16px;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.83rem;
     white-space: nowrap;
     color: var(--white);
   }
 
-  /* Row color groups */
   .cat-blue   .row-label { background: var(--blue); }
   .cat-mobile .row-label { background: var(--orange); }
   .cat-energy .row-label { background: #166534; }
   .cat-other  .row-label { background: var(--mid); }
 
-  /* Qty input */
-  .qty-cell { text-align: center; padding: 6px 8px; }
-  .qty-cell input[type=number] {
-    width: 62px;
-    padding: 7px 6px;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.9rem;
-    font-weight: 500;
-    text-align: center;
+  /* +/- stepper */
+  .qty-cell { text-align: center; padding: 5px 4px; }
+  .stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     background: var(--bg);
-    color: var(--text);
-    transition: border-color 0.15s, background 0.15s;
-    -moz-appearance: textfield;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 2px 4px;
   }
-  .qty-cell input[type=number]::-webkit-inner-spin-button,
-  .qty-cell input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-  .qty-cell input:focus {
-    outline: none;
-    border-color: var(--orange);
-    background: var(--white);
-  }
-  .qty-cell input.has-value {
+  .stepper.has-value {
     border-color: var(--orange-light);
     background: var(--orange-pale);
+  }
+  .stepper button {
+    width: 24px; height: 24px;
+    border: none;
+    border-radius: 5px;
+    background: #fff;
     color: var(--orange);
+    font-size: 16px;
     font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    transition: background .12s;
+    flex-shrink: 0;
   }
+  .stepper button:hover { background: var(--orange-pale); }
+  .stepper button:active { background: #fde8d0; }
+  .stepper .qty-val {
+    min-width: 28px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    user-select: none;
+  }
+  .stepper.has-value .qty-val { color: var(--orange); }
 
-  /* Grey out N/A cells */
-  .na-cell {
-    background: #F0EDE9;
-    width: 80px;
-  }
+  /* N/A cells */
+  .na-cell { background: #f3f4f6; width: 80px; }
 
   /* Rate display */
   .rate-cell {
     text-align: center;
     font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--muted);
-    padding: 6px 10px;
+    padding: 5px 8px;
     white-space: nowrap;
   }
 
@@ -186,82 +168,72 @@
   .subtotal-cell {
     text-align: right;
     font-family: 'DM Mono', monospace;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: var(--orange);
-    padding: 8px 18px 8px 8px;
+    padding: 8px 16px 8px 8px;
     white-space: nowrap;
-    min-width: 110px;
+    min-width: 100px;
   }
   .subtotal-cell.zero { color: var(--border); font-weight: 400; }
 
-  /* Column header groups */
-  .group-header {
-    background: #2C1F0E !important;
-    font-size: 0.65rem !important;
-    letter-spacing: 0.1em !important;
-    color: #C4A882 !important;
-    padding: 7px 8px !important;
-    border-bottom: 2px solid var(--orange) !important;
-  }
-
   /* Total bar */
   .total-bar {
-    background: var(--dark);
+    background: var(--orange);
     color: var(--white);
     border-radius: var(--radius);
-    padding: 22px 28px;
+    padding: 18px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-shadow: var(--shadow);
-    margin-bottom: 28px;
+    margin-bottom: 20px;
   }
   .total-bar .label {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: #C4A882;
+    color: #fff3e8;
   }
   .total-bar .amount {
     font-family: 'DM Mono', monospace;
-    font-size: 2.2rem;
+    font-size: 2rem;
     font-weight: 700;
-    color: var(--orange);
+    color: #fff;
     letter-spacing: -1px;
   }
 
   /* Category totals */
   .cat-totals {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 14px;
-    margin-bottom: 36px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
   }
   .cat-card {
     background: var(--white);
     border-radius: var(--radius);
-    padding: 16px 20px;
+    padding: 14px 18px;
     box-shadow: var(--shadow);
     border-top: 4px solid var(--border);
   }
   .cat-card.cat-blue   { border-color: var(--blue); }
   .cat-card.cat-mobile { border-color: var(--orange); }
-  .cat-card.cat-energy { border-color: #166634; }
+  .cat-card.cat-energy { border-color: #166534; }
   .cat-card.cat-other  { border-color: var(--mid); }
 
   .cat-card .cat-name {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--muted);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
   }
   .cat-card .cat-amount {
     font-family: 'DM Mono', monospace;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--text);
   }
@@ -274,54 +246,24 @@
     background: transparent;
     border: 2px solid var(--border);
     border-radius: 8px;
-    padding: 9px 20px;
+    padding: 8px 18px;
     font-family: 'Syne', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: var(--muted);
     cursor: pointer;
     transition: all 0.15s;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
   }
-  .reset-btn:hover {
-    border-color: var(--orange);
-    color: var(--orange);
-  }
+  .reset-btn:hover { border-color: var(--orange); color: var(--orange); }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#1A1108;border-bottom:2px solid #FF6B00;">
-  <span style="font-weight:700;font-size:15px;color:#FF6B00;">Phil-Mobile</span>
-  <a href="https://app.phil-mobile.be/wp_home.html" style="font-size:11px;color:#FF6B00;text-decoration:none;padding:5px 12px;border:1px solid #FF6B00;border-radius:6px;">🏠 Accueil</a>
-</div>
-<header style="justify-content:space-between;">
-  <div style="display:flex;align-items:center;gap:18px;">
-    <div class="logo">€</div>
-    <div>
-      <h1>Calculateur de Commissions</h1>
-      <p>Saisissez les quantités vendues — les commissions se calculent automatiquement</p>
-    </div>
-  </div>
-
-  <img 
-    src="https://www.phil-mobile.be/mobile/logos/phil-mobile.png"
-    alt="Phil-Mobile"
-    style="
-      width:90px;
-      height:auto;
-      border-radius:12px;
-      background:white;
-      padding:4px;
-    "
-  >
-</header>
-
 <div class="container">
 
   <div class="instructions">
-    <strong>Mode d'emploi :</strong> Dans les colonnes <strong>BC</strong>, <strong>SC OU.+</strong>, <strong>Convergence</strong>, <strong>Portabilité</strong> et <strong>SoHo</strong>, entrez le nombre de ventes réalisées pour chaque produit. Le total de votre commission s'affiche automatiquement.
+    <strong>Mode d'emploi :</strong> Utilisez les boutons <strong>+</strong> et <strong>−</strong> pour indiquer le nombre de ventes par produit et par type. Le total de votre commission se calcule automatiquement.
   </div>
 
   <button class="reset-btn" onclick="resetAll()">↺ Réinitialiser</button>
@@ -329,21 +271,21 @@
   <table id="commTable">
     <thead>
       <tr>
-        <th style="min-width:200px">Produit</th>
+        <th style="min-width:180px">Produit</th>
         <th class="group-header" colspan="2">BC</th>
         <th class="group-header" colspan="2">SC OU +</th>
         <th class="group-header" colspan="2">CONVERGENCE</th>
         <th class="group-header" colspan="2">PORTABILITÉ</th>
-        <th class="group-header" colspan="2">SOHO-INDEPENDANT</th>
-        <th class="col-total">TOTAL COMMISSION</th>
+        <th class="group-header" colspan="2">SOHO-INDEP.</th>
+        <th class="col-total">TOTAL</th>
       </tr>
       <tr>
         <th></th>
-        <th>Quantité</th><th>Euro</th>
-        <th>Quantité</th><th>Euro</th>
-        <th>Quantité</th><th>Euro</th>
-        <th>Quantité</th><th>Euro</th>
-        <th>Quantité</th><th>Euro</th>
+        <th>Qté</th><th>€/u</th>
+        <th>Qté</th><th>€/u</th>
+        <th>Qté</th><th>€/u</th>
+        <th>Qté</th><th>€/u</th>
+        <th>Qté</th><th>€/u</th>
         <th class="col-total"></th>
       </tr>
     </thead>
@@ -351,7 +293,7 @@
   </table>
 
   <div class="total-bar">
-    <span class="label">Total de la commission sur le client</span>
+    <span class="label">Total commission client</span>
     <span class="amount" id="grandTotal">0,00 €</span>
   </div>
 
@@ -377,40 +319,50 @@
 </div>
 
 <script>
-// Data: [label, cat, [bc, sc, conv, port, soho]]  null = N/A
 const products = [
-  { label: "Home Flybox",              cat: "fixe",   rates: [25,  30,   null, null, null] },
-  { label: "INTERNET",                 cat: "fixe",   rates: [15,  20,   15,   12,   null] },
-  { label: "TV ORANGE",                cat: "fixe",   rates: [10,  10,   null, null, null] },
-  { label: "MOBILE CHILD",        cat: "mobile", rates: [1,   5,    null, null, null] },
-  { label: "MOBILE SMALL",       cat: "mobile", rates: [10,  15,   null, null, null] },
-  { label: "MOBILE MEDIUM",      cat: "mobile", rates: [35,  40,   12,   20,   15]   },
-  { label: "MOBILE UNLIMITED",  cat: "mobile", rates: [60,  65,   12,   20,   15]   },
-  { label: "MOBILE LARGE",      cat: "mobile", rates: [50,  55,   12,   20,   15]   },
-  { label: "ENECO ELECTRICITE",        cat: "energy", rates: [20,  25,   null, null, 20]   },
-  { label: "ENECO GAZ",                cat: "energy", rates: [20,  25,   null, null, 20]   },
-  { label: "Entretien de chaudière",   cat: "energy", rates: [20,  25,   null, null, null] },
-  { label: "eBilling",                 cat: "other",  rates: [5,   5,    null, null, null] },
-  { label: "Domiciliation",            cat: "other",  rates: [5,   5,    null, null, null] },
+  { label: "Home Flybox",            cat: "fixe",   rates: [25,  30,   null, null, null] },
+  { label: "INTERNET",               cat: "fixe",   rates: [15,  20,   15,   12,   null] },
+  { label: "TV ORANGE",              cat: "fixe",   rates: [10,  10,   null, null, null] },
+  { label: "MOBILE CHILD",          cat: "mobile", rates: [1,   5,    null, null, null] },
+  { label: "MOBILE SMALL",          cat: "mobile", rates: [10,  15,   null, null, null] },
+  { label: "MOBILE MEDIUM",         cat: "mobile", rates: [35,  40,   12,   20,   15]   },
+  { label: "MOBILE UNLIMITED",      cat: "mobile", rates: [60,  65,   12,   20,   15]   },
+  { label: "MOBILE LARGE",          cat: "mobile", rates: [50,  55,   12,   20,   15]   },
+  { label: "ENECO ELECTRICITE",     cat: "energy", rates: [20,  25,   null, null, 20]   },
+  { label: "ENECO GAZ",             cat: "energy", rates: [20,  25,   null, null, 20]   },
+  { label: "Entretien chaudière",   cat: "energy", rates: [20,  25,   null, null, null] },
+  { label: "eBilling",              cat: "other",  rates: [5,   5,    null, null, null] },
+  { label: "Domiciliation",         cat: "other",  rates: [5,   5,    null, null, null] },
 ];
 
-const catClass = {
-  fixe: "cat-blue",
-  mobile: "cat-mobile",
-  energy: "cat-energy",
-  other: "cat-other"
-};
+const catClass = { fixe:"cat-blue", mobile:"cat-mobile", energy:"cat-energy", other:"cat-other" };
 
-const cols = ["BC", "SC OU.+", "Convergence", "Portabilité", "SoHo"];
+// Store qty values
+const vals = {};
+
+function getKey(pi, ci) { return `${pi}_${ci}`; }
 
 function fmt(v) {
-  return v.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  return v.toLocaleString('fr-FR', { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' €';
+}
+
+function step(pi, ci, delta) {
+  const key = getKey(pi, ci);
+  const cur = vals[key] || 0;
+  const next = Math.max(0, cur + delta);
+  vals[key] = next;
+  // Update display
+  const valEl = document.getElementById(`val_${key}`);
+  const stepper = document.getElementById(`step_${key}`);
+  valEl.textContent = next;
+  if (next > 0) stepper.classList.add('has-value');
+  else stepper.classList.remove('has-value');
+  recalc();
 }
 
 function buildTable() {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
-
   products.forEach((p, pi) => {
     const tr = document.createElement('tr');
     tr.className = catClass[p.cat];
@@ -420,26 +372,21 @@ function buildTable() {
     tdLabel.innerHTML = `<div class="row-label">${p.label}</div>`;
     tr.appendChild(tdLabel);
 
-    // 5 columns × (qty input + rate display)
     p.rates.forEach((rate, ci) => {
+      const key = getKey(pi, ci);
       const tdQty = document.createElement('td');
       tdQty.className = 'qty-cell';
 
       if (rate === null) {
         tdQty.className += ' na-cell';
-        tdQty.innerHTML = '';
       } else {
-        const inp = document.createElement('input');
-        inp.type = 'number';
-        inp.min = 0;
-        inp.value = '';
-        inp.placeholder = '0';
-        inp.id = `inp_${pi}_${ci}`;
-        inp.addEventListener('input', () => {
-          inp.classList.toggle('has-value', inp.value !== '' && Number(inp.value) > 0);
-          recalc();
-        });
-        tdQty.appendChild(inp);
+        vals[key] = vals[key] || 0;
+        tdQty.innerHTML = `
+          <div class="stepper" id="step_${key}">
+            <button onclick="step(${pi},${ci},-1)" title="Moins">−</button>
+            <span class="qty-val" id="val_${key}">0</span>
+            <button onclick="step(${pi},${ci},+1)" title="Plus">+</button>
+          </div>`;
       }
       tr.appendChild(tdQty);
 
@@ -449,7 +396,6 @@ function buildTable() {
       tr.appendChild(tdRate);
     });
 
-    // Row subtotal
     const tdSub = document.createElement('td');
     tdSub.className = 'subtotal-cell zero';
     tdSub.id = `sub_${pi}`;
@@ -461,33 +407,24 @@ function buildTable() {
 }
 
 function recalc() {
-  const catTotals = { fixe: 0, mobile: 0, energy: 0, other: 0 };
+  const catTotals = { fixe:0, mobile:0, energy:0, other:0 };
   let grand = 0;
 
   products.forEach((p, pi) => {
     let rowTotal = 0;
     p.rates.forEach((rate, ci) => {
       if (rate === null) return;
-      const inp = document.getElementById(`inp_${pi}_${ci}`);
-      const qty = inp ? (parseInt(inp.value) || 0) : 0;
-      rowTotal += qty * rate;
+      rowTotal += (vals[getKey(pi,ci)] || 0) * rate;
     });
-
     grand += rowTotal;
     catTotals[p.cat] += rowTotal;
 
     const subEl = document.getElementById(`sub_${pi}`);
-    if (rowTotal === 0) {
-      subEl.textContent = '- €';
-      subEl.className = 'subtotal-cell zero';
-    } else {
-      subEl.textContent = fmt(rowTotal);
-      subEl.className = 'subtotal-cell';
-    }
+    subEl.textContent = rowTotal === 0 ? '- €' : fmt(rowTotal);
+    subEl.className = rowTotal === 0 ? 'subtotal-cell zero' : 'subtotal-cell';
   });
 
   document.getElementById('grandTotal').textContent = fmt(grand);
-
   for (const [cat, val] of Object.entries(catTotals)) {
     const el = document.getElementById('cat-' + cat);
     el.textContent = fmt(val);
@@ -496,12 +433,12 @@ function recalc() {
 }
 
 function resetAll() {
-  products.forEach((p, pi) => {
-    p.rates.forEach((rate, ci) => {
-      if (rate === null) return;
-      const inp = document.getElementById(`inp_${pi}_${ci}`);
-      if (inp) { inp.value = ''; inp.classList.remove('has-value'); }
-    });
+  Object.keys(vals).forEach(k => {
+    vals[k] = 0;
+    const valEl = document.getElementById(`val_${k}`);
+    const stepper = document.getElementById(`step_${k}`);
+    if (valEl) valEl.textContent = '0';
+    if (stepper) stepper.classList.remove('has-value');
   });
   recalc();
 }
