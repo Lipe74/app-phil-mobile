@@ -601,20 +601,13 @@ function switchTab(tab) {
   else if (tab === 'smartsn') document.getElementById('smartsn-form').style.display = 'block';
 }
 
-function unlockOutils() {
-  document.getElementById('rem-lock').style.display = 'none';
-  document.getElementById('rem-error') && (document.getElementById('rem-error').style.display = 'none');
-  document.getElementById('outils-unlocked').style.display = 'block';
-  document.getElementById('iframe-loading').style.display = 'flex';
-  document.getElementById('embed-frame').style.display = 'none';
-}
 
 function checkCode() {
   const val = document.getElementById('rem-code').value;
   if (val === CODE) {
-    // Sauvegarder le timestamp de connexion (60 min)
-    localStorage.setItem('pm_outils_auth', Date.now());
-    unlockOutils();
+    document.getElementById('rem-lock').style.display = 'none';
+    document.getElementById('rem-error').style.display = 'none';
+    document.getElementById('outils-unlocked').style.display = 'block';
   } else {
     document.getElementById('rem-error').style.display = 'block';
     document.getElementById('rem-code').value = '';
@@ -622,16 +615,6 @@ function checkCode() {
 }
 
 switchTab('contact');
-
-// Au chargement : vérifier si session encore valide (< 60 min)
-(function checkSession() {
-  const TIMEOUT = 60 * 60 * 1000;
-  const saved = localStorage.getItem('pm_outils_auth');
-  if (saved && (Date.now() - parseInt(saved)) < TIMEOUT) {
-    unlockOutils();
-    localStorage.setItem('pm_outils_auth', Date.now());
-  }
-})();
 
 document.addEventListener('keydown', function(e) {
   const lock = document.getElementById('rem-lock');
