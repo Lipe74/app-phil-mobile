@@ -28,7 +28,7 @@
     <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
     <span style="font-weight:700;font-size:14px;color:#f97316;">Hub Consultants</span>
   </div>
-  <a href="https://app.phil-mobile.be/wp_consultant_login.html" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">Déconnexion</a>
+  <a href="#" onclick="logout()" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">Déconnexion</a>
 </div>
 
 <!-- ONGLETS -->
@@ -548,7 +548,13 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
 <script>
 const CODE = 'Philmobile2026';
 
-function frameLoaded() {
+function logout() {
+  sessionStorage.clear();
+  localStorage.removeItem('pm_consultant_auth');
+  window.location.href = 'https://app.phil-mobile.be/wp_home.html';
+}
+
+
   document.getElementById('iframe-loading').style.display = 'none';
   document.getElementById('embed-frame').style.display = 'block';
 }
