@@ -27,8 +27,8 @@
   <div style="display:flex;align-items:center;gap:10px;">
     <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
     <span style="font-weight:700;font-size:14px;color:#f97316;">Hub Consultants</span>
+    <a href="https://app.phil-mobile.be/wp_home.html" target="_blank" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">🏠 Accueil</a>
   </div>
-  <a href="#" onclick="logout()" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">🏠 Accueil</a>
 </div>
 
 <!-- ONGLETS -->
@@ -548,10 +548,21 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
 <script>
 const CODE = 'Philmobile2026';
 
+function setCookie(name, val, minutes) {
+  const d = new Date();
+  d.setTime(d.getTime() + minutes * 60000);
+  document.cookie = name + '=' + val + ';expires=' + d.toUTCString() + ';path=/';
+}
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
+function deleteCookie(name) {
+  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+}
+
 function logout() {
-  sessionStorage.clear();
-  localStorage.removeItem('pm_consultant_auth');
-  localStorage.removeItem('pm_outils_auth');
+  deleteCookie('pm_outils_auth');
   window.location.href = 'https://app.phil-mobile.be/wp_home.html';
 }
 
@@ -605,16 +616,28 @@ function switchTab(tab) {
 function checkCode() {
   const val = document.getElementById('rem-code').value;
   if (val === CODE) {
-    document.getElementById('rem-lock').style.display = 'none';
-    document.getElementById('rem-error').style.display = 'none';
-    document.getElementById('outils-unlocked').style.display = 'block';
+    setCookie('pm_outils_auth', '1', 60);
+    doUnlock();
   } else {
     document.getElementById('rem-error').style.display = 'block';
     document.getElementById('rem-code').value = '';
   }
 }
 
+function doUnlock() {
+  document.getElementById('rem-lock').style.display = 'none';
+  document.getElementById('rem-error').style.display = 'none';
+  document.getElementById('outils-unlocked').style.display = 'block';
+}
+
 switchTab('contact');
+
+window.addEventListener('DOMContentLoaded', function() {
+  if (getCookie('pm_outils_auth') === '1') {
+    doUnlock();
+    setCookie('pm_outils_auth', '1', 60); // rafraîchir
+  }
+});
 
 document.addEventListener('keydown', function(e) {
   const lock = document.getElementById('rem-lock');
