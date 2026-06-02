@@ -98,12 +98,34 @@
 
         <!-- COLONNE DROITE : contenu -->
         <div style="flex:1;min-width:280px;">
-          <!-- Iframe panel -->
-          <div id="iframe-panel" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#fff;height:80vh;min-height:500px;display:flex;flex-direction:column;">
+
+          <!-- Page d'accueil (visible par défaut) -->
+          <div id="welcome-panel" style="border:1px solid #f97316;border-radius:12px;background:#fff;padding:28px 24px;height:80vh;min-height:500px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#fff3e8;border:2px solid #f97316;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:20px;">🧰</div>
+            <div style="font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">Bienvenue dans vos outils</div>
+            <div style="font-size:13px;color:#6b7280;line-height:1.8;max-width:320px;margin-bottom:24px;">
+              Retrouvez ici votre <strong style="color:#f97316;">simulateur de commissions</strong>, tous vos <strong style="color:#f97316;">documents</strong> utiles (manuels, plans, catalogues) ainsi que vos <strong style="color:#f97316;">scripts de vente</strong> prêts à l'emploi.<br><br>
+              Cliquez sur un élément du menu à gauche pour l'afficher ici.
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px;">
+              <div style="display:flex;align-items:center;gap:10px;background:#fef9f5;border:1px solid #f97316;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;">💶 <span>Simulateur de commissions interactif</span></div>
+              <div style="display:flex;align-items:center;gap:10px;background:#fef9f5;border:1px solid #f97316;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;">📁 <span>Manuels, plans &amp; catalogues PDF</span></div>
+              <div style="display:flex;align-items:center;gap:10px;background:#fef9f5;border:1px solid #f97316;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;">💬 <span>Scripts de vente prêts à copier</span></div>
+            </div>
+            <div style="margin-top:32px;padding-top:20px;border-top:1px solid #f3f4f6;width:100%;max-width:320px;">
+              <div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">En cas de lien mort ou de souci</div>
+              <a href="mailto:infos@phil-mobile.be" style="font-size:13px;font-weight:700;color:#f97316;text-decoration:none;">📧 infos@phil-mobile.be</a><br>
+              <a href="https://wa.me/32475240205" style="font-size:13px;font-weight:700;color:#25d366;text-decoration:none;margin-top:4px;display:inline-block;">💬 WhatsApp Philippe</a>
+              <div style="font-size:11px;color:#9ca3af;margin-top:8px;">— Philippe</div>
+            </div>
+          </div>
+
+          <!-- Iframe panel (caché par défaut) -->
+          <div id="iframe-panel" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#fff;height:80vh;min-height:500px;display:none;flex-direction:column;">
             <div id="iframe-loading" style="display:flex;align-items:center;justify-content:center;height:100%;color:#f97316;font-size:13px;flex-direction:column;gap:8px;">
               <div style="font-size:28px;">⏳</div>Chargement...
             </div>
-            <iframe id="embed-frame" src="https://app.phil-mobile.be/wp_rem.html" style="width:100%;flex:1;border:none;display:none;" onload="frameLoaded()"></iframe>
+            <iframe id="embed-frame" src="" style="width:100%;flex:1;border:none;display:none;" onload="frameLoaded()"></iframe>
           </div>
 
           <!-- Script panels (cachés par défaut) -->
@@ -160,12 +182,10 @@ function frameLoaded() {
 }
 
 function loadFrame(url, btn) {
-  // Deactivate all menu items
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   btn.classList.add('active-item');
-  // Hide all script panels
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
-  // Show iframe panel
+  document.getElementById('welcome-panel').style.display = 'none';
   const panel = document.getElementById('iframe-panel');
   panel.style.display = 'flex';
   document.getElementById('iframe-loading').style.display = 'flex';
@@ -176,9 +196,8 @@ function loadFrame(url, btn) {
 function showScript(id) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   event.currentTarget.classList.add('active-item');
-  // Hide iframe panel
+  document.getElementById('welcome-panel').style.display = 'none';
   document.getElementById('iframe-panel').style.display = 'none';
-  // Hide all scripts then show the right one
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById(id).style.display = 'block';
 }
