@@ -77,5 +77,13 @@
   </div>
 </div>
 
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('App offline activée !'))
+      .catch(err => console.log('SW error:', err));
+  }
+</script>
 </body>
 </html>
