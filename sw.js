@@ -1,4 +1,4 @@
-const CACHE_NAME = 'philmobile-v1';
+const CACHE_NAME = 'philmobile-v2';
 
 const FILES_TO_CACHE = [
   '/',
@@ -43,7 +43,6 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(cached => {
       return cached || fetch(event.request).catch(() => {
-        // Si offline et pas en cache, page de fallback
         if (event.request.destination === 'document') {
           return caches.match('/wp_home.html');
         }
