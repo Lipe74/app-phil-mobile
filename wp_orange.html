@@ -52,9 +52,15 @@
       <div class="header-title">Simulateur Phil-Mobile</div>
       <div class="header-sub">Le simulateur pour vos clients.</div>
     </div>
-    <button onclick="window.print()" style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
-      🖨️ Imprimer / PDF
-    </button>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+      <button onclick="window.print()" style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+        🖨️ Imprimer / PDF
+      </button>
+      <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
+        <button id="btn-tvac" onclick="setTVAC(true)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:white;color:#ff5a14;">TVAC</button>
+        <button id="btn-htva" onclick="setTVAC(false)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:white;">HTVA</button>
+      </div>
+    </div>
   </div>
 
   <div class="section">
@@ -94,6 +100,10 @@
   </div>
 
   <div class="summary">
+    <div class="sum-row" style="margin-bottom:10px;">
+      <span class="sum-total-label" style="font-size:18px;">Prix affichés</span>
+      <span id="tva-badge" style="background:rgba(255,255,255,0.25);color:white;font-weight:700;font-size:14px;padding:5px 16px;border-radius:20px;">TVAC (21%)</span>
+    </div>
     <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
     <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
     <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet, TV & Acc.</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
@@ -116,6 +126,35 @@
 
 <script>
 document.getElementById('logo-img').src = 'https://app.phil-mobile.be/logo.png';
+
+let isTVAC = true;
+const TVA = 1.21;
+
+function setTVAC(tvac) {
+  isTVAC = tvac;
+  document.getElementById('btn-tvac').style.background = tvac ? 'white' : 'transparent';
+  document.getElementById('btn-tvac').style.color = tvac ? '#ff5a14' : 'white';
+  document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
+  document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
+  document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
+  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-rows','promos-rows'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
+  buildQtyRows('options-rows', options);
+  buildToggleRows('promos-rows', promos);
+  // Restaurer les quantités
+  document.querySelectorAll('.qty-val').forEach(el => {
+    const id = el.id.replace('qty-','');
+    el.textContent = qtyMap[id] || 0;
+  });
+  render();
+}
+
+function priceFmt(p) {
+  const val = isTVAC ? p : p / TVA;
+  return fmt(Math.abs(val));
+}
 
 const productList = {
   internet: [
@@ -161,6 +200,8 @@ const promos = [
   { id:'pr_large',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Large</span>', sub:'- 5€ · Valable 12 mois', price:5, perAbo:true, mobileId:'mob_large' },
   { id:'pr_netflix_zen',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'- 5,99€ · Valable 6 mois', price:5.99, perAbo:false },
   { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'- 5,99€ · À vie', price:5.99, perAbo:false },
+  { id:'pr_comfort_start_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service — Start & Zen Internet</span>', sub:'- 10€ · Durant 12 mois', price:10, perAbo:false },
+  { id:'pr_comfort_giga',      name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service — Giga Internet</span>',        sub:'- 5€ · Durant 12 mois',  price:5,  perAbo:false },
 ];
 
 const loveRates = {
@@ -267,14 +308,15 @@ function render() {
   const mob = calcMobiles(), inet = calcInternet();
   const total = Math.max(0, prod + opts - love - prom);
   const after = Math.max(0, prod + opts - love);
-  document.getElementById('s-products').textContent = fmt(prod);
-  document.getElementById('s-mobiles').textContent = fmt(mob);
-  document.getElementById('s-internet').textContent = fmt(inet);
-  document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts));
-  document.getElementById('s-love').textContent = '- ' + fmt(love);
-  document.getElementById('s-promos').textContent = '- ' + fmt(prom);
-  document.getElementById('s-total').textContent = fmt(total);
-  document.getElementById('s-after').textContent = fmt(after);
+  const r = isTVAC ? 1 : 1/TVA;
+  document.getElementById('s-products').textContent = fmt(prod*r);
+  document.getElementById('s-mobiles').textContent = fmt(mob*r);
+  document.getElementById('s-internet').textContent = fmt(inet*r);
+  document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts)*r);
+  document.getElementById('s-love').textContent = '- ' + fmt(love*r);
+  document.getElementById('s-promos').textContent = '- ' + fmt(prom*r);
+  document.getElementById('s-total').textContent = fmt(total*r);
+  document.getElementById('s-after').textContent = fmt(after*r);
   promos.forEach(p => {
     if (!p.perAbo || !p.mobileId) return;
     const qty = qtyMap[p.mobileId] || 0;
@@ -318,7 +360,7 @@ function buildQtyRows(containerId, items) {
     row.dataset.id = p.id;
     row.innerHTML = `
       <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}</div>
-      <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${fmt(p.price)}</div>
+      <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
       <div class="qty-ctrl">
         <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
         <span class="qty-val" id="qty-${p.id}">0</span>
@@ -337,7 +379,7 @@ function buildToggleRows(containerId, items) {
     row.onclick = () => togglePromo(p.id);
     row.innerHTML = `
       <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
-      <div class="toggle-price">- ${fmt(p.price)}</div>
+      <div class="toggle-price">- ${priceFmt(p.price)}</div>
       <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
     c.appendChild(row);
   });
