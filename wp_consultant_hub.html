@@ -805,7 +805,7 @@ const PM_ASP_MAP = {
   'Mobile Child':0,'Mobile Small':1,'Mobile Medium':1,'Mobile Large':1,'Mobile Unlimited':1,
   'Internet Start':1,'Internet Zen':1,'Internet Giga':1,'Ligne fixe':0,'TV Orange':1,
   'Eneco Flex':0.5,'Eneco Fixe':0.5,'Eneco Gaz':0.5,
-  'Mobile Child SoHo':0,'Mobile Small SoHo':1,'Mobile Medium SoHo':1,'Mobile Large SoHo':1,'Mobile Unlimited SoHo':1,
+  'Mobile Child SoHo':0,'Mobile Small SoHo':1,'Mobile Medium SoHo':1.5,'Mobile Large SoHo':1.5,'Mobile Unlimited SoHo':1.5,
   'Internet Start SoHo':1,'Internet Zen SoHo':1,'Internet Giga SoHo':1,'Ligne fixe SoHo':0,'TV Orange SoHo':1,
   'Eneco Flex SoHo':1,'Eneco Fixe SoHo':1,'Eneco Gaz SoHo':1
 };
@@ -876,6 +876,9 @@ function pmRenderNiveauDetail() {
   }
 }
 
+// Produits éligibles portabilité (+0.5 ASP) — Internet uniquement, pas de SoHo Internet
+const PM_PORTABILITE = ['Internet Start','Internet Zen','Internet Giga'];
+
 function pmBuildProducts() {
   if(!pmIsCurrentMonth()){document.getElementById('pm-products-panel').innerHTML='<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">🔒 Encodage mois en cours uniquement</div>';return;}
   const mc=pmGetMC(pmCurYear,pmCurMonth); const byCnt={};mc.forEach(c=>{byCnt[c.product]=(byCnt[c.product]||0)+1;});
@@ -889,12 +892,20 @@ function pmBuildProducts() {
         const pKey=pmSohoMode?p+' SoHo':p;
         const asp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
         const cnt=byCnt[pKey]||0;
-        html+=`<div class="pm-prod-item">
-          <button class="pm-pbtn" onclick="pmChangeQty('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},-1)">&#8722;</button>
-          <span class="pm-pcnt${cnt>0?' pos':''}" id="pmpc-${pKey.replace(/\s/g,'_')}">${cnt}</span>
-          <button class="pm-pbtn" onclick="pmChangeQty('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},1)">+</button>
-          <span class="pm-pname">${p}</span>
-          ${asp>0?`<span class="pm-pasp">${asp}asp</span>`:''}
+        const hasPorts=PM_PORTABILITE.includes(pKey);
+        const portId='pmport-'+pKey.replace(/\s/g,'_');
+        html+=`<div class="pm-prod-item" style="flex-direction:column;align-items:stretch;padding:4px 6px;gap:3px;">
+          <div style="display:flex;align-items:center;gap:0;">
+            <button class="pm-pbtn" onclick="pmChangeQty('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},-1)">&#8722;</button>
+            <span class="pm-pcnt${cnt>0?' pos':''}" id="pmpc-${pKey.replace(/\s/g,'_')}">${cnt}</span>
+            <button class="pm-pbtn" onclick="pmChangeQty('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},1)">+</button>
+            <span class="pm-pname">${p}</span>
+            ${asp>0?`<span class="pm-pasp">${asp}asp</span>`:''}
+          </div>
+          ${hasPorts?`<label style="display:flex;align-items:center;gap:4px;font-size:9px;color:#6b7280;cursor:pointer;padding-left:2px;">
+            <input type="checkbox" id="${portId}" style="width:11px;height:11px;cursor:pointer;accent-color:#f97316;">
+            <span>Portabilité <span style="color:#f97316;font-weight:700;">+0.5asp</span></span>
+          </label>`:''}
         </div>`;
       });
       html+=`</div>`;
@@ -906,14 +917,19 @@ function pmBuildProducts() {
 
 window.pmChangeQty = function(brand,product,soho,delta) {
   const pKey=soho?product+' SoHo':product;
-  const asp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
+  const baseAsp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
+  const portId='pmport-'+pKey.replace(/\s/g,'_');
+  const portEl=document.getElementById(portId);
+  const portabilite=portEl&&portEl.checked;
+  const asp=baseAsp+(portabilite?0.5:0);
   const dVal=document.getElementById('pm-contract-date').value;
   const contractDate=dVal?pmFmtDate(dVal+' '):pmFmtDate(pmToday);
   const encodedDate=pmFmtDate(pmToday);
   const isLate=dVal&&dVal!==pmToInputVal(pmToday);
   const agent=document.getElementById('pm-add-agent').value;
   if(delta>0){
-    pmContracts.push({id:Date.now(),brand,product:pKey,agent,contractDate,encodedDate,isLate:!!isLate,asp,soho,year:pmCurYear,month:pmCurMonth});
+    pmContracts.push({id:Date.now(),brand,product:pKey,agent,contractDate,encodedDate,isLate:!!isLate,asp,soho,portabilite,year:pmCurYear,month:pmCurMonth});
+    if(portEl) portEl.checked=false;
   } else {
     const found=[...pmContracts].map((c,i)=>({c,i})).reverse().find(({c})=>c.product===pKey&&c.year===pmCurYear&&c.month===pmCurMonth);
     if(found) pmContracts.splice(found.i,1);
