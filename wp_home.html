@@ -11,8 +11,39 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Phil-Mobile">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Splash iOS -->
+<link rel="apple-touch-startup-image" href="https://app.phil-mobile.be/splash.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="https://app.phil-mobile.be/splash.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="https://app.phil-mobile.be/splash.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="https://app.phil-mobile.be/splash.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+<link rel="apple-touch-startup-image" href="https://app.phil-mobile.be/splash.png">
+<!-- Splash Android PWA via JS -->
+<style>
+#pm-splash{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s ease;}
+#pm-splash img{width:100%;height:100%;object-fit:cover;}
+#pm-splash.hide{opacity:0;pointer-events:none;}
+</style>
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#faf8f4;color:#2c2418;">
+
+<!-- SPLASH ANDROID PWA -->
+<div id="pm-splash" style="display:none;">
+  <img src="https://app.phil-mobile.be/splash.png" alt="Phil-Mobile">
+</div>
+<script>
+// Afficher splash uniquement en mode PWA standalone
+if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
+  const s=document.getElementById('pm-splash');
+  if(s){s.style.display='flex';}
+  window.addEventListener('load',function(){
+    setTimeout(function(){
+      const s=document.getElementById('pm-splash');
+      if(s){s.classList.add('hide');setTimeout(()=>s.remove(),500);}
+    },2000);
+  });
+}
+</script>
 
 <!-- NAV -->
 <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#ffffff;border-bottom:2px solid #dd9933;">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phil-mobile-v6';
+const CACHE_NAME = 'phil-mobile-v7';
 const ASSETS = [
   '/',
   '/wp_home.html',
@@ -12,6 +12,7 @@ const ASSETS = [
   '/wp_smartPlan.pdf',
   '/wp_orangeproduits.pdf',
   'https://app.phil-mobile.be/logo.png',
+  'https://app.phil-mobile.be/splash.png',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
