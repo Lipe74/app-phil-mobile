@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phil-mobile-v4';
+const CACHE_NAME = 'phil-mobile-v5';
 const ASSETS = [
   '/',
   '/wp_home.html',
@@ -38,12 +38,9 @@ self.addEventListener('activate', event => {
 // Fetch — Cache First pour assets statiques, Network First pour le reste
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-
-  // Ignorer les requêtes non-GET et chrome-extension
   if (event.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
 
-  // localStorage (données contrats) — toujours réseau si dispo, sinon cache
   const isStatic = ASSETS.some(a => event.request.url.includes(a)) ||
     event.request.url.endsWith('.html') ||
     event.request.url.endsWith('.pdf') ||
@@ -52,7 +49,6 @@ self.addEventListener('fetch', event => {
     event.request.url.endsWith('.css');
 
   if (isStatic) {
-    // Cache First
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) return cached;
@@ -66,7 +62,6 @@ self.addEventListener('fetch', event => {
       })
     );
   } else {
-    // Network First
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
