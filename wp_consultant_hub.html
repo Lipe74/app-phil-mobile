@@ -220,6 +220,12 @@
               <span style="font-size:10px;color:#9ca3af;">Encod&#233; le <span id="pm-encoded-label"></span></span>
             </div>
             <div id="pm-products-panel"></div>
+            <!-- Panier -->
+            <div style="margin-top:10px;border-top:1px solid #fde8cc;padding-top:10px;">
+              <div class="pm-sec" style="margin-top:0;">Panier</div>
+              <div id="pm-panier"></div>
+              <button id="pm-btn-valider" onclick="pmValiderPanier()" style="margin-top:10px;width:100%;padding:10px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;opacity:0.4;" disabled>&#10003; Valider l'encodage</button>
+            </div>
           </div>
 
           <!-- Stats produits -->
@@ -830,7 +836,21 @@ function pmIsCurrentMonth() { return pmCurYear===pmToday.getFullYear() && pmCurM
 function pmFmtDate(d) { return new Date(d).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 function pmToInputVal(d) { return d.toISOString().split('T')[0]; }
 function pmSetToday() { document.getElementById('pm-contract-date').value=pmToInputVal(pmToday); document.getElementById('pm-encoded-label').textContent=pmFmtDate(pmToday); }
-function pmToggleSoHo() { pmSohoMode=!pmSohoMode; const t=document.getElementById('pm-soho-toggle'); pmSohoMode?t.classList.add('active'):t.classList.remove('active'); pmBuildProducts(); }
+// Panier temporaire avant validation
+let pmPanier = [];
+
+function pmToggleSoHo() {
+  if(pmPanier.length>0){
+    if(!confirm('Votre panier non validé sera vidé si vous changez de mode. Continuer ?')) return;
+    pmPanier=[];
+  }
+  pmSohoMode=!pmSohoMode;
+  const t=document.getElementById('pm-soho-toggle');
+  pmSohoMode?t.classList.add('active'):t.classList.remove('active');
+  pmBuildProducts();
+  pmRenderPanier();
+}
+
 function pmGetTotalASP(agent) { return (PM_AGENT_PROFILES[agent]?.aspInit||0) + pmContracts.filter(c=>c.agent===agent).reduce((s,c)=>s+(c.asp||0),0); }
 function pmGetNiveau(asp) { let c=PM_NIVEAUX[0]; for(let i=0;i<PM_NIVEAUX.length;i++){if(asp>=PM_NIVEAUX[i].pts)c=PM_NIVEAUX[i];} return c; }
 function pmGetNextNiveau(asp) { for(let i=0;i<PM_NIVEAUX.length;i++){if(PM_NIVEAUX[i].pts>asp)return PM_NIVEAUX[i];} return null; }
@@ -881,7 +901,6 @@ const PM_PORTABILITE = ['Internet Start','Internet Zen','Internet Giga','Interne
 
 function pmBuildProducts() {
   if(!pmIsCurrentMonth()){document.getElementById('pm-products-panel').innerHTML='<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">🔒 Encodage mois en cours uniquement</div>';return;}
-  const mc=pmGetMC(pmCurYear,pmCurMonth); const byCnt={};mc.forEach(c=>{byCnt[c.product]=(byCnt[c.product]||0)+1;});
   let html='';
   Object.entries(PM_PRODUCTS).forEach(([brand,groups])=>{
     const color=brand==='Orange'?'#E65100':'#2E7D32';
@@ -890,20 +909,20 @@ function pmBuildProducts() {
       html+=`<div class="pm-grp">${grp}</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px;">`;
       prods.forEach(p=>{
         const pKey=pmSohoMode?p+' SoHo':p;
-        const asp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
-        const cnt=byCnt[pKey]||0;
+        const baseAsp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
         const hasPorts=PM_PORTABILITE.includes(pKey);
         const portId='pmport-'+pKey.replace(/\s/g,'_');
+        const panierQty=pmPanier.filter(x=>x.pKey===pKey).length;
         html+=`<div class="pm-prod-item" style="flex-direction:column;align-items:stretch;padding:4px 6px;gap:3px;">
           <div style="display:flex;align-items:center;gap:0;">
-            <button class="pm-pbtn" onclick="pmChangeQty('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},-1)">&#8722;</button>
-            <span class="pm-pcnt${cnt>0?' pos':''}" id="pmpc-${pKey.replace(/\s/g,'_')}">${cnt}</span>
-            <button class="pm-pbtn" onclick="pmChangeQty('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},1)">+</button>
+            <button class="pm-pbtn" onclick="pmPanierChange('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},-1)">&#8722;</button>
+            <span class="pm-pcnt${panierQty>0?' pos':''}" id="pmpc-${pKey.replace(/\s/g,'_')}">${panierQty}</span>
+            <button class="pm-pbtn" onclick="pmPanierChange('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},1)">+</button>
             <span class="pm-pname">${p}</span>
-            ${asp>0?`<span class="pm-pasp">${asp}asp</span>`:''}
+            ${baseAsp>0?`<span class="pm-pasp">${baseAsp}asp</span>`:''}
           </div>
           ${hasPorts?`<label style="display:flex;align-items:center;gap:4px;font-size:9px;color:#6b7280;cursor:pointer;padding-left:2px;">
-            <input type="checkbox" id="${portId}" style="width:11px;height:11px;cursor:pointer;accent-color:#f97316;">
+            <input type="checkbox" id="${portId}" style="width:11px;height:11px;cursor:pointer;accent-color:#f97316;" onchange="pmPanierUpdatePorta('${pKey}',this.checked)">
             <span>Portabilité <span style="color:#f97316;font-weight:700;">+0.5asp</span></span>
           </label>`:''}
         </div>`;
@@ -913,32 +932,68 @@ function pmBuildProducts() {
     html+=`</div>`;
   });
   document.getElementById('pm-products-panel').innerHTML=html;
+  pmRenderPanier();
 }
 
-window.pmChangeQty = function(brand,product,soho,delta) {
+window.pmPanierChange = function(brand,product,soho,delta) {
   const pKey=soho?product+' SoHo':product;
   const baseAsp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
-  const portId='pmport-'+pKey.replace(/\s/g,'_');
-  const portEl=document.getElementById(portId);
-  const portabilite=portEl&&portEl.checked;
-  const asp=baseAsp+(portabilite?0.5:0);
+  if(delta>0){
+    pmPanier.push({brand,product,pKey,baseAsp,asp:baseAsp,soho,portabilite:false});
+  } else {
+    const idx=[...pmPanier].map((x,i)=>({x,i})).reverse().find(({x})=>x.pKey===pKey);
+    if(idx) pmPanier.splice(idx.i,1);
+  }
+  const el=document.getElementById('pmpc-'+pKey.replace(/\s/g,'_'));
+  const qty=pmPanier.filter(x=>x.pKey===pKey).length;
+  if(el){el.textContent=qty;el.className='pm-pcnt'+(qty>0?' pos':'');el.classList.add('pm-flash');setTimeout(()=>el.classList.remove('pm-flash'),250);}
+  pmRenderPanier();
+};
+
+window.pmPanierUpdatePorta = function(pKey,checked) {
+  pmPanier.forEach(item=>{
+    if(item.pKey===pKey){item.portabilite=checked;item.asp=item.baseAsp+(checked?0.5:0);}
+  });
+  pmRenderPanier();
+};
+
+function pmRenderPanier() {
+  const el=document.getElementById('pm-panier');
+  if(!el) return;
+  if(pmPanier.length===0){
+    el.innerHTML='<div style="font-size:11px;color:#9ca3af;text-align:center;padding:8px;">Panier vide — utilisez les boutons + ci-dessus</div>';
+    document.getElementById('pm-btn-valider').style.opacity='0.4';
+    document.getElementById('pm-btn-valider').disabled=true;
+    return;
+  }
+  const aspTotal=pmPanier.reduce((s,x)=>s+x.asp,0);
+  const grouped={};
+  pmPanier.forEach(x=>{const k=x.pKey+(x.portabilite?'|P':'');grouped[k]=grouped[k]||{...x,qty:0};grouped[k].qty++;});
+  el.innerHTML=Object.values(grouped).map(g=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #fde8cc;font-size:11px;">
+      <span style="font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;background:${g.brand==='Orange'?'#FFF3E0':'#E8F5E9'};color:${g.brand==='Orange'?'#B45309':'#2E7D32'};">${g.soho?'SoHo':g.brand}</span>
+      <span style="flex:1;color:#1a1a1a;">${g.product.replace(' SoHo','')}${g.portabilite?' <span style="color:#f97316;font-size:9px;">+porta</span>':''}</span>
+      <span style="font-size:10px;background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:99px;">×${g.qty}</span>
+      <span style="font-size:10px;color:#f97316;">${Math.round(g.asp*g.qty*10)/10}asp</span>
+    </div>`).join('')+
+    `<div style="display:flex;justify-content:flex-end;gap:6px;padding-top:6px;font-size:11px;font-weight:700;color:#f97316;">Total panier: ${Math.round(aspTotal*10)/10} ASP</div>`;
+  document.getElementById('pm-btn-valider').style.opacity='1';
+  document.getElementById('pm-btn-valider').disabled=false;
+}
+
+window.pmValiderPanier = function() {
+  if(pmPanier.length===0) return;
   const dVal=document.getElementById('pm-contract-date').value;
   const contractDate=dVal?pmFmtDate(dVal+' '):pmFmtDate(pmToday);
   const encodedDate=pmFmtDate(pmToday);
   const isLate=dVal&&dVal!==pmToInputVal(pmToday);
   const agent=document.getElementById('pm-add-agent').value;
-  if(delta>0){
-    pmContracts.push({id:Date.now(),brand,product:pKey,agent,contractDate,encodedDate,isLate:!!isLate,asp,soho,portabilite,year:pmCurYear,month:pmCurMonth});
-    if(portEl) portEl.checked=false;
-  } else {
-    const found=[...pmContracts].map((c,i)=>({c,i})).reverse().find(({c})=>c.product===pKey&&c.year===pmCurYear&&c.month===pmCurMonth);
-    if(found) pmContracts.splice(found.i,1);
-  }
+  pmPanier.forEach(item=>{
+    pmContracts.push({id:Date.now()+Math.random(),brand:item.brand,product:item.pKey,agent,contractDate,encodedDate,isLate:!!isLate,asp:item.asp,soho:item.soho,portabilite:item.portabilite,year:pmCurYear,month:pmCurMonth});
+  });
+  pmPanier=[];
   pmSave();
-  const mc=pmGetMC(pmCurYear,pmCurMonth);
-  const cnt=mc.filter(c=>c.product===pKey).length;
-  const el=document.getElementById('pmpc-'+pKey.replace(/\s/g,'_'));
-  if(el){el.textContent=cnt;el.className='pm-pcnt'+(cnt>0?' pos':'');el.classList.add('pm-flash');setTimeout(()=>el.classList.remove('pm-flash'),250);}
+  pmBuildProducts();
   pmRenderStats(); pmRenderAgentCards(); pmRenderNiveauDetail();
 };
 
