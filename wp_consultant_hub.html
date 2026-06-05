@@ -31,6 +31,7 @@
     <span style="font-weight:700;font-size:14px;color:#f97316;">Outils Phil-Mobile</span>
     <a href="https://app.phil-mobile.be/wp_home.html" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">🏠 Accueil</a>
   </div>
+  <div id="pm-welcome" style="display:none;font-size:12px;font-weight:700;color:#f97316;background:#fff3e8;padding:5px 12px;border-radius:99px;border:1px solid #f97316;"></div>
 </div>
 
 <!-- ONGLETS -->
@@ -105,11 +106,11 @@
     <!-- VERROU -->
     <div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
       <div style="font-size:28px;margin-bottom:12px;">🔐</div>
-      <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">Accès restreint</div>
-      <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Entrez le code d'accès pour accéder au simulateur, aux documents et aux scripts.</div>
-      <input type="password" id="rem-code" placeholder="Code d'accès" style="width:100%;max-width:220px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;letter-spacing:3px;display:block;margin:0 auto 12px;">
-      <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Code incorrect. Réessayez.</div>
-      <button onclick="checkCode()" style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Valider</button>
+      <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">Accès Consultants</div>
+      <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Entrez votre identifiant Smart SN pour accéder à vos outils.</div>
+      <input type="text" id="rem-code" placeholder="Votre identifiant Smart SN" autocomplete="off" autocapitalize="none" style="width:100%;max-width:240px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+      <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Identifiant non reconnu. Contactez Philippe.</div>
+      <button onclick="checkCode()" style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Connexion</button>
     </div>
 
     <!-- LAYOUT 2 COLONNES (visible après le code) -->
@@ -734,11 +735,18 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
 </div>
 
 <script>
-const CODE = 'Philmobile2026';
+// Identifiants Smart SN
+const PM_USERS = {
+  'delta835':  { name: 'Philippe', fullName: 'Philippe Tomaszewsky', agent: 'Philippe Tomaszewsky', isAdmin: true },
+  'lotus193':  { name: 'Julien',   fullName: 'Julien Couvreur',      agent: 'Julien Couvreur',      isAdmin: false }
+};
+const SESSION_DAYS = 7;
 
-function setCookie(name, val, minutes) {
+let pmCurrentUser = null;
+
+function setCookie(name, val, days) {
   const d = new Date();
-  d.setTime(d.getTime() + minutes * 60000);
+  d.setTime(d.getTime() + days * 86400000);
   document.cookie = name + '=' + val + ';expires=' + d.toUTCString() + ';path=/';
 }
 function getCookie(name) {
@@ -750,8 +758,13 @@ function deleteCookie(name) {
 }
 
 function logout() {
-  deleteCookie('pm_outils_auth');
+  deleteCookie('pm_user');
   window.location.href = 'https://app.phil-mobile.be/wp_home.html';
+}
+
+function setWelcome(user) {
+  const el = document.getElementById('pm-welcome');
+  if (el) { el.textContent = '👋 ' + user.name; el.style.display = 'block'; }
 }
 
 function frameLoaded() {
@@ -800,31 +813,43 @@ function switchTab(tab) {
   else if (tab === 'smartsn') document.getElementById('smartsn-form').style.display = 'block';
 }
 
-
 function checkCode() {
-  const val = document.getElementById('rem-code').value;
-  if (val === CODE) {
-    setCookie('pm_outils_auth', '1', 60);
-    doUnlock();
+  const val = document.getElementById('rem-code').value.trim().toLowerCase();
+  const user = PM_USERS[val];
+  if (user) {
+    setCookie('pm_user', val, SESSION_DAYS);
+    doUnlock(user);
   } else {
     document.getElementById('rem-error').style.display = 'block';
     document.getElementById('rem-code').value = '';
   }
 }
 
-function doUnlock() {
+function doUnlock(user) {
+  pmCurrentUser = user;
   document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
+  setWelcome(user);
+  // Pré-sélectionner l'agent dans le suivi
+  const agentSel = document.getElementById('pm-add-agent');
+  if (agentSel) agentSel.value = user.agent;
+  // Si Julien : masquer les cartes agents autres que lui dans la progression
+  pmNiveauAgent = user.agent;
 }
 
 switchTab('contact');
 
 window.addEventListener('DOMContentLoaded', function() {
-  if (getCookie('pm_outils_auth') === '1') {
-    doUnlock();
-    setCookie('pm_outils_auth', '1', 60); // rafraîchir
+  const saved = getCookie('pm_user');
+  if (saved && PM_USERS[saved]) {
+    doUnlock(PM_USERS[saved]);
+    setCookie('pm_user', saved, SESSION_DAYS); // rafraîchir
   }
+  const di = document.getElementById('pm-contract-date');
+  const el = document.getElementById('pm-encoded-label');
+  if(di) di.value = pmToInputVal(pmToday);
+  if(el) el.textContent = pmFmtDate(pmToday);
 });
 
 document.addEventListener('keydown', function(e) {
@@ -901,7 +926,12 @@ function pmGetNiveau(asp) { let c=PM_NIVEAUX[0]; for(let i=0;i<PM_NIVEAUX.length
 function pmGetNextNiveau(asp) { for(let i=0;i<PM_NIVEAUX.length;i++){if(PM_NIVEAUX[i].pts>asp)return PM_NIVEAUX[i];} return null; }
 
 function pmRenderAgentCards() {
-  document.getElementById('pm-agent-cards').innerHTML = Object.entries(PM_AGENT_PROFILES).map(([name,p]) => {
+  // Philippe voit les deux, Julien voit uniquement lui
+  const agents = pmCurrentUser && !pmCurrentUser.isAdmin
+    ? Object.entries(PM_AGENT_PROFILES).filter(([name]) => name === pmCurrentUser.agent)
+    : Object.entries(PM_AGENT_PROFILES);
+
+  document.getElementById('pm-agent-cards').innerHTML = agents.map(([name,p]) => {
     const asp=pmGetTotalASP(name); const cur=pmGetNiveau(asp); const next=pmGetNextNiveau(asp);
     const pct=next?Math.round((asp-cur.pts)/(next.pts-cur.pts)*100):100;
     const active=name===pmNiveauAgent;
@@ -1045,7 +1075,11 @@ window.pmValiderPanier = function() {
 window.pmDelContract = function(id) { pmContracts=pmContracts.filter(c=>c.id!==id); pmSave(); pmRender(); };
 
 function pmRenderStats() {
-  const mc=pmGetMC(pmCurYear,pmCurMonth);
+  const allMC = pmGetMC(pmCurYear, pmCurMonth);
+  // Julien voit uniquement ses contrats
+  const mc = pmCurrentUser && !pmCurrentUser.isAdmin
+    ? allMC.filter(c => c.agent === pmCurrentUser.agent)
+    : allMC;
   const byProd={};mc.forEach(c=>{byProd[c.product]=(byProd[c.product]||0)+1;});
   const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
   const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
