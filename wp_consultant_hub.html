@@ -876,8 +876,8 @@ function pmRenderNiveauDetail() {
   }
 }
 
-// Produits éligibles portabilité (+0.5 ASP) — Internet uniquement, pas de SoHo Internet
-const PM_PORTABILITE = ['Internet Start','Internet Zen','Internet Giga'];
+// Produits éligibles portabilité (+0.5 ASP) — Internet résidentiel et SoHo
+const PM_PORTABILITE = ['Internet Start','Internet Zen','Internet Giga','Internet Start SoHo','Internet Zen SoHo','Internet Giga SoHo'];
 
 function pmBuildProducts() {
   if(!pmIsCurrentMonth()){document.getElementById('pm-products-panel').innerHTML='<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">🔒 Encodage mois en cours uniquement</div>';return;}
