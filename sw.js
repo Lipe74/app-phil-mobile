@@ -1,11 +1,8 @@
-const CACHE_NAME = 'philmobile-v2';
-
-const FILES_TO_CACHE = [
+const CACHE_NAME = 'phil-mobile-v4';
+const ASSETS = [
   '/',
   '/wp_home.html',
   '/wp_consultant_hub.html',
-  '/logo.png',
-  '/manifest.json',
   '/wp_rem.html',
   '/wp_orange.html',
   '/wp_eneco.html',
@@ -14,39 +11,69 @@ const FILES_TO_CACHE = [
   '/wp_commissions.pdf',
   '/wp_smartPlan.pdf',
   '/wp_orangeproduits.pdf',
+  'https://app.phil-mobile.be/logo.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
-// Installation : on met tout en cache
+// Installation — mise en cache des assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(FILES_TO_CACHE);
-    })
+      return Promise.allSettled(
+        ASSETS.map(url => cache.add(url).catch(() => console.warn('Cache miss:', url)))
+      );
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activation : on supprime les anciens caches
+// Activation — suppression des anciens caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      )
-    )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch : cache d'abord, internet si pas en cache
+// Fetch — Cache First pour assets statiques, Network First pour le reste
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => {
-        if (event.request.destination === 'document') {
-          return caches.match('/wp_home.html');
-        }
-      });
-    })
-  );
+  const url = new URL(event.request.url);
+
+  // Ignorer les requêtes non-GET et chrome-extension
+  if (event.request.method !== 'GET') return;
+  if (url.protocol === 'chrome-extension:') return;
+
+  // localStorage (données contrats) — toujours réseau si dispo, sinon cache
+  const isStatic = ASSETS.some(a => event.request.url.includes(a)) ||
+    event.request.url.endsWith('.html') ||
+    event.request.url.endsWith('.pdf') ||
+    event.request.url.endsWith('.png') ||
+    event.request.url.endsWith('.js') ||
+    event.request.url.endsWith('.css');
+
+  if (isStatic) {
+    // Cache First
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        }).catch(() => cached);
+      })
+    );
+  } else {
+    // Network First
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+  }
+});
+
+// Message : forcer la mise à jour du cache
+self.addEventListener('message', event => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
 });

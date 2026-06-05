@@ -80,6 +80,7 @@
 
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-left:4px;">🧮 Simulateur</div>
           <button onclick="loadFrame('https://app.phil-mobile.be/wp_rem.html',this)" class="menu-item" id="menu-sim">💶 Calculateur de commissions</button>
+          <button onclick="showSuivi(this)" class="menu-item" id="menu-suivi">📊 Suivi des contrats</button>
           <button onclick="loadFrame('https://app.phil-mobile.be/wp_orange.html',this)" class="menu-item">🟠 Simulateur Orange</button>
           <button onclick="loadFrame('https://app.phil-mobile.be/wp_eneco.html',this)" class="menu-item">⚡ Simulateur Eneco</button>
 
@@ -131,6 +132,102 @@
               <a href="https://wa.me/32475240205" style="font-size:13px;font-weight:700;color:#25d366;text-decoration:none;margin-top:4px;display:inline-block;">💬 WhatsApp Philippe</a>
               <div style="font-size:11px;color:#9ca3af;margin-top:8px;">— Philippe</div>
             </div>
+          </div>
+
+          <!-- Panel Suivi des contrats -->
+          <div id="suivi-panel" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;background:#fff;padding:20px;overflow-y:auto;max-height:80vh;">
+          <style>
+          .pm-mc{background:#fef9f5;border-radius:8px;padding:.7rem;border:1px solid #fde8cc;}
+          .pm-mc-label{font-size:10px;color:#92400e;margin-bottom:3px;}
+          .pm-mc-val{font-size:20px;font-weight:700;color:#1a1a1a;}
+          .pm-pbar{height:4px;background:#f3f4f6;border-radius:99px;margin-top:5px;overflow:hidden;}
+          .pm-pbar-fill{height:100%;border-radius:99px;background:#f97316;transition:width .4s;}
+          .pm-agent-tab{flex:1;text-align:center;padding:7px 6px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;color:#f97316;border:none;background:none;font-family:Arial,sans-serif;}
+          .pm-agent-tab.active{background:#f97316;color:#fff;}
+          .pm-prod-btn{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-radius:8px;border:1px solid #f0f0f0;background:#fff;cursor:pointer;font-size:11px;color:#1a1a1a;transition:all .15s;font-family:Arial,sans-serif;min-width:0;}
+          .pm-prod-btn.orange:hover{border-color:#E65100;background:#FFF3E0;}
+          .pm-prod-btn.eneco:hover{border-color:#2E7D32;background:#E8F5E9;}
+          .pm-cnt{font-size:10px;font-weight:700;min-width:18px;height:17px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;}
+          .pm-cnt.orange{background:#FFF3E0;color:#B45309;}
+          .pm-cnt.eneco{background:#E8F5E9;color:#2E7D32;}
+          .pm-cnt.zero{background:#f3f4f6;color:#9ca3af;}
+          .pm-flash{animation:pmflash .3s ease;}
+          @keyframes pmflash{0%{transform:scale(1.15);}100%{transform:scale(1);}}
+          .pm-hist-item{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:11px;}
+          .pm-hist-item:last-child{border-bottom:none;}
+          .pm-hbadge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;white-space:nowrap;}
+          .pm-bo{background:#FFF3E0;color:#B45309;border:1px solid #f0d080;}
+          .pm-be{background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;}
+          .pm-late{font-size:9px;background:#FFF3E0;color:#B45309;border:1px solid #f0d080;padding:1px 5px;border-radius:99px;margin-left:3px;}
+          .pm-grp{font-size:10px;color:#9ca3af;padding:6px 0 2px;font-style:italic;}
+          .pm-prod-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f9f9f9;}
+          .pm-prod-row:last-child{border-bottom:none;}
+          .pm-section{font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:14px 0 6px;}
+          </style>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:14px;font-weight:700;color:#1a1a1a;">📊 Suivi des contrats</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button onclick="pmPrevMonth()" style="background:none;border:1px solid #f97316;border-radius:6px;padding:3px 8px;cursor:pointer;color:#f97316;font-size:12px;font-family:Arial,sans-serif;">&#8249;</button>
+              <span id="pm-month-label" style="font-size:12px;font-weight:700;color:#1a1a1a;min-width:110px;text-align:center;">&#8212;</span>
+              <button onclick="pmNextMonth()" style="background:none;border:1px solid #f97316;border-radius:6px;padding:3px 8px;cursor:pointer;color:#f97316;font-size:12px;font-family:Arial,sans-serif;">&#8250;</button>
+            </div>
+          </div>
+
+          <div id="pm-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;"></div>
+
+          <div style="background:#fef9f5;border:1px solid #fde8cc;border-radius:10px;padding:12px;margin-bottom:14px;">
+            <div class="pm-section" style="margin-top:0;">Encoder &#8212; choisir l'agent</div>
+            <div id="pm-agent-tabs" style="display:flex;gap:4px;background:#f3f4f6;padding:3px;border-radius:8px;margin-bottom:10px;"></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+              <label style="font-size:11px;color:#92400e;">&#128197; Date contrat</label>
+              <input type="date" id="pm-contract-date" style="font-size:11px;padding:4px 8px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#1a1a1a;font-family:Arial,sans-serif;">
+              <button onclick="pmSetToday()" style="font-size:10px;padding:4px 8px;border:1px solid #f97316;border-radius:6px;background:none;cursor:pointer;color:#f97316;font-family:Arial,sans-serif;">Aujourd'hui</button>
+              <span style="font-size:10px;color:#9ca3af;">Encod&#233; le <span id="pm-encoded-label"></span></span>
+            </div>
+            <div id="pm-products-panel"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+            <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;">
+              <div class="pm-section" style="margin-top:0;">Orange</div>
+              <div id="pm-orange-stats"></div>
+            </div>
+            <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;">
+              <div class="pm-section" style="margin-top:0;">Eneco</div>
+              <div id="pm-eneco-stats"></div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:14px;">
+            <div class="pm-section" style="margin-top:0;">Par agent</div>
+            <div id="pm-team-stats"></div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:14px;">
+            <div class="pm-section" style="margin-top:0;">Historique du mois</div>
+            <div id="pm-history"></div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:14px;">
+            <div class="pm-section" style="margin-top:0;">&#201;volution 6 mois</div>
+            <div style="position:relative;width:100%;height:160px;">
+              <canvas id="pm-chart" role="img" aria-label="&#201;volution contrats Orange et Eneco sur 6 mois"></canvas>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#6b7280;">
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#E65100;margin-right:3px;"></span>Orange</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#2E7D32;margin-right:3px;"></span>Eneco</span>
+            </div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;">
+            <div class="pm-section" style="margin-top:0;">Export</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="pmExportPDF()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:#0D2580;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#128196; Exporter PDF</button>
+              <button onclick="pmExportMail()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;color:#f97316;border:1px solid #f97316;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#128231; Pr&#233;parer email</button>
+            </div>
+          </div>
+
           </div>
 
           <!-- Iframe panel (caché par défaut) -->
@@ -648,6 +745,268 @@ document.addEventListener('keydown', function(e) {
   const lock = document.getElementById('rem-lock');
   if (e.key === 'Enter' && lock && lock.style.display !== 'none') checkCode();
 });
+
+function showSuivi(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('suivi-panel').style.display = 'block';
+  pmRender();
+}
+
+// ===== SUIVI CONTRATS =====
+const PM_MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const PM_AGENTS = ['Philippe Tomaszewsky','Julien Couvreur'];
+const PM_PRODUCTS = {
+  Orange: {
+    Internet: ['Internet Start','Internet Zen','Internet Giga'],
+    'Ligne fixe': ['Ligne fixe'],
+    TV: ['TV Orange'],
+    Mobile: ['Mobile Small','Mobile Medium','Mobile Large','Mobile Unlimited','Mobile Child']
+  },
+  Eneco: { Énergie: ['Eneco Flex','Eneco Fixe','Eneco Gaz'] }
+};
+const PM_ALL_O = Object.values(PM_PRODUCTS.Orange).flat();
+const PM_ALL_E = Object.values(PM_PRODUCTS.Eneco).flat();
+
+const pmToday = new Date();
+let pmCurYear = pmToday.getFullYear(), pmCurMonth = pmToday.getMonth();
+let pmActiveAgent = PM_AGENTS[0];
+let pmContracts = [];
+try { pmContracts = JSON.parse(localStorage.getItem('pm5_c') || '[]'); } catch(e) {}
+
+function pmSave() { try { localStorage.setItem('pm5_c', JSON.stringify(pmContracts)); } catch(e) {} }
+function pmGetMC(y,m) { return pmContracts.filter(c => c.year===y && c.month===m); }
+function pmCountBy(mc,field) { const r={}; mc.forEach(c=>{r[c[field]]=(r[c[field]]||0)+1;}); return r; }
+function pmIsCurrentMonth() { return pmCurYear===pmToday.getFullYear() && pmCurMonth===pmToday.getMonth(); }
+function pmFmtDate(d) { return new Date(d).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function pmToInputVal(d) { return d.toISOString().split('T')[0]; }
+
+function pmSetToday() {
+  document.getElementById('pm-contract-date').value = pmToInputVal(pmToday);
+  document.getElementById('pm-encoded-label').textContent = pmFmtDate(pmToday);
+}
+
+function pmBuildAgentTabs() {
+  document.getElementById('pm-agent-tabs').innerHTML = PM_AGENTS.map(a =>
+    `<button class="pm-agent-tab${a===pmActiveAgent?' active':''}" onclick="pmSetAgent('${a}')">${a.split(' ')[0]}</button>`
+  ).join('');
+}
+
+window.pmSetAgent = function(a) { pmActiveAgent=a; pmBuildAgentTabs(); };
+
+function pmBuildProducts() {
+  const mc = pmGetMC(pmCurYear, pmCurMonth);
+  const byProd = pmCountBy(mc, 'product');
+  if (!pmIsCurrentMonth()) {
+    document.getElementById('pm-products-panel').innerHTML = '<div style="text-align:center;padding:12px;color:#9ca3af;font-size:12px;">🔒 Encodage uniquement pour le mois en cours</div>';
+    return;
+  }
+  let html = '';
+  Object.entries(PM_PRODUCTS).forEach(([brand, groups]) => {
+    const cls = brand==='Orange'?'orange':'eneco';
+    const color = brand==='Orange'?'#E65100':'#2E7D32';
+    html += `<div style="margin-bottom:10px;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:50%;background:${color};display:inline-block;"></span><span style="font-size:12px;font-weight:700;color:#1a1a1a;">${brand}</span></div>`;
+    Object.entries(groups).forEach(([grp, prods]) => {
+      html += `<div class="pm-grp">${grp}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;">`;
+      prods.forEach(p => {
+        const cnt = byProd[p]||0;
+        const cntCls = cnt>0?cls:'zero';
+        html += `<button class="pm-prod-btn ${cls}" onclick="pmAddContract('${brand}','${p.replace(/'/g,"\\'")}')"><span>${p}</span><span class="pm-cnt ${cntCls}" id="pmpc-${p.replace(/\s/g,'_')}">${cnt}</span></button>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('pm-products-panel').innerHTML = html;
+}
+
+window.pmAddContract = function(brand, product) {
+  const dVal = document.getElementById('pm-contract-date').value;
+  const contractDate = dVal ? pmFmtDate(dVal+' ') : pmFmtDate(pmToday);
+  const encodedDate = pmFmtDate(pmToday);
+  const isLate = dVal && dVal !== pmToInputVal(pmToday);
+  pmContracts.push({id:Date.now(),brand,product,agent:pmActiveAgent,contractDate,encodedDate,isLate:!!isLate,year:pmCurYear,month:pmCurMonth});
+  pmSave();
+  const el = document.getElementById('pmpc-'+product.replace(/\s/g,'_'));
+  if (el) {
+    const cnt = pmGetMC(pmCurYear,pmCurMonth).filter(c=>c.product===product).length;
+    el.textContent = cnt;
+    const cls = brand==='Orange'?'orange':'eneco';
+    el.className = 'pm-cnt '+cls+' pm-flash';
+    setTimeout(()=>el.classList.remove('pm-flash'),300);
+  }
+  pmRenderStats();
+};
+
+window.pmDelContract = function(id) {
+  pmContracts = pmContracts.filter(c=>c.id!==id);
+  pmSave(); pmRender();
+};
+
+function pmRenderStats() {
+  const mc = pmGetMC(pmCurYear, pmCurMonth);
+  const byProd = pmCountBy(mc, 'product');
+  const totalO = PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0),0);
+  const totalE = PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0),0);
+  const total = totalO + totalE;
+
+  document.getElementById('pm-metrics').innerHTML = `
+    <div class="pm-mc"><div class="pm-mc-label">Total</div><div class="pm-mc-val">${total}</div><div class="pm-pbar"><div class="pm-pbar-fill" style="width:${Math.min(100,total*5)}%;"></div></div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Orange</div><div class="pm-mc-val" style="color:#E65100;">${totalO}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Eneco</div><div class="pm-mc-val" style="color:#2E7D32;">${totalE}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Mois</div><div class="pm-mc-val" style="font-size:13px;">${PM_MONTHS[pmCurMonth].slice(0,3)}</div></div>
+  `;
+
+  function renderProdStats(elId, groups, color) {
+    let html = '';
+    Object.entries(groups).forEach(([grp, ps]) => {
+      html += `<div class="pm-grp">${grp}</div>`;
+      ps.forEach(p => {
+        const cnt = byProd[p]||0;
+        html += `<div class="pm-prod-row"><span style="font-size:11px;color:#1a1a1a;">${p}</span><span style="font-size:12px;font-weight:700;color:${cnt>0?color:'#9ca3af'};">${cnt}</span></div>`;
+      });
+    });
+    document.getElementById(elId).innerHTML = html;
+  }
+  renderProdStats('pm-orange-stats', PM_PRODUCTS.Orange, '#E65100');
+  renderProdStats('pm-eneco-stats', PM_PRODUCTS.Eneco, '#2E7D32');
+
+  const byAgent = pmCountBy(mc, 'agent');
+  document.getElementById('pm-team-stats').innerHTML = Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).map(([agent,cnt]) => {
+    const ini = agent.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f3f4f6;">
+      <span style="width:24px;height:24px;border-radius:50%;background:#EEF2FF;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0D2580;">${ini}</span>
+      <span style="flex:1;font-size:12px;color:#1a1a1a;">${agent}</span>
+      <span style="font-size:13px;font-weight:700;">${cnt}</span></div>`;
+  }).join('') || '<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">Aucun agent ce mois</div>';
+
+  const sorted = [...mc].sort((a,b)=>b.id-a.id);
+  document.getElementById('pm-history').innerHTML = sorted.length ? sorted.map(c => `
+    <div class="pm-hist-item">
+      <span class="pm-hbadge ${c.brand==='Orange'?'pm-bo':'pm-be'}">${c.brand}</span>
+      <span style="flex:1;color:#1a1a1a;">${c.product}</span>
+      <span style="color:#6b7280;font-size:10px;">${c.agent.split(' ')[0]}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+        <span style="font-size:10px;color:#374151;">📝 ${c.contractDate}${c.isLate?'<span class="pm-late">tardif</span>':''}</span>
+        <span style="font-size:9px;color:#9ca3af;">🕐 ${c.encodedDate}</span>
+      </div>
+      <button onclick="pmDelContract(${c.id})" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:0 2px;font-size:13px;" aria-label="Supprimer">🗑</button>
+    </div>`).join('') : '<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">Aucun contrat — cliquez sur un produit !</div>';
+}
+
+function pmRenderChart() {
+  if (!document.getElementById('pm-chart')) return;
+  if (!window.Chart) return;
+  if (window._pmChart) { window._pmChart.destroy(); }
+  const labels=[], dO=[], dE=[];
+  for (let i=5;i>=0;i--) {
+    let m=pmCurMonth-i, y=pmCurYear;
+    while(m<0){m+=12;y--;}
+    labels.push(PM_MONTHS[m].slice(0,3));
+    const mc=pmGetMC(y,m);
+    const bp=pmCountBy(mc,'product');
+    dO.push(PM_ALL_O.reduce((s,p)=>s+(bp[p]||0),0));
+    dE.push(PM_ALL_E.reduce((s,p)=>s+(bp[p]||0),0));
+  }
+  window._pmChart = new Chart(document.getElementById('pm-chart'), {
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Orange',data:dO,backgroundColor:'#E65100',borderRadius:3},
+      {label:'Eneco',data:dE,backgroundColor:'#2E7D32',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{stacked:true,ticks:{font:{size:10}},grid:{display:false}},
+              y:{stacked:true,ticks:{font:{size:10},stepSize:1},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+}
+
+function pmRender() {
+  document.getElementById('pm-month-label').textContent = PM_MONTHS[pmCurMonth]+' '+pmCurYear;
+  pmBuildAgentTabs();
+  pmBuildProducts();
+  pmRenderStats();
+  if (document.getElementById('suivi-panel').style.display !== 'none') pmRenderChart();
+}
+
+function pmPrevMonth() { pmCurMonth--; if(pmCurMonth<0){pmCurMonth=11;pmCurYear--;} pmRender(); }
+function pmNextMonth() { pmCurMonth++; if(pmCurMonth>11){pmCurMonth=0;pmCurYear++;} pmRender(); }
+
+function pmBuildSummary(mc) {
+  const byProd=pmCountBy(mc,'product');
+  const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0),0);
+  const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0),0);
+  let lines=[`Résumé contrats — ${PM_MONTHS[pmCurMonth]} ${pmCurYear}`,`Total: ${totalO+totalE} (Orange: ${totalO} | Eneco: ${totalE})`,'',' === ORANGE ==='];
+  Object.entries(PM_PRODUCTS.Orange).forEach(([grp,ps])=>ps.forEach(p=>{if(byProd[p]>0)lines.push(`  ${p}: ${byProd[p]}`);}));
+  lines.push('',' === ENECO ===');
+  PM_ALL_E.forEach(p=>{if(byProd[p]>0)lines.push(`  ${p}: ${byProd[p]}`);});
+  const byAgent=pmCountBy(mc,'agent');
+  if(Object.keys(byAgent).length){lines.push('',' === PAR AGENT ===');Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).forEach(([a,c])=>lines.push(`  ${a}: ${c}`));}
+  return lines.join('\n');
+}
+
+window.pmExportPDF = function() {
+  const mc=pmGetMC(pmCurYear,pmCurMonth);
+  const byProd=pmCountBy(mc,'product');
+  const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0),0);
+  const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0),0);
+  const byAgent=pmCountBy(mc,'agent');
+  let html=`<html><head><meta charset="utf-8"><title>Phil-Mobile — ${PM_MONTHS[pmCurMonth]} ${pmCurYear}</title>
+  <style>body{font-family:Arial,sans-serif;padding:32px;color:#1a1a2e;max-width:600px;margin:auto;}
+  h1{font-size:20px;color:#0D2580;margin-bottom:4px;}.sub{font-size:13px;color:#666;margin-bottom:24px;}
+  .totals{display:flex;gap:16px;margin-bottom:24px;}.tot{background:#fef9f5;border-radius:8px;padding:12px 20px;text-align:center;}
+  .tot-val{font-size:26px;font-weight:700;}.tot-label{font-size:11px;color:#666;}
+  h2{font-size:14px;color:#f97316;margin:20px 0 8px;border-bottom:1px solid #fde8cc;padding-bottom:4px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}td{padding:5px 8px;border-bottom:1px solid #f3f4f6;}td:last-child{text-align:right;font-weight:700;}
+  .grp{font-size:11px;color:#9ca3af;padding:8px 8px 2px;font-style:italic;}
+  .footer{margin-top:32px;font-size:11px;color:#aaa;text-align:center;}</style></head><body>
+  <h1>Phil-Mobile — Résumé contrats</h1>
+  <div class="sub">${PM_MONTHS[pmCurMonth]} ${pmCurYear} · Généré le ${pmFmtDate(pmToday)}</div>
+  <div class="totals">
+    <div class="tot"><div class="tot-val" style="color:#0D2580;">${totalO+totalE}</div><div class="tot-label">Total</div></div>
+    <div class="tot"><div class="tot-val" style="color:#E65100;">${totalO}</div><div class="tot-label">Orange</div></div>
+    <div class="tot"><div class="tot-val" style="color:#2E7D32;">${totalE}</div><div class="tot-label">Eneco</div></div>
+  </div><h2>Orange</h2><table>`;
+  Object.entries(PM_PRODUCTS.Orange).forEach(([grp,ps])=>{
+    html+=`<tr><td colspan="2" class="grp">${grp}</td></tr>`;
+    ps.forEach(p=>{html+=`<tr><td>${p}</td><td>${byProd[p]||0}</td></tr>`;});
+  });
+  html+=`</table><h2>Eneco</h2><table>`;
+  PM_ALL_E.forEach(p=>{html+=`<tr><td>${p}</td><td>${byProd[p]||0}</td></tr>`;});
+  html+=`</table>`;
+  if(Object.keys(byAgent).length){
+    html+=`<h2>Par agent</h2><table>`;
+    Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).forEach(([a,c])=>{html+=`<tr><td>${a}</td><td>${c}</td></tr>`;});
+    html+=`</table>`;
+  }
+  html+=`<div class="footer">Phil-Mobile · infos@phil-mobile.be · +32 475 24 02 05</div></body></html>`;
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+};
+
+window.pmExportMail = function() {
+  const mc=pmGetMC(pmCurYear,pmCurMonth);
+  const txt=pmBuildSummary(mc);
+  const subject=`Résumé contrats Phil-Mobile — ${PM_MONTHS[pmCurMonth]} ${pmCurYear}`;
+  window.location.href=`mailto:infos@phil-mobile.be?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(txt)}`;
+};
+
+// Init date suivi
+window.addEventListener('DOMContentLoaded', function() {
+  const di = document.getElementById('pm-contract-date');
+  const el = document.getElementById('pm-encoded-label');
+  if(di) di.value = pmToInputVal(pmToday);
+  if(el) el.textContent = pmFmtDate(pmToday);
+});
+
+// Charger Chart.js si pas déjà chargé
+if (!window.Chart) {
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+  document.head.appendChild(s);
+}
 
 function copyText(id, btn) {
   const text = document.getElementById(id).textContent.trim();
