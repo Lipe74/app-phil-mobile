@@ -32,91 +32,70 @@
     <a href="https://app.phil-mobile.be/wp_home.html" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">🏠 Accueil</a>
   </div>
   <div id="pm-welcome" style="display:none;font-size:12px;font-weight:700;color:#f97316;background:#fff3e8;padding:5px 12px;border-radius:99px;border:1px solid #f97316;"></div>
-  <button id="pm-admin-btn" onclick="pmOpenAdmin()" style="display:none;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#f97316;background:#fff3e8;padding:5px 12px;border-radius:99px;border:1px solid #f97316;cursor:pointer;font-family:Arial,sans-serif;">⚙️ Admin</button>
 </div>
 
 <!-- ONGLETS -->
 <div style="padding:12px 16px 0;">
 
   <div style="display:flex;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;overflow:hidden;">
-    <button id="tab-btn-contact" onclick="switchTab('contact')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #f97316;font-family:Arial,sans-serif;">🏠 Accueil</button>
+    <button id="tab-btn-contact" onclick="switchTab('contact')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #f97316;font-family:Arial,sans-serif;">📩 Contacter Phil-Mobile</button>
     <button id="tab-btn-outils" onclick="switchTab('outils')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">🧰 Outils</button>
+    <button id="tab-btn-smartsn" onclick="switchTab('smartsn')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">🏢 Contacter Smart SN</button>
   </div>
 
-  <!-- ONGLET ACCUEIL : dashboard perso -->
-  <div id="contact-form" style="border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
+  <!-- CARTE CONTACT PHIL-MOBILE -->
+  <div id="contact-form" style="border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:24px 16px;text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 14px;">
+      <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
+    </div>
+    <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">Philippe</div>
+    <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Phil-Mobile · Votre upline</div>
+    <a href="https://wa.me/32475240205" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25d366;color:#ffffff;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      WhatsApp · +32 475 24 02 05
+    </a>
+    <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f97316;color:#f8f8f8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+      📧 infos@phil-mobile.be
+    </a>
 
-    <!-- DASHBOARD PERSO (visible après login) -->
-    <div id="pm-dashboard" style="display:none;">
+    <!-- AGENDA ÉVÉNEMENTS -->
+    <div style="text-align:left;margin-top:24px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📅 Agenda des événements</div>
 
-      <!-- Carte profil + statut -->
-      <div style="background:#fff;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div id="pm-profile-card"></div>
-      </div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🏢 Team Meeting Herstal (19:30–21:30)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 08/06/2026</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 22/06/2026</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 06/07/2026</div>
+      <div style="font-size:11px;color:#f97316;font-style:italic;margin-top:4px;margin-bottom:10px;">⚠️ Inscription via My Smart → Events</div>
 
-      <!-- Contacter Phil-Mobile -->
-      <div style="background:#fff;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">📩 Contacter Phil-Mobile</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-          <div style="width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid #f97316;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-            <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
-          </div>
-          <div>
-            <div style="font-size:14px;font-weight:700;color:#1a1a1a;">Philippe</div>
-            <div style="font-size:11px;color:#f97316;">Phil-Mobile · Votre upline</div>
-          </div>
-        </div>
-        <a href="https://wa.me/32475240205" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">💬 WhatsApp · +32 475 24 02 05</a>
-        <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f97316;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">📧 infos@phil-mobile.be</a>
-      </div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Bruxelles (18:00–21:00)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 17/06/2026</div>
 
-      <!-- Contacter Smart SN -->
-      <div style="background:#fff;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">🏢 Support Smart SN</div>
-        <a href="tel:+3200077170" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f8f8f8;color:#1a1a1a;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;border:1px solid #f97316;margin-bottom:8px;">📞 +32 200 77 17</a>
-        <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f97316;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">📧 support@smartsn.be</a>
-        <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f97316;color:#fff;padding:11px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">💶 rem@smartsn.be</a>
-      </div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Samedi (09:30–12:30)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/06/2026</div>
 
-      <!-- Agenda -->
-      <div style="background:#fff;border:1px solid #f97316;border-radius:12px;padding:16px;margin-bottom:12px;text-align:left;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📅 Agenda des événements</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">🏢 Team Meeting Herstal (19:30–21:30)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:3px;">📍 08/06/2026</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:3px;">📍 22/06/2026</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:3px;">📍 06/07/2026</div>
-        <div style="font-size:11px;color:#f97316;font-style:italic;margin-top:3px;margin-bottom:8px;">⚠️ Inscription via My Smart → Events</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">🎓 Success Training FR — Bruxelles (18:00–21:00)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 17/06/2026</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">🎓 Success Training FR — Samedi (09:30–12:30)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 27/06/2026</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">🟠 Orange MasterClass — Bruxelles (19:00–22:00)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 23/06/2026</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">⚡ How to sell Eneco? — Herstal (19:00–21:00)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 29/06/2026</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">🥂 Summer Drink (20:00–22:00)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 02/07/2026</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">🦁 Family Day — Pairi Daiza (10:00–18:00)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 27/09/2026</div>
-        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">⭐ Smart Day (13:00–18:00)</div>
-        <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:8px;">📍 14/11/2026</div>
-      </div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🟠 Orange MasterClass — Bruxelles (19:00–22:00)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 23/06/2026</div>
 
-      <!-- Calendly -->
-      <div style="background:#fff;border:1px solid #f97316;border-radius:12px;padding:16px;text-align:left;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📆 Réserver un accompagnement</div>
-        <div style="border-radius:10px;overflow:hidden;border:1px solid #f97316;">
-          <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:500px;border:none;" frameborder="0"></iframe>
-        </div>
-      </div>
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⚡ How to sell Eneco? — Herstal (19:00–21:00)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 29/06/2026</div>
 
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🥂 Summer Drink (20:00–22:00)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 02/07/2026</div>
+
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🦁 Family Day — Pairi Daiza (10:00–18:00)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/09/2026</div>
+
+      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⭐ Smart Day (13:00–18:00)</div>
+      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 14/11/2026</div>
     </div>
 
-    <!-- Message avant login -->
-    <div id="pm-pre-login" style="text-align:center;padding:24px 16px;">
-      <div style="font-size:28px;margin-bottom:8px;">👋</div>
-      <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">Bienvenue sur l'espace Phil-Mobile</div>
-      <div style="font-size:12px;color:#f97316;">Connectez-vous via l'onglet Outils pour accéder à votre tableau de bord.</div>
+    <!-- CALENDLY -->
+    <div style="text-align:left;">
+      <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📆 Réserver un accompagnement</div>
+      <div style="border-radius:12px;overflow:hidden;border:1px solid #f97316;">
+        <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:600px;border:none;" frameborder="0"></iframe>
+      </div>
     </div>
 
   </div>
@@ -732,112 +711,22 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
     </div>
 
   </div>
-  <!-- CARTE CONTACT SMART SN — supprimée, fusionnée dans accueil -->
-
-</div>
-
-<!-- ADMIN PANEL (caché, accessible via bouton admin) -->
-<div id="pm-admin-panel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;overflow-y:auto;">
-  <div style="background:#fff;max-width:700px;margin:20px auto;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-    <!-- Header admin orange -->
-    <div style="background:#f97316;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <img src="https://app.phil-mobile.be/logo.png" style="width:28px;height:28px;border-radius:50%;background:white;padding:2px;object-fit:contain;">
-        <span style="font-size:15px;font-weight:700;color:white;">⚙️ Admin Phil-Mobile</span>
-      </div>
-      <button onclick="document.getElementById('pm-admin-panel').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:6px 12px;cursor:pointer;font-family:Arial,sans-serif;font-size:13px;">✕ Fermer</button>
-    </div>
-    <div style="padding:20px;">
-      <div id="pm-admin-alert" style="display:none;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;"></div>
-
-      <!-- Liste consultants -->
-      <div style="margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Consultants (<span id="pm-admin-count">0</span> actifs)</div>
-        <div id="pm-admin-list"></div>
-      </div>
-
-      <!-- Ajouter consultant -->
-      <div style="border:1px solid #f97316;border-radius:10px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">➕ Ajouter un consultant</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">ID Smart SN *</label><input id="adm-id" type="text" autocapitalize="none" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Prénom *</label><input id="adm-name" type="text" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Nom complet *</label><input id="adm-fullname" type="text" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">ASP initiaux</label><input id="adm-asp" type="number" value="0" min="0" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Date démarrage</label><input id="adm-start" type="date" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Upline</label><input id="adm-upline" type="text" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Tél. upline</label><input id="adm-upline-tel" type="tel" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-          <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Email upline</label><input id="adm-upline-email" type="email" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        </div>
-        <button onclick="pmAdminAdd()" style="background:#f97316;color:white;border:none;border-radius:8px;padding:9px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">+ Ajouter</button>
-      </div>
-
-      <!-- JSON export -->
-      <div style="border:1px solid #f97316;border-radius:10px;padding:16px;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">consultants.json — GitHub</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <button onclick="pmAdminCopyJSON()" style="background:#f97316;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier JSON</button>
-          <button onclick="pmAdminDownloadJSON()" style="background:white;color:#f97316;border:1px solid #f97316;border-radius:6px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">⬇ Télécharger</button>
-        </div>
-        <pre id="pm-admin-json" style="background:#1a1a2e;color:#a8ff78;font-size:10px;padding:12px;border-radius:8px;overflow:auto;max-height:200px;white-space:pre;"></pre>
-      </div>
-    </div>
+  <!-- CARTE CONTACT SMART SN -->
+  <div id="smartsn-form" style="display:none;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:24px 16px;text-align:center;">
+    <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">🏢</div>
+    <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">Smart SN</div>
+    <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Support consultant</div>
+    <a href="tel:+3200077170" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid #f97316;margin-bottom:10px;">
+      📞 +32 200 77 17
+    </a>
+    <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f97316;color:#f8f8f8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
+      📧 support@smartsn.be
+    </a>
+    <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f97316;color:#f8f8f8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
+      📧 rem@smartsn.be
+    </a>
   </div>
-</div>
 
-<!-- MODAL ÉDITION CONSULTANT -->
-<div id="pm-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;overflow-y:auto;align-items:center;justify-content:center;">
-  <div style="background:white;max-width:520px;width:calc(100% - 32px);margin:20px auto;border-radius:14px;overflow:hidden;">
-    <div style="background:#f97316;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:14px;font-weight:700;color:white;">✏️ Modifier consultant</span>
-      <button onclick="document.getElementById('pm-edit-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:6px;padding:4px 10px;cursor:pointer;">✕</button>
-    </div>
-    <div style="padding:16px;">
-      <input type="hidden" id="edit-idx">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">ID Smart SN</label><input id="edit-id" type="text" autocapitalize="none" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Prénom</label><input id="edit-name" type="text" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Nom complet</label><input id="edit-fullname" type="text" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">ASP initiaux</label><input id="edit-asp" type="number" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Date démarrage</label><input id="edit-start" type="date" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Upline</label><input id="edit-upline" type="text" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Tél. upline</label><input id="edit-upline-tel" type="tel" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-        <div><label style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;">Email upline</label><input id="edit-upline-email" type="email" style="width:100%;padding:8px;border:1px solid #f97316;border-radius:6px;font-size:12px;margin-top:3px;font-family:Arial,sans-serif;"></div>
-      </div>
-      <!-- Qualifications -->
-      <div style="border-top:1px solid #fde8cc;padding-top:12px;margin-bottom:14px;">
-        <div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Qualifications</div>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fef9f5;border-radius:8px;cursor:pointer;margin-bottom:6px;border:1px solid #fde8cc;">
-          <input type="checkbox" id="edit-pqs" style="width:15px;height:15px;accent-color:#2E7D32;">
-          <div><div style="font-size:12px;font-weight:700;">✅ PQS réussi</div><div style="font-size:10px;color:#6b7280;">10 ASP dans les 40 premiers jours</div></div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fef9f5;border-radius:8px;cursor:pointer;margin-bottom:6px;border:1px solid #fde8cc;">
-          <input type="checkbox" id="edit-fastsc" style="width:15px;height:15px;accent-color:#f97316;">
-          <div><div style="font-size:12px;font-weight:700;">🚀 Fast SC validé</div><div style="font-size:10px;color:#6b7280;">Niveau SC dans les 90 premiers jours</div></div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fef9f5;border-radius:8px;cursor:pointer;border:1px solid #fde8cc;">
-          <input type="checkbox" id="edit-fastec" style="width:15px;height:15px;accent-color:#1e3a6e;">
-          <div><div style="font-size:12px;font-weight:700;">⚡ Fast EC validé</div><div style="font-size:10px;color:#6b7280;">Niveau EC dans les 120 premiers jours</div></div>
-        </label>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button onclick="document.getElementById('pm-edit-modal').style.display='none'" style="background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Annuler</button>
-        <button onclick="pmAdminSaveEdit()" style="background:#f97316;color:white;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">💾 Enregistrer</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- FOOTER -->
@@ -905,7 +794,7 @@ function showScript(id) {
 }
 
 function switchTab(tab) {
-  ['contact','outils'].forEach(t => {
+  ['contact','outils','smartsn'].forEach(t => {
     const btn = document.getElementById('tab-btn-' + t);
     if (!btn) return;
     if (t === tab) {
@@ -918,8 +807,10 @@ function switchTab(tab) {
   });
   document.getElementById('contact-form').style.display = 'none';
   document.getElementById('outils-form').style.display = 'none';
+  document.getElementById('smartsn-form').style.display = 'none';
   if (tab === 'contact') document.getElementById('contact-form').style.display = 'block';
   else if (tab === 'outils') document.getElementById('outils-form').style.display = 'block';
+  else if (tab === 'smartsn') document.getElementById('smartsn-form').style.display = 'block';
 }
 
 function checkCode() {
@@ -940,17 +831,11 @@ function doUnlock(user) {
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
   setWelcome(user);
-  // Bouton admin visible uniquement pour Philippe
-  if (user.isAdmin) {
-    const adminBtn = document.getElementById('pm-admin-btn');
-    if (adminBtn) adminBtn.style.display = 'flex';
-  }
   // Pré-sélectionner l'agent dans le suivi
   const agentSel = document.getElementById('pm-add-agent');
   if (agentSel) agentSel.value = user.agent;
+  // Si Julien : masquer les cartes agents autres que lui dans la progression
   pmNiveauAgent = user.agent;
-  // Afficher le dashboard accueil
-  pmRenderDashboard();
 }
 
 switchTab('contact');
@@ -985,8 +870,8 @@ function showSuivi(btn) {
 // ===== SUIVI CONTRATS v6 =====
 const PM_MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const PM_AGENT_PROFILES = {
-  'Philippe Tomaszewsky': { initials:'PT', startDate:'29/11/2025', aspInit:82, upline:'Jean Luc Danko', uplineTel:'+32498664215', uplineEmail:'jld@danko.be', pqsValidated:true, fastSCValidated:false, fastECValidated:false },
-  'Julien Couvreur':      { initials:'JC', startDate:'24/04/2026', aspInit:16, upline:'Philippe Tomaszewsky', uplineTel:'+32 475 24 02 05', uplineEmail:'infos@phil-mobile.be', pqsValidated:false, fastSCValidated:false, fastECValidated:false }
+  'Philippe Tomaszewsky': { initials:'PT', startDate:'29/11/2025', aspInit:82 },
+  'Julien Couvreur':      { initials:'JC', startDate:'24/04/2026', aspInit:16 }
 };
 const PM_NIVEAUX = [
   {code:'BC',label:'BC',pts:0},{code:'SC',label:'SC',pts:70},{code:'EC',label:'EC',pts:200},
@@ -1331,261 +1216,7 @@ if (!window.Chart) {
   document.head.appendChild(s);
 }
 
-// ===== DASHBOARD ACCUEIL =====
-function pmCalcPQS(startDateStr){
-  if(!startDateStr||startDateStr==='—') return null;
-  const parts=startDateStr.split('/');
-  if(parts.length!==3) return null;
-  const start=new Date(parts[2],parts[1]-1,parts[0]);
-  const deadline=new Date(start.getTime()+40*24*60*60*1000);
-  const now=new Date();
-  const daysLeft=Math.ceil((deadline-now)/(24*60*60*1000));
-  const pct=Math.min(100,Math.max(0,Math.round((40-daysLeft)/40*100)));
-  return{deadline,daysLeft,pct};
-}
-function pmCalcFastDays(startDateStr,limitDays){
-  if(!startDateStr||startDateStr==='—') return null;
-  const parts=startDateStr.split('/');
-  if(parts.length!==3) return null;
-  const start=new Date(parts[2],parts[1]-1,parts[0]);
-  const deadline=new Date(start.getTime()+limitDays*24*60*60*1000);
-  return Math.ceil((deadline-new Date())/(24*60*60*1000));
-}
-function pmFmtDateFr(d){return d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});}
-
-function pmRenderDashboard(){
-  const user = pmCurrentUser;
-  if(!user) return;
-  document.getElementById('pm-pre-login').style.display='none';
-  document.getElementById('pm-dashboard').style.display='block';
-
-  const profile = PM_AGENT_PROFILES[user.fullName] || {};
-  const asp = pmGetTotalASP(user.fullName);
-  const curNiv = pmGetNiveau(asp);
-  const nextNiv = pmGetNextNiveau(asp);
-  const pqs = pmCalcPQS(profile.startDate);
-  const fastSCDays = pmCalcFastDays(profile.startDate, 90);
-  const fastECDays = pmCalcFastDays(profile.startDate, 120);
-
-  // Badges qualifications
-  const pqsBadge = profile.pqsValidated
-    ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:700;border:1px solid #c8e6c9;">✅ PQS réussi</span>'
-    : pqs && pqs.daysLeft>0
-      ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#FFF3E0;color:#B45309;font-weight:700;border:1px solid #f0d080;">⏱ PQS — ${pqs.daysLeft}j restants</span>`
-      : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#fff0f0;color:#E24B4A;font-weight:700;border:1px solid #ffcdd2;">❌ PQS non réussi</span>';
-
-  const fastSCBadge = profile.fastSCValidated
-    ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#FFF3E0;color:#B45309;font-weight:700;border:1px solid #f0d080;">🚀 Fast SC validé</span>'
-    : fastSCDays!==null && fastSCDays>0
-      ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:700;border:1px solid #e5e7eb;">🚀 Fast SC — ${fastSCDays}j restants</span>`
-      : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:700;border:1px solid #e5e7eb;">🚀 Fast SC expiré</span>';
-
-  const fastECBadge = profile.fastECValidated
-    ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#EEF2FF;color:#1e3a6e;font-weight:700;border:1px solid #c7d7f5;">⚡ Fast EC validé</span>'
-    : fastECDays!==null && fastECDays>0
-      ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:700;border:1px solid #e5e7eb;">⚡ Fast EC — ${fastECDays}j restants</span>`
-      : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:700;border:1px solid #e5e7eb;">⚡ Fast EC expiré</span>';
-
-  // PQS barre (seulement si pas validé)
-  let pqsBarHtml = '';
-  if(pqs && !profile.pqsValidated){
-    const color = pqs.daysLeft<=0?'#E24B4A':pqs.daysLeft<=7?'#f97316':pqs.daysLeft<=14?'#F59E0B':'#2E7D32';
-    const label = pqs.daysLeft<=0?'⚠️ Délai PQS dépassé !':pqs.daysLeft===1?'🔴 Deadline PQS demain !':`⏱ Deadline PQS dans <strong style="color:${color};">${pqs.daysLeft} jours</strong>`;
-    pqsBarHtml = `<div style="margin-top:10px;background:#f5f7fa;border-radius:8px;padding:8px 12px;border-left:3px solid ${color};">
-      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">${label} <span style="font-size:10px;color:#9ca3af;">— ${pmFmtDateFr(pqs.deadline)}</span></div>
-      <div style="height:4px;background:#e5e7eb;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pqs.pct}%;background:${color};border-radius:99px;"></div></div>
-    </div>`;
-  }
-
-  // Ligne du temps niveau
-  const niveauBarHtml = nextNiv ? `
-    <div style="margin-top:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:3px;">
-        <span>${curNiv.label} (${curNiv.pts})</span>
-        <span>${Math.round(asp*10)/10} ASP</span>
-        <span>${nextNiv.label} (${nextNiv.pts})</span>
-      </div>
-      <div style="height:6px;background:#f3f4f6;border-radius:99px;overflow:hidden;border:1px solid #e5e7eb;">
-        <div style="height:100%;width:${Math.round((asp-curNiv.pts)/(nextNiv.pts-curNiv.pts)*100)}%;background:linear-gradient(90deg,#f97316,#ffb347);border-radius:99px;transition:width .5s;"></div>
-      </div>
-      <div style="font-size:10px;color:#9ca3af;margin-top:3px;text-align:right;">→ <strong style="color:#f97316;">${Math.round((nextNiv.pts-asp)*10)/10} ASP</strong> pour atteindre ${nextNiv.label}</div>
-    </div>` : `<div style="margin-top:8px;font-size:11px;color:#f97316;font-weight:700;">🏆 Niveau maximum atteint !</div>`;
-
-  // Sponsor
-  let sponsorHtml = '';
-  if(profile.upline){
-    sponsorHtml = `<div style="margin-top:10px;background:#fff3e8;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <div style="font-size:18px;">👤</div>
-      <div style="flex:1;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;">Votre sponsor</div><div style="font-size:13px;font-weight:700;color:#f97316;">${profile.upline}</div></div>
-      ${profile.uplineTel?`<a href="tel:${profile.uplineTel}" style="font-size:11px;font-weight:700;color:white;background:#f97316;padding:5px 10px;border-radius:99px;text-decoration:none;">📞 Appeler</a>`:''}
-      ${profile.uplineEmail?`<a href="mailto:${profile.uplineEmail}" style="font-size:11px;font-weight:700;color:#f97316;background:#fff3e8;padding:5px 10px;border-radius:99px;text-decoration:none;border:1px solid #f97316;">📧 Email</a>`:''}
-    </div>`;
-  }
-
-  const ini = user.fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  document.getElementById('pm-profile-card').innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-      <div style="width:40px;height:40px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;">${ini}</div>
-      <div style="flex:1;">
-        <div style="font-size:15px;font-weight:700;color:#1a1a1a;">Bonjour ${user.name} 👋</div>
-        <div style="font-size:11px;color:#6b7280;">Consultant Smart SN · Actif depuis le <strong>${profile.startDate||'—'}</strong></div>
-        <div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-size:12px;font-weight:700;background:#fff3e8;color:#f97316;padding:3px 10px;border-radius:99px;border:1px solid #fde8cc;">Statut : ${curNiv.label}</span>
-          ${nextNiv?`<span style="font-size:11px;color:#9ca3af;">→ <strong style="color:#6b7280;">${nextNiv.label}</strong> dans <strong style="color:#f97316;">${Math.round((nextNiv.pts-asp)*10)/10} ASP</strong></span>`:''}
-        </div>
-      </div>
-    </div>
-    ${niveauBarHtml}
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
-      ${pqsBadge}${fastSCBadge}${fastECBadge}
-    </div>
-    ${pqsBarHtml}
-    ${sponsorHtml}
-  `;
-}
-
-// ===== ADMIN =====
-const PM_ADMIN_PWD = '1F23f1e329@';
-let pmAdminData = null;
-let pmAdminUnlocked = false;
-
-function pmOpenAdmin(){
-  if(!pmAdminUnlocked){
-    const pwd = prompt('Mot de passe admin :');
-    if(pwd !== PM_ADMIN_PWD){ alert('Mot de passe incorrect'); return; }
-    pmAdminUnlocked = true;
-  }
-  pmAdminLoadData();
-  document.getElementById('pm-admin-panel').style.display = 'block';
-}
-
-async function pmAdminLoadData(){
-  try {
-    const data = await fetch('https://lipe74.github.io/phil-mobile-app/consultants.json?v='+Date.now()).then(r=>r.json());
-    pmAdminData = data;
-  } catch(e) {
-    // Fallback : construire depuis PM_USERS
-    pmAdminData = {
-      consultants: Object.entries(PM_USERS).map(([id,u])=>({
-        id, name:u.name, fullName:u.fullName, isAdmin:u.isAdmin, active:true,
-        ...PM_AGENT_PROFILES[u.fullName]
-      }))
-    };
-  }
-  pmAdminRenderList();
-  pmAdminRenderJSON();
-}
-
-function pmAdminRenderList(){
-  if(!pmAdminData) return;
-  const active = pmAdminData.consultants.filter(c=>c.active).length;
-  document.getElementById('pm-admin-count').textContent = active;
-  document.getElementById('pm-admin-list').innerHTML = pmAdminData.consultants.map((c,i)=>{
-    const ini = c.fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const pqs = pmCalcPQS(c.startDate);
-    let pqsInfo = '';
-    if(pqs && !c.pqsValidated) pqsInfo = `<span style="font-size:10px;color:${pqs.daysLeft<=7?'#E24B4A':'#B45309'};">⏱ PQS: ${pqs.daysLeft}j restants</span>`;
-    else if(c.pqsValidated) pqsInfo = '<span style="font-size:10px;color:#2E7D32;">✅ PQS réussi</span>';
-    return `<div style="border:1px solid #f97316;border-radius:8px;padding:10px;margin-bottom:8px;background:${c.active?'white':'#f9f9f9'};opacity:${c.active?1:.6};">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="width:30px;height:30px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;">${ini}</div>
-        <div style="flex:1;">
-          <div style="font-size:12px;font-weight:700;">${c.fullName} ${c.isAdmin?'<span style="font-size:10px;background:#fff3e8;color:#f97316;padding:1px 6px;border-radius:99px;border:1px solid #fde8cc;">Admin</span>':''} <span style="font-size:10px;padding:1px 6px;border-radius:99px;background:${c.active?'#E8F5E9':'#f3f4f6'};color:${c.active?'#2E7D32':'#6b7280'};">${c.active?'Actif':'Inactif'}</span></div>
-          <div style="font-size:10px;color:#9ca3af;">ID: <strong>${c.id}</strong> · Depuis ${c.startDate||'—'} · ${c.aspInit||0} ASP init ${pqsInfo?'·':''} ${pqsInfo}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="pmAdminOpenEdit(${i})" style="font-size:11px;padding:4px 10px;background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif;">✏️ Modifier</button>
-        <button onclick="pmAdminToggle(${i})" style="font-size:11px;padding:4px 10px;background:white;color:#E24B4A;border:1px solid #E24B4A;border-radius:6px;cursor:pointer;font-family:Arial,sans-serif;">${c.active?'Désactiver':'Réactiver'}</button>
-        <button onclick="pmAdminRemove(${i})" style="font-size:11px;padding:4px 8px;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;">🗑</button>
-      </div>
-    </div>`;
-  }).join('') || '<div style="font-size:12px;color:#9ca3af;padding:8px 0;">Aucun consultant</div>';
-}
-
-function pmAdminOpenEdit(i){
-  const c = pmAdminData.consultants[i];
-  document.getElementById('edit-idx').value = i;
-  document.getElementById('edit-id').value = c.id;
-  document.getElementById('edit-name').value = c.name;
-  document.getElementById('edit-fullname').value = c.fullName;
-  document.getElementById('edit-asp').value = c.aspInit||0;
-  document.getElementById('edit-upline').value = c.upline||'';
-  document.getElementById('edit-upline-tel').value = c.uplineTel||'';
-  document.getElementById('edit-upline-email').value = c.uplineEmail||'';
-  document.getElementById('edit-pqs').checked = !!c.pqsValidated;
-  document.getElementById('edit-fastsc').checked = !!c.fastSCValidated;
-  document.getElementById('edit-fastec').checked = !!c.fastECValidated;
-  if(c.startDate&&c.startDate!=='—'){
-    const p=c.startDate.split('/');
-    if(p.length===3) document.getElementById('edit-start').value=`${p[2]}-${p[1]}-${p[0]}`;
-  } else { document.getElementById('edit-start').value=''; }
-  document.getElementById('pm-edit-modal').style.display='flex';
-}
-
-function pmAdminSaveEdit(){
-  const i=parseInt(document.getElementById('edit-idx').value);
-  const c=pmAdminData.consultants[i];
-  const startRaw=document.getElementById('edit-start').value;
-  let startDate=c.startDate;
-  if(startRaw){const d=new Date(startRaw);startDate=d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});}
-  pmAdminData.consultants[i]={...c,
-    id:document.getElementById('edit-id').value.trim().toLowerCase(),
-    name:document.getElementById('edit-name').value.trim(),
-    fullName:document.getElementById('edit-fullname').value.trim(),
-    aspInit:parseInt(document.getElementById('edit-asp').value)||0,
-    startDate,
-    upline:document.getElementById('edit-upline').value.trim()||null,
-    uplineTel:document.getElementById('edit-upline-tel').value.trim()||null,
-    uplineEmail:document.getElementById('edit-upline-email').value.trim()||null,
-    pqsValidated:document.getElementById('edit-pqs').checked,
-    fastSCValidated:document.getElementById('edit-fastsc').checked,
-    fastECValidated:document.getElementById('edit-fastec').checked,
-  };
-  // Sync PM_AGENT_PROFILES et PM_USERS
-  const updated=pmAdminData.consultants[i];
-  PM_AGENT_PROFILES[updated.fullName]={initials:updated.fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),startDate:updated.startDate,aspInit:updated.aspInit,upline:updated.upline,uplineTel:updated.uplineTel,uplineEmail:updated.uplineEmail,pqsValidated:updated.pqsValidated,fastSCValidated:updated.fastSCValidated,fastECValidated:updated.fastECValidated};
-  document.getElementById('pm-edit-modal').style.display='none';
-  pmAdminRenderList();pmAdminRenderJSON();
-  pmRenderDashboard();
-  pmAdminShowAlert('✅ Modifié ! Pensez à mettre à jour GitHub.','#E8F5E9','#2E7D32');
-}
-
-function pmAdminToggle(i){pmAdminData.consultants[i].active=!pmAdminData.consultants[i].active;pmAdminRenderList();pmAdminRenderJSON();}
-function pmAdminRemove(i){if(!confirm(`Supprimer ${pmAdminData.consultants[i].fullName} ?`))return;pmAdminData.consultants.splice(i,1);pmAdminRenderList();pmAdminRenderJSON();}
-
-function pmAdminAdd(){
-  const id=document.getElementById('adm-id').value.trim().toLowerCase();
-  const name=document.getElementById('adm-name').value.trim();
-  const fullName=document.getElementById('adm-fullname').value.trim();
-  if(!id||!name||!fullName){pmAdminShowAlert('Remplissez les champs obligatoires *','#fff0f0','#E24B4A');return;}
-  if(pmAdminData.consultants.find(c=>c.id===id)){pmAdminShowAlert('Identifiant déjà utilisé !','#fff0f0','#E24B4A');return;}
-  const startRaw=document.getElementById('adm-start').value;
-  let startDate='—';
-  if(startRaw){const d=new Date(startRaw);startDate=d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'});}
-  const aspInit=parseInt(document.getElementById('adm-asp').value)||0;
-  const upline=document.getElementById('adm-upline').value.trim();
-  const uplineTel=document.getElementById('adm-upline-tel').value.trim();
-  const uplineEmail=document.getElementById('adm-upline-email').value.trim();
-  pmAdminData.consultants.push({id,name,fullName,aspInit,startDate,upline:upline||null,uplineTel:uplineTel||null,uplineEmail:uplineEmail||null,isAdmin:false,active:true,pqsValidated:false,fastSCValidated:false,fastECValidated:false});
-  PM_USERS[id]={name,fullName,agent:fullName,isAdmin:false};
-  PM_AGENT_PROFILES[fullName]={initials:fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2),startDate,aspInit,upline:upline||null,uplineTel:uplineTel||null,uplineEmail:uplineEmail||null};
-  ['adm-id','adm-name','adm-fullname','adm-upline','adm-upline-tel','adm-upline-email','adm-start'].forEach(f=>document.getElementById(f).value='');
-  document.getElementById('adm-asp').value='0';
-  pmAdminRenderList();pmAdminRenderJSON();
-  pmAdminShowAlert(`✅ ${fullName} ajouté ! Pensez à mettre à jour GitHub.`,'#E8F5E9','#2E7D32');
-}
-
-function pmAdminRenderJSON(){if(!pmAdminData)return;document.getElementById('pm-admin-json').textContent=JSON.stringify(pmAdminData,null,2);}
-function pmAdminCopyJSON(){navigator.clipboard.writeText(JSON.stringify(pmAdminData,null,2)).then(()=>pmAdminShowAlert('✅ JSON copié !','#E8F5E9','#2E7D32'));}
-function pmAdminDownloadJSON(){const b=new Blob([JSON.stringify(pmAdminData,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='consultants.json';a.click();}
-function pmAdminShowAlert(msg,bg,color){const el=document.getElementById('pm-admin-alert');el.textContent=msg;el.style.background=bg;el.style.color=color;el.style.border=`1px solid ${color}`;el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
-
-// Fermer modals en cliquant dehors
-document.addEventListener('click',function(e){
-  const editModal=document.getElementById('pm-edit-modal');
-  if(e.target===editModal) editModal.style.display='none';
-});
+function copyText(id, btn) {
   const text = document.getElementById(id).textContent.trim();
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = '✅ Copié !';
