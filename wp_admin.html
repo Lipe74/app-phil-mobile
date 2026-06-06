@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Phil-Mobile — Admin</title>
-<link rel="icon" type="image/png" href="https://app.phil-mobile.be/logo.png">
+<link rel="icon" type="image/png" href="images/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -235,6 +235,15 @@ const ADMIN_PWD = '1F23f1e329@';
 let consultantsData = null;
 let currentFilter = 'all';
 
+// Données initiales (fallback si pm_consultants.json pas encore sur le serveur)
+const INITIAL_DATA = {
+  "admins": [{"id":"delta835","name":"Philippe","fullName":"Philippe Tomaszewsky","isAdmin":true}],
+  "consultants": [
+    {"id":"delta835","name":"Philippe","fullName":"Philippe Tomaszewsky","startDate":"29/11/2025","aspInit":82,"isAdmin":true,"active":true,"upline":null,"uplineTel":null,"uplineEmail":null,"calendlyUrl":"https://calendly.com/infos-phil-mobile/30min","pqsValidated":true,"fastSCValidated":true,"fastECValidated":false},
+    {"id":"lotus193","name":"Julien","fullName":"Julien Couvreur","startDate":"24/04/2026","aspInit":16,"isAdmin":false,"active":true,"upline":"Philippe Tomaszewsky","uplineTel":"+32 475 24 02 05","uplineEmail":"infos@phil-mobile.be","calendlyUrl":"https://calendly.com/infos-phil-mobile/30min","pqsValidated":false,"fastSCValidated":false,"fastECValidated":false}
+  ]
+};
+
 // ===== AUTH =====
 function checkAdmin(){
   const val = document.getElementById('admin-pwd').value;
@@ -256,7 +265,8 @@ async function loadData(){
     const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
     consultantsData = data;
   } catch(e){
-    consultantsData = {admins:[],consultants:[]};
+    // Fallback : utiliser les données initiales intégrées
+    consultantsData = JSON.parse(JSON.stringify(INITIAL_DATA));
   }
   renderList(); renderJSON();
 }
