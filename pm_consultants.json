@@ -1,0 +1,44 @@
+{
+  "admins": [
+    {
+      "id": "delta835",
+      "name": "Philippe",
+      "fullName": "Philippe Tomaszewsky",
+      "isAdmin": true
+    }
+  ],
+  "consultants": [
+    {
+      "id": "delta835",
+      "name": "Philippe",
+      "fullName": "Philippe Tomaszewsky",
+      "startDate": "29/11/2025",
+      "aspInit": 82,
+      "isAdmin": true,
+      "active": true,
+      "upline": null,
+      "uplineTel": null,
+      "uplineEmail": null,
+      "calendlyUrl": "https://calendly.com/infos-phil-mobile/30min",
+      "pqsValidated": true,
+      "fastSCValidated": true,
+      "fastECValidated": false
+    },
+    {
+      "id": "lotus193",
+      "name": "Julien",
+      "fullName": "Julien Couvreur",
+      "startDate": "24/04/2026",
+      "aspInit": 16,
+      "isAdmin": false,
+      "active": true,
+      "upline": "Philippe Tomaszewsky",
+      "uplineTel": "+32 475 24 02 05",
+      "uplineEmail": "infos@phil-mobile.be",
+      "calendlyUrl": "https://calendly.com/infos-phil-mobile/30min",
+      "pqsValidated": false,
+      "fastSCValidated": false,
+      "fastECValidated": false
+    }
+  ]
+}
