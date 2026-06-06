@@ -34,74 +34,16 @@
   <div id="pm-welcome" style="display:none;font-size:12px;font-weight:700;color:#f97316;background:#fff3e8;padding:5px 12px;border-radius:99px;border:1px solid #f97316;"></div>
 </div>
 
-<!-- ONGLETS -->
+<!-- TABLEAU DE BORD -->
 <div style="padding:12px 16px 0;">
 
   <div style="display:flex;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;overflow:hidden;">
-    <button id="tab-btn-contact" onclick="switchTab('contact')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:rgba(221,153,51,0.1);border:none;border-bottom:3px solid #f97316;font-family:Arial,sans-serif;">📩 Contacter Phil-Mobile</button>
-    <button id="tab-btn-outils" onclick="switchTab('outils')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">🧰 Outils</button>
-    <button id="tab-btn-smartsn" onclick="switchTab('smartsn')" style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;color:#f97316;background:transparent;border:none;border-bottom:3px solid transparent;font-family:Arial,sans-serif;">🏢 Contacter Smart SN</button>
+    <div style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;color:#f97316;background:rgba(221,153,51,0.1);border-bottom:3px solid #f97316;font-family:Arial,sans-serif;">🧰 Tableau de bord</div>
   </div>
 
-  <!-- CARTE CONTACT PHIL-MOBILE -->
-  <div id="contact-form" style="border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:24px 16px;text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 14px;">
-      <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
-    </div>
-    <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">Philippe</div>
-    <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Phil-Mobile · Votre upline</div>
-    <a href="https://wa.me/32475240205" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#25d366;color:#ffffff;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-      WhatsApp · +32 475 24 02 05
-    </a>
-    <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f97316;color:#f8f8f8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
-      📧 infos@phil-mobile.be
-    </a>
 
-    <!-- AGENDA ÉVÉNEMENTS -->
-    <div style="text-align:left;margin-top:24px;margin-bottom:20px;">
-      <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📅 Agenda des événements</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🏢 Team Meeting Herstal (19:30–21:30)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 08/06/2026</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 22/06/2026</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 06/07/2026</div>
-      <div style="font-size:11px;color:#f97316;font-style:italic;margin-top:4px;margin-bottom:10px;">⚠️ Inscription via My Smart → Events</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Bruxelles (18:00–21:00)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 17/06/2026</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Samedi (09:30–12:30)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/06/2026</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🟠 Orange MasterClass — Bruxelles (19:00–22:00)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 23/06/2026</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⚡ How to sell Eneco? — Herstal (19:00–21:00)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 29/06/2026</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🥂 Summer Drink (20:00–22:00)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 02/07/2026</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🦁 Family Day — Pairi Daiza (10:00–18:00)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/09/2026</div>
-
-      <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⭐ Smart Day (13:00–18:00)</div>
-      <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 14/11/2026</div>
-    </div>
-
-    <!-- CALENDLY -->
-    <div style="text-align:left;">
-      <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📆 Réserver un accompagnement</div>
-      <div style="border-radius:12px;overflow:hidden;border:1px solid #f97316;">
-        <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:600px;border:none;" frameborder="0"></iframe>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ONGLET OUTILS : layout 2 colonnes -->
-  <div id="outils-form" style="display:none;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
+  <!-- LAYOUT OUTILS (always visible) -->
+  <div id="outils-form" style="display:block;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
 
     <!-- VERROU -->
     <div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
@@ -125,6 +67,11 @@
           <button onclick="showSuivi(this)" class="menu-item" id="menu-suivi">📊 Suivi des contrats</button>
           <button onclick="loadFrame('https://app.phil-mobile.be/wp_orange.html',this)" class="menu-item">🟠 Simulateur Orange</button>
           <button onclick="loadFrame('https://app.phil-mobile.be/wp_eneco.html',this)" class="menu-item">⚡ Simulateur Eneco</button>
+
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Contacts</div>
+          <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Phil-Mobile</button>
+          <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
+          <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🌐 Websites</div>
           <a href="https://smartservicesnetwork.my.site.com/" target="_blank" class="menu-item" style="text-decoration:none;width:auto;display:inline-block;">🏢 My Smart ↗</a>
@@ -158,6 +105,87 @@
 
         <!-- COLONNE DROITE : contenu -->
         <div style="flex:1;min-width:280px;">
+
+          <!-- Panel Contacts Phil-Mobile -->
+          <div id="panel-contacts-pm" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:80vh;">
+            <div style="text-align:center;margin-bottom:20px;">
+              <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 12px;">
+                <img src="https://app.phil-mobile.be/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
+              </div>
+              <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Philippe Tomaszewsky</div>
+              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Phil-Mobile · Votre upline</div>
+            </div>
+            <a href="https://wa.me/32475240205" style="display:flex;align-items:center;gap:10px;background:#25d366;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              WhatsApp · +32 475 24 02 05
+            </a>
+            <a href="tel:+32475240205" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
+              📞 +32 475 24 02 05
+            </a>
+            <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              📧 infos@phil-mobile.be
+            </a>
+            <a href="mailto:philippe.tomaszewsky@gmail.com" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+              📧 philippe.tomaszewsky@gmail.com
+            </a>
+          </div>
+
+          <!-- Panel Contacts Smart SN -->
+          <div id="panel-contacts-smart" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:80vh;">
+            <div style="text-align:center;margin-bottom:20px;">
+              <div style="width:64px;height:64px;border-radius:50%;background:rgba(249,115,22,0.1);border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;">🏢</div>
+              <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Smart SN</div>
+              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Support consultant</div>
+            </div>
+            <a href="tel:+3200077170" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
+              📞 +32 200 77 17
+            </a>
+            <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              📧 support@smartsn.be
+            </a>
+            <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+              📧 rem@smartsn.be
+            </a>
+          </div>
+
+          <!-- Panel Agenda -->
+          <div id="panel-agenda" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:80vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:16px;">📅 Agenda des événements</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🏢 Team Meeting Herstal (19:30–21:30)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 08/06/2026</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 22/06/2026</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 06/07/2026</div>
+            <div style="font-size:11px;color:#f97316;font-style:italic;margin-top:4px;margin-bottom:10px;">⚠️ Inscription via My Smart → Events</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Bruxelles (18:00–21:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 17/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Samedi (09:30–12:30)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🟠 Orange MasterClass — Bruxelles (19:00–22:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 23/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⚡ How to sell Eneco? — Herstal (19:00–21:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 29/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🥂 Summer Drink (20:00–22:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 02/07/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🦁 Family Day — Pairi Daiza (10:00–18:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/09/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⭐ Smart Day (13:00–18:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 14/11/2026</div>
+
+            <div style="margin-top:20px;border-top:1px solid #f3f4f6;padding-top:16px;">
+              <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📆 Réserver un accompagnement</div>
+              <div style="border-radius:12px;overflow:hidden;border:1px solid #f97316;">
+                <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:500px;border:none;" frameborder="0"></iframe>
+              </div>
+            </div>
+          </div>
 
           <!-- Page d'accueil (visible par défaut) -->
           <div id="welcome-panel" style="border:1px solid #f97316;border-radius:12px;background:#fff;padding:28px 24px;height:80vh;min-height:500px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
@@ -711,21 +739,6 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
     </div>
 
   </div>
-  <!-- CARTE CONTACT SMART SN -->
-  <div id="smartsn-form" style="display:none;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:24px 16px;text-align:center;">
-    <div style="width:64px;height:64px;border-radius:50%;background:rgba(221,153,51,0.15);border:2px solid rgba(221,153,51,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;">🏢</div>
-    <div style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">Smart SN</div>
-    <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Support consultant</div>
-    <a href="tel:+3200077170" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;border:1px solid #f97316;margin-bottom:10px;">
-      📞 +32 200 77 17
-    </a>
-    <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f97316;color:#f8f8f8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;margin-bottom:10px;">
-      📧 support@smartsn.be
-    </a>
-    <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#f97316;color:#f8f8f8;padding:13px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none;">
-      📧 rem@smartsn.be
-    </a>
-  </div>
 
 </div>
 
@@ -735,12 +748,23 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
 </div>
 
 <script>
-// Identifiants Smart SN
-const PM_USERS = {
-  'delta835':  { name: 'Philippe', fullName: 'Philippe Tomaszewsky', agent: 'Philippe Tomaszewsky', isAdmin: true },
-  'lotus193':  { name: 'Julien',   fullName: 'Julien Couvreur',      agent: 'Julien Couvreur',      isAdmin: false }
-};
+// Identifiants chargés depuis pm_consultants.json
+let PM_USERS = {};
 const SESSION_DAYS = 7;
+
+async function loadPMUsers() {
+  try {
+    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+      PM_USERS[c.id] = { name: c.name, fullName: c.fullName, agent: c.fullName, isAdmin: !!c.isAdmin };
+    });
+  } catch(e) {
+    // fallback: allow admin access
+    PM_USERS = {
+      'delta835': { name: 'Philippe', fullName: 'Philippe Tomaszewsky', agent: 'Philippe Tomaszewsky', isAdmin: true }
+    };
+  }
+}
 
 let pmCurrentUser = null;
 
@@ -793,27 +817,43 @@ function showScript(id) {
   document.getElementById(id).style.display = 'block';
 }
 
-function switchTab(tab) {
-  ['contact','outils','smartsn'].forEach(t => {
-    const btn = document.getElementById('tab-btn-' + t);
-    if (!btn) return;
-    if (t === tab) {
-      btn.style.background = 'rgba(221,153,51,0.1)';
-      btn.style.borderBottom = '3px solid #f97316';
-    } else {
-      btn.style.background = 'transparent';
-      btn.style.borderBottom = '3px solid transparent';
-    }
-  });
-  document.getElementById('contact-form').style.display = 'none';
-  document.getElementById('outils-form').style.display = 'none';
-  document.getElementById('smartsn-form').style.display = 'none';
-  if (tab === 'contact') document.getElementById('contact-form').style.display = 'block';
-  else if (tab === 'outils') document.getElementById('outils-form').style.display = 'block';
-  else if (tab === 'smartsn') document.getElementById('smartsn-form').style.display = 'block';
+function showContacts(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-contacts-pm').style.display = 'block';
 }
 
-function checkCode() {
+function showContactsSmart(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-contacts-smart').style.display = 'block';
+}
+
+function showAgenda(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-agenda').style.display = 'block';
+}
+
+function switchTab(tab) {
+  // kept for compatibility but no-op now (single tab)
+}
+
+
+async function checkCode() {
+  if (Object.keys(PM_USERS).length === 0) await loadPMUsers();
   const val = document.getElementById('rem-code').value.trim().toLowerCase();
   const user = PM_USERS[val];
   if (user) {
@@ -834,13 +874,25 @@ function doUnlock(user) {
   // Pré-sélectionner l'agent dans le suivi
   const agentSel = document.getElementById('pm-add-agent');
   if (agentSel) agentSel.value = user.agent;
-  // Si Julien : masquer les cartes agents autres que lui dans la progression
+  // Rafraîchir les profils agents depuis pm_consultants.json
+  refreshAgentProfiles().then(() => {
+    // Peupler le select agent avec les agents actifs
+    if (agentSel) {
+      agentSel.innerHTML = '';
+      Object.keys(PM_AGENT_PROFILES).forEach(name => {
+        const o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        agentSel.appendChild(o);
+      });
+      agentSel.value = user.agent;
+    }
+  });
+  // Si non-admin : masquer les cartes agents autres que lui dans la progression
   pmNiveauAgent = user.agent;
 }
 
-switchTab('contact');
-
-window.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('DOMContentLoaded', async function() {
+  await loadPMUsers();
   const saved = getCookie('pm_user');
   if (saved && PM_USERS[saved]) {
     doUnlock(PM_USERS[saved]);
@@ -869,10 +921,23 @@ function showSuivi(btn) {
 
 // ===== SUIVI CONTRATS v6 =====
 const PM_MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const PM_AGENT_PROFILES = {
+let PM_AGENT_PROFILES = {
   'Philippe Tomaszewsky': { initials:'PT', startDate:'29/11/2025', aspInit:82 },
   'Julien Couvreur':      { initials:'JC', startDate:'24/04/2026', aspInit:16 }
 };
+// Sera mis à jour après le chargement de pm_consultants.json
+async function refreshAgentProfiles() {
+  try {
+    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+    const newProfiles = {};
+    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+      const parts = c.fullName.trim().split(' ');
+      const initials = parts.map(p=>p[0]).join('').toUpperCase().slice(0,2);
+      newProfiles[c.fullName] = { initials, startDate: c.startDate||'—', aspInit: c.aspInit||0 };
+    });
+    if(Object.keys(newProfiles).length > 0) PM_AGENT_PROFILES = newProfiles;
+  } catch(e) {}
+}
 const PM_NIVEAUX = [
   {code:'BC',label:'BC',pts:0},{code:'SC',label:'SC',pts:70},{code:'EC',label:'EC',pts:200},
   {code:'PC',label:'PC',pts:600},{code:'MC',label:'MC',pts:2500},{code:'NMC',label:'NMC',pts:10000},{code:'PMC',label:'PMC',pts:25000}
