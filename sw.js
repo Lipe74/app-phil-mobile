@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phil-mobile-v7';
+const CACHE_NAME = 'phil-mobile-v8';
 const ASSETS = [
   '/',
   '/wp_home.html',
@@ -16,7 +16,6 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
-// Installation — mise en cache des assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -27,7 +26,6 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activation — suppression des anciens caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -36,7 +34,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch — Cache First pour assets statiques, Network First pour le reste
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
@@ -69,7 +66,6 @@ self.addEventListener('fetch', event => {
   }
 });
 
-// Message : forcer la mise à jour du cache
 self.addEventListener('message', event => {
   if (event.data === 'skipWaiting') self.skipWaiting();
 });
