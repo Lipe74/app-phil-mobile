@@ -1469,12 +1469,25 @@ function loadSimPanel(url) {
     const iframe = document.getElementById('sim-fullscreen-iframe');
     iframe.src = url;
     overlay.style.display = 'flex';
+    // Scale iframe to fit screen width
+    setTimeout(() => scaleSimIframe(), 800);
     return;
   }
   const panel = document.getElementById('sim-bottom-panel');
   const iframe = document.getElementById('sim-bottom-iframe');
   iframe.src = url;
   panel.style.display = 'flex';
+}
+function scaleSimIframe() {
+  const iframe = document.getElementById('sim-fullscreen-iframe');
+  const container = iframe.parentElement;
+  const desktopWidth = 900; // largeur supposée des simulateurs
+  const screenW = container.offsetWidth;
+  const screenH = container.offsetHeight;
+  const scale = screenW / desktopWidth;
+  iframe.style.width = desktopWidth + 'px';
+  iframe.style.height = Math.round(screenH / scale) + 'px';
+  iframe.style.transform = 'scale(' + scale + ')';
 }
 function closeSimFullscreen() {
   document.getElementById('sim-fullscreen').style.display = 'none';
@@ -1517,7 +1530,9 @@ function copyText(id, btn) {
     <span style="font-size:13px;font-weight:700;color:#f97316;font-family:Arial,sans-serif;">&#129518; Simulateur</span>
     <button onclick="closeSimFullscreen()" style="background:#f97316;border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#10005; Fermer</button>
   </div>
-  <iframe id="sim-fullscreen-iframe" src="" style="flex:1;width:100%;border:none;" allowfullscreen></iframe>
+  <div style="flex:1;overflow:hidden;position:relative;">
+    <iframe id="sim-fullscreen-iframe" src="" style="position:absolute;top:0;left:0;border:none;transform-origin:top left;" allowfullscreen></iframe>
+  </div>
 </div>
 </body>
 </html>
