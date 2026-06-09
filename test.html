@@ -1481,13 +1481,24 @@ function loadSimPanel(url) {
 function scaleSimIframe() {
   const iframe = document.getElementById('sim-fullscreen-iframe');
   const container = iframe.parentElement;
-  const desktopWidth = 900; // largeur supposée des simulateurs
+  const desktopWidth = 900;
   const screenW = container.offsetWidth;
   const screenH = container.offsetHeight;
   const scale = screenW / desktopWidth;
+  iframe._simScale = scale;
   iframe.style.width = desktopWidth + 'px';
   iframe.style.height = Math.round(screenH / scale) + 'px';
   iframe.style.transform = 'scale(' + scale + ')';
+}
+function zoomSim(delta) {
+  const iframe = document.getElementById('sim-fullscreen-iframe');
+  const container = iframe.parentElement;
+  const current = iframe._simScale || parseFloat(iframe.style.transform.replace('scale(','')) || 1;
+  const newScale = Math.min(2, Math.max(0.3, current + delta));
+  iframe._simScale = newScale;
+  iframe.style.width = '900px';
+  iframe.style.height = Math.round(container.offsetHeight / newScale) + 'px';
+  iframe.style.transform = 'scale(' + newScale + ')';
 }
 function closeSimFullscreen() {
   document.getElementById('sim-fullscreen').style.display = 'none';
@@ -1528,7 +1539,11 @@ function copyText(id, btn) {
 <div id="sim-fullscreen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:1000;flex-direction:column;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#fff3e8;border-bottom:2px solid #f97316;flex-shrink:0;">
     <span style="font-size:13px;font-weight:700;color:#f97316;font-family:Arial,sans-serif;">&#129518; Simulateur</span>
-    <button onclick="closeSimFullscreen()" style="background:#f97316;border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#10005; Fermer</button>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="zoomSim(-0.1)" style="background:#fff;border:1px solid #f97316;border-radius:8px;padding:6px 12px;color:#f97316;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;line-height:1;">&#8722;</button>
+      <button onclick="zoomSim(0.1)" style="background:#fff;border:1px solid #f97316;border-radius:8px;padding:6px 12px;color:#f97316;font-size:15px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;line-height:1;">&#43;</button>
+      <button onclick="closeSimFullscreen()" style="background:#f97316;border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#10005; Fermer</button>
+    </div>
   </div>
   <div style="flex:1;overflow:hidden;position:relative;">
     <iframe id="sim-fullscreen-iframe" src="" style="position:absolute;top:0;left:0;border:none;transform-origin:top left;" allowfullscreen></iframe>
