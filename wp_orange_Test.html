@@ -49,7 +49,7 @@
   <div class="header">
     <img class="header-logo" id="logo-img" src="" alt="Phil-Mobile logo" />
     <div class="header-text" style="flex:1;">
-      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.1 STABLE</span></div>
+      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.2 Beta 1</span></div>
       <div class="header-sub">Le simulateur pour vos clients.</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
@@ -129,7 +129,23 @@
     </div>
   </div>
 
-  <div class="summary">
+  
+<div class="section">
+  <div class="section-title">👤 Informations client</div>
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">Nom du client</label>
+    <input id="client-name" type="text" placeholder="Ex : Jean Dupont"
+    style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+  <div>
+    <label style="display:block;font-weight:600;margin-bottom:4px;">Téléphone</label>
+    <input id="client-phone" type="text" placeholder="Ex : 0499 12 34 56"
+    style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+</div>
+
+<div class="summary">
+
     <div class="sum-row" style="margin-bottom:10px;">
       <span class="sum-total-label" style="font-size:18px;">Prix affichés</span>
       <span id="tva-badge" style="background:rgba(255,255,255,0.25);color:white;font-weight:700;font-size:14px;padding:5px 16px;border-radius:20px;">TVAC (21%)</span>
@@ -171,7 +187,7 @@
     
   </div>
 
-  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
 
 <script>
@@ -206,10 +222,16 @@ const TVA = 1.21;
 
 
 function shareWhatsApp(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+
   const msg =
 `================================
 SIMULATION ORANGE PHIL-MOBILE
 ================================
+
+Client : ${client}
+Téléphone : ${phone}
 
 ✓ Aujourd'hui : ${document.getElementById('s-now').textContent}
 ✓ Après 6 mois : ${document.getElementById('s-6months').textContent}
@@ -222,6 +244,32 @@ Phil-Mobile
 infos@phil-mobile.be`;
 
   window.open('https://wa.me/?text=' + encodeURIComponent(msg),'_blank');
+}
+
+function copyResume(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+
+  const txt =
+`================================
+SIMULATION ORANGE PHIL-MOBILE
+================================
+
+Client : ${client}
+Téléphone : ${phone}
+
+✓ Aujourd'hui : ${document.getElementById('s-now').textContent}
+✓ Après 6 mois : ${document.getElementById('s-6months').textContent}
+✓ Après 12 mois : ${document.getElementById('s-12months').textContent}
+
+★ Tarif à vie : ${document.getElementById('s-total').textContent}
+
+Phil-Mobile
+0475 24 02 05
+infos@phil-mobile.be`;
+
+  navigator.clipboard.writeText(txt);
+  alert('Résumé copié dans le presse-papiers');
 }
 
 
