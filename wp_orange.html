@@ -84,7 +84,20 @@
   </div>
   <div class="section">
     <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> Options</div>
-    <div id="options-rows"></div>
+
+    <div style="margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
+      📌 FRAIS UNIQUES
+    </div>
+    
+<div style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;">
+ℹ️ Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.
+</div>
+<div id="options-unique-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
+      📅 OPTIONS MENSUELLES
+    </div>
+    <div id="options-monthly-rows"></div>
   </div>
 
   <div class="section">
@@ -97,7 +110,7 @@
   <div class="section">
     <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS PERMANENTES</div>
     <div style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;">
-      ✅ Promotions permanentes ou remises uniques.
+      ✅ Promotions permanentes et réductions uniques.
     </div>
     <div id="promos-permanent-rows"></div>
   </div>
@@ -124,9 +137,9 @@
     <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
     <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
     <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet, TV & Acc.</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
-    <div class="sum-row"><span class="sum-label">Options</span><span class="sum-val" id="s-options">+ 0,00 €</span></div>
+    <div class="sum-row"><span class="sum-label">Options mensuelles</span><span class="sum-val" id="s-options">+ 0,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
     <div class="sum-row"><span class="sum-label">Remises Love (à vie)</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
-    <div class="sum-row"><span class="sum-label">Promotions actives</span><span class="sum-val" id="s-promos"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
+    <div class="sum-row"><span class="sum-label">Promotions mensuelles</span><span class="sum-val" id="s-promos"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div><div class="sum-row"><span class="sum-label">🎁 Promotions uniques</span><span class="sum-val" id="s-promos-unique">- 0,00 €</span></div>
     <hr class="sum-divider">
     <div class="sum-row">
       <span class="sum-total-label">Total mensuel</span>
@@ -178,11 +191,12 @@ function setTVAC(tvac) {
   document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
   document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
   document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
-  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-rows','promos-rows','promos-permanent-rows'].forEach(id => {
+  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-unique-rows','options-monthly-rows','promos-rows','promos-permanent-rows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
   Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
-  buildQtyRows('options-rows', options);
+  buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
+buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_sans_mob','opt_surf'].includes(o.id)));
   buildToggleRows('promos-permanent-rows', promosPermanent);
   buildToggleRows('promos-rows', promos);
   // Restaurer les quantités
@@ -234,20 +248,20 @@ const options = [
 ];
 
 const promosPermanent = [
-  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'- 10€ · Valable à vie', price:10, perAbo:false },
-  { id:'pr_install',   name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Installation Internet offerte</span>', sub:'- 39€ · Remise unique', price:39, perAbo:false },
-
+  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'-10€/mois · À vie', price:10, perAbo:false },
+  { id:'pr_activation', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">🎁 Frais d’activation offerts</span>', sub:'-39€ · Remise unique', price:39, perAbo:false },
+  { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'-5,99€/mois · À vie', price:5.99, perAbo:false },
 ];
 
 const promos = [
-  { id:'pr_wallonie',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet Start & Zen</span>', sub:'- 15€ par internet · Valable 6 mois, uniquement sur le ZEN', price:15, perAbo:true, mobileId:'_internet' },
-  { id:'pr_fibre',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet Fibre</span>', sub:'- 15€ · Valable 1 an', price:15, perAbo:false },
-  { id:'pr_medium',    name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Medium</span>', sub:'- 5€ · Uniquement si ajout d\'un abonnement Child (si sans Internet, si non promo de 5€)', price:5, perAbo:true, mobileId:'mob_medium', requiresChild:true },
-  { id:'pr_large',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Large</span>', sub:'- 5€ · Valable 12 mois', price:5, perAbo:true, mobileId:'mob_large' },
-  { id:'pr_netflix_zen',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'- 5,99€ · Valable 6 mois', price:5.99, perAbo:false },
-
-  { id:'pr_comfort_start_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service — Start & Zen Internet</span>', sub:'- 10€ · Durant 12 mois', price:10, perAbo:false },
-  { id:'pr_comfort_giga',      name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service — Giga Internet</span>',        sub:'- 5€ · Durant 12 mois',  price:5,  perAbo:false },
+  { id:'pr_start', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Start</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false },
+  { id:'pr_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Zen</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false },
+  { id:'pr_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Giga</span>', sub:'-15€/mois pendant 12 mois (Client LOVE uniquement)', price:15, perAbo:false },
+  { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium" },
+  { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true },
+  { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large" },
+  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false },
+  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false }
 ];
 
 const loveRates = {
@@ -313,26 +327,42 @@ function calcProducts() {
 }
 function calcOptions() {
   let t = 0;
-  options.forEach(o => { t += o.price * (qtyMap[o.id] || 0); });
-  return t;
-}
-function calcPromos() {
-  let t = 0;
-  const inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
-  const hasChild = (qtyMap['mob_child'] || 0) > 0;
-  [...promos, ...promosPermanent].forEach(p => {
-    if (!togMap[p.id]) return;
-    if (p.mobileId === '_internet') {
-      t += p.price * Math.max(1, inetCount);
-    } else if (p.requiresChild) {
-      if (hasChild) t += p.price * Math.max(1, qtyMap[p.mobileId] || 0);
-    } else if (p.perAbo && p.mobileId) {
-      t += p.price * Math.max(1, qtyMap[p.mobileId] || 0);
-    } else {
-      t += p.price;
-    }
+  ['opt_booster','opt_confort','opt_sans_mob','opt_surf'].forEach(id=>{
+    const o=options.find(x=>x.id===id);
+    if(o) t+=o.price*(qtyMap[id]||0);
   });
   return t;
+}
+
+function calcFraisUniques() {
+  return 39 + ((qtyMap['opt_raccord']||0) * 99);
+}
+function calcPromos() {
+  let mensuel = 0;
+  let unique = 0;
+  const inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
+  const hasChild = (qtyMap['mob_child'] || 0) > 0;
+
+  [...promos, ...promosPermanent].forEach(p => {
+    if (!togMap[p.id]) return;
+
+    if (p.id === 'pr_activation') {
+      unique += p.price;
+      return;
+    }
+
+    if (p.mobileId === '_internet') {
+      mensuel += p.price * Math.max(1, inetCount);
+    } else if (p.requiresChild) {
+      if (hasChild) mensuel += p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else if (p.perAbo && p.mobileId) {
+      mensuel += p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else {
+      mensuel += p.price;
+    }
+  });
+
+  return {mensuel, unique};
 }
 
 function calcMobiles() {
@@ -350,7 +380,7 @@ function calcInternet() {
 }
 
 function render() {
-  const prod = calcProducts(), opts = calcOptions(), love = calcLove(), prom = calcPromos();
+  const prod = calcProducts(), opts = calcOptions(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel; const promUnique = promosCalc.unique;
   const mob = calcMobiles(), inet = calcInternet();
   const total = Math.max(0, prod + opts - love - prom);
   const after = Math.max(0, prod + opts - love);
@@ -360,7 +390,7 @@ function render() {
   document.getElementById('s-internet').textContent = fmt(inet*r);
   document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts)*r);
   document.getElementById('s-love').textContent = '- ' + fmt(love*r);
-  document.getElementById('s-promos').textContent = '- ' + fmt(prom*r);
+  document.getElementById('s-promos').textContent = '- ' + fmt(prom*r); document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
   document.getElementById('s-total').textContent = fmt(total*r);
   document.getElementById('s-after').textContent = fmt(after*r);
   [...promos, ...promosPermanent].forEach(p => {
@@ -432,7 +462,8 @@ function buildToggleRows(containerId, items) {
 }
 
 Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
-buildQtyRows('options-rows', options);
+buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
+buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_sans_mob','opt_surf'].includes(o.id)));
 buildToggleRows('promos-permanent-rows', promosPermanent);
 buildToggleRows('promos-rows', promos);
 render();
