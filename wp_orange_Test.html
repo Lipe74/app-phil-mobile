@@ -49,7 +49,7 @@
   <div class="header">
     <img class="header-logo" id="logo-img" src="" alt="Phil-Mobile logo" />
     <div class="header-text" style="flex:1;">
-      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.1 Beta 1</span></div>
+      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.1 Beta 4 FIX</span></div>
       <div class="header-sub">Le simulateur pour vos clients.</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
@@ -137,7 +137,7 @@
     <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
     <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
     <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet, TV & Acc.</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
-    <div class="sum-row"><span class="sum-label">Options mensuelles</span><span class="sum-val" id="s-options">+ 0,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
+    <div class="sum-row"><span class="sum-label">Options mensuelles</span><span class="sum-val" id="s-options">+ 0,00 €</span></div><div class="sum-row" id="home-row" style="display:none;"><span class="sum-label">🌐 Supplément Internet Home</span><span class="sum-val" id="s-home">+ 4,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
     <div class="sum-row"><span class="sum-label">Remises Love (à vie)</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
     
 <div class="sum-row">
@@ -171,7 +171,7 @@
     
   </div>
 
-  <button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
 
 <script>
@@ -204,6 +204,25 @@ let isTVAC = true;
 
 const TVA = 1.21;
 
+
+function shareWhatsApp(){
+  const msg =
+`📱 Simulation Orange Phil-Mobile
+
+🟢 Aujourd'hui : ${document.getElementById('s-now').textContent}
+🟠 Après 6 mois : ${document.getElementById('s-6months').textContent}
+🔴 Après 12 mois : ${document.getElementById('s-12months').textContent}
+
+🏁 Tarif à vie : ${document.getElementById('s-total').textContent}
+
+Phil-Mobile
+0475 24 02 05
+infos@phil-mobile.be`;
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg),'_blank');
+}
+
+
 function setTVAC(tvac) {
   isTVAC = tvac;
   document.getElementById('btn-tvac').style.background = tvac ? 'white' : 'transparent';
@@ -214,9 +233,12 @@ function setTVAC(tvac) {
   ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-unique-rows','options-monthly-rows','promos-rows','promos-permanent-rows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
-  Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
+  
+
+
+Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
   buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
-buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_sans_mob','opt_surf'].includes(o.id)));
+buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
   buildToggleRows('promos-permanent-rows', promosPermanent);
   buildToggleRows('promos-rows', promos);
   // Restaurer les quantités
@@ -263,7 +285,7 @@ const options = [
   { id:'opt_raccord',   name:'Frais de Raccordement',        sub:'Si pas de cable dans la maison (Frais d\'installation)', price:99, oneshot:true },
   { id:'opt_booster',   name:'WiFi Booster',                 sub:'Prix / booster', price:3, max:5 },
   { id:'opt_confort',   name:'Option WiFi Confort',          sub:'3 Booster + Boitier 4G (Prix / mois)', price:10 },
-  { id:'opt_sans_mob',  name:'Internet sans mobile',         sub:'Frais mensuel',  price:4 },
+  
   { id:'opt_surf',      name:'Carte Extra Surf Mobile',      sub:'Prix par carte', price:3, max:9 },
 ];
 
@@ -347,7 +369,7 @@ function calcProducts() {
 }
 function calcOptions() {
   let t = 0;
-  ['opt_booster','opt_confort','opt_sans_mob','opt_surf'].forEach(id=>{
+  ['opt_booster','opt_confort','opt_surf'].forEach(id=>{
     const o=options.find(x=>x.id===id);
     if(o) t+=o.price*(qtyMap[id]||0);
   });
@@ -358,25 +380,27 @@ function calcFraisUniques() {
   return 39 + ((qtyMap['opt_raccord']||0) * 99);
 }
 function calcPromos() {
-  let mensuel = 0, unique = 0, promo6 = 0, promo12 = 0;
-  const inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
-  const hasChild = (qtyMap['mob_child'] || 0) > 0;
+  let mensuel=0, unique=0, promo6=0, promo12=0;
+  const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
+  const hasChild=(qtyMap['mob_child']||0)>0;
 
-  [...promos, ...promosPermanent].forEach(p => {
-    if (!togMap[p.id]) return;
+  [...promos,...promosPermanent].forEach(p=>{
+    if(!togMap[p.id]) return;
 
-    if (p.id === 'pr_activation') { unique += p.price; return; }
+    if(p.id==='pr_activation'){ unique += p.price; return; }
 
-    let montant = 0;
-    if (p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
-    else if (p.requiresChild) { if (hasChild) montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0); }
-    else if (p.perAbo && p.mobileId) montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
-    else montant = p.price;
+    let montant=0;
+    if(p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
+    else if(p.requiresChild){
+      if(hasChild) montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else if(p.perAbo && p.mobileId){
+      montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else montant = p.price;
 
     mensuel += montant;
 
-    if (p.duration === 6) promo6 += montant;
-    else if (p.duration === 12) promo12 += montant;
+    if(p.duration===6) promo6 += montant;
+    if(p.duration===12) promo12 += montant;
   });
 
   return {mensuel, unique, promo6, promo12};
@@ -401,13 +425,20 @@ function render() {
   const prom6 = promosCalc.promo6 || 0;
   const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
   const mob = calcMobiles(), inet = calcInternet();
-  const total = Math.max(0, prod + opts - love - prom);
-  const after = Math.max(0, prod + opts - love);
+  const hasInet = (qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0)+(qtyMap['inet_giga']||0) > 0;
+  const mobileCount = totalMobileAbo();
+  const homeFee = (hasInet && mobileCount===0) ? 4 : 0;
+  const total = Math.max(0, prod + opts + homeFee - love - prom);
+  const after = Math.max(0, prod + opts + homeFee - love);
   const r = isTVAC ? 1 : 1/TVA;
   document.getElementById('s-products').textContent = fmt(prod*r);
   document.getElementById('s-mobiles').textContent = fmt(mob*r);
   document.getElementById('s-internet').textContent = fmt(inet*r);
   document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts)*r);
+  const hr=document.getElementById('home-row');
+  if(hr){hr.style.display=homeFee?'flex':'none';}
+  const sh=document.getElementById('s-home');
+  if(sh){sh.textContent='+ ' + fmt(homeFee*r);}
   document.getElementById('s-love').textContent = '- ' + fmt(love*r);
   const p6=document.getElementById('s-promos6');
   const p12=document.getElementById('s-promos12');
@@ -497,7 +528,7 @@ function buildToggleRows(containerId, items) {
 
 Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
 buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
-buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_sans_mob','opt_surf'].includes(o.id)));
+buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
 buildToggleRows('promos-permanent-rows', promosPermanent);
 buildToggleRows('promos-rows', promos);
 render();
