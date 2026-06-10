@@ -8,7 +8,7 @@
 .header-title { color:#fff; font-size:30px; font-weight:bold; }
 .header-by { color:rgba(255,255,255,0.8); font-size:14px;  }
 .header-sub { color:rgba(255,255,255,0.9); font-size:15px; }
-.section { background:white; border:none; border-radius:22px; padding:26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(0,0,0,0.06); }
+.section { background:white; border:1.5px solid #ffb680; border-radius:22px; padding:26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(0,0,0,0.06); }
 .section-title { font-size:24px; font-weight:700; color:#222; margin-bottom:22px; display:flex; align-items:center; gap:8px; }
 .product-row { display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid #f0f0f0; }
 .product-row:last-child { border-bottom: none; }
@@ -56,6 +56,9 @@
       <button onclick="window.print()" style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
         🖨️ Imprimer / PDF
       </button>
+      <button onclick="resetCache()" style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+        🔧 Réparer l'application
+      </button>
       <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
         <button id="btn-tvac" onclick="setTVAC(true)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:white;color:#ff5a14;">TVAC</button>
         <button id="btn-htva" onclick="setTVAC(false)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:white;">HTVA</button>
@@ -89,19 +92,29 @@
     <div class="love-box" id="love-detail">
       <div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>
     </div>
- <div class="section">
-  <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS JUIN 2026</div>
-
-  <div style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;">
-    📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.
   </div>
 
-  <div id="promos-rows"></div>
-
-  <div style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
-    ⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS PERMANENTES</div>
+    <div style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;">
+      ✅ Promotions permanentes ou remises uniques.
+    </div>
+    <div id="promos-permanent-rows"></div>
   </div>
-</div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 PROMOTIONS TEMPORAIRES</div>
+
+    <div style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;">
+      📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.
+    </div>
+
+    <div id="promos-rows"></div>
+
+    <div style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
+      ⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.
+    </div>
+  </div>
 
   <div class="summary">
     <div class="sum-row" style="margin-bottom:10px;">
@@ -131,7 +144,31 @@
 <script>
 document.getElementById('logo-img').src = 'https://app.phil-mobile.be/images/logo.png';
 
+
+async function resetCache() {
+  if (!confirm("Vider le cache de l'application ?")) return;
+
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      await reg.unregister();
+    }
+  }
+
+  localStorage.clear();
+  sessionStorage.clear();
+
+  alert("Cache vidé. Rechargement...");
+  location.href = location.pathname + '?refresh=' + Date.now();
+}
+
 let isTVAC = true;
+
 const TVA = 1.21;
 
 function setTVAC(tvac) {
@@ -141,11 +178,12 @@ function setTVAC(tvac) {
   document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
   document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
   document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
-  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-rows','promos-rows'].forEach(id => {
+  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-rows','promos-rows','promos-permanent-rows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
   Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
   buildQtyRows('options-rows', options);
+  buildToggleRows('promos-permanent-rows', promosPermanent);
   buildToggleRows('promos-rows', promos);
   // Restaurer les quantités
   document.querySelectorAll('.qty-val').forEach(el => {
@@ -195,15 +233,19 @@ const options = [
   { id:'opt_surf',      name:'Carte Extra Surf Mobile',      sub:'Prix par carte', price:3, max:9 },
 ];
 
+const promosPermanent = [
+  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'- 10€ · Valable à vie', price:10, perAbo:false },
+  { id:'pr_install',   name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Installation Internet offerte</span>', sub:'- 39€ · Remise unique', price:39, perAbo:false },
+
+];
+
 const promos = [
   { id:'pr_wallonie',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet Start & Zen</span>', sub:'- 15€ par internet · Valable 6 mois, uniquement sur le ZEN', price:15, perAbo:true, mobileId:'_internet' },
-  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'- 10€ · Valable à vie', price:10, perAbo:false },
   { id:'pr_fibre',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Internet Fibre</span>', sub:'- 15€ · Valable 1 an', price:15, perAbo:false },
-  { id:'pr_install',   name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Installation Internet offerte</span>', sub:'- 39€ · Remise unique', price:39, perAbo:false },
   { id:'pr_medium',    name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Medium</span>', sub:'- 5€ · Uniquement si ajout d\'un abonnement Child (si sans Internet, si non promo de 5€)', price:5, perAbo:true, mobileId:'mob_medium', requiresChild:true },
   { id:'pr_large',     name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion Mobile Large</span>', sub:'- 5€ · Valable 12 mois', price:5, perAbo:true, mobileId:'mob_large' },
   { id:'pr_netflix_zen',  name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'- 5,99€ · Valable 6 mois', price:5.99, perAbo:false },
-  { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'- 5,99€ · À vie', price:5.99, perAbo:false },
+
   { id:'pr_comfort_start_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service — Start & Zen Internet</span>', sub:'- 10€ · Durant 12 mois', price:10, perAbo:false },
   { id:'pr_comfort_giga',      name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service — Giga Internet</span>',        sub:'- 5€ · Durant 12 mois',  price:5,  perAbo:false },
 ];
@@ -218,7 +260,7 @@ const loveRates = {
 const qtyMap = {};
 [...Object.values(productList).flat(), ...options].forEach(p => qtyMap[p.id] = 0);
 const togMap = {};
-promos.forEach(p => togMap[p.id] = false);
+[...promos, ...promosPermanent].forEach(p => togMap[p.id] = false);
 
 function fmt(v) { return Math.abs(v).toFixed(2).replace('.',',') + ' €'; }
 function hasInternet() { return ['inet_start','inet_zen','inet_giga'].some(id => qtyMap[id] > 0); }
@@ -278,7 +320,7 @@ function calcPromos() {
   let t = 0;
   const inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
   const hasChild = (qtyMap['mob_child'] || 0) > 0;
-  promos.forEach(p => {
+  [...promos, ...promosPermanent].forEach(p => {
     if (!togMap[p.id]) return;
     if (p.mobileId === '_internet') {
       t += p.price * Math.max(1, inetCount);
@@ -321,7 +363,7 @@ function render() {
   document.getElementById('s-promos').textContent = '- ' + fmt(prom*r);
   document.getElementById('s-total').textContent = fmt(total*r);
   document.getElementById('s-after').textContent = fmt(after*r);
-  promos.forEach(p => {
+  [...promos, ...promosPermanent].forEach(p => {
     if (!p.perAbo || !p.mobileId) return;
     const qty = qtyMap[p.mobileId] || 0;
     const el = document.querySelector('[data-id="'+p.id+'"] .toggle-name');
@@ -391,6 +433,7 @@ function buildToggleRows(containerId, items) {
 
 Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
 buildQtyRows('options-rows', options);
+buildToggleRows('promos-permanent-rows', promosPermanent);
 buildToggleRows('promos-rows', promos);
 render();
 </script>
