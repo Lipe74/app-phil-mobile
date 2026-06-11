@@ -1,4 +1,14 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simulateur Phil-Mobile</title>
+
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
@@ -49,7 +59,7 @@
   <div class="header">
     <img class="header-logo" id="logo-img" src="" alt="Phil-Mobile logo" />
     <div class="header-text" style="flex:1;">
-      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.2 Beta 1</span></div>
+      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.3 Stable</span></div>
       <div class="header-sub">Le simulateur pour vos clients.</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
@@ -187,7 +197,7 @@
     
   </div>
 
-  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
 
 <script>
@@ -271,6 +281,82 @@ infos@phil-mobile.be`;
   navigator.clipboard.writeText(txt);
   alert('Résumé copié dans le presse-papiers');
 }
+
+
+
+
+function generateClientOffer(){
+const client=document.getElementById('client-name')?.value||'Client';
+const phone=document.getElementById('client-phone')?.value||'';
+const ref='PM-'+Date.now();
+const today=new Date().toLocaleDateString('fr-BE');
+
+let produits=[];
+Object.values(productList).flat().forEach(p=>{
+ const q=qtyMap[p.id]||0;
+ if(q>0) produits.push(p.name.replace(/<[^>]*>/g,'')+' x'+q);
+});
+options.forEach(p=>{
+ const q=qtyMap[p.id]||0;
+ if(q>0) produits.push(p.name.replace(/<[^>]*>/g,'')+' x'+q);
+});
+
+let promosTxt=[];
+[...promos,...promosPermanent].forEach(p=>{
+ if(togMap[p.id]) promosTxt.push(p.name.replace(/<[^>]*>/g,''));
+});
+
+const w=window.open('','_blank');
+w.document.write(`
+<html><head><title>Offre Client Phil-Mobile</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
+.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px}
+h1{color:#ff5a14;text-align:center}
+.btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
+</style></head><body>
+<div style="text-align:center">
+<img src="https://app.phil-mobile.be/images/logo.png" width="120">
+<h1>OFFRE COMMERCIALE PHIL-MOBILE</h1>
+</div>
+
+<div class="box">
+<b>Référence :</b> ${ref}<br>
+<b>Date :</b> ${today}<br>
+<b>Client :</b> ${client}<br>
+<b>Téléphone :</b> ${phone}
+</div>
+
+<div class="box">
+<h3>📦 Produits sélectionnés</h3>
+${produits.length?produits.join('<br>'):'Aucun produit sélectionné'}
+</div>
+
+<div class="box">
+<h3>🎁 Promotions activées</h3>
+${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
+</div>
+
+<div class="box">
+<h3>💰 Tarification</h3>
+🟢 Aujourd'hui : ${document.getElementById('s-now').textContent}<br><br>
+🟠 Après 6 mois : ${document.getElementById('s-6months').textContent}<br><br>
+🔴 Après 12 mois : ${document.getElementById('s-12months').textContent}<br><br>
+<hr>
+<b>🏁 Tarif à vie : ${document.getElementById('s-total').textContent}</b>
+</div>
+
+<div class="box">
+<b>PHIL-MOBILE</b><br>
+0475 24 02 05<br>
+infos@phil-mobile.be
+</div>
+
+<button class="btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+</body></html>`);
+w.document.close();
+}
+
 
 
 function setTVAC(tvac) {
@@ -615,3 +701,5 @@ font-style:normal !important;
 }
 
 </style>
+  </body>
+</html>
