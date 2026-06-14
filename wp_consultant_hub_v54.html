@@ -1688,12 +1688,25 @@ window.firebaseLogin = async function(){
     document.getElementById('rem-error').style.display='none';
 
     // TEMPORAIRE
-doUnlock({
-  name: 'Philippe',
-  email: cred.user.email,
-  agent: 'Philippe Tomaszewsky',
-  isAdmin: true
-});
+if (cred.user.email === 'infos@phil-mobile.be') {
+
+  doUnlock({
+    name: 'Philippe',
+    email: cred.user.email,
+    agent: 'Philippe Tomaszewsky',
+    isAdmin: true
+  });
+
+} else {
+
+  doUnlock({
+    name: 'Utilisateur Test',
+    email: cred.user.email,
+    agent: 'Utilisateur Test',
+    isAdmin: false
+  });
+
+}
   }catch(err){
 
     document.getElementById('rem-error').style.display='block';
