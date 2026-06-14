@@ -864,6 +864,7 @@ async function loadPMUsers() {
     const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
     (data.consultants||[]).filter(c=>c.active).forEach(c=>{
 PM_USERS[c.id] = {
+  id: c.id,
   name: c.name,
   fullName: c.fullName,
   email: c.email,
