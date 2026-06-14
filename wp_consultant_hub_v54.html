@@ -1723,6 +1723,7 @@ if (!consultant) {
 }
 
 window.firebaseResetPassword = async function(){
+window.firebaseResetPassword = async function(){
 
   const email =
     document.getElementById('rem-email').value.trim();
@@ -1748,6 +1749,19 @@ window.firebaseResetPassword = async function(){
   }
 }
 
+document.addEventListener('keydown', function(e) {
+
+  const lock = document.getElementById('rem-lock');
+
+  if (
+    e.key === 'Enter' &&
+    lock &&
+    lock.style.display !== 'none'
+  ) {
+    firebaseLogin();
+  }
+
+});
 </script>
 </body>
 </html>
