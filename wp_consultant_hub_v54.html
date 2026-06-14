@@ -94,7 +94,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.4 Beta 5      </span>
+Build 5.4 Beta 6     </span>
     </div>
   <!-- Websites dropdown -->
     <div style="position:relative;" id="ws-dropdown-wrap">
@@ -172,7 +172,7 @@ Build 5.4 Beta 5      </span>
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.4 Beta 5
+      Build 5.4 Beta 6
     </div>
   </div>
 
@@ -194,6 +194,7 @@ Build 5.4 Beta 5      </span>
 
   <input type="password"
          id="rem-password"
+           onkeydown="if(event.key==='Enter') firebaseLogin();"
          placeholder="Votre mot de passe"
          autocomplete="current-password"
          style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
@@ -1723,8 +1724,6 @@ if (!consultant) {
 }
 
 window.firebaseResetPassword = async function(){
-window.firebaseResetPassword = async function(){
-
   const email =
     document.getElementById('rem-email').value.trim();
 
@@ -1749,19 +1748,7 @@ window.firebaseResetPassword = async function(){
   }
 }
 
-document.addEventListener('keydown', function(e) {
 
-  const lock = document.getElementById('rem-lock');
-
-  if (
-    e.key === 'Enter' &&
-    lock &&
-    lock.style.display !== 'none'
-  ) {
-    firebaseLogin();
-  }
-
-});
 </script>
 </body>
 </html>
