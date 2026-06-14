@@ -1694,8 +1694,12 @@ window.firebaseLogin = async function(){
     document.getElementById('rem-error').style.display='none';
 
     // TEMPORAIRE
-    alert('Connexion Firebase OK : ' + cred.user.email);
-
+doUnlock({
+  name: 'Philippe',
+  email: cred.user.email,
+  agent: 'Philippe Tomaszewsky',
+  isAdmin: true
+});
   }catch(err){
 
     document.getElementById('rem-error').style.display='block';
