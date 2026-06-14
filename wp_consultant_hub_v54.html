@@ -863,13 +863,25 @@ async function loadPMUsers() {
   try {
     const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
     (data.consultants||[]).filter(c=>c.active).forEach(c=>{
-      PM_USERS[c.id] = { name: c.name, fullName: c.fullName, agent: c.fullName, isAdmin: !!c.isAdmin };
+PM_USERS[c.id] = {
+  name: c.name,
+  fullName: c.fullName,
+  email: c.email,
+  agent: c.fullName,
+  isAdmin: !!c.isAdmin
+};
     });
   } catch(e) {
     // fallback: allow admin access
     PM_USERS = {
-      'delta835': { name: 'Philippe', fullName: 'Philippe Tomaszewsky', agent: 'Philippe Tomaszewsky', isAdmin: true }
-    };
+  'delta835': {
+    name: 'Philippe',
+    fullName: 'Philippe Tomaszewsky',
+    email: 'infos@phil-mobile.be',
+    agent: 'Philippe Tomaszewsky',
+    isAdmin: true
+  }
+};
   }
 }
 
@@ -1688,16 +1700,16 @@ window.firebaseLogin = async function(){
     document.getElementById('rem-error').style.display='none';
 
     // TEMPORAIRE
-if (cred.user.email === 'infos@phil-mobile.be') {
+const consultant = Object.values(PM_USERS).find(
+  u => u.email &&
+       u.email.toLowerCase() === cred.user.email.toLowerCase()
+);
 
-  doUnlock({
-    name: 'Philippe',
-    email: cred.user.email,
-    agent: 'Philippe Tomaszewsky',
-    isAdmin: true
-  });
+if (!consultant) {
+  alert('Consultant non autorisé');
+  return;
+}
 
-} else {
 
   doUnlock({
     name: 'Utilisateur Test',
