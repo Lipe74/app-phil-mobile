@@ -1,8 +1,8 @@
 {
   "name": "App Phil-Mobile",
   "short_name": "App Phil-Mobile",
-  "description": "Application de la Team Phil-Mobile - Télécom & Énergie",
-  "start_url": "/wp_home.html",
+  "description": "Application Consultants Phil-Mobile",
+"start_url": "/wp_consultant_hub.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
