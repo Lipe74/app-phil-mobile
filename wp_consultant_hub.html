@@ -123,8 +123,34 @@
       </div>
     </div>
   </div>
-  <div id="pm-welcome" style="display:none;font-size:12px;font-weight:700;color:#f97316;background:#fff3e8;padding:5px 12px;border-radius:99px;border:1px solid #f97316;"></div>
-</div>
+<div style="display:flex;align-items:center;gap:8px;">
+
+  <div id="pm-welcome"
+       style="display:none;
+              font-size:12px;
+              font-weight:700;
+              color:#f97316;
+              background:#fff3e8;
+              padding:5px 12px;
+              border-radius:99px;
+              border:1px solid #f97316;">
+  </div>
+
+  <button onclick="logout()"
+          style="display:none;
+                 background:#fff3e8;
+                 border:1px solid #f97316;
+                 color:#f97316;
+                 border-radius:99px;
+                 padding:5px 12px;
+                 font-size:12px;
+                 font-weight:700;
+                 cursor:pointer;"
+          id="pm-logout">
+    🚪 Déconnexion
+  </button>
+
+</div></div>
 
 <!-- TABLEAU DE BORD -->
 <div style="padding:12px 16px 0;">
@@ -829,7 +855,7 @@ function deleteCookie(name) {
 
 function logout() {
   deleteCookie('pm_user');
-  window.location.href = 'https://app.phil-mobile.be/wp_home.html';
+  window.location.href = 'https://app.phil-mobile.be/wp_consultant_hub.html';
 }
 
 function setWelcome(user) {
@@ -931,6 +957,8 @@ function doUnlock(user) {
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
     document.getElementById('top-header').style.display = 'flex';
+    document.getElementById('pm-logout').style.display = 'block';
+
 
   setWelcome(user);
   // Pré-sélectionner l'agent dans le suivi
