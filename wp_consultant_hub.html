@@ -68,17 +68,19 @@
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
 
 <!-- HEADER compact -->
-<div id="top-header"
-     style="display:none;justify-content:space-between;
-            align-items:center;padding:10px 16px;
-            background:#f8f8f8;
-            border-bottom:1px solid #f97316;
-            position:sticky;top:0;z-index:100;">
-  <div style="display:flex;align-items:center;gap:10px;">
-    <img src="images/logo.png" alt="Phil-Mobile" style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
-    <span style="font-weight:700;font-size:14px;color:#f97316;">Outils Phil-Mobile</span>
-    <a href="https://app.phil-mobile.be/wp_home.html" style="font-size:11px;color:#f97316;text-decoration:none;padding:5px 10px;border:1px solid #f97316;border-radius:6px;">&#127968; Accueil</a>
-    <!-- Websites dropdown -->
+<img src="images/logo.png" alt="Phil-Mobile"
+     style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
+
+<div style="display:flex;flex-direction:column;line-height:1.1;">
+  <span style="font-weight:700;font-size:14px;color:#f97316;">
+    Outils Phil-Mobile
+  </span>
+
+  <span style="font-size:10px;color:#999;font-weight:600;">
+    Build 5.32
+  </span>
+</div>
+  <!-- Websites dropdown -->
     <div style="position:relative;" id="ws-dropdown-wrap">
       <button onclick="toggleWsMenu()" style="font-size:11px;color:#f97316;background:#f8f8f8;border:1px solid #f97316;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Arial,sans-serif;font-weight:600;display:flex;align-items:center;gap:5px;">
         &#127760; Sites Internet importants <span id="ws-arrow" style="font-size:9px;transition:transform .2s;">&#9660;</span>
