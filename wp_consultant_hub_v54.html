@@ -94,7 +94,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.4 Beta 3      </span>
+Build 5.4 Beta 4      </span>
     </div>
   <!-- Websites dropdown -->
     <div style="position:relative;" id="ws-dropdown-wrap">
@@ -172,7 +172,7 @@ Build 5.4 Beta 3      </span>
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.4 Beta 3
+      Build 5.4 Beta 4
     </div>
   </div>
 
@@ -1709,18 +1709,8 @@ if (!consultant) {
   alert('Consultant non autorisé');
   return;
 }
-
-
-  doUnlock({
-    name: 'Utilisateur Test',
-    email: cred.user.email,
-    agent: 'Utilisateur Test',
-    isAdmin: false
-  });
-
-}
+ doUnlock(consultant);
   }catch(err){
-
     document.getElementById('rem-error').style.display='block';
 
   }
