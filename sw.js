@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phil-mobile-v5.3.6';
+const CACHE_NAME = 'phil-mobile-v5.4';
 
 const ASSETS = [
   '/',
