@@ -1033,8 +1033,9 @@ function renderDashboard() {
   const el = document.getElementById('pm-dashboard-info');
   if (el) el.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-      <img src="images/${pmCurrentUser.id}.png" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;" onerror="this.src='images/logo.png'">
-      <div style="flex:1;">
+<img src="images/${pmCurrentUser?.id || 'logo'}.png"
+     style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;"
+     onerror="this.src='images/logo.png'">      <div style="flex:1;">
         <div style="font-size:15px;font-weight:700;color:#1a1a1a;">Bonjour ${u.name} 👋</div>
         <div style="font-size:11px;color:#6b7280;">Consultant Phil-Mobile · Actif depuis le <strong>${p.startDate||'—'}</strong></div>
         <div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
