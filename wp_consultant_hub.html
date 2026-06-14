@@ -94,8 +94,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-        Build 5.3.5
-      </span>
+Build 5.4 Stable     </span>
     </div>
   <!-- Websites dropdown -->
     <div style="position:relative;" id="ws-dropdown-wrap">
@@ -164,27 +163,58 @@
   <!-- LAYOUT OUTILS (always visible) -->
   <div id="outils-form" style="display:block;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
 
-    <!-- VERROU -->
+   <!-- VERROU FIREBASE -->
 <div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
 
   <div style="margin-bottom:20px;">
     <img src="images/logo.png"
          alt="Phil-Mobile"
          style="width:140px;height:140px;object-fit:contain;">
-      <div style="font-size:12px;
-              color:#999;
-              font-weight:600;
-              margin-top:6px;">
-    Build 5.3.5
-  </div>
-  </div>      
-  <div style="font-size:28px;margin-bottom:12px;">🔐</div>
-      <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">Accès Consultants</div>
-      <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Entrez votre identifiant Smart SN pour accéder à vos outils.</div>
-      <input type="text" id="rem-code" placeholder="Votre identifiant Smart SN" autocomplete="off" autocapitalize="none" style="width:100%;max-width:240px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
-      <div id="rem-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Identifiant non reconnu. Contactez Philippe.</div>
-      <button onclick="checkCode()" style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Connexion</button>
+
+    <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
+      Build 5.4 Stable
     </div>
+  </div>
+
+  <div style="font-size:28px;margin-bottom:12px;">🔐</div>
+
+  <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">
+    Accès Consultants
+  </div>
+
+  <div style="font-size:12px;color:#f97316;margin-bottom:16px;">
+    Connectez-vous avec votre adresse e-mail.
+  </div>
+
+  <input type="email"
+         id="rem-email"
+         placeholder="Votre adresse e-mail"
+         autocomplete="email"
+         style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+
+  <input type="password"
+         id="rem-password"
+           onkeydown="if(event.key==='Enter') firebaseLogin();"
+         placeholder="Votre mot de passe"
+         autocomplete="current-password"
+         style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+
+  <div id="rem-error"
+       style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">
+    Adresse e-mail ou mot de passe incorrect.
+  </div>
+
+  <button onclick="firebaseLogin()"
+          style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+    Connexion
+  </button>
+
+  <div onclick="firebaseResetPassword()"
+       style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
+    Mot de passe oublié ?
+  </div>
+
+</div>
 
     <!-- LAYOUT 2 COLONNES (visible après le code) -->
     <div id="outils-unlocked" style="display:none;">
@@ -834,13 +864,26 @@ async function loadPMUsers() {
   try {
     const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
     (data.consultants||[]).filter(c=>c.active).forEach(c=>{
-      PM_USERS[c.id] = { name: c.name, fullName: c.fullName, agent: c.fullName, isAdmin: !!c.isAdmin };
+PM_USERS[c.id] = {
+  id: c.id,
+  name: c.name,
+  fullName: c.fullName,
+  email: c.email,
+  agent: c.fullName,
+  isAdmin: !!c.isAdmin
+};
     });
   } catch(e) {
     // fallback: allow admin access
     PM_USERS = {
-      'delta835': { name: 'Philippe', fullName: 'Philippe Tomaszewsky', agent: 'Philippe Tomaszewsky', isAdmin: true }
-    };
+  'delta835': {
+    name: 'Philippe',
+    fullName: 'Philippe Tomaszewsky',
+    email: 'infos@phil-mobile.be',
+    agent: 'Philippe Tomaszewsky',
+    isAdmin: true
+  }
+};
   }
 }
 
@@ -1001,11 +1044,6 @@ window.addEventListener('DOMContentLoaded', async function() {
   if(el) el.textContent = pmFmtDate(pmToday);
 });
 
-document.addEventListener('keydown', function(e) {
-  const lock = document.getElementById('rem-lock');
-  if (e.key === 'Enter' && lock && lock.style.display !== 'none') checkCode();
-});
-
 function renderDashboard() {
   if (!pmCurrentUser) return;
   const u = pmCurrentUser;
@@ -1070,8 +1108,13 @@ function renderDashboard() {
 <img src="images/${pmCurrentUser?.id || 'logo'}.png"
      style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;"
      onerror="this.src='images/logo.png'">      <div style="flex:1;">
-        <div style="font-size:15px;font-weight:700;color:#1a1a1a;">Bonjour ${u.name} 👋</div>
-        <div style="font-size:11px;color:#6b7280;">Consultant Phil-Mobile · Actif depuis le <strong>${p.startDate||'—'}</strong></div>
+<div style="font-size:15px;font-weight:700;color:#1a1a1a;">
+  Bonjour ${u.name} 👋
+</div>
+
+<div style="font-size:10px;color:#9ca3af;">
+  ID : ${u.id}
+</div>        <div style="font-size:11px;color:#6b7280;">Consultant Phil-Mobile · Actif depuis le <strong>${p.startDate||'—'}</strong></div>
         <div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:12px;font-weight:700;background:#fff3e8;color:#f97316;padding:3px 10px;border-radius:99px;border:1px solid #fde8cc;">Statut : ${cur.label}</span>
           ${next?`<span style="font-size:11px;color:#9ca3af;">→ <strong style="color:#6b7280;">${next.label}</strong> dans <strong style="color:#f97316;">${Math.round((next.pts-aspTotal)*10)/10} ASP</strong></span>`:''}
@@ -1618,5 +1661,94 @@ function copyText(id, btn) {
     <iframe id="sim-fullscreen-iframe" src="" style="position:absolute;top:0;left:0;border:none;transform-origin:top left;" allowfullscreen></iframe>
   </div>
 </div>
+  <script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+window.firebaseLogin = async function(){
+
+  const email =
+    document.getElementById('rem-email').value.trim();
+
+  const password =
+    document.getElementById('rem-password').value;
+
+  try{
+
+    const cred =
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    document.getElementById('rem-error').style.display='none';
+
+    // TEMPORAIRE
+const consultant = Object.values(PM_USERS).find(
+  u => u.email &&
+       u.email.toLowerCase() === cred.user.email.toLowerCase()
+);
+
+if (!consultant) {
+  alert('Consultant non autorisé');
+  return;
+}
+ doUnlock(consultant);
+  }catch(err){
+    document.getElementById('rem-error').style.display='block';
+
+  }
+}
+
+window.firebaseResetPassword = async function(){
+  const email =
+    document.getElementById('rem-email').value.trim();
+
+  if(!email){
+    alert('Entrez votre email');
+    return;
+  }
+
+  try{
+
+    await sendPasswordResetEmail(
+      auth,
+      email
+    );
+
+    alert('Email envoyé');
+
+  }catch(err){
+
+    alert(err.message);
+
+  }
+}
+
+
+</script>
 </body>
 </html>
