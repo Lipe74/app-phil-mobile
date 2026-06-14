@@ -68,7 +68,12 @@
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
 
 <!-- HEADER compact -->
-<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #f97316;position:sticky;top:0;z-index:100;">
+<div id="top-header"
+     style="display:none;justify-content:space-between;
+            align-items:center;padding:10px 16px;
+            background:#f8f8f8;
+            border-bottom:1px solid #f97316;
+            position:sticky;top:0;z-index:100;">
   <div style="display:flex;align-items:center;gap:10px;">
     <img src="images/logo.png" alt="Phil-Mobile" style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
     <span style="font-weight:700;font-size:14px;color:#f97316;">Outils Phil-Mobile</span>
@@ -115,8 +120,13 @@
   <div id="outils-form" style="display:block;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
 
     <!-- VERROU -->
-    <div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
-      <div style="font-size:28px;margin-bottom:12px;">🔐</div>
+<div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
+
+  <div style="margin-bottom:20px;">
+    <img src="images/logo.png"
+         alt="Phil-Mobile"
+         style="width:140px;height:140px;object-fit:contain;">
+  </div>      <div style="font-size:28px;margin-bottom:12px;">🔐</div>
       <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">Accès Consultants</div>
       <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Entrez votre identifiant Smart SN pour accéder à vos outils.</div>
       <input type="text" id="rem-code" placeholder="Votre identifiant Smart SN" autocomplete="off" autocapitalize="none" style="width:100%;max-width:240px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
@@ -895,6 +905,8 @@ function doUnlock(user) {
   document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
+    document.getElementById('top-header').style.display = 'flex';
+
   setWelcome(user);
   // Pré-sélectionner l'agent dans le suivi
   const agentSel = document.getElementById('pm-add-agent');
