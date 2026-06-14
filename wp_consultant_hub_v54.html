@@ -1031,10 +1031,6 @@ window.addEventListener('DOMContentLoaded', async function() {
   if(el) el.textContent = pmFmtDate(pmToday);
 });
 
-  const lock = document.getElementById('rem-lock');
-  if (e.key === 'Enter' && lock && lock.style.display !== 'none')
-    firebaseLogin();
-});
 function renderDashboard() {
   if (!pmCurrentUser) return;
   const u = pmCurrentUser;
