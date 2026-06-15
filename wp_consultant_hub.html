@@ -903,9 +903,15 @@ function deleteCookie(name) {
   document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
 }
 
-function logout() {
+async function logout() {
+
+  await signOut(auth);
+
   deleteCookie('pm_user');
-  window.location.href = 'https://app.phil-mobile.be/wp_consultant_hub.html';
+
+  window.location.href =
+    'https://app.phil-mobile.be/wp_consultant_hub.html';
+
 }
 
 function setWelcome(user) {
