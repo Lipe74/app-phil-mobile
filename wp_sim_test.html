@@ -59,7 +59,7 @@
   <div class="header">
     <img class="header-logo" id="logo-img" src="" alt="Phil-Mobile logo" />
     <div class="header-text" style="flex:1;">
-      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.4 Beta</span></div>
+      <div class="header-title">Simulateur Phil-Mobile <span style="font-size:14px;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;vertical-align:middle;">Version 5.5 Beta</span></div>
       <div class="header-sub">Le simulateur pour vos clients.</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
@@ -549,7 +549,21 @@ function calcOptions() {
 }
 
 function calcFraisUniques() {
-  return 39 + ((qtyMap['opt_raccord']||0) * 99);
+
+  const hasInternet =
+    (qtyMap['inet_start'] || 0) +
+    (qtyMap['inet_zen'] || 0) +
+    (qtyMap['inet_giga'] || 0) > 0;
+
+  let frais = 0;
+
+  if (hasInternet) {
+    frais += 39;
+  }
+
+  frais += (qtyMap['opt_raccord'] || 0) * 99;
+
+  return frais;
 }
 function calcPromos() {
   let mensuel=0, unique=0, promo6=0, promo12=0;
