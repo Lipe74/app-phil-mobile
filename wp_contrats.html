@@ -10,6 +10,30 @@
 <link rel="apple-touch-icon" href="images/logo.png">
 
 <style>
+  .counter{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.counter button{
+  width:34px;
+  height:34px;
+  border:none;
+  border-radius:8px;
+  background:#ff5a14;
+  color:white;
+  font-size:20px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.counter span{
+  min-width:25px;
+  text-align:center;
+  font-size:18px;
+  font-weight:bold;
+}
 *{
   box-sizing:border-box;
   margin:0;
@@ -131,6 +155,77 @@ Particulier
 
       <div class="section-title">
 📱 Produits Orange
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>📱 Mobile Small</span>
+  <div class="counter">
+    <button onclick="changeQty('small',-1)">-</button>
+    <span id="small">0</span>
+    <button onclick="changeQty('small',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>📱 Mobile Medium</span>
+  <div class="counter">
+    <button onclick="changeQty('medium',-1)">-</button>
+    <span id="medium">0</span>
+    <button onclick="changeQty('medium',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>📱 Mobile Large</span>
+  <div class="counter">
+    <button onclick="changeQty('large',-1)">-</button>
+    <span id="large">0</span>
+    <button onclick="changeQty('large',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>📱 Mobile Unlimited</span>
+  <div class="counter">
+    <button onclick="changeQty('unlimited',-1)">-</button>
+    <span id="unlimited">0</span>
+    <button onclick="changeQty('unlimited',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>🌐 Internet</span>
+  <div class="counter">
+    <button onclick="changeQty('internet',-1)">-</button>
+    <span id="internet">0</span>
+    <button onclick="changeQty('internet',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>📺 TV</span>
+  <div class="counter">
+    <button onclick="changeQty('tv',-1)">-</button>
+    <span id="tv">0</span>
+    <button onclick="changeQty('tv',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>☎️ Fixe</span>
+  <div class="counter">
+    <button onclick="changeQty('fixe',-1)">-</button>
+    <span id="fixe">0</span>
+    <button onclick="changeQty('fixe',1)">+</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
+  <span>📡 Flybox</span>
+  <div class="counter">
+    <button onclick="changeQty('flybox',-1)">-</button>
+    <span id="flybox">0</span>
+    <button onclick="changeQty('flybox',1)">+</button>
+  </div>
+</div>
 </div>
 
 <label>
@@ -145,6 +240,22 @@ SoHo
   </div>
 
 </div>
+<script>
 
+function changeQty(id, delta){
+
+  const el = document.getElementById(id);
+
+  let value = parseInt(el.textContent) || 0;
+
+  value += delta;
+
+  if(value < 0) value = 0;
+
+  el.textContent = value;
+
+}
+
+</script>
 </body>
 </html>
