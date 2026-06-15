@@ -1720,6 +1720,10 @@ const consultant = Object.values(PM_USERS).find(
        u.email.toLowerCase() === cred.user.email.toLowerCase()
 );
 
+console.log("PM_USERS =", PM_USERS);
+console.log("Email Firebase =", cred.user.email);
+console.log("Consultant trouvé =", consultant);
+
 if (!consultant) {
   alert('Consultant non autorisé');
   return;
