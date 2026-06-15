@@ -903,14 +903,23 @@ function deleteCookie(name) {
   document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
 }
 
-function logout() {
+async function logout() {
+
+  await signOut(auth);
+
   deleteCookie('pm_user');
-  window.location.href = 'https://app.phil-mobile.be/wp_consultant_hub.html';
+
+  window.location.href =
+    'https://app.phil-mobile.be/wp_consultant_hub.html';
+
 }
 
 function setWelcome(user) {
   const el = document.getElementById('pm-welcome');
-  if (el) { el.textContent = '👋 ' + user.name; el.style.display = 'block'; }
+  if (el) {
+    el.textContent = '🆔 ' + user.id;
+    el.style.display = 'block';
+  }
 }
 
 function frameLoaded() {
@@ -1007,7 +1016,7 @@ function doUnlock(user) {
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
     document.getElementById('top-header').style.display = 'flex';
-    document.getElementById('pm-logout').style.display = 'block';
+    //document.getElementById('pm-logout').style.display = 'block';
 
 
   setWelcome(user);
