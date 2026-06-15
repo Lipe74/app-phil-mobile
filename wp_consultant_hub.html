@@ -916,7 +916,10 @@ async function logout() {
 
 function setWelcome(user) {
   const el = document.getElementById('pm-welcome');
-  if (el) { el.textContent = '👋 ' + user.name; el.style.display = 'block'; }
+  if (el) {
+    el.textContent = '🆔 ' + user.id;
+    el.style.display = 'block';
+  }
 }
 
 function frameLoaded() {
