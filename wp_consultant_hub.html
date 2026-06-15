@@ -1031,17 +1031,23 @@ function doUnlock(user) {
   pmNiveauAgent = user.agent;
 }
 
-window.addEventListener('DOMContentLoaded', async function() {
+onAuthStateChanged(auth, async (user) => {
+
+  console.log('Firebase user:', user?.email);
+
+  if (!user) return;
+
   await loadPMUsers();
-  const saved = getCookie('pm_user');
-  if (saved && PM_USERS[saved]) {
-    doUnlock(PM_USERS[saved]);
-    setCookie('pm_user', saved, SESSION_DAYS); // rafraîchir
-  }
-  const di = document.getElementById('pm-contract-date');
-  const el = document.getElementById('pm-encoded-label');
-  if(di) di.value = pmToInputVal(pmToday);
-  if(el) el.textContent = pmFmtDate(pmToday);
+
+  const consultant = Object.values(PM_USERS).find(
+    u => u.email &&
+         u.email.toLowerCase() === user.email.toLowerCase()
+  );
+
+  if (!consultant) return;
+
+  doUnlock(consultant);
+
 });
 
 function renderDashboard() {
