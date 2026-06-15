@@ -1031,25 +1031,6 @@ function doUnlock(user) {
   pmNiveauAgent = user.agent;
 }
 
-onAuthStateChanged(auth, async (user) => {
-
-  console.log('Firebase user:', user?.email);
-
-  if (!user) return;
-
-  await loadPMUsers();
-
-  const consultant = Object.values(PM_USERS).find(
-    u => u.email &&
-         u.email.toLowerCase() === user.email.toLowerCase()
-  );
-
-  if (!consultant) return;
-
-  doUnlock(consultant);
-
-});
-
 function renderDashboard() {
   if (!pmCurrentUser) return;
   const u = pmCurrentUser;
@@ -1693,6 +1674,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+
+onAuthStateChanged(auth, async (user) => {
+
+  console.log('Firebase user:', user?.email);
+
+  if (!user) return;
+
+  await loadPMUsers();
+
+  const consultant = Object.values(PM_USERS).find(
+    u => u.email &&
+         u.email.toLowerCase() === user.email.toLowerCase()
+  );
+
+  if (!consultant) return;
+
+  doUnlock(consultant);
+
+});
 
 window.firebaseLogin = async function(){
 
