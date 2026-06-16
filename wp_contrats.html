@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewportx" content="width=device-width, initial-scale=1.0">
 <title>Contrats & ASP - V1.0</title>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
@@ -69,14 +69,27 @@ select:focus{
     grid-template-columns:1fr;
   }
 }
+.date-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+  margin-top:10px;
+}
 
+@media(max-width:768px){
+
+  .date-grid{
+    grid-template-columns:1fr;
+  }
+
+}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="header">
 <h1>📋 Mes contrats</h1>
-<div>Build V1 Beta 2</div>
+<div>Build V1 Beta 3</div>
 </div>
 
 <div class="tabs">
@@ -116,9 +129,6 @@ select:focus{
        placeholder="📍 Ville ou adresse">
 
 </div>
-
-<label>📅 Date du contrat</label>
-<input type="date" id="dateContrat">
 
 <div class="client-type">
 
@@ -203,6 +213,8 @@ function saveContract(){
    tel:document.getElementById('tel').value,
    societe: document.getElementById('societe').value,
 tva: document.getElementById('tva').value,
+   etatContrat:
+document.getElementById('etatContrat').value,
    produits:{...qty}
  });
  localStorage.setItem('contracts',JSON.stringify(data));
