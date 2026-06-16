@@ -3,259 +3,147 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Contrats & ASP (by Phil-Mobile)</title>
-
-<link rel="icon" type="image/png" href="images/logo.png">
-<link rel="apple-touch-icon" href="images/logo.png">
-
+<title>Contrats & ASP - V1.0</title>
 <style>
-  .counter{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-
-.counter button{
-  width:34px;
-  height:34px;
-  border:none;
-  border-radius:8px;
-  background:#ff5a14;
-  color:white;
-  font-size:20px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.counter span{
-  min-width:25px;
-  text-align:center;
-  font-size:18px;
-  font-weight:bold;
-}
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-}
-
-body{
-  font-family:Arial,sans-serif;
-  background:#f5f5f5;
-}
-
-.app{
-  max-width:1000px;
-  margin:0 auto;
-  padding:24px;
-}
-
-.header{
-  background:#ff5a14;
-  border-radius:24px;
-  padding:22px;
-  margin-bottom:18px;
-  display:flex;
-  align-items:center;
-  gap:16px;
-}
-
-.header-logo{
-  width:64px;
-  height:64px;
-  border-radius:14px;
-  background:white;
-  padding:4px;
-  object-fit:contain;
-}
-
-.header-title{
-  color:white;
-  font-size:30px;
-  font-weight:bold;
-}
-
-.header-sub{
-  color:rgba(255,255,255,0.9);
-  font-size:15px;
-}
-
-.section{
-  background:white;
-  border:1.5px solid #ffb680;
-  border-radius:22px;
-  padding:26px;
-  margin-bottom:16px;
-}
-
-.section-title{
-  font-size:24px;
-  font-weight:700;
-  color:#222;
-  margin-bottom:20px;
-}
-
-.placeholder{
-  color:#777;
-  font-size:16px;
-  text-align:center;
-  padding:30px;
-}
+body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
+.app{max-width:1100px;margin:auto;padding:20px}
+.header{background:#ff5a14;color:#fff;padding:20px;border-radius:20px}
+.tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap}
+.tabbtn{padding:10px 15px;border:none;border-radius:10px;background:#ff5a14;color:#fff;cursor:pointer}
+.section{background:#fff;border:1px solid #ffb680;border-radius:18px;padding:20px;margin-bottom:15px}
+.hidden{display:none}
+input{width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px}
+.row{display:flex;justify-content:space-between;margin:8px 0}
+.counter button{width:30px;height:30px}
+.card{background:#fafafa;border-radius:10px;padding:10px;margin:8px 0}
 </style>
 </head>
-
 <body>
-
 <div class="app">
-
-  <div class="header">
-
-    <img class="header-logo"
-         src="https://app.phil-mobile.be/images/logo.png"
-         alt="Phil-Mobile">
-
-    <div>
-
-      <div class="header-title">
-        📋 Contrats & ASP
-      </div>
-
-      <div class="header-sub">
-        Suivi des ventes Orange et Eneco
-      </div>
-
-      <div style="margin-top:8px;color:rgba(255,255,255,.85);font-size:13px;font-weight:600;">
-        Build 5.7 Beta - Juin 2026
-      </div>
-
-    </div>
-
-  </div>
-
-  <div class="section">
-
-    <div class="section-title">
-<div class="section-title">
-👤 Informations client
+<div class="header">
+<h1>📋 Contrats & ASP - V1.0</h1>
+<div>Phil-Mobile - Suivi commercial</div>
 </div>
 
-<input placeholder="Nom du client">
-
-<input placeholder="Téléphone">
-
-<input placeholder="N° Client Orange">
-
-<input placeholder="N° Contrat My Smart">
-
-<label>
-<input type="radio" name="typeClient" checked>
-Particulier
-</label>
-
-      <div class="section-title">
-📱 Produits Orange
-        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>📱 Mobile Small</span>
-  <div class="counter">
-    <button onclick="changeQty('small',-1)">-</button>
-    <span id="small">0</span>
-    <button onclick="changeQty('small',1)">+</button>
-  </div>
+<div class="tabs">
+<button class="tabbtn" onclick="showTab('new')">📋 Nouveau</button>
+<button class="tabbtn" onclick="showTab('history')">📚 Historique</button>
+<button class="tabbtn" onclick="showTab('stats')">📊 Statistiques</button>
+<button class="tabbtn" onclick="showTab('settings')">⚙️ Paramètres</button>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>📱 Mobile Medium</span>
-  <div class="counter">
-    <button onclick="changeQty('medium',-1)">-</button>
-    <span id="medium">0</span>
-    <button onclick="changeQty('medium',1)">+</button>
-  </div>
+<div id="new" class="section">
+<h2>👤 Client</h2>
+<input id="nom" placeholder="Nom du client">
+<input id="tel" placeholder="Téléphone">
+
+<h2>📱 Produits</h2>
+<div id="products"></div>
+
+<button class="tabbtn" onclick="saveContract()">💾 Enregistrer le contrat</button>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>📱 Mobile Large</span>
-  <div class="counter">
-    <button onclick="changeQty('large',-1)">-</button>
-    <span id="large">0</span>
-    <button onclick="changeQty('large',1)">+</button>
-  </div>
+<div id="history" class="section hidden">
+<h2>📚 Historique</h2>
+<div id="historyList"></div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>📱 Mobile Unlimited</span>
-  <div class="counter">
-    <button onclick="changeQty('unlimited',-1)">-</button>
-    <span id="unlimited">0</span>
-    <button onclick="changeQty('unlimited',1)">+</button>
-  </div>
+<div id="stats" class="section hidden">
+<h2>📊 Statistiques</h2>
+<div id="statsContent"></div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>🌐 Internet</span>
-  <div class="counter">
-    <button onclick="changeQty('internet',-1)">-</button>
-    <span id="internet">0</span>
-    <button onclick="changeQty('internet',1)">+</button>
-  </div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>📺 TV</span>
-  <div class="counter">
-    <button onclick="changeQty('tv',-1)">-</button>
-    <span id="tv">0</span>
-    <button onclick="changeQty('tv',1)">+</button>
-  </div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>☎️ Fixe</span>
-  <div class="counter">
-    <button onclick="changeQty('fixe',-1)">-</button>
-    <span id="fixe">0</span>
-    <button onclick="changeQty('fixe',1)">+</button>
-  </div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-bottom:10px;">
-  <span>📡 Flybox</span>
-  <div class="counter">
-    <button onclick="changeQty('flybox',-1)">-</button>
-    <span id="flybox">0</span>
-    <button onclick="changeQty('flybox',1)">+</button>
-  </div>
+<div id="settings" class="section hidden">
+<h2>⚙️ Paramètres</h2>
+<button class="tabbtn" onclick="exportData()">⬇ Export JSON</button>
+<button class="tabbtn" onclick="resetData()">🗑 Réinitialiser</button>
 </div>
 </div>
 
-<label>
-<input type="radio" name="typeClient">
-SoHo
-</label>    </div>
-
-    <div class="placeholder">
-      Module Contrats & ASP bientôt disponible.
-    </div>
-
-  </div>
-
-</div>
 <script>
+const productNames=["small","medium","large","unlimited","internet","tv","fixe","flybox"];
+const labels={small:"Mobile Small",medium:"Mobile Medium",large:"Mobile Large",unlimited:"Mobile Unlimited",internet:"Internet",tv:"TV",fixe:"Fixe",flybox:"Flybox"};
+let qty={};
+productNames.forEach(p=>qty[p]=0);
 
-function changeQty(id, delta){
+const container=document.getElementById('products');
+productNames.forEach(p=>{
+ const d=document.createElement('div');
+ d.className='row';
+ d.innerHTML=`<span>${labels[p]}</span>
+ <span class="counter">
+ <button onclick="chg('${p}',-1)">-</button>
+ <span id="${p}">0</span>
+ <button onclick="chg('${p}',1)">+</button>
+ </span>`;
+ container.appendChild(d);
+});
 
-  const el = document.getElementById(id);
-
-  let value = parseInt(el.textContent) || 0;
-
-  value += delta;
-
-  if(value < 0) value = 0;
-
-  el.textContent = value;
-
+function chg(id,d){
+ qty[id]=Math.max(0,qty[id]+d);
+ document.getElementById(id).textContent=qty[id];
 }
 
+function showTab(id){
+ document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
+ document.getElementById(id).classList.remove('hidden');
+ if(id==='history') renderHistory();
+ if(id==='stats') renderStats();
+}
+
+function saveContract(){
+ let data=JSON.parse(localStorage.getItem('contracts')||'[]');
+ data.push({
+   date:new Date().toISOString(),
+   nom:document.getElementById('nom').value,
+   tel:document.getElementById('tel').value,
+   produits:{...qty}
+ });
+ localStorage.setItem('contracts',JSON.stringify(data));
+ alert('Contrat enregistré');
+}
+
+function renderHistory(){
+ let data=JSON.parse(localStorage.getItem('contracts')||'[]');
+ let html='';
+ data.forEach((c,i)=>{
+   html+=`<div class="card"><b>${c.nom||'Sans nom'}</b><br>${new Date(c.date).toLocaleDateString()}<br>
+   <button onclick="delContract(${i})">🗑 Supprimer</button></div>`;
+ });
+ document.getElementById('historyList').innerHTML=html||'Aucun contrat';
+}
+
+function delContract(i){
+ let data=JSON.parse(localStorage.getItem('contracts')||'[]');
+ data.splice(i,1);
+ localStorage.setItem('contracts',JSON.stringify(data));
+ renderHistory();
+}
+
+function renderStats(){
+ let data=JSON.parse(localStorage.getItem('contracts')||'[]');
+ let totals={};
+ productNames.forEach(p=>totals[p]=0);
+ data.forEach(c=>productNames.forEach(p=>totals[p]+=c.produits[p]||0));
+ let html=`<div class="card"><b>Contrats :</b> ${data.length}</div>`;
+ productNames.forEach(p=>html+=`<div class="card">${labels[p]} : ${totals[p]}</div>`);
+ document.getElementById('statsContent').innerHTML=html;
+}
+
+function exportData(){
+ const data=localStorage.getItem('contracts')||'[]';
+ const blob=new Blob([data],{type:'application/json'});
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='contrats_export.json';
+ a.click();
+}
+
+function resetData(){
+ if(confirm('Supprimer toutes les données ?')){
+  localStorage.removeItem('contracts');
+ }
+}
 </script>
 </body>
 </html>
