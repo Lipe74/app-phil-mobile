@@ -108,22 +108,15 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.8 Stable - Juin 2026
+Build 5.9.1 Stable - Juin 2026
      </span>
     </div>
     </div>
-  </div>
-<div style="display:flex;align-items:center;gap:8px;">
-
-  <div id="pm-welcome"
-       style="display:none;
-              font-size:12px;
-              font-weight:700;
-              color:#f97316;
-              background:#fff3e8;
-              padding:5px 12px;
-              border-radius:99px;
-              border:1px solid #f97316;">
+    <button onclick="forceRefreshApp()"
+        title="Actualiser l'application"
+        style="border:none;background:#fff3e8;color:#f97316;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:bold;">
+  🔄
+</button>
   </div>
 
   <button onclick="logout()"
@@ -162,7 +155,7 @@ Build 5.8 Stable - Juin 2026
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.8 Stable - Juin 2026
+      Build 5.9.1 Stable - Juin 2026
     </div>
   </div>
 
@@ -1900,6 +1893,19 @@ window.closeSimulator = function(){
   document.getElementById('simFrame').src = '';
 
 };
+
+window.forceRefreshApp = function(){
+
+  if('caches' in window){
+    caches.keys().then(names=>{
+      names.forEach(name=>caches.delete(name));
+    });
+  }
+
+  location.reload();
+
+};
+
 </script>
   <div id="simModal" style="
 display:none;
