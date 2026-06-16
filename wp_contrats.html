@@ -279,9 +279,31 @@ function renderHistory(){
  let data=JSON.parse(localStorage.getItem('contracts')||'[]');
  let html='';
  data.forEach((c,i)=>{
-   html+=`<div class="card"><b>${c.nom||'Sans nom'}</b><br>${new Date(c.date).toLocaleDateString()}<br>
-   <button onclick="delContract(${i})">🗑 Supprimer</button></div>`;
- });
+html+=`
+<div class="card">
+
+<b>👤 ${c.nom||'Sans nom'}</b><br>
+
+🏢 ${c.societe||'-'}<br>
+
+📅 ${new Date(c.date).toLocaleDateString()}<br>
+
+📊 ${c.etatContrat||'Encodé'}<br><br>
+
+<button onclick="viewContract(${i})">
+👁 Voir
+</button>
+
+<button onclick="editContract(${i})">
+✏️ Modifier
+</button>
+
+<button onclick="delContract(${i})">
+🗑 Supprimer
+</button>
+
+</div>
+`;
  document.getElementById('historyList').innerHTML=html||'Aucun contrat';
 }
 
