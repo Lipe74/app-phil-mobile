@@ -978,16 +978,18 @@ async function logout() {
 
 function setWelcome(user) {
   const el = document.getElementById('pm-welcome');
+
   if (el) {
     el.textContent = '🆔 ' + user.id;
     el.style.display = 'block';
   }
-  function toggleMenu(id){
+}
+
+function toggleMenu(id){
   document
     .getElementById(id)
     .classList
     .toggle('open');
-}
 }
 
 function frameLoaded() {
