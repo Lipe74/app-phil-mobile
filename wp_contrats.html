@@ -230,35 +230,40 @@ select:focus{
 
 <script>
 const productNames=[
-"small",
-"medium",
-"large",
-"unlimited",
+  "small",
+  "medium",
+  "large",
+  "unlimited",
 
-"internetStart",
-"internetZen",
-"internetGiga",
+  "internetStart",
+  "internetZen",
+  "internetGiga",
 
-"tv",
-"fixe",
-"flybox"
+  "tv",
+  "fixe",
+  "flybox"
+];
+
 const labels={
 
-small:"📱 Mobile Small",
-medium:"📱 Mobile Medium",
-large:"📱 Mobile Large",
-unlimited:"♾️ Mobile Unlimited",
+  small:"📱 Mobile Small",
+  medium:"📱 Mobile Medium",
+  large:"📱 Mobile Large",
+  unlimited:"♾️ Mobile Unlimited",
 
-internetStart:"🌐 Internet Start",
-internetZen:"🌐 Internet Zen",
-internetGiga:"🚀 Internet Giga",
+  internetStart:"🌐 Internet Start",
+  internetZen:"🌐 Internet Zen",
+  internetGiga:"🚀 Internet Giga",
 
-tv:"📺 TV",
-fixe:"☎️ Fixe",
-flybox:"📡 Flybox"
+  tv:"📺 TV",
+  fixe:"☎️ Fixe",
+  flybox:"📡 Flybox"
 
 };
-  productNames.forEach(p=>qty[p]=0);
+
+let qty={};
+
+productNames.forEach(p=>qty[p]=0);
 
 const container=document.getElementById('products');
 productNames.forEach(p=>{
