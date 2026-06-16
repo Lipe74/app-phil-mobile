@@ -41,7 +41,24 @@
   "pqsValidated": false,
   "fastSCValidated": false,
   "fastECValidated": false
-},
+},   
+    {
+  "id": "spons009",
+  "name": "Jean Luc",
+  "fullName": "Jean Luc Danko",
+  "email": "jld@danko.be",
+  "startDate": "29/11/2025",
+  "aspInit": 10000,
+  "isAdmin": true,
+      "active": true,
+      "upline": null,
+      "uplineTel": null,
+      "uplineEmail": null,
+      "calendlyUrl": "https://calendly.com/infos-phil-mobile/30min",
+      "pqsValidated": true,
+      "fastSCValidated": false,
+      "fastECValidated": false
+    },
     {
   "id": "test001",
   "name": "Utilisateur Test",
