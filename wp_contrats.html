@@ -276,37 +276,52 @@ document.getElementById('etatContrat').value,
 }
 
 function renderHistory(){
- let data=JSON.parse(localStorage.getItem('contracts')||'[]');
- let html='';
- data.forEach((c,i)=>{
-html+=`
-<div class="card">
 
-<b>👤 ${c.nom||'Sans nom'}</b><br>
+  let data =
+    JSON.parse(localStorage.getItem('contracts')||'[]');
 
-🏢 ${c.societe||'-'}<br>
+  let html='';
 
-📅 ${new Date(c.date).toLocaleDateString()}<br>
+  data.forEach((c,i)=>{
 
-📊 ${c.etatContrat||'Encodé'}<br><br>
+    html+=`
+    <div class="card">
 
-<button onclick="viewContract(${i})">
-👁 Voir
-</button>
+      <b>👤 ${c.nom||'Sans nom'}</b><br>
 
-<button onclick="editContract(${i})">
-✏️ Modifier
-</button>
+      🏢 ${c.societe||'-'}<br>
 
-<button onclick="delContract(${i})">
-🗑 Supprimer
-</button>
+      📅 ${new Date(c.date).toLocaleDateString()}<br>
 
-</div>
-`;
- document.getElementById('historyList').innerHTML=html||'Aucun contrat';
+      📊 ${c.etatContrat||'Encodé'}<br><br>
+
+      <button onclick="viewContract(${i})">
+      👁 Voir
+      </button>
+
+      <button onclick="editContract(${i})">
+      ✏️ Modifier
+      </button>
+
+      <button onclick="delContract(${i})">
+      🗑 Supprimer
+      </button>
+
+    </div>
+    `;
+
+  });
+
+  document.getElementById('historyList').innerHTML =
+    html || 'Aucun contrat';
+
+}function viewContract(i){
+  alert("Voir contrat : " + i);
 }
 
+function editContract(i){
+  alert("Modifier contrat : " + i);
+}
 function delContract(i){
  let data=JSON.parse(localStorage.getItem('contracts')||'[]');
  data.splice(i,1);
