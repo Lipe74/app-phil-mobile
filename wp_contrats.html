@@ -108,7 +108,7 @@ select:focus{
 
 <h1>📋 Mes contrats</h1>
 
-<div>Build V1 Beta 7</div>
+<div>Build V1 Beta 8</div>
 
 </div>
 
@@ -315,6 +315,29 @@ function resetData(){
  if(confirm('Supprimer toutes les données ?')){
   localStorage.removeItem('contracts');
  }
+}
+  function searchContracts(){
+
+  const term =
+    document.getElementById('searchBox')
+    .value
+    .toLowerCase();
+
+  const cards =
+    document.querySelectorAll('#historyList .card');
+
+  cards.forEach(card=>{
+
+    const txt =
+      card.textContent.toLowerCase();
+
+    card.style.display =
+      txt.includes(term)
+      ? 'block'
+      : 'none';
+
+  });
+
 }
 </script>
 </body>
