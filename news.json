@@ -1,23 +1,33 @@
 [
   {
     "active": true,
-    "type": "orange",
-    "title": "Nouvelle promotion Orange",
-    "message": "Les nouvelles promotions Orange sont disponibles dans le simulateur.",
-    "date": "16/06/2026"
-  },
-  {
-    "active": true,
-    "type": "danger",
-    "title": "Attention",
-    "message": "Une information importante nécessite votre attention.",
-    "date": "16/06/2026"
-  },
-  {
-    "active": true,
     "type": "success",
-    "title": "Mise à jour de l'application",
-    "message": "La version 5.9.1 Stable est disponible. Cliquez sur le bouton 🔄 pour actualiser.",
+    "title": "Version 5.9.1 Stable disponible - Cliquez sur 🔄 pour actualiser",
+    "message": "",
     "date": "16/06/2026"
+  },
+
+  {
+    "active": false,
+    "type": "orange",
+    "title": "Promotions Orange Juillet 2026 disponibles",
+    "message": "",
+    "date": "01/07/2026"
+  },
+
+  {
+    "active": false,
+    "type": "orange",
+    "title": "Promotions Orange Août 2026 disponibles",
+    "message": "",
+    "date": "01/08/2026"
+  },
+
+  {
+    "active": false,
+    "type": "danger",
+    "title": "Maintenance prévue ce soir",
+    "message": "",
+    "date": "15/07/2026"
   }
 ]
