@@ -108,7 +108,7 @@ select:focus{
 
 <h1>📋 Mes contrats</h1>
 
-<div>Build V1 Beta 8</div>
+<div>Build V1 Beta 9</div>
 
 </div>
 
@@ -229,10 +229,36 @@ select:focus{
 </div>
 
 <script>
-const productNames=["small","medium","large","unlimited","internet","tv","fixe","flybox"];
-const labels={small:"Mobile Small",medium:"Mobile Medium",large:"Mobile Large",unlimited:"Mobile Unlimited",internet:"Internet",tv:"TV",fixe:"Fixe",flybox:"Flybox"};
-let qty={};
-productNames.forEach(p=>qty[p]=0);
+const productNames=[
+"small",
+"medium",
+"large",
+"unlimited",
+
+"internetStart",
+"internetZen",
+"internetGiga",
+
+"tv",
+"fixe",
+"flybox"
+const labels={
+
+small:"📱 Mobile Small",
+medium:"📱 Mobile Medium",
+large:"📱 Mobile Large",
+unlimited:"♾️ Mobile Unlimited",
+
+internetStart:"🌐 Internet Start",
+internetZen:"🌐 Internet Zen",
+internetGiga:"🚀 Internet Giga",
+
+tv:"📺 TV",
+fixe:"☎️ Fixe",
+flybox:"📡 Flybox"
+
+};
+  productNames.forEach(p=>qty[p]=0);
 
 const container=document.getElementById('products');
 productNames.forEach(p=>{
