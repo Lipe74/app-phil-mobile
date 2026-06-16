@@ -75,8 +75,8 @@ select:focus{
 <body>
 <div class="app">
 <div class="header">
-<h1>📋 Historique des contrats</h1>
-<div>Build V1 Beta 1</div>
+<h1>📋 Mes contrats</h1>
+<div>Build V1 Beta 2</div>
 </div>
 
 <div class="tabs">
@@ -93,16 +93,27 @@ select:focus{
 <div class="form-grid">
 
   <input id="nom"
-         placeholder="👤 Nom du client">
+         placeholder="👤 Nom du client (ex : Jean Dupont)">
+
+  <input id="societe"
+         placeholder="🏢 Société (ex : Dupont Consulting SRL)">
 
   <input id="tel"
-         placeholder="📞 Téléphone">
+         placeholder="📞 Téléphone (ex : 0475 24 02 05)">
+
+  <input id="tva"
+         placeholder="🧾 TVA (ex : BE0123456789)">
 
   <input id="clientOrange"
-         placeholder="🟧 N° Client Orange">
+         placeholder="🟧 N° Client Orange (ex : 1.9763217)">
 
   <input id="contratSmart"
-         placeholder="📋 N° Contrat My Smart">
+         placeholder="📋 N° Contrat My Smart (ex : 0000282697)">
+  <input id="email"
+       placeholder="📧 E-mail">
+
+<input id="adresse"
+       placeholder="📍 Ville ou adresse">
 
 </div>
 
@@ -190,6 +201,8 @@ function saveContract(){
    date:new Date().toISOString(),
    nom:document.getElementById('nom').value,
    tel:document.getElementById('tel').value,
+   societe: document.getElementById('societe').value,
+tva: document.getElementById('tva').value,
    produits:{...qty}
  });
  localStorage.setItem('contracts',JSON.stringify(data));
