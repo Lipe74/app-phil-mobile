@@ -14,13 +14,21 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
 .tabbtn{padding:10px 15px;border:none;border-radius:10px;background:#ff5a14;color:#fff;cursor:pointer}
 .section{background:#fff;border:1px solid #ffb680;border-radius:18px;padding:20px;margin-bottom:15px}
 .hidden{display:none}
-input{width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px}
-  select{
+input{
   width:100%;
-  padding:10px;
-  margin:5px 0 10px;
+  padding:8px;
+  margin:2px 0 6px;
   border:1px solid #ccc;
   border-radius:8px;
+  box-sizing:border-box;
+}
+  select{
+  width:100%;
+  padding:8px;
+  margin:2px 0 6px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  box-sizing:border-box;
 }
 .row{display:flex;justify-content:space-between;margin:8px 0}
 .counter button{width:30px;height:30px}
@@ -68,10 +76,9 @@ select:focus{
   border-color:#ff5a14;
 }
  .form-grid{
-  display:grid !important;
-  grid-template-columns:1fr 1fr !important;
+  display:grid;
+  grid-template-columns:1fr 1fr;
   gap:15px;
-  border:2px solid red;
 }
 
 @media(max-width:768px){
@@ -101,7 +108,7 @@ select:focus{
 
 <h1>📋 Mes contrats</h1>
 
-<div>Build V1 Beta 6</div>
+<div>Build V1 Beta 7</div>
 
 </div>
 
