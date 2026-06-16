@@ -16,6 +16,48 @@ input{width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-rad
 .row{display:flex;justify-content:space-between;margin:8px 0}
 .counter button{width:30px;height:30px}
 .card{background:#fafafa;border-radius:10px;padding:10px;margin:8px 0}
+
+input:focus,
+select:focus{
+  outline:none;
+  border-color:#ff5a14;
+  box-shadow:0 0 0 4px rgba(255,90,20,.15);
+}
+
+.card-client{
+  background:white;
+  border-radius:18px;
+  padding:20px;
+  border:2px solid #ffb680;
+  margin-bottom:20px;
+}
+
+.card-client h3{
+  color:#ff5a14;
+  margin-bottom:15px;
+}
+
+/* FIN AJOUT */
+       .client-type{
+  display:flex;
+  gap:12px;
+  margin-top:15px;
+}
+
+.type-card{
+  flex:1;
+  text-align:center;
+  padding:14px;
+  border:2px solid #ffd1b8;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:600;
+  background:#fffaf7;
+}
+
+.type-card:hover{
+  border-color:#ff5a14;
+}
 </style>
 </head>
 <body>
@@ -32,8 +74,10 @@ input{width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-rad
 <button class="tabbtn" onclick="showTab('settings')">⚙️ Paramètres</button>
 </div>
 
-<div id="new" class="section">
-<h2>👤 Client</h2>
+<div class="card-client">
+
+<h3>👤 Informations client</h3>
+
 <input id="nom" placeholder="Nom du client">
 
 <input id="tel" placeholder="Téléphone">
@@ -47,24 +91,24 @@ input{width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-rad
 <label>📅 Date du contrat</label>
 <input type="date" id="dateContrat">
 
-<div style="margin-top:10px;">
+<div class="client-type">
 
-<label>
+<label class="type-card">
 <input type="radio"
        name="typeClient"
        value="Particulier"
        checked>
-Particulier
+👤 Particulier
 </label>
 
-&nbsp;&nbsp;&nbsp;
-
-<label>
+<label class="type-card">
 <input type="radio"
        name="typeClient"
        value="SoHo">
-SoHo
+🏢 SoHo
 </label>
+
+</div>
 
 </div>
 
