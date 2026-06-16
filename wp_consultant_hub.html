@@ -1936,17 +1936,15 @@ async function loadNews() {
 
   try {
 
+    if (window.innerWidth <= 768) {
+      return;
+    }
     const res = await fetch('news.json?v=' + Date.now());
-
     const news = await res.json();
-
     const active = news.find(n => n.active);
-
     if (!active) return;
-
     const banner =
       document.getElementById('news-banner');
-
     let bg = '#fff7ed';
     let color = '#9a3412';
     let border = '#f97316';
