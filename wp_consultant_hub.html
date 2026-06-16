@@ -111,37 +111,6 @@
 Build 5.7 Stable - Juin 2026
      </span>
     </div>
-  <!-- Websites dropdown -->
-    <div style="position:relative;" id="ws-dropdown-wrap">
-      <button onclick="toggleWsMenu()" style="font-size:11px;color:#f97316;background:#f8f8f8;border:1px solid #f97316;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Arial,sans-serif;font-weight:600;display:flex;align-items:center;gap:5px;">
-        &#127760; Liens importants <span id="ws-arrow" style="font-size:9px;transition:transform .2s;">&#9660;</span>
-      </button>
-      <div id="ws-menu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid #f97316;border-radius:10px;box-shadow:0 4px 16px rgba(249,115,22,0.15);min-width:220px;z-index:200;overflow:hidden;">
-        <a href="https://smartservicesnetwork.my.site.com/" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;border-bottom:1px solid #fff3e8;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#127962; My Smart &#8599;</a>
-        <a href="https://smartsn.showpad.biz/webapp2/home" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;border-bottom:1px solid #fff3e8;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#128241; Showpad &#8599;</a>
-        <a href="https://obe.my.site.com" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;border-bottom:1px solid #fff3e8;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#9729;&#65039; Sales Force &#8599;</a>
-        <a href="https://www.crdc.be/" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;border-bottom:1px solid #fff3e8;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#128203; CRB (1399) &#8599;</a>
-        <a href="https://eneco.be/fr/?" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;border-bottom:1px solid #fff3e8;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#9889; Eneco &#8599;</a>
-        <a href="https://www.orange.be/fr/options-et-services/internet/internet-boost/internet-boost-giga" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;border-bottom:1px solid #fff3e8;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#128992; Orange Fibre &#201;ligibilit&#233; &#8599;</a>
-        <a href="https://phil-mobile.be/" target="_blank" onclick="closeWsMenu()" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;text-decoration:none;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#127760; Phil-Mobile &#8599;</a>
-      </div></div> 
-    
-    <!-- Simulateurs dropdown -->
-    <div style="position:relative;" id="sim-dropdown-wrap">
-      <button onclick="toggleSimMenu()" style="font-size:11px;color:#f97316;background:#f8f8f8;border:1px solid #f97316;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:Arial,sans-serif;font-weight:600;display:flex;align-items:center;gap:5px;">
-        &#129518; Simulateurs <span id="sim-arrow" style="font-size:9px;transition:transform .2s;">&#9660;</span>
-      </button>
-      <div id="sim-menu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid #f97316;border-radius:10px;box-shadow:0 4px 16px rgba(249,115,22,0.15);min-width:220px;z-index:200;overflow:hidden;">
-        <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_rem.html');closeSimMenu();" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;background:transparent;border:none;border-bottom:1px solid #fff3e8;width:100%;text-align:left;cursor:pointer;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#128182; Calculateur de commissions</button>
-        <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_orange.html');closeSimMenu();" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;background:transparent;border:none;border-bottom:1px solid #fff3e8;width:100%;text-align:left;cursor:pointer;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#128992; Simulateur Orange</button>
-        <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_eneco.html');closeSimMenu();" style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;background:transparent;border:none;width:100%;text-align:left;cursor:pointer;font-family:Arial,sans-serif;" onmouseover="this.style.background='#fff3e8'" onmouseout="this.style.background='transparent'">&#9889; Simulateur Eneco</button>
-      <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_contrats.html');closeSimMenu();"
-style="display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12px;font-weight:600;color:#1a1a1a;background:transparent;border:none;width:100%;text-align:left;cursor:pointer;font-family:Arial,sans-serif;"
-onmouseover="this.style.background='#fff3e8'"
-onmouseout="this.style.background='transparent'">
-📋 Contrats & ASP (BETA)
-</button>
-      </div>
     </div>
   </div>
 <div style="display:flex;align-items:center;gap:8px;">
@@ -254,6 +223,33 @@ onmouseout="this.style.background='transparent'">
 
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📁 Documents</div>
           <button onclick="toggleMenu('docsManuels')" class="menu-item group-toggle">
+            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">
+📊 Simulateurs
+</div>
+
+<button onclick="toggleMenu('simMenu')" class="menu-item group-toggle">
+🧮 Simulateurs
+</button>
+
+<div id="simMenu" class="submenu">
+
+  <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_rem.html')" class="menu-item">
+    💰 Calculateur de commissions
+  </button>
+
+  <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_orange.html')" class="menu-item">
+    🟠 Simulateur Orange
+  </button>
+
+  <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_eneco.html')" class="menu-item">
+    ⚡ Simulateur Eneco
+  </button>
+
+  <button onclick="loadSimPanel('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">
+    📋 Contrats & ASP (BETA)
+  </button>
+
+</div>
 📚 Manuels
 </button>
 
