@@ -112,6 +112,30 @@ Build 5.9.1 Stable - Juin 2026
      </span>
     </div>
     </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+
+<div id="news-banner"
+     style="
+       display:none;
+       min-width:250px;
+       max-width:500px;
+       padding:8px 14px;
+       border-radius:8px;
+       font-size:12px;
+       font-weight:700;
+       text-align:center;
+       white-space:nowrap;
+       overflow:hidden;
+       text-overflow:ellipsis;">
+</div>
+
+  <button onclick="forceRefreshApp()"
+          title="Actualiser l'application"
+          style="border:none;background:#fff3e8;color:#f97316;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:bold;">
+    🔄
+  </button>
+
+</div>
     <button onclick="forceRefreshApp()"
         title="Actualiser l'application"
         style="border:none;background:#fff3e8;color:#f97316;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:bold;">
@@ -1905,7 +1929,57 @@ window.forceRefreshApp = function(){
   location.reload();
 
 };
+async function loadNews() {
 
+  try {
+
+    const res = await fetch('news.json?v=' + Date.now());
+
+    const news = await res.json();
+
+    const active = news.find(n => n.active);
+
+    if (!active) return;
+
+    const banner =
+      document.getElementById('news-banner');
+
+    let bg = '#fff7ed';
+    let color = '#9a3412';
+    let border = '#f97316';
+    let icon = '🟠';
+
+    if(active.type === 'danger'){
+      bg = '#fef2f2';
+      color = '#991b1b';
+      border = '#ef4444';
+      icon = '🔴';
+    }
+
+    if(active.type === 'success'){
+      bg = '#ecfdf5';
+      color = '#166534';
+      border = '#22c55e';
+      icon = '🟢';
+    }
+
+    banner.style.display = 'block';
+    banner.style.background = bg;
+    banner.style.color = color;
+    banner.style.border = '1px solid ' + border;
+
+    banner.innerHTML =
+      icon + ' ' + active.title;
+
+  } catch(err){
+
+    console.log('News indisponibles');
+
+  }
+
+}
+
+loadNews();
 </script>
   <div id="simModal" style="
 display:none;
