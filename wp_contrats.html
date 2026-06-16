@@ -2,8 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewportx" content="width=device-width, initial-scale=1.0">
-<title>Contrats & ASP - V1.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V1.0</title>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
 .app{max-width:1100px;margin:auto;padding:20px}
@@ -88,8 +87,21 @@ select:focus{
 <body>
 <div class="app">
 <div class="header">
+
 <h1>📋 Mes contrats</h1>
-<div>Build V1 Beta 3</div>
+
+<div>Build V1 Beta 4</div>
+
+</div>
+
+<div class="search-box">
+
+  <input
+    id="searchBox"
+    type="text"
+    placeholder="🔍 Rechercher un client, société, TVA..."
+    onkeyup="searchContracts()">
+</div>
 </div>
 
 <div class="tabs">
