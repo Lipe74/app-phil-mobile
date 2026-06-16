@@ -2,16 +2,26 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+  <link rel="icon"
+      type="image/png"
+      href="images/logo.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V1.0</title>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
-.app{max-width:1100px;margin:auto;padding:20px}
+.app{max-width:1100px;margin:auto;padding:12px 20px;}
 .header{background:#ff5a14;color:#fff;padding:20px;border-radius:20px}
 .tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap}
 .tabbtn{padding:10px 15px;border:none;border-radius:10px;background:#ff5a14;color:#fff;cursor:pointer}
 .section{background:#fff;border:1px solid #ffb680;border-radius:18px;padding:20px;margin-bottom:15px}
 .hidden{display:none}
 input{width:100%;padding:10px;margin:5px 0 10px;border:1px solid #ccc;border-radius:8px}
+  select{
+  width:100%;
+  padding:10px;
+  margin:5px 0 10px;
+  border:1px solid #ccc;
+  border-radius:8px;
+}
 .row{display:flex;justify-content:space-between;margin:8px 0}
 .counter button{width:30px;height:30px}
 .card{background:#fafafa;border-radius:10px;padding:10px;margin:8px 0}
@@ -90,7 +100,7 @@ select:focus{
 
 <h1>📋 Mes contrats</h1>
 
-<div>Build V1 Beta 4</div>
+<div>Build V1 Beta 5</div>
 
 </div>
 
@@ -110,6 +120,8 @@ select:focus{
 <button class="tabbtn" onclick="showTab('stats')">📊 Statistiques</button>
 <button class="tabbtn" onclick="showTab('settings')">⚙️ Paramètres</button>
 </div>
+
+<div id="new" class="section">
 
 <div class="card-client">
 
@@ -142,8 +154,31 @@ select:focus{
 
 </div>
 
-<div class="client-type">
+<div class="date-grid">
 
+  <div>
+    <label>📅 Date du contrat</label>
+    <input type="date" id="dateContrat">
+  </div>
+
+  <div>
+    <label>📊 État du contrat</label>
+
+    <select id="etatContrat">
+
+      <option value="Encodé">📝 Encodé</option>
+      <option value="Activé">✅ Activé</option>
+      <option value="En attente">⏳ En attente</option>
+      <option value="Annulé">❌ Annulé</option>
+      <option value="Refusé">🚫 Refusé</option>
+
+    </select>
+
+  </div>
+
+</div>
+
+<div class="client-type">
 <label class="type-card">
 <input type="radio"
        name="typeClient"
