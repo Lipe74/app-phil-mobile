@@ -56,8 +56,8 @@
       "uplineEmail": null,
       "calendlyUrl": "https://calendly.com/infos-phil-mobile/30min",
       "pqsValidated": true,
-      "fastSCValidated": false,
-      "fastECValidated": false
+      "fastSCValidated": true,
+      "fastECValidated": true
     },
     {
   "id": "test001",
