@@ -16,6 +16,20 @@
   color:#1a1a1a;font-size:12px;font-weight:600;cursor:pointer;
   font-family:Arial,sans-serif;transition:all .15s;
 }
+  .submenu{
+  display:none;
+  margin-left:10px;
+}
+
+.submenu.open{
+  display:block;
+}
+
+.group-toggle{
+  width:100%;
+  text-align:left;
+}
+
 .menu-item:hover { background:#fff3e8; }
 .active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
 @media(max-width:600px){
@@ -94,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.6 Stable - Juin 2026
+Build 5.7 Stable - Juin 2026
      </span>
     </div>
   <!-- Websites dropdown -->
@@ -179,7 +193,7 @@ onmouseout="this.style.background='transparent'">
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.6 Stable - Juin 2026
+      Build 5.7 Stable - Juin 2026
     </div>
   </div>
 
@@ -239,19 +253,55 @@ onmouseout="this.style.background='transparent'">
           <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📁 Documents</div>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_salesforce.pdf',this)" class="menu-item">🟠 Manuel Sales Force</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_mysmart.pdf',this)" class="menu-item">📘 Manuel My Smart SN</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_commissions.pdf',this)" class="menu-item">💶 Les commissions</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_smartPlan.pdf',this)" class="menu-item">📊 Plan de commissions</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_orangeproduits.pdf',this)" class="menu-item">🟠 Produits Orange</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/decodeur.pdf',this)" class="menu-item">📺 Orange Décodeur</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/modem.pdf',this)" class="menu-item">📡 Orange Modem</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/roaming.pdf',this)" class="menu-item">🌍 Roaming</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie01.pdf',this)" class="menu-item">📺 Chaînes Wallonie 01</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie02.pdf',this)" class="menu-item">📺 Chaînes Wallonie 02</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/flandre.pdf',this)" class="menu-item">📺 Chaînes Flandre</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles01.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 01</button>
-          <button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles02.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 02</button>
+          <button onclick="toggleMenu('docsManuels')" class="menu-item group-toggle">
+📚 Manuels
+</button>
+
+<div id="docsManuels" class="submenu">
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_salesforce.pdf',this)" class="menu-item">🟠 Manuel Sales Force</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_mysmart.pdf',this)" class="menu-item">📘 Manuel My Smart SN</button>
+
+</div>
+
+<button onclick="toggleMenu('docsCommissions')" class="menu-item group-toggle">
+💰 Commissions
+</button>
+
+<div id="docsCommissions" class="submenu">
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_commissions.pdf',this)" class="menu-item">💶 Les commissions</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_smartPlan.pdf',this)" class="menu-item">📊 Plan de commissions</button>
+
+</div>
+
+<button onclick="toggleMenu('docsOrange')" class="menu-item group-toggle">
+🟠 Orange
+</button>
+
+<div id="docsOrange" class="submenu">
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_orangeproduits.pdf',this)" class="menu-item">🟠 Produits Orange</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/decodeur.pdf',this)" class="menu-item">📺 Orange Décodeur</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/modem.pdf',this)" class="menu-item">📡 Orange Modem</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/roaming.pdf',this)" class="menu-item">🌍 Roaming</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie01.pdf',this)" class="menu-item">📺 Chaînes Wallonie 01</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie02.pdf',this)" class="menu-item">📺 Chaînes Wallonie 02</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/flandre.pdf',this)" class="menu-item">📺 Chaînes Flandre</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles01.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 01</button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles02.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 02</button>
+
+</div>
 
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🟠 Scripts Orange</div>
           <button onclick="showScript('sc-orange-froid')" class="menu-item">❄️ Prospect froid</button>
@@ -932,6 +982,12 @@ function setWelcome(user) {
     el.textContent = '🆔 ' + user.id;
     el.style.display = 'block';
   }
+  function toggleMenu(id){
+  document
+    .getElementById(id)
+    .classList
+    .toggle('open');
+}
 }
 
 function frameLoaded() {
