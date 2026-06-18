@@ -65,7 +65,7 @@
   "fullName": "Smart (test)",
   "email": "smart@phil-mobile.be",
  "startDate": "14/06/2026",
-  "aspInit": 0,
+  "aspInit": 150,
   "isAdmin": false,
   "active": true,
   "upline": "Philippe Tomaszewsky",
