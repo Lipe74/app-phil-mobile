@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.3 Test - Juin 2026
+Build 5.9.4 Test - Insertion d'un formulaire pour l'application
      </span>
     </div>
     </div>
@@ -173,7 +173,7 @@ Build 5.9.3 Test - Juin 2026
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.3 Test - Juin 2026
+      Build 5.9.4 Test - Insertion d'un formulaire pour l'application
     </div>
   </div>
 
@@ -1917,11 +1917,52 @@ function copyText(id, btn) {
       : 'none';
 }
 
-function submitAccessRequest(){
+async function submitAccessRequest(){
 
-  alert(
-    "Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
-  );
+  try {
+
+    await addDoc(collection(db, "prospects"), {
+
+      firstName: document.getElementById('req-firstname').value.trim(),
+      lastName: document.getElementById('req-lastname').value.trim(),
+
+      company: document.getElementById('req-company').value.trim(),
+      vat: document.getElementById('req-vat').value.trim(),
+
+      email: document.getElementById('req-email').value.trim(),
+      phone: document.getElementById('req-phone').value.trim(),
+
+      asp: document.getElementById('req-asp').value.trim(),
+      startDate: document.getElementById('req-startdate').value.trim(),
+
+      pqsValidated: document.getElementById('req-pqs').checked,
+      fastSCValidated: document.getElementById('req-fastsc').checked,
+      fastECValidated: document.getElementById('req-fastec').checked,
+
+      upline: document.getElementById('req-upline').value.trim(),
+      uplinePhone: document.getElementById('req-upline-phone').value.trim(),
+      uplineEmail: document.getElementById('req-upline-email').value.trim(),
+
+      comment: document.getElementById('req-comment').value.trim(),
+
+      status: "pending",
+      createdAt: new Date().toISOString()
+
+    });
+
+    alert(
+      "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
+    );
+
+  } catch(err){
+
+    console.error(err);
+
+    alert(
+      "❌ Erreur lors de l'enregistrement de la demande."
+    );
+
+  }
 
 }
 </script>
