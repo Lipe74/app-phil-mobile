@@ -1919,12 +1919,13 @@ function copyText(id, btn) {
 
 window.submitAccessRequest = async function(){
 
-  console.log("db =", db);
-  console.log("addDoc =", addDoc);
+  console.log("db =", window.db);
+  console.log("addDoc =", window.addDoc);
 
   try {
 
-await addDoc(collection(window.db, "prospects"), {
+    await window.addDoc(window.collection(window.db, "prospects"), {
+
       firstName: document.getElementById('req-firstname').value.trim(),
       lastName: document.getElementById('req-lastname').value.trim(),
 
@@ -2029,8 +2030,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 window.db = getFirestore(app);
-    window.addDoc = addDoc;
+window.addDoc = addDoc;
 window.collection = collection;
+
 onAuthStateChanged(auth, async (user) => {
 
   console.log('Firebase user:', user?.email);
