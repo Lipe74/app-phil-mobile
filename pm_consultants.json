@@ -59,6 +59,23 @@
       "fastSCValidated": true,
       "fastECValidated": true
     },
+        {
+  "id": "smart",
+  "name": "Consultant",
+  "fullName": "Smart (test)",
+  "email": "smart@phil-mobile.be",
+ "startDate": "14/06/2026",
+  "aspInit": 0,
+  "isAdmin": false,
+  "active": true,
+  "upline": "Philippe Tomaszewsky",
+  "uplineTel": "+32 475 24 02 05",
+  "uplineEmail": "infos@phil-mobile.be",
+  "calendlyUrl": "https://calendly.com/infos-phil-mobile/30min",
+  "pqsValidated": false,
+  "fastSCValidated": false,
+  "fastECValidated": false
+    }
     {
   "id": "test001",
   "name": "Utilisateur Test",
