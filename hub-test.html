@@ -272,6 +272,7 @@ Build 5.9.3 Test - Juin 2026
 </div>
 <button
   id="btn-access-request"
+  onclick="toggleAccessForm()"
   style="
     margin-top:15px;
     width:220px;
@@ -285,7 +286,62 @@ Build 5.9.3 Test - Juin 2026
   ">
   Demander un accès
 </button>
+<div id="accessForm" style="
+  display:none;
+  margin-top:20px;
+  text-align:left;
+">
 
+<h3 style="color:#f97316;">
+📝 Demande d'accès
+</h3>
+
+<input id="req-firstname" placeholder="Prénom" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-lastname" placeholder="Nom" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-company" placeholder="Société" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-vat" placeholder="TVA" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-email" placeholder="Email" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-phone" placeholder="Téléphone" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-asp" placeholder="ASP actuel" style="width:100%;margin:5px 0;padding:10px;">
+
+<h4>Qualifications</h4>
+
+<label><input type="checkbox" id="req-pqs"> PQS validé</label><br>
+<label><input type="checkbox" id="req-fastsc"> Fast SC validé</label><br>
+<label><input type="checkbox" id="req-fastec"> Fast EC validé</label>
+
+<h4 style="margin-top:15px;">Upline</h4>
+
+<input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-phone" placeholder="Téléphone de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-email" placeholder="Email de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+
+<textarea
+  id="req-comment"
+  placeholder="Commentaires"
+  style="width:100%;margin-top:10px;padding:10px;height:80px;">
+</textarea>
+
+<button
+  onclick="submitAccessRequest()"
+  style="
+    margin-top:15px;
+    width:100%;
+    background:#16a34a;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Envoyer ma demande
+</button>
+
+</div>
   <div style="
     margin-top:12px;
     font-size:11px;
@@ -1844,6 +1900,24 @@ function copyText(id, btn) {
     btn.textContent = '✅ Copié !';
     setTimeout(() => btn.textContent = '📋 Copier le script complet', 2000);
   });
+}
+  function toggleAccessForm(){
+
+  const form =
+    document.getElementById('accessForm');
+
+  form.style.display =
+    form.style.display === 'none'
+      ? 'block'
+      : 'none';
+}
+
+function submitAccessRequest(){
+
+  alert(
+    "Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
+  );
+
 }
 </script>
 
