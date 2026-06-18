@@ -1917,7 +1917,10 @@ function copyText(id, btn) {
       : 'none';
 }
 
-async function submitAccessRequest(){
+window.submitAccessRequest = async function(){
+
+  console.log("db =", db);
+  console.log("addDoc =", addDoc);
 
   try {
 
