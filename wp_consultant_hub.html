@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.5.3.1 Version Stable
+Build 5.9.5.3.2 Version Stable
      </span>
     </div>
     </div>
@@ -173,7 +173,7 @@ Build 5.9.5.3.1 Version Stable
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.5.3.1 Version Stable
+      Build 5.9.5.3.2 Version Stable
     </div>
   </div>
 
@@ -1323,15 +1323,30 @@ function doUnlock(user) {
 
 function renderDashboard() {
   console.log('renderDashboard lancé');
-  console.log('Agent =', pmCurrentUser.agent);
+
   if (!pmCurrentUser) return;
+
   const u = pmCurrentUser;
-  // Find full profile from PM_AGENT_PROFILES
-  const p = PM_AGENT_PROFILES[u.agent] || { initials: u.name.slice(0,2).toUpperCase(), startDate: '—', aspInit: 0 };
+
+  console.log('Agent =', u.agent);
+
+  const p = PM_AGENT_PROFILES[u.agent] || {
+    initials: u.name.slice(0,2).toUpperCase(),
+    startDate: '—',
+    aspInit: 0
+  };
+
+  console.log('u.agent =', u.agent);
+  console.log('PM_AGENT_PROFILES =', PM_AGENT_PROFILES);
+  console.log('Profil trouvé =', PM_AGENT_PROFILES[u.agent]);
+  console.log('p final =', p);
+
   const aspTotal = pmGetTotalASP(u.agent);
+
+  console.log('aspTotal =', aspTotal);
+
   const cur = pmGetNiveau(aspTotal);
   const next = pmGetNextNiveau(aspTotal);
-
   // PQS / Fast SC / Fast EC
   function calcFastDays(limitDays) {
     if (!p.startDate || p.startDate === '—') return null;
