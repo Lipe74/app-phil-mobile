@@ -394,6 +394,7 @@ Build 6 Beta 2.7  -
     <div id="outils-unlocked" style="display:none;">
       <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
 
+
         <!-- COLONNE GAUCHE : menu -->
         <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
 
@@ -1155,11 +1156,9 @@ const SESSION_DAYS = 7;
 
 async function loadPMUsers() {
   try {
-const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
-
-console.log("Consultants JSON =", data.consultants);
-(data.consultants||[]).forEach(c=>{
-  PM_USERS[c.id] = {
+    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+PM_USERS[c.id] = {
   id: c.id,
   name: c.name,
   fullName: c.fullName,
@@ -1313,7 +1312,6 @@ async function checkCode() {
 }
 
 function doUnlock(user) {
-  console.log('doUnlock appelé', user);
   pmCurrentUser = user;
   document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('rem-error').style.display = 'none';
@@ -1322,9 +1320,7 @@ function doUnlock(user) {
     //document.getElementById('pm-logout').style.display = 'block';
 
 
-console.log('Avant setWelcome');
-setWelcome(user);
-console.log('Après setWelcome');
+  setWelcome(user);
   // Pré-sélectionner l'agent dans le suivi
   const agentSel = document.getElementById('pm-add-agent');
   if (agentSel) agentSel.value = user.agent;
@@ -1340,9 +1336,7 @@ console.log('Après setWelcome');
       });
       agentSel.value = user.agent;
     }
-console.log('Avant renderDashboard');
-renderDashboard();
-console.log('Après renderDashboard');
+    renderDashboard();
   });
   // Si non-admin : masquer les cartes agents autres que lui dans la progression
   pmNiveauAgent = user.agent;
@@ -2109,32 +2103,22 @@ window.firebaseLogin = async function(){
 
     document.getElementById('rem-error').style.display='none';
 
-    // TEMPORAIRE
-const consultant = Object.values(PM_USERS).find(
-  u => u.email &&
-       u.email.toLowerCase() === cred.user.email.toLowerCase()
-);
+    await loadPMUsers();
 
-console.log("PM_USERS =", PM_USERS);
-console.log("Email Firebase =", cred.user.email);
+    const consultant = Object.values(PM_USERS).find(
+      u => u.email &&
+           u.email.toLowerCase() === cred.user.email.toLowerCase()
+    );
 
-Object.values(PM_USERS).forEach(u => {
-  console.log(
-    "TEST =>",
-    u.email,
-    "===",
-    cred.user.email,
-    "?",
-    u.email?.toLowerCase() === cred.user.email.toLowerCase()
-  );
-});
+    if (!consultant) {
+      console.log('Aucun consultant correspondant à cet email dans PM_USERS');
+      document.getElementById('rem-error').textContent = "Compte non reconnu. Contactez l'administrateur.";
+      document.getElementById('rem-error').style.display = 'block';
+      return;
+    }
 
-console.log("Consultant trouvé =", consultant);
+    doUnlock(consultant);
 
-if (!consultant) {
-  console.log('PM_USERS pas encore chargé');
-  return;
-}
   }catch(err){
     document.getElementById('rem-error').style.display='block';
 
