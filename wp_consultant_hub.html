@@ -1322,6 +1322,7 @@ function doUnlock(user) {
 }
 
 function renderDashboard() {
+  console.log('renderDashboard lancé');
   if (!pmCurrentUser) return;
   const u = pmCurrentUser;
   // Find full profile from PM_AGENT_PROFILES
