@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 6 Beta 2.1  - 
+Build 6 Beta 2.2  - 
      </span>
     </div>
     </div>
@@ -168,7 +168,7 @@ Build 6 Beta 2.1  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 6 Beta 2.1 
+      Build 6 Beta 2.2 
     </div>
   </div>
 
@@ -2112,6 +2112,18 @@ const consultant = Object.values(PM_USERS).find(
 
 console.log("PM_USERS =", PM_USERS);
 console.log("Email Firebase =", cred.user.email);
+
+Object.values(PM_USERS).forEach(u => {
+  console.log(
+    "TEST =>",
+    u.email,
+    "===",
+    cred.user.email,
+    "?",
+    u.email?.toLowerCase() === cred.user.email.toLowerCase()
+  );
+});
+
 console.log("Consultant trouvé =", consultant);
 
 if (!consultant) {
