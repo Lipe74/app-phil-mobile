@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.5.2 Version Stable
+Build 5.9.5.3 Version Stable
      </span>
     </div>
     </div>
@@ -173,7 +173,7 @@ Build 5.9.5.2 Version Stable
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.5.2 Version Stable
+      Build 5.9.5.3 Version Stable
     </div>
   </div>
 
@@ -2052,19 +2052,22 @@ onAuthStateChanged(auth, async (user) => {
 
   await loadPMUsers();
 
- console.log('PM_USERS=', PM_USERS);
 console.log('PM_USERS.consultants=', PM_USERS.consultants);
 
-const consultant = PM_USERS.consultants.find(
+const consultant = Object.values(PM_USERS).find(
   u => u.email &&
        u.email.toLowerCase() === user.email.toLowerCase()
 );
 
 console.log('Consultant trouvé =', consultant);
 
-  if (!consultant) return;
+if (!consultant) return;
 
-  doUnlock(consultant);
+console.log('Avant doUnlock');
+
+doUnlock(consultant);
+
+console.log('Après doUnlock');
 
 });
 
