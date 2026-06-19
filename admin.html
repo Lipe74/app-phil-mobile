@@ -397,12 +397,15 @@ window.confirmActivate = async function () {
 
   let adminUserEmail;
   suspendAuthCheck = true;
+
+  // Étapes critiques : création du compte + du profil
   try {
-    // 1. Créer le compte Firebase Auth (cela connecte temporairement ce nouvel utilisateur)
     adminUserEmail = auth.currentUser.email;
     await createUserWithEmailAndPassword(auth, email, password);
 
-    // 2. Créer le document Firestore consultants
+    // Petite pause pour laisser Firestore stabiliser sa session après le changement d'utilisateur
+    await new Promise(r => setTimeout(r, 600));
+
     await setDoc(doc(db, 'consultants', id), {
       id, name, fullName, email, startDate, aspInit,
       isAdmin, active: true,
@@ -414,15 +417,19 @@ window.confirmActivate = async function () {
       paidAmount, paidDate
     });
 
-    // 3. Marquer le prospect comme activé (si applicable)
-    if (currentProspectForActivation) {
-      await updateDoc(doc(db, 'prospects', currentProspectForActivation), { status: 'activated' });
-    }
-
   } catch (err) {
     suspendAuthCheck = false;
     alert('Erreur lors de la création: ' + err.message);
     return;
+  }
+
+  // Étape secondaire (non bloquante) : marquer le prospect comme activé
+  if (currentProspectForActivation) {
+    try {
+      await updateDoc(doc(db, 'prospects', currentProspectForActivation), { status: 'activated' });
+    } catch (err) {
+      console.log('Avertissement: le prospect n\'a pas pu être marqué comme activé (le consultant est bien créé):', err.message);
+    }
   }
 
   // Fermer le modal d'activation tout de suite : le consultant est créé à ce stade
