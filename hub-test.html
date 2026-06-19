@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 6 Beta 2.2  - 
+Build 6 Beta 2.3  - 
      </span>
     </div>
     </div>
@@ -168,7 +168,7 @@ Build 6 Beta 2.2  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 6 Beta 2.2 
+      Build 6 Beta 2.3 
     </div>
   </div>
 
@@ -1157,9 +1157,11 @@ const SESSION_DAYS = 7;
 
 async function loadPMUsers() {
   try {
-    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
-    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
-PM_USERS[c.id] = {
+const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+
+console.log("Consultants JSON =", data.consultants);
+(data.consultants||[]).forEach(c=>{
+  PM_USERS[c.id] = {
   id: c.id,
   name: c.name,
   fullName: c.fullName,
