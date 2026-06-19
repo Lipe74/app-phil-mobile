@@ -2,17 +2,17 @@
   {
     "active": true,
     "type": "success",
-    "title": "Version 5.9.5.5 Stable disponible - Cliquez sur 🔄 pour actualiser",
+    "title": "Build 5.9.7 Stable disponible (pensez à actualiser)",
     "message": "",
     "date": "16/06/2026"
   },
 
   {
-    "active": false,
+    "active": true,
     "type": "orange",
-    "title": "Promotions Orange Juillet 2026 disponibles",
+    "title": "Promotions Orange juin 2026 uniquement",
     "message": "",
-    "date": "01/07/2026"
+    "date": "30/06/2026"
   },
 
   {
