@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.5 Stable - Juin 2026
+Build 5.9.6 Stable  - 
      </span>
     </div>
     </div>
@@ -151,29 +151,22 @@ Build 5.9.5 Stable - Juin 2026
     🚪 Déconnexion
   </button>
 
-</div></div>
-
 <!-- TABLEAU DE BORD -->
-<div style="padding:12px 16px 0;">
-
-  <div style="display:flex;background:#f8f8f8;border:1px solid #f97316;border-radius:12px;overflow:hidden;">
-    <div style="flex:1;padding:12px 4px;text-align:center;font-size:10px;font-weight:700;color:#f97316;background:rgba(221,153,51,0.1);border-bottom:3px solid #f97316;font-family:Arial,sans-serif;">🧰 Espace Consultants</div>
-  </div>
-
 
   <!-- LAYOUT OUTILS (always visible) -->
-  <div id="outils-form" style="display:block;border:1px solid #f97316;border-top:none;border-radius:0 0 12px 12px;background:#f8f8f8;padding:16px;">
-
+<div id="outils-form"
+     style="display:block;
+            background:#f8f8f8;
+            padding:16px;">
    <!-- VERROU FIREBASE -->
-<div id="rem-lock" style="border:1px solid #f97316;border-radius:12px;background:#f8f8f8;padding:24px 16px;text-align:center;margin-bottom:8px;">
-
+<div id="rem-lock" style="background:#f8f8f8;padding:10px 16px;text-align:center;margin-bottom:8px;">
   <div style="margin-bottom:20px;">
     <img src="images/logo.png"
          alt="Phil-Mobile"
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.5 Stable - Juin 2026
+      Build 5.9.6 Stable 
     </div>
   </div>
 
@@ -182,7 +175,24 @@ Build 5.9.5 Stable - Juin 2026
   <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">
     Accès Consultants
   </div>
-
+<div style="
+  background:#fff3e8;
+  border:1px solid #f97316;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:16px;
+  font-size:12px;
+  color:#555;
+  text-align:center;
+  max-width:500px;
+  margin-left:auto;
+  margin-right:auto;
+">
+  ℹ️ Cette application est développée et maintenue par
+  <b style="color:#f97316;">PHIL-MOBILE</b> pour les consultants Smart SN.
+  <br><br>
+  Elle n'est pas un produit officiel de Smart SN.
+</div>
   <div style="font-size:12px;color:#f97316;margin-bottom:16px;">
     Connectez-vous avec votre adresse e-mail.
   </div>
@@ -214,12 +224,178 @@ Build 5.9.5 Stable - Juin 2026
        style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
     Mot de passe oublié ?
   </div>
+<div style="
+  max-width:700px;
+  margin:30px auto;
+  padding:18px;
+  border:1px solid #f97316;
+  border-radius:16px;
+  background:#fff;
+">
+
+<div style="
+  max-width:500px;
+  margin:0 auto;
+  padding:25px;
+">
+
+  <div style="
+    font-size:24px;
+    font-weight:700;
+    color:#f97316;
+    text-align:center;
+    margin-bottom:10px;
+  ">
+    🚀 Découvrez l'application Consultants by PHIL-MOBILE
+  </div>
+
+  <div style="
+    text-align:center;
+    color:#666;
+    font-size:15px;
+    margin-bottom:20px;
+  ">
+    📱 Tous vos outils Smart SN réunis au même endroit
+  </div>
+
+  <div style="
+    color:#555;
+    line-height:2;
+    font-size:15px;
+    max-width:420px;
+    margin:0 auto;
+    text-align:left;
+  ">
+    ✔ Simulateur Orange<br>
+    ✔ Simulateur Eneco<br>
+    ✔ Simulateur de commissions<br>
+    ✔ Manuels et documentations en ligne<br>
+    ✔ Liens directs vers vos applications Smart SN<br>
+    ✔ Fonctionnement hors ligne<br>
+    ✔ Contact direct de votre Upline<br>
+    ✔ Installation sur smartphone<br>
+    ✔ Mises à jour incluses
+  </div>
+
+  <div style="
+    margin-top:20px;
+    padding:15px;
+    background:#fff3e8;
+    border:1px solid #f97316;
+    border-radius:12px;
+    text-align:center;
+  ">
+    <div style="
+      font-size:28px;
+      font-weight:700;
+      color:#f97316;
+    ">
+      149 € HTVA / an
+    </div>
+
+    <div style="
+      font-size:12px;
+      color:#666;
+      margin-top:5px;
+    ">
+      Facture annuelle • Dépense professionnelle déductible
+    </div>
+  </div>
+<button
+  id="btn-access-request"
+  onclick="toggleAccessForm()"
+  style="
+    margin-top:15px;
+    width:220px;
+    background:#f97316;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Demander un accès
+</button>
+<div id="accessForm" style="
+  display:none;
+  max-width:700px;
+  margin:20px auto;
+  text-align:left;
+">
+
+<h3 style="color:#f97316;">
+📝 Demande d'accès
+</h3>
+
+<input id="req-firstname" placeholder="Prénom" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-lastname" placeholder="Nom" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-company" placeholder="Société" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-vat" placeholder="TVA" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-email" placeholder="Email" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-phone" placeholder="Téléphone" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-asp" placeholder="ASP actuel" style="width:100%;margin:5px 0;padding:10px;">
+<input
+  id="req-startdate"
+  placeholder="Date d'entrée chez Smart (jj/mm/aaaa)"
+  style="width:100%;margin:5px 0;padding:10px;">  
+
+<h4>Qualifications</h4>
+
+<label><input type="checkbox" id="req-pqs"> PQS validé</label><br>
+<label><input type="checkbox" id="req-fastsc"> Fast SC validé</label><br>
+<label><input type="checkbox" id="req-fastec"> Fast EC validé</label>
+
+<h4 style="margin-top:15px;">Upline</h4>
+
+<input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-phone" placeholder="Téléphone de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-email" placeholder="Email de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+
+<textarea
+  id="req-comment"
+  placeholder="Commentaires"
+  style="width:100%;margin-top:10px;padding:10px;height:80px;">
+</textarea>
+
+<button
+  onclick="submitAccessRequest()"
+  style="
+    margin-top:15px;
+    width:100%;
+    background:#16a34a;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Envoyer ma demande
+</button>
+
+</div>
+  <div style="
+    margin-top:12px;
+    font-size:11px;
+    color:#888;
+    line-height:1.4;
+  ">
+    Cette application est développée de manière indépendante par PHIL-MOBILE et n'est pas un produit officiel Smart SN.
+  </div>
+
+</div>
+</div>
 
 </div>
 
     <!-- LAYOUT 2 COLONNES (visible après le code) -->
     <div id="outils-unlocked" style="display:none;">
       <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+
 
         <!-- COLONNE GAUCHE : menu -->
         <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
@@ -1764,6 +1940,68 @@ function copyText(id, btn) {
     setTimeout(() => btn.textContent = '📋 Copier le script complet', 2000);
   });
 }
+  function toggleAccessForm(){
+
+  const form =
+    document.getElementById('accessForm');
+
+  form.style.display =
+    form.style.display === 'none'
+      ? 'block'
+      : 'none';
+}
+
+window.submitAccessRequest = async function(){
+
+  console.log("db =", window.db);
+  console.log("addDoc =", window.addDoc);
+
+  try {
+
+    await window.addDoc(window.collection(window.db, "prospects"), {
+
+      firstName: document.getElementById('req-firstname').value.trim(),
+      lastName: document.getElementById('req-lastname').value.trim(),
+
+      company: document.getElementById('req-company').value.trim(),
+      vat: document.getElementById('req-vat').value.trim(),
+
+      email: document.getElementById('req-email').value.trim(),
+      phone: document.getElementById('req-phone').value.trim(),
+
+      asp: document.getElementById('req-asp').value.trim(),
+      startDate: document.getElementById('req-startdate').value.trim(),
+
+      pqsValidated: document.getElementById('req-pqs').checked,
+      fastSCValidated: document.getElementById('req-fastsc').checked,
+      fastECValidated: document.getElementById('req-fastec').checked,
+
+      upline: document.getElementById('req-upline').value.trim(),
+      uplinePhone: document.getElementById('req-upline-phone').value.trim(),
+      uplineEmail: document.getElementById('req-upline-email').value.trim(),
+
+      comment: document.getElementById('req-comment').value.trim(),
+
+      status: "pending",
+      createdAt: new Date().toISOString()
+
+    });
+
+    alert(
+      "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
+    );
+
+  } catch(err){
+
+    console.error(err);
+
+    alert(
+      "❌ Erreur lors de l'enregistrement de la demande."
+    );
+
+  }
+
+}
 </script>
 
 <script>
@@ -1807,7 +2045,12 @@ import {
   onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
+import {
+  getFirestore,
+  collection,
+  addDoc
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -1820,6 +2063,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+window.db = getFirestore(app);
+window.addDoc = addDoc;
+window.collection = collection;
 
 onAuthStateChanged(auth, async (user) => {
 
@@ -1859,21 +2105,22 @@ window.firebaseLogin = async function(){
 
     document.getElementById('rem-error').style.display='none';
 
-    // TEMPORAIRE
-const consultant = Object.values(PM_USERS).find(
-  u => u.email &&
-       u.email.toLowerCase() === cred.user.email.toLowerCase()
-);
+    await loadPMUsers();
 
-console.log("PM_USERS =", PM_USERS);
-console.log("Email Firebase =", cred.user.email);
-console.log("Consultant trouvé =", consultant);
+    const consultant = Object.values(PM_USERS).find(
+      u => u.email &&
+           u.email.toLowerCase() === cred.user.email.toLowerCase()
+    );
 
-if (!consultant) {
-  console.log('PM_USERS pas encore chargé');
-  return;
-}
- doUnlock(consultant);
+    if (!consultant) {
+      console.log('Aucun consultant correspondant à cet email dans PM_USERS');
+      document.getElementById('rem-error').textContent = "Compte non reconnu. Contactez l'administrateur.";
+      document.getElementById('rem-error').style.display = 'block';
+      return;
+    }
+
+    doUnlock(consultant);
+
   }catch(err){
     document.getElementById('rem-error').style.display='block';
 
