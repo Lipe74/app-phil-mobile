@@ -2052,10 +2052,15 @@ onAuthStateChanged(auth, async (user) => {
 
   await loadPMUsers();
 
-  const consultant = Object.values(PM_USERS).find(
-    u => u.email &&
-         u.email.toLowerCase() === user.email.toLowerCase()
-  );
+ console.log('PM_USERS=', PM_USERS);
+console.log('PM_USERS.consultants=', PM_USERS.consultants);
+
+const consultant = PM_USERS.consultants.find(
+  u => u.email &&
+       u.email.toLowerCase() === user.email.toLowerCase()
+);
+
+console.log('Consultant trouvé =', consultant);
 
   if (!consultant) return;
 
