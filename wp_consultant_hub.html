@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.1 Stable - Juin 2026
+Build 5.9.5 Version Stable
      </span>
     </div>
     </div>
@@ -173,7 +173,7 @@ Build 5.9.1 Stable - Juin 2026
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.1 Stable - Juin 2026
+      Build 5.9.5 Version Stable
     </div>
   </div>
 
@@ -214,7 +214,149 @@ Build 5.9.1 Stable - Juin 2026
        style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
     Mot de passe oublié ?
   </div>
+<div style="
+  margin-top:30px;
+  padding:18px;
+  border:1px solid #f97316;
+  border-radius:16px;
+  background:#fff;
+">
 
+  <div style="
+    font-size:18px;
+    font-weight:700;
+    color:#f97316;
+    margin-bottom:10px;
+  ">
+    🚀 Vous êtes intéressé par l'application ?
+  </div>
+
+  <div style="
+    font-size:14px;
+  color:#555;
+  line-height:1.6;
+  margin-bottom:12px;
+">
+  Gérez votre activité Smart plus efficacement grâce à une application développée spécialement pour les consultants.
+</p>
+
+<div style="
+  font-size:14px;
+  color:#555;
+  line-height:1.8;
+">
+  ✔ Simulateur Orange<br>
+  ✔ Simulateur Eneco<br>
+  ✔ Simulateur de commissions<br>
+  ✔ Manuels et documentations en ligne<br>
+  ✔ Liens directs vers vos applications Smart<br>
+  ✔ Fonctionnement hors ligne<br>
+  ✔ Contact direct de votre Upline<br>
+  ✔ Installation sur smartphone<br>
+  ✔ Mises à jour incluses
+</div>
+
+ <div style="
+  margin-top:12px;
+  font-weight:700;
+  color:#111;
+">
+  149 € HTVA / an
+</div>
+<div style="
+  margin-top:4px;
+  font-size:12px;
+  color:#666;
+">
+  Facture annuelle • Dépense professionnelle déductible
+</div>
+<button
+  id="btn-access-request"
+  onclick="toggleAccessForm()"
+  style="
+    margin-top:15px;
+    width:220px;
+    background:#f97316;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Demander un accès
+</button>
+<div id="accessForm" style="
+  display:none;
+  max-width:700px;
+  margin:20px auto;
+  text-align:left;
+">
+
+<h3 style="color:#f97316;">
+📝 Demande d'accès
+</h3>
+
+<input id="req-firstname" placeholder="Prénom" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-lastname" placeholder="Nom" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-company" placeholder="Société" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-vat" placeholder="TVA" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-email" placeholder="Email" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-phone" placeholder="Téléphone" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-asp" placeholder="ASP actuel" style="width:100%;margin:5px 0;padding:10px;">
+<input
+  id="req-startdate"
+  placeholder="Date d'entrée chez Smart (jj/mm/aaaa)"
+  style="width:100%;margin:5px 0;padding:10px;">  
+
+<h4>Qualifications</h4>
+
+<label><input type="checkbox" id="req-pqs"> PQS validé</label><br>
+<label><input type="checkbox" id="req-fastsc"> Fast SC validé</label><br>
+<label><input type="checkbox" id="req-fastec"> Fast EC validé</label>
+
+<h4 style="margin-top:15px;">Upline</h4>
+
+<input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-phone" placeholder="Téléphone de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-email" placeholder="Email de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+
+<textarea
+  id="req-comment"
+  placeholder="Commentaires"
+  style="width:100%;margin-top:10px;padding:10px;height:80px;">
+</textarea>
+
+<button
+  onclick="submitAccessRequest()"
+  style="
+    margin-top:15px;
+    width:100%;
+    background:#16a34a;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Envoyer ma demande
+</button>
+
+</div>
+  <div style="
+    margin-top:12px;
+    font-size:11px;
+    color:#888;
+    line-height:1.4;
+  ">
+    Cette application est développée de manière indépendante par PHIL-MOBILE et n'est pas un produit officiel Smart.
+  </div>
+
+</div>
 </div>
 
     <!-- LAYOUT 2 COLONNES (visible après le code) -->
@@ -1764,6 +1906,68 @@ function copyText(id, btn) {
     setTimeout(() => btn.textContent = '📋 Copier le script complet', 2000);
   });
 }
+  function toggleAccessForm(){
+
+  const form =
+    document.getElementById('accessForm');
+
+  form.style.display =
+    form.style.display === 'none'
+      ? 'block'
+      : 'none';
+}
+
+window.submitAccessRequest = async function(){
+
+  console.log("db =", window.db);
+  console.log("addDoc =", window.addDoc);
+
+  try {
+
+    await window.addDoc(window.collection(window.db, "prospects"), {
+
+      firstName: document.getElementById('req-firstname').value.trim(),
+      lastName: document.getElementById('req-lastname').value.trim(),
+
+      company: document.getElementById('req-company').value.trim(),
+      vat: document.getElementById('req-vat').value.trim(),
+
+      email: document.getElementById('req-email').value.trim(),
+      phone: document.getElementById('req-phone').value.trim(),
+
+      asp: document.getElementById('req-asp').value.trim(),
+      startDate: document.getElementById('req-startdate').value.trim(),
+
+      pqsValidated: document.getElementById('req-pqs').checked,
+      fastSCValidated: document.getElementById('req-fastsc').checked,
+      fastECValidated: document.getElementById('req-fastec').checked,
+
+      upline: document.getElementById('req-upline').value.trim(),
+      uplinePhone: document.getElementById('req-upline-phone').value.trim(),
+      uplineEmail: document.getElementById('req-upline-email').value.trim(),
+
+      comment: document.getElementById('req-comment').value.trim(),
+
+      status: "pending",
+      createdAt: new Date().toISOString()
+
+    });
+
+    alert(
+      "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
+    );
+
+  } catch(err){
+
+    console.error(err);
+
+    alert(
+      "❌ Erreur lors de l'enregistrement de la demande."
+    );
+
+  }
+
+}
 </script>
 
 <script>
@@ -1807,7 +2011,12 @@ import {
   onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
+import {
+  getFirestore,
+  collection,
+  addDoc
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -1820,6 +2029,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+window.db = getFirestore(app);
+window.addDoc = addDoc;
+window.collection = collection;
 
 onAuthStateChanged(auth, async (user) => {
 
