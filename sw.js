@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phil-mobile-Build 5.9.5.5 ';
+const CACHE_NAME = 'phil-mobile-Build 5.9.6 ';
 const ASSETS = [
   '/',
   '/wp_home.html',
