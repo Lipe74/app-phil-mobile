@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 6 Beta 2.4  - 
+Build 6 Beta 2.5  - 
      </span>
     </div>
     </div>
@@ -168,7 +168,7 @@ Build 6 Beta 2.4  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 6 Beta 2.4 
+      Build 6 Beta 2.5 
     </div>
   </div>
 
@@ -1324,7 +1324,9 @@ function doUnlock(user) {
     //document.getElementById('pm-logout').style.display = 'block';
 
 
-  setWelcome(user);
+console.log('Avant setWelcome');
+setWelcome(user);
+console.log('Après setWelcome');
   // Pré-sélectionner l'agent dans le suivi
   const agentSel = document.getElementById('pm-add-agent');
   if (agentSel) agentSel.value = user.agent;
