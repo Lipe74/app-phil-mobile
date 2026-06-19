@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Phil-Mobile</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f8f8f8;
+    color: #1a1a1a;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px;
+    background: #fff;
+    border-bottom: 1px solid #f97316;
+  }
+  .header h1 { font-size: 18px; color: #f97316; margin: 0; }
+  .header button {
+    background: #fff3e8; border: 1px solid #f97316; color: #f97316;
+    border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+  .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .section { margin-bottom: 30px; }
+  .section-title {
+    font-size: 13px; font-weight: 700; color: #f97316;
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
+  }
+  .card {
+    background: #fff; border: 1px solid #f0f0f0; border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .card-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .card-info { flex: 1; min-width: 200px; }
+  .card-info strong { font-size: 14px; }
+  .card-info .meta { font-size: 12px; color: #888; margin-top: 3px; }
+  .card-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn {
+    border: none; border-radius: 8px; padding: 8px 14px;
+    font-size: 12px; font-weight: 700; cursor: pointer; font-family: Arial, sans-serif;
+  }
+  .btn-primary { background: #f97316; color: #fff; }
+  .btn-secondary { background: #fff; border: 1px solid #ccc; color: #555; }
+  .btn-danger { background: #fde2e1; color: #c0392b; border: 1px solid #f5b7b1; }
+  .empty { color: #999; font-size: 13px; padding: 10px 0; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+  .badge-active { background: #E8F5E9; color: #2E7D32; }
+  .badge-inactive { background: #f3f4f6; color: #888; }
+
+  /* Login */
+  #login-screen {
+    max-width: 360px; margin: 80px auto; text-align: center;
+    background: #fff; border: 1px solid #f97316; border-radius: 14px; padding: 30px 24px;
+  }
+  #login-screen input {
+    width: 100%; padding: 11px 14px; font-size: 14px; border: 1px solid #f97316;
+    border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; text-align: center;
+  }
+  #login-screen button {
+    background: #f97316; color: #fff; border: none; padding: 11px 28px;
+    border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%;
+  }
+  #login-error { color: #e24b4a; font-size: 12px; margin-bottom: 10px; display: none; }
+
+  /* Modal formulaire */
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 14px; padding: 24px; max-width: 480px; width: 90%;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal-box h3 { color: #f97316; margin-top: 0; }
+  .form-row { margin-bottom: 10px; }
+  .form-row label { display: block; font-size: 11px; color: #888; margin-bottom: 3px; font-weight: 700; }
+  .form-row input, .form-row select {
+    width: 100%; padding: 9px 10px; font-size: 13px; border: 1px solid #ddd;
+    border-radius: 6px; box-sizing: border-box;
+  }
+  .form-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .form-actions button { flex: 1; }
+  .checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px; }
+
+  #toast {
+    position: fixed; bottom: 20px; right: 20px; background: #1a1a1a; color: #fff;
+    padding: 12px 18px; border-radius: 8px; font-size: 13px; display: none; z-index: 2000;
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <h2 style="color:#f97316;">🔐 Admin Phil-Mobile</h2>
+  <div id="login-error">Identifiants incorrects ou accès non autorisé.</div>
+  <input type="email" id="login-email" placeholder="Email" autocomplete="email">
+  <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') adminLogin();">
+  <button onclick="adminLogin()">Connexion</button>
+</div>
+
+<div id="admin-app" style="display:none;">
+  <div class="header">
+    <h1>🧰 Admin Phil-Mobile</h1>
+    <button onclick="adminLogout()">🚪 Déconnexion</button>
+  </div>
+
+  <div class="container">
+
+    <div class="section">
+      <div class="section-title">📝 Demandes en attente</div>
+      <div id="prospects-list"><div class="empty">Chargement...</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">👥 Consultants actifs / inactifs</div>
+      <div id="consultants-list"><div class="empty">Chargement...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal : activer un prospect / créer un consultant -->
+<div class="modal-overlay" id="activate-modal">
+  <div class="modal-box">
+    <h3>✅ Activer ce consultant</h3>
+    <div class="form-row">
+      <label>ID unique (identifiant Smart)</label>
+      <input type="text" id="f-id" placeholder="ex: delta835">
+    </div>
+    <div class="form-row">
+      <label>Prénom</label>
+      <input type="text" id="f-name">
+    </div>
+    <div class="form-row">
+      <label>Nom complet</label>
+      <input type="text" id="f-fullname">
+    </div>
+    <div class="form-row">
+      <label>Email</label>
+      <input type="email" id="f-email">
+    </div>
+    <div class="form-row">
+      <label>Mot de passe temporaire</label>
+      <input type="text" id="f-password" value="Smart2026!">
+    </div>
+    <div class="form-row">
+      <label>Date d'entrée (jj/mm/aaaa)</label>
+      <input type="text" id="f-startdate" placeholder="ex: 19/06/2026">
+    </div>
+    <div class="form-row">
+      <label>ASP initial</label>
+      <input type="number" id="f-aspinit" value="0">
+    </div>
+    <div class="form-row">
+      <label>Montant payé (€)</label>
+      <input type="number" id="f-paidamount" value="149">
+    </div>
+    <div class="form-row">
+      <label>Date de paiement (jj/mm/aaaa)</label>
+      <input type="text" id="f-paiddate" placeholder="ex: 19/06/2026">
+    </div>
+    <div class="checkbox-row"><input type="checkbox" id="f-isadmin"> Administrateur</div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeActivateModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmActivate()">Créer le consultant</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  setDoc,
+  doc,
+  updateDoc
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.db = db;
+window.doc = doc;
+window.setDoc = setDoc;
+window.collection = collection;
+window.getDocs = getDocs;
+window.updateDoc = updateDoc;
+
+let currentProspectForActivation = null;
+let isAdminUser = false;
+
+// --- Connexion ---
+window.adminLogin = async function () {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    document.getElementById('login-error').style.display = 'none';
+  } catch (err) {
+    document.getElementById('login-error').textContent = 'Identifiants incorrects.';
+    document.getElementById('login-error').style.display = 'block';
+  }
+};
+
+window.adminLogout = async function () {
+  await signOut(auth);
+  location.reload();
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('admin-app').style.display = 'none';
+    return;
+  }
+
+  // Vérifier que ce compte est bien admin dans la collection consultants
+  const snap = await getDocs(collection(db, 'consultants'));
+  let found = null;
+  snap.forEach(d => {
+    const c = d.data();
+    if (c.email && c.email.toLowerCase() === user.email.toLowerCase()) found = c;
+  });
+
+  if (!found || !found.isAdmin) {
+    document.getElementById('login-error').textContent = 'Ce compte n\'a pas accès à l\'admin.';
+    document.getElementById('login-error').style.display = 'block';
+    await signOut(auth);
+    return;
+  }
+
+  isAdminUser = true;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+  loadProspects();
+  loadConsultants();
+});
+
+// --- Toast ---
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// --- Prospects en attente ---
+async function loadProspects() {
+  const container = document.getElementById('prospects-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  const snap = await getDocs(collection(db, 'prospects'));
+  const pending = [];
+  snap.forEach(d => {
+    const p = d.data();
+    if (p.status === 'pending' || !p.status) pending.push({ docId: d.id, ...p });
+  });
+
+  if (pending.length === 0) {
+    container.innerHTML = '<div class="empty">Aucune demande en attente.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  pending.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <div class="card-info">
+          <strong>${escapeHtml(p.firstName || '')} ${escapeHtml(p.lastName || '')}</strong>
+          <div class="meta">${escapeHtml(p.company || '—')} · ${escapeHtml(p.email || '')} · ${escapeHtml(p.phone || '')}</div>
+          <div class="meta">ASP actuel: ${escapeHtml(String(p.asp ?? '—'))} · Entrée Smart: ${escapeHtml(p.startDate || '—')}</div>
+          <div class="meta">Upline: ${escapeHtml(p.upline || '—')} (${escapeHtml(p.uplinePhone || '—')})</div>
+          ${p.comment ? `<div class="meta">💬 ${escapeHtml(p.comment)}</div>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-primary" onclick="openActivateModal('${p.docId}')">✅ Activer</button>
+          <button class="btn btn-secondary" onclick="dismissProspect('${p.docId}')">Ignorer</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  window._prospectsCache = pending;
+}
+
+window.dismissProspect = async function (docId) {
+  if (!confirm('Marquer cette demande comme traitée sans créer de compte ?')) return;
+  await updateDoc(doc(db, 'prospects', docId), { status: 'dismissed' });
+  showToast('Demande ignorée.');
+  loadProspects();
+};
+
+// --- Modal activation ---
+window.openActivateModal = function (docId) {
+  const p = (window._prospectsCache || []).find(x => x.docId === docId);
+  currentProspectForActivation = docId;
+  document.getElementById('f-id').value = '';
+  document.getElementById('f-name').value = p?.firstName || '';
+  document.getElementById('f-fullname').value = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
+  document.getElementById('f-email').value = p?.email || '';
+  document.getElementById('f-password').value = 'Smart2026!';
+  document.getElementById('f-startdate').value = p?.startDate || '';
+  document.getElementById('f-aspinit').value = p?.asp || 0;
+  document.getElementById('f-paidamount').value = 149;
+  document.getElementById('f-paiddate').value = '';
+  document.getElementById('f-isadmin').checked = false;
+  document.getElementById('activate-modal').classList.add('open');
+};
+
+window.openCreateModal = function () {
+  currentProspectForActivation = null;
+  document.getElementById('f-id').value = '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-fullname').value = '';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-password').value = 'Smart2026!';
+  document.getElementById('f-startdate').value = '';
+  document.getElementById('f-aspinit').value = 0;
+  document.getElementById('f-paidamount').value = 149;
+  document.getElementById('f-paiddate').value = '';
+  document.getElementById('f-isadmin').checked = false;
+  document.getElementById('activate-modal').classList.add('open');
+};
+
+window.closeActivateModal = function () {
+  document.getElementById('activate-modal').classList.remove('open');
+};
+
+window.confirmActivate = async function () {
+  const id = document.getElementById('f-id').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  const fullName = document.getElementById('f-fullname').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const password = document.getElementById('f-password').value;
+  const startDate = document.getElementById('f-startdate').value.trim();
+  const aspInit = Number(document.getElementById('f-aspinit').value) || 0;
+  const paidAmount = Number(document.getElementById('f-paidamount').value) || 0;
+  const paidDate = document.getElementById('f-paiddate').value.trim();
+  const isAdmin = document.getElementById('f-isadmin').checked;
+
+  if (!id || !name || !email || !password) {
+    alert('ID, prénom, email et mot de passe sont obligatoires.');
+    return;
+  }
+
+  try {
+    // 1. Créer le compte Firebase Auth (cela connecte temporairement ce nouvel utilisateur)
+    const adminUserEmail = auth.currentUser.email;
+    await createUserWithEmailAndPassword(auth, email, password);
+
+    // 2. Créer le document Firestore consultants
+    await setDoc(doc(db, 'consultants', id), {
+      id, name, fullName, email, startDate, aspInit,
+      isAdmin, active: true,
+      upline: 'Philippe Tomaszewsky',
+      uplineTel: '+32 475 24 02 05',
+      uplineEmail: 'infos@phil-mobile.be',
+      calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
+      pqsValidated: false, fastSCValidated: false, fastECValidated: false,
+      paidAmount, paidDate
+    });
+
+    // 3. Marquer le prospect comme activé (si applicable)
+    if (currentProspectForActivation) {
+      await updateDoc(doc(db, 'prospects', currentProspectForActivation), { status: 'activated' });
+    }
+
+    // 4. Se reconnecter en tant qu'admin (la création du compte t'a déconnecté)
+    showToast('Consultant créé. Reconnexion admin...');
+    await signOut(auth);
+    const adminPassword = prompt('Confirme ton mot de passe admin pour te reconnecter:');
+    if (adminPassword) {
+      await signInWithEmailAndPassword(auth, adminUserEmail, adminPassword);
+    }
+
+    closeActivateModal();
+    showToast('✅ Consultant créé avec succès !');
+    loadProspects();
+    loadConsultants();
+
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+// --- Consultants actifs ---
+async function loadConsultants() {
+  const container = document.getElementById('consultants-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  const snap = await getDocs(collection(db, 'consultants'));
+  const list = [];
+  snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty">Aucun consultant.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  list.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <div class="card-info">
+          <strong>${escapeHtml(c.fullName || c.name || '')}</strong>
+          <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
+          ${c.isAdmin ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">Admin</span>' : ''}
+          <div class="meta">${escapeHtml(c.email || '')} · ID: ${escapeHtml(c.id || c.docId)}</div>
+          <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP init: ${escapeHtml(String(c.aspInit ?? 0))}</div>
+          ${c.paidAmount ? `<div class="meta">💰 Payé: ${escapeHtml(String(c.paidAmount))}€ le ${escapeHtml(c.paidDate || '—')}</div>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn ${c.active ? 'btn-danger' : 'btn-primary'}" onclick="toggleActive('${c.docId}', ${!c.active})">
+            ${c.active ? '⏸ Désactiver' : '▶ Réactiver'}
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+window.toggleActive = async function (docId, newState) {
+  await updateDoc(doc(db, 'consultants', docId), { active: newState });
+  showToast(newState ? 'Consultant réactivé.' : 'Consultant désactivé.');
+  loadConsultants();
+};
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+</script>
+
+</body>
+</html>
