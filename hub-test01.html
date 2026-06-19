@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outils Phil-Mobile</title>
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
+  <link rel="manifest" href="/manifest.json">
+
+<meta name="theme-color" content="#f97316">
+<style>
+.menu-item {
+  display:block;width:100%;text-align:left;padding:9px 12px;
+  background:#fff;border:1px solid #f97316;border-radius:8px;
+  color:#1a1a1a;font-size:12px;font-weight:600;cursor:pointer;
+  font-family:Arial,sans-serif;transition:all .15s;
+}
+  .submenu{
+  display:none;
+  margin-left:10px;
+}
+
+.submenu.open{
+  display:block;
+}
+
+.group-toggle{
+  width:100%;
+  text-align:left;
+}
+
+.menu-item:hover { background:#fff3e8; }
+.active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
+@media(max-width:600px){
+  #outils-unlocked > div { flex-direction:column !important; }
+  #outils-unlocked > div > div:first-child { width:100% !important; }
+  #iframe-panel { height:60vh !important;min-height:350px !important; }
+}
+/* Suivi contrats styles */
+.pm-sec{font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 6px;}
+.pm-mc{background:#fef9f5;border-radius:8px;padding:.65rem;border:1px solid #fde8cc;}
+.pm-mc-label{font-size:10px;color:#92400e;margin-bottom:3px;}
+.pm-mc-val{font-size:19px;font-weight:700;color:#1a1a1a;}
+.pm-pbar{height:4px;background:#f3f4f6;border-radius:99px;margin-top:5px;overflow:hidden;}
+.pm-pbar-fill{height:100%;border-radius:99px;background:#f97316;transition:width .4s;}
+.pm-niv-bar{display:flex;border-radius:6px;overflow:hidden;border:1px solid #f0f0f0;margin-bottom:10px;}
+.pm-niv-step{flex:1;padding:6px 2px;text-align:center;font-size:10px;font-weight:600;color:#9ca3af;background:#f9f9f9;border-right:1px solid #f0f0f0;}
+.pm-niv-step:last-child{border-right:none;}
+.pm-niv-step.done{background:#E8F5E9;color:#2E7D32;}
+.pm-niv-step.current{background:#f97316;color:#fff;font-weight:700;}
+.pm-niv-pts{display:block;font-size:8px;margin-top:1px;opacity:.8;}
+.pm-agent-card{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid #f0f0f0;background:#f9f9f9;margin-bottom:6px;cursor:pointer;transition:all .15s;}
+.pm-agent-card.active{border-color:#f97316;background:#fff8f0;}
+.pm-agent-av{width:32px;height:32px;border-radius:50%;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0D2580;flex-shrink:0;}
+.pm-agent-card.active .pm-agent-av{background:#f97316;color:#fff;}
+.pm-toggle-soho{display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7280;cursor:pointer;padding:5px 10px;border:1px solid #f0f0f0;border-radius:6px;background:#fff;user-select:none;font-family:Arial,sans-serif;}
+.pm-toggle-soho.active{background:#E3F2FD;color:#1565C0;border-color:#90caf9;}
+.pm-dot{width:24px;height:14px;border-radius:99px;background:#d1d5db;position:relative;transition:.2s;flex-shrink:0;}
+.pm-toggle-soho.active .pm-dot{background:#1565C0;}
+.pm-dot::after{content:'';position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s;}
+.pm-toggle-soho.active .pm-dot::after{left:12px;}
+.pm-prod-item{display:flex;align-items:center;gap:0;border:1px solid #f0f0f0;border-radius:6px;overflow:hidden;background:#fff;}
+.pm-pbtn{width:24px;height:28px;border:none;cursor:pointer;font-size:14px;font-weight:700;background:none;color:#6b7280;font-family:Arial,sans-serif;}
+.pm-pbtn:hover{background:#f3f4f6;}
+.pm-pcnt{font-size:11px;font-weight:700;min-width:18px;text-align:center;color:#1a1a1a;}
+.pm-pcnt.pos{color:#2E7D32;}
+.pm-pname{font-size:10px;color:#1a1a1a;padding:0 6px;}
+.pm-pasp{font-size:9px;color:#9ca3af;padding-right:5px;}
+.pm-flash{animation:pmfl .25s ease;}
+@keyframes pmfl{0%{transform:scale(1.2);}100%{transform:scale(1);}}
+.pm-grp{font-size:10px;color:#9ca3af;padding:5px 0 3px;font-style:italic;}
+.pm-hist-item{display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid #f3f4f6;font-size:10px;}
+.pm-hist-item:last-child{border-bottom:none;}
+.pm-hbadge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:5px;white-space:nowrap;}
+.pm-bo{background:#FFF3E0;color:#B45309;border:1px solid #f0d080;}
+.pm-be{background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;}
+.pm-bs{background:#E3F2FD;color:#1565C0;border:1px solid #90caf9;}
+.pm-late{font-size:9px;background:#FFF3E0;color:#B45309;padding:1px 4px;border-radius:99px;margin-left:3px;}
+.pm-asp-chip{font-size:9px;background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:99px;}
+.pm-prod-stat{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f9f9f9;}
+.pm-prod-stat:last-child{border-bottom:none;}
+</style>
+</head>
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
+
+<!-- HEADER compact -->
+  <div id="top-header"
+     style="display:none;
+            justify-content:space-between;
+            align-items:center;
+            padding:10px 16px;
+            background:#f8f8f8;
+            border-bottom:1px solid #f97316;
+            position:sticky;
+            top:0;
+            z-index:100;">
+
+  <div style="display:flex;align-items:center;gap:10px;">
+
+    <img src="images/logo.png"
+         alt="Phil-Mobile"
+         style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
+
+    <div style="display:flex;flex-direction:column;line-height:1;">
+      <span style="font-weight:700;font-size:14px;color:#f97316;">
+        Outils Phil-Mobile
+      </span>
+
+      <span style="font-size:9px;color:#999;font-weight:600;">
+Build 6 Beta 2.7  - 
+     </span>
+    </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+
+<div id="news-banner"
+     style="
+       display:none;
+       min-width:250px;
+       max-width:500px;
+       padding:8px 14px;
+       border-radius:8px;
+       font-size:12px;
+       font-weight:700;
+       text-align:center;
+       white-space:nowrap;
+       overflow:hidden;
+       text-overflow:ellipsis;">
+</div>
+
+</div>
+    <button onclick="forceRefreshApp()"
+        title="Actualiser l'application"
+        style="border:none;background:#fff3e8;color:#f97316;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:bold;">
+  🔄
+</button>
+  </div>
+
+  <button onclick="logout()"
+          style="display:none;
+                 background:#fff3e8;
+                 border:1px solid #f97316;
+                 color:#f97316;
+                 border-radius:99px;
+                 padding:5px 12px;
+                 font-size:12px;
+                 font-weight:700;
+                 cursor:pointer;"
+          id="pm-logout">
+    🚪 Déconnexion
+  </button>
+
+<!-- TABLEAU DE BORD -->
+
+  <!-- LAYOUT OUTILS (always visible) -->
+<div id="outils-form"
+     style="display:block;
+            background:#f8f8f8;
+            padding:16px;">
+   <!-- VERROU FIREBASE -->
+<div id="rem-lock" style="background:#f8f8f8;padding:10px 16px;text-align:center;margin-bottom:8px;">
+  <div style="margin-bottom:20px;">
+    <img src="images/logo.png"
+         alt="Phil-Mobile"
+         style="width:140px;height:140px;object-fit:contain;">
+
+    <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
+      Build 6 Beta 2.7 
+    </div>
+  </div>
+
+  <div style="font-size:28px;margin-bottom:12px;">🔐</div>
+
+  <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">
+    Accès Consultants
+  </div>
+<div style="
+  background:#fff3e8;
+  border:1px solid #f97316;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:16px;
+  font-size:12px;
+  color:#555;
+  text-align:center;
+  max-width:500px;
+  margin-left:auto;
+  margin-right:auto;
+">
+  ℹ️ Cette application est développée et maintenue par
+  <b style="color:#f97316;">PHIL-MOBILE</b> pour les consultants Smart SN.
+  <br><br>
+  Elle n'est pas un produit officiel de Smart SN.
+</div>
+  <div style="font-size:12px;color:#f97316;margin-bottom:16px;">
+    Connectez-vous avec votre adresse e-mail.
+  </div>
+
+  <input type="email"
+         id="rem-email"
+         placeholder="Votre adresse e-mail"
+         autocomplete="email"
+         style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+
+  <input type="password"
+         id="rem-password"
+           onkeydown="if(event.key==='Enter') firebaseLogin();"
+         placeholder="Votre mot de passe"
+         autocomplete="current-password"
+         style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+
+  <div id="rem-error"
+       style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">
+    Adresse e-mail ou mot de passe incorrect.
+  </div>
+
+  <button onclick="firebaseLogin()"
+          style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+    Connexion
+  </button>
+
+  <div onclick="firebaseResetPassword()"
+       style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
+    Mot de passe oublié ?
+  </div>
+<div style="
+  max-width:700px;
+  margin:30px auto;
+  padding:18px;
+  border:1px solid #f97316;
+  border-radius:16px;
+  background:#fff;
+">
+
+<div style="
+  max-width:500px;
+  margin:0 auto;
+  padding:25px;
+">
+
+  <div style="
+    font-size:24px;
+    font-weight:700;
+    color:#f97316;
+    text-align:center;
+    margin-bottom:10px;
+  ">
+    🚀 Découvrez l'application Consultants by PHIL-MOBILE
+  </div>
+
+  <div style="
+    text-align:center;
+    color:#666;
+    font-size:15px;
+    margin-bottom:20px;
+  ">
+    📱 Tous vos outils Smart SN réunis au même endroit
+  </div>
+
+  <div style="
+    color:#555;
+    line-height:2;
+    font-size:15px;
+    max-width:420px;
+    margin:0 auto;
+    text-align:left;
+  ">
+    ✔ Simulateur Orange<br>
+    ✔ Simulateur Eneco<br>
+    ✔ Simulateur de commissions<br>
+    ✔ Manuels et documentations en ligne<br>
+    ✔ Liens directs vers vos applications Smart SN<br>
+    ✔ Fonctionnement hors ligne<br>
+    ✔ Contact direct de votre Upline<br>
+    ✔ Installation sur smartphone<br>
+    ✔ Mises à jour incluses
+  </div>
+
+  <div style="
+    margin-top:20px;
+    padding:15px;
+    background:#fff3e8;
+    border:1px solid #f97316;
+    border-radius:12px;
+    text-align:center;
+  ">
+    <div style="
+      font-size:28px;
+      font-weight:700;
+      color:#f97316;
+    ">
+      149 € HTVA / an
+    </div>
+
+    <div style="
+      font-size:12px;
+      color:#666;
+      margin-top:5px;
+    ">
+      Facture annuelle • Dépense professionnelle déductible
+    </div>
+  </div>
+<button
+  id="btn-access-request"
+  onclick="toggleAccessForm()"
+  style="
+    margin-top:15px;
+    width:220px;
+    background:#f97316;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Demander un accès
+</button>
+<div id="accessForm" style="
+  display:none;
+  max-width:700px;
+  margin:20px auto;
+  text-align:left;
+">
+
+<h3 style="color:#f97316;">
+📝 Demande d'accès
+</h3>
+
+<input id="req-firstname" placeholder="Prénom" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-lastname" placeholder="Nom" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-company" placeholder="Société" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-vat" placeholder="TVA" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-email" placeholder="Email" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-phone" placeholder="Téléphone" style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-asp" placeholder="ASP actuel" style="width:100%;margin:5px 0;padding:10px;">
+<input
+  id="req-startdate"
+  placeholder="Date d'entrée chez Smart (jj/mm/aaaa)"
+  style="width:100%;margin:5px 0;padding:10px;">  
+
+<h4>Qualifications</h4>
+
+<label><input type="checkbox" id="req-pqs"> PQS validé</label><br>
+<label><input type="checkbox" id="req-fastsc"> Fast SC validé</label><br>
+<label><input type="checkbox" id="req-fastec"> Fast EC validé</label>
+
+<h4 style="margin-top:15px;">Upline</h4>
+
+<input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-phone" placeholder="Téléphone de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-email" placeholder="Email de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+
+<textarea
+  id="req-comment"
+  placeholder="Commentaires"
+  style="width:100%;margin-top:10px;padding:10px;height:80px;">
+</textarea>
+
+<button
+  onclick="submitAccessRequest()"
+  style="
+    margin-top:15px;
+    width:100%;
+    background:#16a34a;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:12px;
+    font-weight:700;
+    cursor:pointer;
+  ">
+  Envoyer ma demande
+</button>
+
+</div>
+  <div style="
+    margin-top:12px;
+    font-size:11px;
+    color:#888;
+    line-height:1.4;
+  ">
+    Cette application est développée de manière indépendante par PHIL-MOBILE et n'est pas un produit officiel Smart SN.
+  </div>
+
+</div>
+</div>
+
+    <!-- LAYOUT 2 COLONNES (visible après le code) -->
+    <div id="outils-unlocked" style="display:none;">
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+
+        <!-- COLONNE GAUCHE : menu -->
+        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
+
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-left:4px;">🏠 Accueil</div>
+          <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
+
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Contacts</div>
+          <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Phil-Mobile</button>
+          <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
+          <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
+          
+<!-- SIMULATEURS -->
+
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Simulateurs</div>
+
+<button onclick="toggleMenu('simMenu')" class="menu-item group-toggle">
+🧮 Simulateurs
+</button>
+
+<div id="simMenu" class="submenu">
+
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_rem.html')" class="menu-item">    💰 Calculateur de commissions
+  </button>
+
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_orange.html')" class="menu-item">    🟠 Simulateur Orange
+  </button>
+
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_eneco.html')" class="menu-item">    ⚡ Simulateur Eneco
+  </button>
+
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">    📋 Contrats & ASP (BETA)
+  </button>
+
+</div>
+<!-- Liens importants -->
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">
+🔗 Liens importants
+</div>
+
+<button onclick="toggleMenu('linksMenu')" class="menu-item group-toggle">
+🌐 Liens importants
+</button>
+
+<div id="linksMenu" class="submenu">
+
+  <button onclick="window.open('https://smartservicesnetwork.my.site.com/','_blank')" class="menu-item">
+    🏛️ My Smart
+  </button>
+
+  <button onclick="window.open('https://smartsn.showpad.biz/webapp2/home','_blank')" class="menu-item">
+    📱 Showpad
+  </button>
+
+  <button onclick="window.open('https://obe.my.site.com','_blank')" class="menu-item">
+    ☁️ Sales Force
+  </button>
+
+  <button onclick="window.open('https://www.crdc.be/','_blank')" class="menu-item">
+    📄 CRB (1399)
+  </button>
+
+  <button onclick="window.open('https://eneco.be/fr/','_blank')" class="menu-item">
+    ⚡ Eneco
+  </button>
+
+  <button onclick="window.open('https://www.orange.be/fr/options-et-services/internet/internet-boost/internet-boost-giga','_blank')" class="menu-item">
+    🟠 Éligibilité Fibre
+  </button>
+
+  <button onclick="window.open('https://phil-mobile.be/','_blank')" class="menu-item">
+    🌐 Phil-Mobile
+  </button>
+
+</div>          
+<!-- DOCUMENTS -->
+
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📁 Documents</div>
+
+<button onclick="toggleMenu('docsManuels')" class="menu-item group-toggle">
+📚 Manuels
+</button>
+
+<div id="docsManuels" class="submenu">
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_salesforce.pdf',this)" class="menu-item">
+    🟠 Manuel Sales Force
+  </button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_mysmart.pdf',this)" class="menu-item">
+    📘 Manuel My Smart SN
+  </button>
+
+</div>
+
+<button onclick="toggleMenu('docsCommissions')" class="menu-item group-toggle">
+💰 Commissions
+</button>
+
+<div id="docsCommissions" class="submenu">
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_commissions.pdf',this)" class="menu-item">
+    💶 Les commissions
+  </button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_smartPlan.pdf',this)" class="menu-item">
+    📊 Plan de commissions
+  </button>
+
+</div>
+
+<button onclick="toggleMenu('docsOrange')" class="menu-item group-toggle">
+🟠 Orange
+</button>
+
+<div id="docsOrange" class="submenu">
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_orangeproduits.pdf',this)" class="menu-item">
+    🟠 Produits Orange
+  </button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/decodeur.pdf',this)" class="menu-item">
+    📺 Orange Décodeur
+  </button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/modem.pdf',this)" class="menu-item">
+    📡 Orange Modem
+  </button>
+
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/roaming.pdf',this)" class="menu-item">
+    🌍 Roaming
+  </button>
+  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie01.pdf',this)" class="menu-item">📺 Chaînes Wallonie 01</button>
+<button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie02.pdf',this)" class="menu-item">📺 Chaînes Wallonie 02</button>
+<button onclick="loadFrame('https://app.phil-mobile.be/documents/flandre.pdf',this)" class="menu-item">📺 Chaînes Flandre</button>
+<button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles01.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 01</button>
+<button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles02.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 02</button>
+
+</div>
+
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🟠 Scripts Orange</div>
+          <button onclick="showScript('sc-orange-froid')" class="menu-item">❄️ Prospect froid</button>
+          <button onclick="showScript('sc-orange-ref')" class="menu-item">🤝 Référence</button>
+          <button onclick="showScript('sc-orange-amis')" class="menu-item">👥 Amis / connaissances</button>
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">⚡ Scripts Eneco</div>
+          <button onclick="showScript('sc-eneco-froid')" class="menu-item">❄️ Prospect froid</button>
+          <button onclick="showScript('sc-eneco-ref')" class="menu-item">🤝 Référence</button>
+          <button onclick="showScript('sc-eneco-amis')" class="menu-item">👥 Amis / connaissances</button>
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🚀 Scripts Recrutement</div>
+          <button onclick="showScript('sc-recr-client')" class="menu-item">⭐ Clients existants</button>
+          <button onclick="showScript('sc-recr-prospect')" class="menu-item">❄️ Prospects</button>
+          <button onclick="showScript('sc-recr-amis')" class="menu-item">👥 Connaissances</button>
+        </div>
+
+        <!-- COLONNE DROITE : contenu -->
+        <div style="flex:1;min-width:280px;">
+
+          <!-- Panel Contacts Phil-Mobile -->
+          <div id="panel-contacts-pm" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="text-align:center;margin-bottom:20px;">
+              <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 12px;">
+                <img src="images/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
+              </div>
+              <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Philippe Tomaszewsky</div>
+              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Phil-Mobile · Votre upline</div>
+            </div>
+            <a href="https://wa.me/32475240205" style="display:flex;align-items:center;gap:10px;background:#25d366;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              WhatsApp · +32 475 24 02 05
+            </a>
+            <a href="tel:+32475240205" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
+              📞 +32 475 24 02 05
+            </a>
+            <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              📧 infos@phil-mobile.be
+            </a>
+            <a href="mailto:philippe.tomaszewsky@gmail.com" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+              📧 philippe.tomaszewsky@gmail.com
+            </a>
+          </div>
+
+          <!-- Panel Contacts Smart SN -->
+          <div id="panel-contacts-smart" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="text-align:center;margin-bottom:20px;">
+              <div style="width:64px;height:64px;border-radius:50%;background:rgba(249,115,22,0.1);border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px;">🏢</div>
+              <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Smart SN</div>
+              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Support consultant</div>
+            </div>
+            <a href="tel:+3200077170" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
+              📞 +32 200 77 17
+            </a>
+            <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              📧 support@smartsn.be
+            </a>
+            <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+              📧 rem@smartsn.be
+            </a>
+          </div>
+
+          <!-- Panel Agenda -->
+          <div id="panel-agenda" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:16px;">📅 Agenda des événements</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🏢 Team Meeting Herstal (19:30–21:30)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 08/06/2026</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 22/06/2026</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:4px;">📍 06/07/2026</div>
+            <div style="font-size:11px;color:#f97316;font-style:italic;margin-top:4px;margin-bottom:10px;">⚠️ Inscription via My Smart → Events</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Bruxelles (18:00–21:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 17/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🎓 Success Training FR — Samedi (09:30–12:30)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🟠 Orange MasterClass — Bruxelles (19:00–22:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 23/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⚡ How to sell Eneco? — Herstal (19:00–21:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 29/06/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🥂 Summer Drink (20:00–22:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 02/07/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">🦁 Family Day — Pairi Daiza (10:00–18:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 27/09/2026</div>
+
+            <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;">⭐ Smart Day (13:00–18:00)</div>
+            <div style="font-size:11px;color:#6b7280;background:#fff3e8;border-radius:6px;padding:6px 10px;margin-bottom:10px;">📍 14/11/2026</div>
+
+            <div style="margin-top:20px;border-top:1px solid #f3f4f6;padding-top:16px;">
+              <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📆 Réserver un accompagnement</div>
+              <div style="border-radius:12px;overflow:hidden;border:1px solid #f97316;">
+                <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:500px;border:none;" frameborder="0"></iframe>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLEAU DE BORD (affiché dès connexion) -->
+          <div id="welcome-panel" style="display:block;">
+            <!-- Carte Bienvenue -->
+            <div style="border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;">
+              <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">BIENVENUE</div>
+              <div id="pm-dashboard-info"></div>
+            </div>
+            <!-- Carte Progression -->
+            <div style="border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;">
+              <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">PROGRESSION</div>
+              <div class="pm-niv-bar" id="pm-accueil-niv-bar"></div>
+              <div id="pm-accueil-niv-info" style="font-size:11px;color:#6b7280;text-align:center;margin-top:6px;"></div>
+            </div>
+            <!-- Métriques -->
+            <div id="pm-accueil-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
+          </div>
+
+          <!-- Panel Suivi des contrats v6 -->
+          <div id="suivi-panel" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;background:#fff;padding:20px;overflow-y:auto;max-height:92vh;">
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:14px;font-weight:700;color:#1a1a1a;">&#128202; Suivi des contrats</div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <button onclick="pmPrevMonth()" style="background:none;border:1px solid #f97316;border-radius:6px;padding:3px 8px;cursor:pointer;color:#f97316;font-size:12px;font-family:Arial,sans-serif;">&#8249;</button>
+              <span id="pm-month-label" style="font-size:12px;font-weight:700;color:#1a1a1a;min-width:110px;text-align:center;">&#8212;</span>
+              <button onclick="pmNextMonth()" style="background:none;border:1px solid #f97316;border-radius:6px;padding:3px 8px;cursor:pointer;color:#f97316;font-size:12px;font-family:Arial,sans-serif;">&#8250;</button>
+            </div>
+          </div>
+
+          <!-- Progression niveaux -->
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:12px;">
+            <div class="pm-sec" style="margin-top:0;">Progression — s&#233;lectionner l'agent</div>
+            <div id="pm-agent-cards" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+            <div class="pm-niv-bar" id="pm-niv-bar"></div>
+            <div id="pm-niv-info" style="font-size:11px;color:#6b7280;text-align:center;"></div>
+          </div>
+
+          <!-- M&#233;triques mois -->
+          <div id="pm-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;"></div>
+
+          <!-- Encodage -->
+          <div style="background:#fef9f5;border:1px solid #fde8cc;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div class="pm-sec" style="margin-top:0;">Encoder un contrat</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+              <select id="pm-add-agent" style="font-size:12px;padding:5px 8px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#1a1a1a;font-family:Arial,sans-serif;">
+                <option value="Philippe Tomaszewsky">Philippe Tomaszewsky</option>
+                <option value="Julien Couvreur">Julien Couvreur</option>
+              </select>
+              <div class="pm-toggle-soho" id="pm-soho-toggle" onclick="pmToggleSoHo()">
+                <span class="pm-dot"></span><span>SoHo</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+              <label style="font-size:11px;color:#92400e;">&#128197; Date contrat</label>
+              <input type="date" id="pm-contract-date" style="font-size:11px;padding:4px 8px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#1a1a1a;font-family:Arial,sans-serif;">
+              <button onclick="pmSetToday()" style="font-size:10px;padding:4px 8px;border:1px solid #f97316;border-radius:6px;background:none;cursor:pointer;color:#f97316;font-family:Arial,sans-serif;">Aujourd'hui</button>
+              <span style="font-size:10px;color:#9ca3af;">Encod&#233; le <span id="pm-encoded-label"></span></span>
+            </div>
+            <div id="pm-products-panel"></div>
+            <!-- Panier -->
+            <div style="margin-top:10px;border-top:1px solid #fde8cc;padding-top:10px;">
+              <div class="pm-sec" style="margin-top:0;">Panier</div>
+              <div id="pm-panier"></div>
+              <button id="pm-btn-valider" onclick="pmValiderPanier()" style="margin-top:10px;width:100%;padding:10px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;opacity:0.4;" disabled>&#10003; Valider l'encodage</button>
+            </div>
+          </div>
+
+          <!-- Stats produits -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;">
+              <div class="pm-sec" style="margin-top:0;">Orange</div>
+              <div id="pm-orange-stats"></div>
+            </div>
+            <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;">
+              <div class="pm-sec" style="margin-top:0;">Eneco</div>
+              <div id="pm-eneco-stats"></div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:12px;">
+            <div class="pm-sec" style="margin-top:0;">Par agent</div>
+            <div id="pm-team-stats"></div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:12px;">
+            <div class="pm-sec" style="margin-top:0;">Historique du mois</div>
+            <div id="pm-history"></div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;margin-bottom:12px;">
+            <div class="pm-sec" style="margin-top:0;">&#201;volution 6 mois</div>
+            <div style="position:relative;width:100%;height:160px;">
+              <canvas id="pm-chart" role="img" aria-label="&#201;volution contrats sur 6 mois"></canvas>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:#6b7280;">
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#E65100;margin-right:3px;"></span>Orange</span>
+              <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#2E7D32;margin-right:3px;"></span>Eneco</span>
+            </div>
+          </div>
+
+          <div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px;background:#fff;">
+            <div class="pm-sec" style="margin-top:0;">Export</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="pmExportPDF()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:#0D2580;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#128196; PDF</button>
+              <button onclick="pmExportMail()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:transparent;color:#f97316;border:1px solid #f97316;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#128231; Email</button>
+            </div>
+          </div>
+
+          </div>
+
+          <!-- Iframe panel (caché par défaut) -->
+          <div id="iframe-panel" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#fff;height:92vh;min-height:500px;display:none;flex-direction:column;">
+            <div id="iframe-loading" style="display:flex;align-items:center;justify-content:center;height:100%;color:#f97316;font-size:13px;flex-direction:column;gap:8px;">
+              <div style="font-size:28px;">⏳</div>Chargement...
+            </div>
+            <iframe id="embed-frame" src="" style="width:100%;flex:1;border:none;display:none;"></iframe>
+          </div>
+
+
+          <!-- Script panels -->
+          <div id="sc-orange-froid" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">🟠❄️</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🟠 Orange — Prospect froid</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour, je suis bien chez Monsieur/Madame [Nom] ?
+
+Philippe de Phil-Mobile à l'appareil.
+
+Je vous rassure, je ne vous appelle pas pour vous vendre quelque chose immédiatement.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je réalise actuellement des analyses gratuites des factures GSM, Internet et TV dans votre région afin de vérifier si les habitants paient le juste prix.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Qualification</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous êtes actuellement chez quel opérateur ?
+Orange, Proximus, VOO, Telenet ou autre ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💬 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Et globalement vous êtes satisfait de votre abonnement ?
+
+Si je pouvais vous faire économiser quelques euros ou obtenir plus de services pour le même prix, cela vous intéresserait ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Prise de rendez-vous</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Le plus simple est de prendre 15 minutes ensemble afin que j'analyse votre facture gratuitement.
+
+Je peux passer quand cela vous convient ou le faire à distance.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Quel serait le meilleur moment pour vous ?</div>
+            </div>
+            <div id="txt-sc-orange-froid" style="display:none;">Bonjour, je suis bien chez Monsieur/Madame [Nom] ?
+
+Philippe de Phil-Mobile à l'appareil.
+
+Je vous rassure, je ne vous appelle pas pour vous vendre quelque chose immédiatement.
+Je réalise actuellement des analyses gratuites des factures GSM, Internet et TV dans votre région afin de vérifier si les habitants paient le juste prix.
+Vous êtes actuellement chez quel opérateur ?
+Orange, Proximus, VOO, Telenet ou autre ?
+Et globalement vous êtes satisfait de votre abonnement ?
+
+Si je pouvais vous faire économiser quelques euros ou obtenir plus de services pour le même prix, cela vous intéresserait ?
+Le plus simple est de prendre 15 minutes ensemble afin que j'analyse votre facture gratuitement.
+
+Je peux passer quand cela vous convient ou le faire à distance.
+Quel serait le meilleur moment pour vous ?</div>
+            <button onclick="copyText('txt-sc-orange-froid',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-orange-ref" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">🟠🤝</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🟠 Orange — Référence client</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom],
+
+Je vous contacte suite aux coordonnées que m'a communiquées [Prénom du client].</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Il est client chez moi pour ses services Orange et m'a indiqué que cela pourrait vous intéresser également.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Actuellement vous êtes chez quel opérateur ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔄 Transition</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je ne vais pas vous demander de changer aujourd'hui.
+
+Mon objectif est simplement de vérifier si votre offre actuelle est toujours adaptée.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je propose une analyse gratuite et sans engagement.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Quel serait le meilleur moment pour regarder cela ensemble ?</div>
+            </div>
+            <div id="txt-sc-orange-ref" style="display:none;">Bonjour Monsieur/Madame [Nom],
+
+Je vous contacte suite aux coordonnées que m'a communiquées [Prénom du client].
+Il est client chez moi pour ses services Orange et m'a indiqué que cela pourrait vous intéresser également.
+Actuellement vous êtes chez quel opérateur ?
+Je ne vais pas vous demander de changer aujourd'hui.
+
+Mon objectif est simplement de vérifier si votre offre actuelle est toujours adaptée.
+Je propose une analyse gratuite et sans engagement.
+Quel serait le meilleur moment pour regarder cela ensemble ?</div>
+            <button onclick="copyText('txt-sc-orange-ref',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-orange-amis" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">🟠👥</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🟠 Orange — Amis / connaissances</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Salut [Prénom], comment vas-tu ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je t'appelle rapidement car je développe actuellement mon activité dans la téléphonie et internet avec Orange.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je me demandais simplement si tu avais déjà regardé récemment ce que tu payes actuellement.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Beaucoup de personnes autour de moi ont réussi à économiser sans changer leurs habitudes.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📋 Proposition</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Si tu veux, je peux jeter un coup d'œil à ta facture gratuitement.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Ça te dirait qu'on regarde ça ensemble ?</div>
+            </div>
+            <div id="txt-sc-orange-amis" style="display:none;">Salut [Prénom], comment vas-tu ?
+Je t'appelle rapidement car je développe actuellement mon activité dans la téléphonie et internet avec Orange.
+Je me demandais simplement si tu avais déjà regardé récemment ce que tu payes actuellement.
+Beaucoup de personnes autour de moi ont réussi à économiser sans changer leurs habitudes.
+Si tu veux, je peux jeter un coup d'œil à ta facture gratuitement.
+Ça te dirait qu'on regarde ça ensemble ?</div>
+            <button onclick="copyText('txt-sc-orange-amis',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-eneco-froid" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">⚡❄️</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">⚡ Eneco — Prospect froid</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom].
+
+Philippe de Phil-Mobile.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">J'effectue actuellement des comparatifs gratuits d'énergie pour vérifier si les ménages paient un prix correct.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous êtes actuellement chez quel fournisseur ?
+Engie, Luminus, TotalEnergies ou autre ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Votre facture a-t-elle augmenté ces derniers mois ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Dans beaucoup de cas, nous trouvons des économies ou une formule plus adaptée.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Pour cela, j'ai simplement besoin de votre dernière facture.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Quand puis-je passer ou vous appeler pour regarder cela ensemble ?</div>
+            </div>
+            <div id="txt-sc-eneco-froid" style="display:none;">Bonjour Monsieur/Madame [Nom].
+
+Philippe de Phil-Mobile.
+J'effectue actuellement des comparatifs gratuits d'énergie pour vérifier si les ménages paient un prix correct.
+Vous êtes actuellement chez quel fournisseur ?
+Engie, Luminus, TotalEnergies ou autre ?
+Votre facture a-t-elle augmenté ces derniers mois ?
+Dans beaucoup de cas, nous trouvons des économies ou une formule plus adaptée.
+Pour cela, j'ai simplement besoin de votre dernière facture.
+Quand puis-je passer ou vous appeler pour regarder cela ensemble ?</div>
+            <button onclick="copyText('txt-sc-eneco-froid',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-eneco-ref" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">⚡🤝</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">⚡ Eneco — Référence</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom].
+
+Je vous contacte de la part de [Prénom].</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Nous avons récemment analysé ses contrats énergie et il m'a conseillé de vous contacter.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous avez déjà comparé vos tarifs cette année ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Beaucoup de clients restent plusieurs années sur des contrats qui ne sont plus optimisés.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Une simple analyse de facture permet de le vérifier.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Puis-je vous proposer un rendez-vous de 15 minutes ?</div>
+            </div>
+            <div id="txt-sc-eneco-ref" style="display:none;">Bonjour Monsieur/Madame [Nom].
+
+Je vous contacte de la part de [Prénom].
+Nous avons récemment analysé ses contrats énergie et il m'a conseillé de vous contacter.
+Vous avez déjà comparé vos tarifs cette année ?
+Beaucoup de clients restent plusieurs années sur des contrats qui ne sont plus optimisés.
+Une simple analyse de facture permet de le vérifier.
+Puis-je vous proposer un rendez-vous de 15 minutes ?</div>
+            <button onclick="copyText('txt-sc-eneco-ref',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-eneco-amis" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">⚡👥</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">⚡ Eneco — Amis / connaissances</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Salut [Prénom], comment vas-tu ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je travaille également dans le secteur de l'énergie avec Eneco.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Tu sais combien tu paies actuellement ton électricité et ton gaz ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Beaucoup de personnes sont surprises quand on compare réellement leur contrat.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📋 Proposition</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Si tu veux, envoie-moi simplement une facture et je regarde ça gratuitement.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Ça ne t'engage à rien.</div>
+            </div>
+            <div id="txt-sc-eneco-amis" style="display:none;">Salut [Prénom], comment vas-tu ?
+Je travaille également dans le secteur de l'énergie avec Eneco.
+Tu sais combien tu paies actuellement ton électricité et ton gaz ?
+Beaucoup de personnes sont surprises quand on compare réellement leur contrat.
+Si tu veux, envoie-moi simplement une facture et je regarde ça gratuitement.
+Ça ne t'engage à rien.</div>
+            <button onclick="copyText('txt-sc-eneco-amis',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-recr-client" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">🚀⭐</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🚀 Recrutement — Client existant</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour [Prénom].</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je vous appelle aujourd'hui non pas pour vos services, mais parce que je recherche actuellement quelques personnes motivées pour rejoindre notre équipe.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Avez-vous déjà envisagé un complément de revenus ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Nous travaillons avec Orange et Eneco, avec formation complète et accompagnement.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous connaissez peut-être des personnes qui cherchent un revenu complémentaire ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je peux vous expliquer cela en 20 minutes.</div>
+            </div>
+            <div id="txt-sc-recr-client" style="display:none;">Bonjour [Prénom].
+Je vous appelle aujourd'hui non pas pour vos services, mais parce que je recherche actuellement quelques personnes motivées pour rejoindre notre équipe.
+Avez-vous déjà envisagé un complément de revenus ?
+Nous travaillons avec Orange et Eneco, avec formation complète et accompagnement.
+Vous connaissez peut-être des personnes qui cherchent un revenu complémentaire ?
+Je peux vous expliquer cela en 20 minutes.</div>
+            <button onclick="copyText('txt-sc-recr-client',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-recr-prospect" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">🚀❄️</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🚀 Recrutement — Prospect</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom].</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je vous contacte car je développe actuellement une équipe commerciale dans votre région.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Seriez-vous ouvert à découvrir une activité complémentaire qui peut être exercée à votre rythme ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">✔ Formation incluse
+✔ Pas besoin d'expérience
+✔ Possibilité de revenus récurrents</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Cherchez-vous actuellement un complément de revenus ou une nouvelle opportunité ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Si oui, je peux vous présenter le concept en une vingtaine de minutes.</div>
+            </div>
+            <div id="txt-sc-recr-prospect" style="display:none;">Bonjour Monsieur/Madame [Nom].
+Je vous contacte car je développe actuellement une équipe commerciale dans votre région.
+Seriez-vous ouvert à découvrir une activité complémentaire qui peut être exercée à votre rythme ?
+✔ Formation incluse
+✔ Pas besoin d'expérience
+✔ Possibilité de revenus récurrents
+Cherchez-vous actuellement un complément de revenus ou une nouvelle opportunité ?
+Si oui, je peux vous présenter le concept en une vingtaine de minutes.</div>
+            <button onclick="copyText('txt-sc-recr-prospect',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+          <div id="sc-recr-amis" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+              <span style="font-size:20px;">🚀👥</span>
+              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🚀 Recrutement — Connaissances</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Salut [Prénom].</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je pense à toi parce que je développe actuellement mon activité avec Orange et Eneco.</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre un deuxième emploi ?</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">✔ Tu travailles quand tu veux
+✔ Formation complète
+✔ Accompagnement permanent</div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
+              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Ça te dirait que je t'explique rapidement le concept autour d'un café ou en visio ?</div>
+            </div>
+            <div id="txt-sc-recr-amis" style="display:none;">Salut [Prénom].
+Je pense à toi parce que je développe actuellement mon activité avec Orange et Eneco.
+Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre un deuxième emploi ?
+✔ Tu travailles quand tu veux
+✔ Formation complète
+✔ Accompagnement permanent
+Ça te dirait que je t'explique rapidement le concept autour d'un café ou en visio ?</div>
+            <button onclick="copyText('txt-sc-recr-amis',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center;padding:10px;font-size:11px;color:#999;border-top:1px solid #f97316;background:#f8f8f8;margin-top:16px;">
+  Phil-Mobile © 2026 • Powered by
+  <a href="https://phil-fixit.be"
+     target="_blank"
+     style="color:#f97316;text-decoration:none;font-weight:700;">
+     Phil-Fixit
+  </a>
+</div>
+
+<script>
+// Identifiants chargés depuis pm_consultants.json
+let PM_USERS = {};
+const SESSION_DAYS = 7;
+
+async function loadPMUsers() {
+  try {
+const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+
+console.log("Consultants JSON =", data.consultants);
+(data.consultants||[]).forEach(c=>{
+  PM_USERS[c.id] = {
+  id: c.id,
+  name: c.name,
+  fullName: c.fullName,
+  email: c.email,
+  agent: c.fullName,
+  isAdmin: !!c.isAdmin
+};
+    });
+  } catch(e) {
+    // fallback: allow admin access
+    PM_USERS = {
+  'delta835': {
+    name: 'Philippe',
+    fullName: 'Philippe Tomaszewsky',
+    email: 'infos@phil-mobile.be',
+    agent: 'Philippe Tomaszewsky',
+    isAdmin: true
+  }
+};
+  }
+}
+
+let pmCurrentUser = null;
+
+function setCookie(name, val, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + days * 86400000);
+  document.cookie = name + '=' + val + ';expires=' + d.toUTCString() + ';path=/';
+}
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
+function deleteCookie(name) {
+  document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+}
+
+async function logout() {
+
+  await signOut(auth);
+
+  deleteCookie('pm_user');
+
+  window.location.href =
+    'https://app.phil-mobile.be/wp_consultant_hub.html';
+
+}
+
+function setWelcome(user) {
+  const el = document.getElementById('pm-welcome');
+
+  if (el) {
+    el.textContent = '🆔 ' + user.id;
+    el.style.display = 'block';
+  }
+}
+
+function toggleMenu(id){
+  document
+    .getElementById(id)
+    .classList
+    .toggle('open');
+}
+
+function frameLoaded() {
+  document.getElementById('iframe-loading').style.display = 'none';
+  document.getElementById('embed-frame').style.display = 'block';
+}
+
+// Attacher frameLoaded à l'iframe
+document.getElementById('embed-frame').addEventListener('load', frameLoaded);
+
+function loadFrame(url, btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  const panel = document.getElementById('iframe-panel');
+  panel.style.display = 'flex';
+  document.getElementById('iframe-loading').style.display = 'flex';
+  document.getElementById('embed-frame').style.display = 'none';
+  document.getElementById('embed-frame').src = url;
+}
+
+function showScript(id) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  event.currentTarget.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+}
+
+function showDashboard(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('welcome-panel').style.display = 'block';
+  renderDashboard();
+}
+
+function showContacts(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-contacts-pm').style.display = 'block';
+}
+
+function showContactsSmart(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-contacts-smart').style.display = 'block';
+}
+
+function showAgenda(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-agenda').style.display = 'block';
+}
+
+function switchTab(tab) {
+  // kept for compatibility but no-op now (single tab)
+}
+
+
+async function checkCode() {
+  if (Object.keys(PM_USERS).length === 0) await loadPMUsers();
+  const val = document.getElementById('rem-code').value.trim().toLowerCase();
+  const user = PM_USERS[val];
+  if (user) {
+    setCookie('pm_user', val, SESSION_DAYS);
+    doUnlock(user);
+  } else {
+    document.getElementById('rem-error').style.display = 'block';
+    document.getElementById('rem-code').value = '';
+  }
+}
+
+function doUnlock(user) {
+  console.log('doUnlock appelé', user);
+  pmCurrentUser = user;
+  document.getElementById('rem-lock').style.display = 'none';
+  document.getElementById('rem-error').style.display = 'none';
+  document.getElementById('outils-unlocked').style.display = 'block';
+    document.getElementById('top-header').style.display = 'flex';
+    //document.getElementById('pm-logout').style.display = 'block';
+
+
+console.log('Avant setWelcome');
+setWelcome(user);
+console.log('Après setWelcome');
+  // Pré-sélectionner l'agent dans le suivi
+  const agentSel = document.getElementById('pm-add-agent');
+  if (agentSel) agentSel.value = user.agent;
+  // Rafraîchir les profils agents depuis pm_consultants.json
+  refreshAgentProfiles().then(() => {
+    // Peupler le select agent avec les agents actifs
+    if (agentSel) {
+      agentSel.innerHTML = '';
+      Object.keys(PM_AGENT_PROFILES).forEach(name => {
+        const o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        agentSel.appendChild(o);
+      });
+      agentSel.value = user.agent;
+    }
+console.log('Avant renderDashboard');
+renderDashboard();
+console.log('Après renderDashboard');
+  });
+  // Si non-admin : masquer les cartes agents autres que lui dans la progression
+  pmNiveauAgent = user.agent;
+}
+
+function renderDashboard() {
+  if (!pmCurrentUser) return;
+  const u = pmCurrentUser;
+  // Find full profile from PM_AGENT_PROFILES
+  const p = PM_AGENT_PROFILES[u.agent] || { initials: u.name.slice(0,2).toUpperCase(), startDate: '—', aspInit: 0 };
+  const aspTotal = pmGetTotalASP(u.agent);
+  const cur = pmGetNiveau(aspTotal);
+  const next = pmGetNextNiveau(aspTotal);
+
+  // PQS / Fast SC / Fast EC
+  function calcFastDays(limitDays) {
+    if (!p.startDate || p.startDate === '—') return null;
+    const parts = p.startDate.split('/');
+    if (parts.length !== 3) return null;
+    const start = new Date(parts[2], parts[1]-1, parts[0]);
+    const deadline = new Date(start.getTime() + limitDays * 86400000);
+    return Math.ceil((deadline - new Date()) / 86400000);
+  }
+  function calcPQSdb() {
+    if (!p.startDate || p.startDate === '—') return null;
+    const parts = p.startDate.split('/');
+    if (parts.length !== 3) return null;
+    const start = new Date(parts[2], parts[1]-1, parts[0]);
+    const deadline = new Date(start.getTime() + 40 * 86400000);
+    const daysLeft = Math.ceil((deadline - new Date()) / 86400000);
+    const pct = Math.min(100, Math.max(0, Math.round((40 - daysLeft) / 40 * 100)));
+    return { deadline, daysLeft, pct };
+  }
+  const pqs = calcPQSdb();
+  const fastSCDays = calcFastDays(90);
+  const fastECDays = calcFastDays(120);
+  // Retrieve full consultant data from PM_USERS to get pqsValidated etc.
+  const fullData = Object.values(PM_USERS).find(x => x.fullName === u.fullName) || {};
+
+  // Sponsor block
+  let sponsorHtml = '';
+  if (u.uplineName || p.upline) {
+    const upName = u.uplineName || p.upline || '';
+    const upTel  = u.uplineTel  || p.uplineTel  || '';
+    const upMail = u.uplineEmail|| p.uplineEmail || '';
+    if (upName) {
+      sponsorHtml = `<div style="margin-top:10px;background:#fef9f5;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #fde8cc;">
+        <div style="font-size:20px;">👤</div>
+        <div style="flex:1;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Votre sponsor</div>
+        <div style="font-size:13px;font-weight:700;color:#f97316;">${upName}</div></div>
+        ${upTel?`<a href="tel:${upTel}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#1a1a2e;color:white;border-radius:99px;text-decoration:none;font-size:12px;font-weight:600;">📞 Appeler</a>`:''}
+        ${upMail?`<a href="mailto:${upMail}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#f97316;color:white;border-radius:99px;text-decoration:none;font-size:12px;font-weight:600;">📧 Email</a>`:''}
+      </div>`;
+    }
+  }
+
+  const mc = pmGetMC(pmCurYear, pmCurMonth);
+  const myMC = u.isAdmin ? mc : mc.filter(c => c.agent === u.agent);
+  const byProd = {}; myMC.forEach(c => { byProd[c.product] = (byProd[c.product]||0)+1; });
+  const totalO = PM_ALL_O.reduce((s,p2) => s+(byProd[p2]||0)+(byProd[p2+' SoHo']||0), 0);
+  const totalE = PM_ALL_E.reduce((s,p2) => s+(byProd[p2]||0)+(byProd[p2+' SoHo']||0), 0);
+  const aspMois = myMC.reduce((s,c) => s+(c.asp||0), 0);
+
+  const el = document.getElementById('pm-dashboard-info');
+  if (el) el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+<img src="images/${pmCurrentUser?.id || 'logo'}.png"
+     style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;"
+     onerror="this.src='images/logo.png'">      <div style="flex:1;">
+<div style="font-size:15px;font-weight:700;color:#1a1a1a;">
+  Bonjour ${u.name} 👋
+</div>
+
+<div style="font-size:10px;color:#9ca3af;">
+  ID : ${u.id}
+</div>        <div style="font-size:11px;color:#6b7280;">Consultant Phil-Mobile · Actif depuis le <strong>${p.startDate||'—'}</strong></div>
+        <div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;background:#fff3e8;color:#f97316;padding:3px 10px;border-radius:99px;border:1px solid #fde8cc;">Statut : ${cur.label}</span>
+          ${next?`<span style="font-size:11px;color:#9ca3af;">→ <strong style="color:#6b7280;">${next.label}</strong> dans <strong style="color:#f97316;">${Math.round((next.pts-aspTotal)*10)/10} ASP</strong></span>`:''}
+        </div>
+      </div>
+    </div>
+    ${next?`
+    <div style="margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;margin-bottom:3px;">
+        <span>${cur.label} (${cur.pts})</span><span>${Math.round(aspTotal*10)/10} ASP</span><span>${next.label} (${next.pts})</span>
+      </div>
+      <div style="height:6px;background:#f3f4f6;border-radius:99px;overflow:hidden;border:1px solid #f0f0f0;">
+        <div style="height:100%;width:${Math.round((aspTotal-cur.pts)/(next.pts-cur.pts)*100)}%;background:linear-gradient(90deg,#f97316,#ffb347);border-radius:99px;"></div>
+      </div>
+    </div>`:''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+      ${pqs&&!pqs.daysLeft<=0||true
+        ? pqs&&pqs.daysLeft>0
+          ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#FFF3E0;color:#B45309;font-weight:600;border:1px solid #f0d080;">⏱ PQS — ${pqs.daysLeft}j restants</span>`
+          : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ PQS réussi</span>'
+        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#fff0f0;color:#E24B4A;font-weight:600;border:1px solid #ffcdd2;">❌ PQS non réussi</span>'}
+      ${fastSCDays!==null&&fastSCDays>0
+        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC — ${fastSCDays}j</span>`
+        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC expiré</span>'}
+      ${fastECDays!==null&&fastECDays>0
+        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC — ${fastECDays}j</span>`
+        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC expiré</span>'}
+    </div>
+    ${sponsorHtml}
+  `;
+
+  // Niveaux bar
+  const nivBar = document.getElementById('pm-accueil-niv-bar');
+  if (nivBar) nivBar.innerHTML = PM_NIVEAUX.map(n => {
+    const done = aspTotal >= n.pts && n.code !== cur.code;
+    const current = n.code === cur.code;
+    return `<div class="pm-niv-step${done?' done':''}${current?' current':''}">${n.label}<span class="pm-niv-pts">${n.pts>0?n.pts:''}</span></div>`;
+  }).join('');
+
+  const nivInfo = document.getElementById('pm-accueil-niv-info');
+  if (nivInfo) {
+    if (next) {
+      const pct = Math.round((aspTotal-cur.pts)/(next.pts-cur.pts)*100);
+      const rem = Math.round((next.pts-aspTotal)*10)/10;
+      nivInfo.innerHTML = `<div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin:6px 0;"><div style="height:100%;width:${pct}%;background:#f97316;border-radius:99px;"></div></div>Niveau <strong>${cur.label}</strong> · ${Math.round(aspTotal*10)/10} ASP · Prochain <strong style="color:#f97316;">${next.label}</strong> dans ${rem} ASP`;
+    } else {
+      nivInfo.innerHTML = `<strong style="color:#f97316;">🏆 Niveau maximum · ${Math.round(aspTotal*10)/10} ASP</strong>`;
+    }
+  }
+
+  // Métriques
+  const metricsEl = document.getElementById('pm-accueil-metrics');
+  if (metricsEl) metricsEl.innerHTML = `
+    <div class="pm-mc"><div class="pm-mc-label">Contrats ce mois</div><div class="pm-mc-val">${totalO+totalE}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Orange</div><div class="pm-mc-val" style="color:#E65100;">${totalO}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Eneco</div><div class="pm-mc-val" style="color:#2E7D32;">${totalE}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">ASP ce mois</div><div class="pm-mc-val" style="color:#f97316;">${Math.round(aspMois*10)/10}</div></div>
+  `;
+}
+
+function showSuivi(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('suivi-panel').style.display = 'block';
+  pmRender();
+}
+
+// ===== SUIVI CONTRATS v6 =====
+const PM_MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+let PM_AGENT_PROFILES = {
+  'Philippe Tomaszewsky': { initials:'PT', startDate:'29/11/2025', aspInit:82 },
+  'Julien Couvreur':      { initials:'JC', startDate:'24/04/2026', aspInit:16 }
+};
+// Sera mis à jour après le chargement de pm_consultants.json
+async function refreshAgentProfiles() {
+  try {
+    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+    const newProfiles = {};
+    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+      const parts = c.fullName.trim().split(' ');
+      const initials = parts.map(p=>p[0]).join('').toUpperCase().slice(0,2);
+      newProfiles[c.fullName] = { initials, startDate: c.startDate||'—', aspInit: c.aspInit||0 };
+    });
+    if(Object.keys(newProfiles).length > 0) PM_AGENT_PROFILES = newProfiles;
+  } catch(e) {}
+}
+const PM_NIVEAUX = [
+  {code:'BC',label:'BC',pts:0},{code:'SC',label:'SC',pts:70},{code:'EC',label:'EC',pts:200},
+  {code:'PC',label:'PC',pts:600},{code:'MC',label:'MC',pts:2500},{code:'NMC',label:'NMC',pts:10000},{code:'PMC',label:'PMC',pts:25000}
+];
+const PM_ASP_MAP = {
+  'Mobile Child':0,'Mobile Small':1,'Mobile Medium':1,'Mobile Large':1,'Mobile Unlimited':1,
+  'Internet Start':1,'Internet Zen':1,'Internet Giga':1,'Ligne fixe':0,'TV Orange':1,
+  'Eneco Flex':0.5,'Eneco Fixe':0.5,'Eneco Gaz':0.5,
+  'Mobile Child SoHo':0,'Mobile Small SoHo':1,'Mobile Medium SoHo':1.5,'Mobile Large SoHo':1.5,'Mobile Unlimited SoHo':1.5,
+  'Internet Start SoHo':1,'Internet Zen SoHo':1,'Internet Giga SoHo':1,'Ligne fixe SoHo':0,'TV Orange SoHo':1,
+  'Eneco Flex SoHo':1,'Eneco Fixe SoHo':1,'Eneco Gaz SoHo':1
+};
+const PM_PRODUCTS = {
+  Orange:{Internet:['Internet Start','Internet Zen','Internet Giga'],'Ligne fixe':['Ligne fixe'],TV:['TV Orange'],Mobile:['Mobile Child','Mobile Small','Mobile Medium','Mobile Large','Mobile Unlimited']},
+  Eneco:{Énergie:['Eneco Flex','Eneco Fixe','Eneco Gaz']}
+};
+const PM_ALL_O = Object.values(PM_PRODUCTS.Orange).flat();
+const PM_ALL_E = Object.values(PM_PRODUCTS.Eneco).flat();
+
+const pmToday = new Date();
+let pmCurYear = pmToday.getFullYear(), pmCurMonth = pmToday.getMonth();
+let pmSohoMode = false;
+let pmNiveauAgent = 'Philippe Tomaszewsky';
+let pmContracts = [];
+try { pmContracts = JSON.parse(localStorage.getItem('pm6_c') || '[]'); } catch(e) {}
+
+function pmSave() { try { localStorage.setItem('pm6_c', JSON.stringify(pmContracts)); } catch(e) {} }
+function pmGetMC(y,m) { return pmContracts.filter(c => c.year===y && c.month===m); }
+function pmCountBy(mc,f) { const r={}; mc.forEach(c=>{r[c[f]]=(r[c[f]]||0)+1;}); return r; }
+function pmIsCurrentMonth() { return pmCurYear===pmToday.getFullYear() && pmCurMonth===pmToday.getMonth(); }
+function pmFmtDate(d) { return new Date(d).toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function pmToInputVal(d) { return d.toISOString().split('T')[0]; }
+function pmSetToday() { document.getElementById('pm-contract-date').value=pmToInputVal(pmToday); document.getElementById('pm-encoded-label').textContent=pmFmtDate(pmToday); }
+// Panier temporaire avant validation
+let pmPanier = [];
+
+function pmToggleSoHo() {
+  if(pmPanier.length>0){
+    if(!confirm('Votre panier non validé sera vidé si vous changez de mode. Continuer ?')) return;
+    pmPanier=[];
+  }
+  pmSohoMode=!pmSohoMode;
+  const t=document.getElementById('pm-soho-toggle');
+  pmSohoMode?t.classList.add('active'):t.classList.remove('active');
+  pmBuildProducts();
+  pmRenderPanier();
+}
+
+function pmGetTotalASP(agent) { return (PM_AGENT_PROFILES[agent]?.aspInit||0) + pmContracts.filter(c=>c.agent===agent).reduce((s,c)=>s+(c.asp||0),0); }
+function pmGetNiveau(asp) { let c=PM_NIVEAUX[0]; for(let i=0;i<PM_NIVEAUX.length;i++){if(asp>=PM_NIVEAUX[i].pts)c=PM_NIVEAUX[i];} return c; }
+function pmGetNextNiveau(asp) { for(let i=0;i<PM_NIVEAUX.length;i++){if(PM_NIVEAUX[i].pts>asp)return PM_NIVEAUX[i];} return null; }
+
+function pmRenderAgentCards() {
+  // Philippe voit les deux, Julien voit uniquement lui
+  const agents = pmCurrentUser && !pmCurrentUser.isAdmin
+    ? Object.entries(PM_AGENT_PROFILES).filter(([name]) => name === pmCurrentUser.agent)
+    : Object.entries(PM_AGENT_PROFILES);
+
+  document.getElementById('pm-agent-cards').innerHTML = agents.map(([name,p]) => {
+    const asp=pmGetTotalASP(name); const cur=pmGetNiveau(asp); const next=pmGetNextNiveau(asp);
+    const pct=next?Math.round((asp-cur.pts)/(next.pts-cur.pts)*100):100;
+    const active=name===pmNiveauAgent;
+    return `<div class="pm-agent-card${active?' active':''}" onclick="pmSetNiveauAgent('${name}')">
+      <div class="pm-agent-av">${p.initials}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:700;color:#1a1a1a;">${name.split(' ')[0]}</div>
+        <div style="font-size:9px;color:#9ca3af;">Depuis ${p.startDate}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
+          <span style="font-size:10px;font-weight:700;color:${active?'#f97316':'#6b7280'};">${cur.label}</span>
+          <div style="flex:1;height:3px;background:#f3f4f6;border-radius:99px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${active?'#f97316':'#d1d5db'};border-radius:99px;"></div></div>
+          <span style="font-size:9px;color:#9ca3af;">${Math.round(asp*10)/10}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.pmSetNiveauAgent = function(name) { pmNiveauAgent=name; pmRenderAgentCards(); pmRenderNiveauDetail(); };
+
+function pmRenderNiveauDetail() {
+  const asp=pmGetTotalASP(pmNiveauAgent); const cur=pmGetNiveau(asp); const next=pmGetNextNiveau(asp);
+  const p=PM_AGENT_PROFILES[pmNiveauAgent];
+  document.getElementById('pm-niv-bar').innerHTML = PM_NIVEAUX.map(n => {
+    const done=asp>=n.pts&&n.code!==cur.code; const current=n.code===cur.code;
+    return `<div class="pm-niv-step${done?' done':''}${current?' current':''}">${n.label}<span class="pm-niv-pts">${n.pts>0?n.pts:''}</span></div>`;
+  }).join('');
+  if(next){
+    const pct=Math.round((asp-cur.pts)/(next.pts-cur.pts)*100);
+    const rem=Math.round((next.pts-asp)*10)/10;
+    document.getElementById('pm-niv-info').innerHTML=`
+      <div style="margin-bottom:5px;font-size:11px;">Niveau <strong>${cur.label}</strong> · <strong>${Math.round(asp*10)/10}</strong> ASP · depuis <strong>${p.startDate}</strong></div>
+      <div style="height:5px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin-bottom:4px;"><div style="height:100%;width:${pct}%;background:#f97316;border-radius:99px;"></div></div>
+      <div style="font-size:10px;color:#9ca3af;">Prochain: <strong style="color:#1a1a1a;">${next.label}</strong> dans <strong style="color:#f97316;">${rem} ASP</strong> · ${pct}%</div>`;
+  } else {
+    document.getElementById('pm-niv-info').innerHTML=`<strong style="color:#f97316;">🏆 Niveau max — ${Math.round(asp*10)/10} ASP depuis ${p.startDate}</strong>`;
+  }
+}
+
+// Produits éligibles portabilité (+0.5 ASP) — Internet résidentiel et SoHo
+const PM_PORTABILITE = ['Internet Start','Internet Zen','Internet Giga','Internet Start SoHo','Internet Zen SoHo','Internet Giga SoHo'];
+
+function pmBuildProducts() {
+  if(!pmIsCurrentMonth()){document.getElementById('pm-products-panel').innerHTML='<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">🔒 Encodage mois en cours uniquement</div>';return;}
+  let html='';
+  Object.entries(PM_PRODUCTS).forEach(([brand,groups])=>{
+    const color=brand==='Orange'?'#E65100':'#2E7D32';
+    html+=`<div style="margin-bottom:8px;"><div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span><span style="font-size:11px;font-weight:700;color:#1a1a1a;">${brand}</span>${pmSohoMode?'<span style="font-size:9px;background:#E3F2FD;color:#1565C0;padding:1px 5px;border-radius:99px;">SoHo</span>':''}</div>`;
+    Object.entries(groups).forEach(([grp,prods])=>{
+      html+=`<div class="pm-grp">${grp}</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px;">`;
+      prods.forEach(p=>{
+        const pKey=pmSohoMode?p+' SoHo':p;
+        const baseAsp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
+        const hasPorts=PM_PORTABILITE.includes(pKey);
+        const portId='pmport-'+pKey.replace(/\s/g,'_');
+        const panierQty=pmPanier.filter(x=>x.pKey===pKey).length;
+        html+=`<div class="pm-prod-item" style="flex-direction:column;align-items:stretch;padding:4px 6px;gap:3px;">
+          <div style="display:flex;align-items:center;gap:0;">
+            <button class="pm-pbtn" onclick="pmPanierChange('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},-1)">&#8722;</button>
+            <span class="pm-pcnt${panierQty>0?' pos':''}" id="pmpc-${pKey.replace(/\s/g,'_')}">${panierQty}</span>
+            <button class="pm-pbtn" onclick="pmPanierChange('${brand}','${p.replace(/'/g,"\\'")}',${pmSohoMode},1)">+</button>
+            <span class="pm-pname">${p}</span>
+            ${baseAsp>0?`<span class="pm-pasp">${baseAsp}asp</span>`:''}
+          </div>
+          ${hasPorts?`<label style="display:flex;align-items:center;gap:4px;font-size:9px;color:#6b7280;cursor:pointer;padding-left:2px;">
+            <input type="checkbox" id="${portId}" style="width:11px;height:11px;cursor:pointer;accent-color:#f97316;" onchange="pmPanierUpdatePorta('${pKey}',this.checked)">
+            <span>Portabilité <span style="color:#f97316;font-weight:700;">+0.5asp</span></span>
+          </label>`:''}
+        </div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('pm-products-panel').innerHTML=html;
+  pmRenderPanier();
+}
+
+window.pmPanierChange = function(brand,product,soho,delta) {
+  const pKey=soho?product+' SoHo':product;
+  const baseAsp=PM_ASP_MAP[pKey]!==undefined?PM_ASP_MAP[pKey]:0;
+  if(delta>0){
+    pmPanier.push({brand,product,pKey,baseAsp,asp:baseAsp,soho,portabilite:false});
+  } else {
+    const idx=[...pmPanier].map((x,i)=>({x,i})).reverse().find(({x})=>x.pKey===pKey);
+    if(idx) pmPanier.splice(idx.i,1);
+  }
+  const el=document.getElementById('pmpc-'+pKey.replace(/\s/g,'_'));
+  const qty=pmPanier.filter(x=>x.pKey===pKey).length;
+  if(el){el.textContent=qty;el.className='pm-pcnt'+(qty>0?' pos':'');el.classList.add('pm-flash');setTimeout(()=>el.classList.remove('pm-flash'),250);}
+  pmRenderPanier();
+};
+
+window.pmPanierUpdatePorta = function(pKey,checked) {
+  pmPanier.forEach(item=>{
+    if(item.pKey===pKey){item.portabilite=checked;item.asp=item.baseAsp+(checked?0.5:0);}
+  });
+  pmRenderPanier();
+};
+
+function pmRenderPanier() {
+  const el=document.getElementById('pm-panier');
+  if(!el) return;
+  if(pmPanier.length===0){
+    el.innerHTML='<div style="font-size:11px;color:#9ca3af;text-align:center;padding:8px;">Panier vide — utilisez les boutons + ci-dessus</div>';
+    document.getElementById('pm-btn-valider').style.opacity='0.4';
+    document.getElementById('pm-btn-valider').disabled=true;
+    return;
+  }
+  const aspTotal=pmPanier.reduce((s,x)=>s+x.asp,0);
+  const grouped={};
+  pmPanier.forEach(x=>{const k=x.pKey+(x.portabilite?'|P':'');grouped[k]=grouped[k]||{...x,qty:0};grouped[k].qty++;});
+  el.innerHTML=Object.values(grouped).map(g=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #fde8cc;font-size:11px;">
+      <span style="font-size:10px;font-weight:700;padding:1px 5px;border-radius:5px;background:${g.brand==='Orange'?'#FFF3E0':'#E8F5E9'};color:${g.brand==='Orange'?'#B45309':'#2E7D32'};">${g.soho?'SoHo':g.brand}</span>
+      <span style="flex:1;color:#1a1a1a;">${g.product.replace(' SoHo','')}${g.portabilite?' <span style="color:#f97316;font-size:9px;">+porta</span>':''}</span>
+      <span style="font-size:10px;background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:99px;">×${g.qty}</span>
+      <span style="font-size:10px;color:#f97316;">${Math.round(g.asp*g.qty*10)/10}asp</span>
+    </div>`).join('')+
+    `<div style="display:flex;justify-content:flex-end;gap:6px;padding-top:6px;font-size:11px;font-weight:700;color:#f97316;">Total panier: ${Math.round(aspTotal*10)/10} ASP</div>`;
+  document.getElementById('pm-btn-valider').style.opacity='1';
+  document.getElementById('pm-btn-valider').disabled=false;
+}
+
+window.pmValiderPanier = function() {
+  if(pmPanier.length===0) return;
+  const dVal=document.getElementById('pm-contract-date').value;
+  const contractDate=dVal?pmFmtDate(dVal+' '):pmFmtDate(pmToday);
+  const encodedDate=pmFmtDate(pmToday);
+  const isLate=dVal&&dVal!==pmToInputVal(pmToday);
+  const agent=document.getElementById('pm-add-agent').value;
+  pmPanier.forEach(item=>{
+    pmContracts.push({id:Date.now()+Math.random(),brand:item.brand,product:item.pKey,agent,contractDate,encodedDate,isLate:!!isLate,asp:item.asp,soho:item.soho,portabilite:item.portabilite,year:pmCurYear,month:pmCurMonth});
+  });
+  pmPanier=[];
+  pmSave();
+  pmBuildProducts();
+  pmRenderStats(); pmRenderAgentCards(); pmRenderNiveauDetail();
+};
+
+window.pmDelContract = function(id) { pmContracts=pmContracts.filter(c=>c.id!==id); pmSave(); pmRender(); };
+
+function pmRenderStats() {
+  const allMC = pmGetMC(pmCurYear, pmCurMonth);
+  // Julien voit uniquement ses contrats
+  const mc = pmCurrentUser && !pmCurrentUser.isAdmin
+    ? allMC.filter(c => c.agent === pmCurrentUser.agent)
+    : allMC;
+  const byProd={};mc.forEach(c=>{byProd[c.product]=(byProd[c.product]||0)+1;});
+  const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
+  const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
+  const total=totalO+totalE;
+  const aspMois=mc.reduce((s,c)=>s+(c.asp||0),0);
+  document.getElementById('pm-metrics').innerHTML=`
+    <div class="pm-mc"><div class="pm-mc-label">Total</div><div class="pm-mc-val">${total}</div><div class="pm-pbar"><div class="pm-pbar-fill" style="width:${Math.min(100,total*5)}%;"></div></div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Orange</div><div class="pm-mc-val" style="color:#E65100;">${totalO}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">Eneco</div><div class="pm-mc-val" style="color:#2E7D32;">${totalE}</div></div>
+    <div class="pm-mc"><div class="pm-mc-label">ASP mois</div><div class="pm-mc-val" style="color:#f97316;">${Math.round(aspMois*10)/10}</div></div>`;
+  function rps(elId,prods,color){
+    document.getElementById(elId).innerHTML=prods.map(p=>{
+      const cnt=(byProd[p]||0)+(byProd[p+' SoHo']||0); const s=byProd[p+' SoHo']||0;
+      return `<div class="pm-prod-stat"><span style="font-size:10px;color:#1a1a1a;">${p}</span><span style="display:flex;align-items:center;gap:4px;">${s>0?`<span style="font-size:9px;background:#E3F2FD;color:#1565C0;padding:1px 4px;border-radius:99px;">+${s}S</span>`:''}<span style="font-size:12px;font-weight:700;color:${cnt>0?color:'#9ca3af'};">${cnt}</span></span></div>`;
+    }).join('');
+  }
+  rps('pm-orange-stats',PM_ALL_O,'#E65100'); rps('pm-eneco-stats',PM_ALL_E,'#2E7D32');
+  const byAgent=pmCountBy(mc,'agent');
+  document.getElementById('pm-team-stats').innerHTML=Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).map(([agent,cnt])=>{
+    const ini=agent.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const aspAgent=mc.filter(c=>c.agent===agent).reduce((s,c)=>s+(c.asp||0),0);
+    const cur=pmGetNiveau(pmGetTotalASP(agent));
+    return `<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f3f4f6;">
+      <span style="width:22px;height:22px;border-radius:50%;background:#EEF2FF;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#0D2580;">${ini}</span>
+      <span style="flex:1;font-size:12px;color:#1a1a1a;">${agent}</span>
+      <span style="font-size:9px;background:#FFF6E0;color:#8a5e00;padding:1px 5px;border-radius:99px;border:1px solid #f0d080;">${cur.label}</span>
+      <span style="font-size:10px;color:#f97316;">+${Math.round(aspAgent*10)/10} ASP</span>
+      <span style="font-size:12px;font-weight:700;">${cnt}</span></div>`;
+  }).join('')||'<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">Aucun agent ce mois</div>';
+  const sorted=[...mc].sort((a,b)=>b.id-a.id);
+  document.getElementById('pm-history').innerHTML=sorted.length?sorted.map(c=>`
+    <div class="pm-hist-item">
+      <span class="pm-hbadge ${c.soho?'pm-bs':c.brand==='Orange'?'pm-bo':'pm-be'}">${c.soho?'SoHo':c.brand}</span>
+      <span style="flex:1;color:#1a1a1a;">${c.product.replace(' SoHo','')}</span>
+      <span class="pm-asp-chip">${c.asp||0}asp</span>
+      <span style="color:#6b7280;font-size:10px;">${c.agent.split(' ')[0]}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+        <span style="font-size:9px;color:#374151;">📝 ${c.contractDate}${c.isLate?'<span class="pm-late">tardif</span>':''}</span>
+        <span style="font-size:9px;color:#9ca3af;">🕐 ${c.encodedDate}</span>
+      </div>
+      <button onclick="pmDelContract(${c.id})" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:0 2px;font-size:12px;">🗑</button>
+    </div>`).join(''):'<div style="text-align:center;padding:10px;color:#9ca3af;font-size:11px;">Aucun contrat — utilisez les boutons + !</div>';
+}
+
+function pmRenderChart() {
+  if(!document.getElementById('pm-chart')||!window.Chart) return;
+  if(window._pmChart){window._pmChart.destroy();}
+  const labels=[],dO=[],dE=[];
+  for(let i=5;i>=0;i--){
+    let m=pmCurMonth-i,y=pmCurYear; while(m<0){m+=12;y--;}
+    labels.push(PM_MONTHS[m].slice(0,3));
+    const mc=pmGetMC(y,m); const bp={};mc.forEach(c=>{bp[c.product]=(bp[c.product]||0)+1;});
+    dO.push(PM_ALL_O.reduce((s,p)=>s+(bp[p]||0)+(bp[p+' SoHo']||0),0));
+    dE.push(PM_ALL_E.reduce((s,p)=>s+(bp[p]||0)+(bp[p+' SoHo']||0),0));
+  }
+  window._pmChart=new Chart(document.getElementById('pm-chart'),{type:'bar',data:{labels,datasets:[
+    {label:'Orange',data:dO,backgroundColor:'#E65100',borderRadius:3},
+    {label:'Eneco',data:dE,backgroundColor:'#2E7D32',borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{stacked:true,ticks:{font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{font:{size:10},stepSize:1},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+}
+
+function pmRender() {
+  document.getElementById('pm-month-label').textContent=PM_MONTHS[pmCurMonth]+' '+pmCurYear;
+  pmRenderAgentCards(); pmRenderNiveauDetail(); pmBuildProducts(); pmRenderStats();
+  if(document.getElementById('suivi-panel').style.display!=='none') pmRenderChart();
+}
+function pmPrevMonth(){pmCurMonth--;if(pmCurMonth<0){pmCurMonth=11;pmCurYear--;}pmRender();}
+function pmNextMonth(){pmCurMonth++;if(pmCurMonth>11){pmCurMonth=0;pmCurYear++;}pmRender();}
+
+window.pmExportPDF=function(){
+  const mc=pmGetMC(pmCurYear,pmCurMonth);
+  const byProd={};mc.forEach(c=>{byProd[c.product]=(byProd[c.product]||0)+1;});
+  const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
+  const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
+  const aspTotal=mc.reduce((s,c)=>s+(c.asp||0),0);
+  const byAgent=pmCountBy(mc,'agent');
+  let html=`<html><head><meta charset="utf-8"><title>Phil-Mobile ${PM_MONTHS[pmCurMonth]} ${pmCurYear}</title>
+  <style>body{font-family:Arial,sans-serif;padding:32px;color:#1a1a2e;max-width:600px;margin:auto;}
+  h1{font-size:20px;color:#0D2580;margin-bottom:4px;}.sub{font-size:13px;color:#666;margin-bottom:20px;}
+  .totals{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}.tot{background:#fef9f5;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;}
+  .tot-val{font-size:22px;font-weight:700;}.tot-label{font-size:11px;color:#666;}
+  h2{font-size:13px;color:#f97316;margin:16px 0 6px;border-bottom:1px solid #fde8cc;padding-bottom:3px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}td{padding:4px 8px;border-bottom:1px solid #f3f4f6;}td:last-child{text-align:right;font-weight:700;}
+  .grp{font-size:10px;color:#9ca3af;padding:6px 8px 2px;font-style:italic;}
+  .footer{margin-top:28px;font-size:11px;color:#aaa;text-align:center;}
+  @media(max-width:768px){
+
+  #news-banner{
+    display:none !important;
+  }
+
+}
+  </style>
+  </head><body>
+  <h1>Phil-Mobile — Résumé contrats</h1>
+  <div class="sub">${PM_MONTHS[pmCurMonth]} ${pmCurYear} · Généré le ${pmFmtDate(pmToday)}</div>
+  <div class="totals">
+    <div class="tot"><div class="tot-val" style="color:#0D2580;">${totalO+totalE}</div><div class="tot-label">Total</div></div>
+    <div class="tot"><div class="tot-val" style="color:#E65100;">${totalO}</div><div class="tot-label">Orange</div></div>
+    <div class="tot"><div class="tot-val" style="color:#2E7D32;">${totalE}</div><div class="tot-label">Eneco</div></div>
+    <div class="tot"><div class="tot-val" style="color:#f97316;">${Math.round(aspTotal*10)/10}</div><div class="tot-label">ASP</div></div>
+  </div><h2>Orange</h2><table>`;
+  Object.entries(PM_PRODUCTS.Orange).forEach(([grp,ps])=>{
+    html+=`<tr><td colspan="2" class="grp">${grp}</td></tr>`;
+    ps.forEach(p=>{const t=(byProd[p]||0)+(byProd[p+' SoHo']||0);const s=byProd[p+' SoHo']||0;html+=`<tr><td>${p}${s>0?` (dont ${s} SoHo)`:''}</td><td>${t}</td></tr>`;});
+  });
+  html+=`</table><h2>Eneco</h2><table>`;
+  PM_ALL_E.forEach(p=>{const t=(byProd[p]||0)+(byProd[p+' SoHo']||0);const s=byProd[p+' SoHo']||0;html+=`<tr><td>${p}${s>0?` (dont ${s} SoHo)`:''}</td><td>${t}</td></tr>`;});
+  html+=`</table>`;
+  if(Object.keys(byAgent).length){html+=`<h2>Par agent</h2><table>`;Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).forEach(([a,c])=>{const asp=mc.filter(x=>x.agent===a).reduce((s,x)=>s+(x.asp||0),0);const cur=pmGetNiveau(pmGetTotalASP(a));html+=`<tr><td>${a} <span style="color:#f97316;font-size:10px;">${cur.label}</span></td><td>${c} · +${Math.round(asp*10)/10} ASP</td></tr>`;});html+=`</table>`;}
+  html+=`<h2>Progression niveaux</h2><table>`;
+  Object.entries(PM_AGENT_PROFILES).forEach(([name,p])=>{const asp=pmGetTotalASP(name);const cur=pmGetNiveau(asp);const next=pmGetNextNiveau(asp);html+=`<tr><td>${name}</td><td>${cur.label} · ${Math.round(asp*10)/10} ASP${next?` → ${next.label} dans ${Math.round((next.pts-asp)*10)/10} ASP`:' · MAX'}</td></tr>`;});
+  html+=`</table><div class="footer">Phil-Mobile · infos@phil-mobile.be · +32 475 24 02 05</div></body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
+};
+
+window.pmExportMail=function(){
+  const mc=pmGetMC(pmCurYear,pmCurMonth);
+  const byProd={};mc.forEach(c=>{byProd[c.product]=(byProd[c.product]||0)+1;});
+  const aspTotal=mc.reduce((s,c)=>s+(c.asp||0),0);
+  const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
+  const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
+  let lines=[`Résumé — ${PM_MONTHS[pmCurMonth]} ${pmCurYear}`,`Total: ${totalO+totalE} | Orange: ${totalO} | Eneco: ${totalE} | ASP: ${Math.round(aspTotal*10)/10}`,'',' === ORANGE ==='];
+  PM_ALL_O.forEach(p=>{const t=(byProd[p]||0)+(byProd[p+' SoHo']||0);if(t>0)lines.push(`  ${p}: ${t}`);});
+  lines.push('',' === ENECO ===');PM_ALL_E.forEach(p=>{const t=(byProd[p]||0)+(byProd[p+' SoHo']||0);if(t>0)lines.push(`  ${p}: ${t}`);});
+  lines.push('',' === NIVEAUX ===');Object.entries(PM_AGENT_PROFILES).forEach(([name])=>{const asp=pmGetTotalASP(name);const cur=pmGetNiveau(asp);const next=pmGetNextNiveau(asp);lines.push(`  ${name}: ${cur.label} · ${Math.round(asp*10)/10} ASP${next?` → ${next.label} dans ${Math.round((next.pts-asp)*10)/10} ASP`:''}`);});
+  window.location.href=`mailto:infos@phil-mobile.be?subject=${encodeURIComponent('Résumé contrats Phil-Mobile — '+PM_MONTHS[pmCurMonth]+' '+pmCurYear)}&body=${encodeURIComponent(lines.join('\n'))}`;
+};
+
+// Init date suivi
+window.addEventListener('DOMContentLoaded', function() {
+  const di=document.getElementById('pm-contract-date');
+  const el=document.getElementById('pm-encoded-label');
+  if(di) di.value=pmToInputVal(pmToday);
+  if(el) el.textContent=pmFmtDate(pmToday);
+});
+
+// Charger Chart.js si pas déjà chargé
+if (!window.Chart) {
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+  document.head.appendChild(s);
+}
+
+// Websites dropdown
+function toggleWsMenu() {
+  const menu = document.getElementById('ws-menu');
+  const arrow = document.getElementById('ws-arrow');
+  const open = menu.style.display === 'none';
+  menu.style.display = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+function closeWsMenu() {
+  document.getElementById('ws-menu').style.display = 'none';
+  document.getElementById('ws-arrow').style.transform = 'rotate(0deg)';
+}
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('ws-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) closeWsMenu();
+  const swrap = document.getElementById('sim-dropdown-wrap');
+  if (swrap && !swrap.contains(e.target)) closeSimMenu();
+});
+
+// Simulateurs dropdown + panel bas
+function toggleSimMenu() {
+  const menu = document.getElementById('sim-menu');
+  const arrow = document.getElementById('sim-arrow');
+  const open = menu.style.display === 'none';
+  menu.style.display = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+function closeSimMenu() {
+  document.getElementById('sim-menu').style.display = 'none';
+  document.getElementById('sim-arrow').style.transform = 'rotate(0deg)';
+}
+function loadSimPanel(url) {
+  if (window.innerWidth <= 600) {
+    const overlay = document.getElementById('sim-fullscreen');
+    const iframe = document.getElementById('sim-fullscreen-iframe');
+    iframe.src = url;
+    overlay.style.display = 'flex';
+    // Scale iframe to fit screen width
+    setTimeout(() => scaleSimIframe(), 800);
+    return;
+  }
+  const panel = document.getElementById('sim-bottom-panel');
+  const iframe = document.getElementById('sim-bottom-iframe');
+  iframe.src = url;
+  panel.style.display = 'flex';
+}
+function scaleSimIframe() {
+  const iframe = document.getElementById('sim-fullscreen-iframe');
+  const container = iframe.parentElement;
+  const desktopWidth = 900;
+  const screenW = container.offsetWidth;
+  const screenH = container.offsetHeight;
+  const scale = screenW / desktopWidth;
+  iframe._simScale = scale;
+  iframe.style.width = desktopWidth + 'px';
+  iframe.style.height = Math.round(screenH / scale) + 'px';
+  iframe.style.transform = 'scale(' + scale + ')';
+}
+function zoomSim(delta) {
+  const iframe = document.getElementById('sim-fullscreen-iframe');
+  const container = iframe.parentElement;
+  const current = iframe._simScale || parseFloat(iframe.style.transform.replace('scale(','')) || 1;
+  const newScale = Math.min(2, Math.max(0.3, current + delta));
+  iframe._simScale = newScale;
+  iframe.style.width = '900px';
+  iframe.style.height = Math.round(container.offsetHeight / newScale) + 'px';
+  iframe.style.transform = 'scale(' + newScale + ')';
+}
+function closeSimFullscreen() {
+  document.getElementById('sim-fullscreen').style.display = 'none';
+  document.getElementById('sim-fullscreen-iframe').src = '';
+}
+function closeSimPanel() {
+  document.getElementById('sim-bottom-panel').style.display = 'none';
+  document.getElementById('sim-bottom-iframe').src = '';
+}
+
+function copyText(id, btn) {
+  const text = document.getElementById(id).textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copié !';
+    setTimeout(() => btn.textContent = '📋 Copier le script complet', 2000);
+  });
+}
+  function toggleAccessForm(){
+
+  const form =
+    document.getElementById('accessForm');
+
+  form.style.display =
+    form.style.display === 'none'
+      ? 'block'
+      : 'none';
+}
+
+window.submitAccessRequest = async function(){
+
+  console.log("db =", window.db);
+  console.log("addDoc =", window.addDoc);
+
+  try {
+
+    await window.addDoc(window.collection(window.db, "prospects"), {
+
+      firstName: document.getElementById('req-firstname').value.trim(),
+      lastName: document.getElementById('req-lastname').value.trim(),
+
+      company: document.getElementById('req-company').value.trim(),
+      vat: document.getElementById('req-vat').value.trim(),
+
+      email: document.getElementById('req-email').value.trim(),
+      phone: document.getElementById('req-phone').value.trim(),
+
+      asp: document.getElementById('req-asp').value.trim(),
+      startDate: document.getElementById('req-startdate').value.trim(),
+
+      pqsValidated: document.getElementById('req-pqs').checked,
+      fastSCValidated: document.getElementById('req-fastsc').checked,
+      fastECValidated: document.getElementById('req-fastec').checked,
+
+      upline: document.getElementById('req-upline').value.trim(),
+      uplinePhone: document.getElementById('req-upline-phone').value.trim(),
+      uplineEmail: document.getElementById('req-upline-email').value.trim(),
+
+      comment: document.getElementById('req-comment').value.trim(),
+
+      status: "pending",
+      createdAt: new Date().toISOString()
+
+    });
+
+    alert(
+      "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
+    );
+
+  } catch(err){
+
+    console.error(err);
+
+    alert(
+      "❌ Erreur lors de l'enregistrement de la demande."
+    );
+
+  }
+
+}
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('App offline activée !'))
+      .catch(err => console.log('SW error:', err));
+  }
+</script>
+
+<!-- Panel simulateur bas de page -->
+<div id="sim-bottom-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;height:55vh;background:#fff;border-top:2px solid #f97316;box-shadow:0 -4px 20px rgba(249,115,22,0.18);z-index:500;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#fff3e8;border-bottom:1px solid #f97316;flex-shrink:0;">
+    <span style="font-size:12px;font-weight:700;color:#f97316;font-family:Arial,sans-serif;">&#129518; Simulateur</span>
+    <button onclick="closeSimPanel()" style="background:none;border:1px solid #f97316;border-radius:6px;padding:3px 10px;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#10005; Fermer</button>
+  </div>
+  <iframe id="sim-bottom-iframe" src="" style="flex:1;width:100%;border:none;" allowfullscreen></iframe>
+</div>
+
+<!-- Overlay simulateur plein écran (mobile) -->
+<div id="sim-fullscreen" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:1000;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 14px;background:#fff3e8;border-bottom:2px solid #f97316;flex-shrink:0;">
+      <button onclick="zoomSim(-0.1)" style="background:#fff;border:1px solid #f97316;border-radius:8px;padding:6px 16px;color:#f97316;font-size:16px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;line-height:1;">&#8722;</button>
+      <button onclick="zoomSim(0.1)" style="background:#fff;border:1px solid #f97316;border-radius:8px;padding:6px 16px;color:#f97316;font-size:16px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;line-height:1;">&#43;</button>
+      <button onclick="closeSimFullscreen()" style="background:#f97316;border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">&#10005; Fermer</button>
+  </div>
+  <div style="flex:1;overflow:hidden;position:relative;">
+    <iframe id="sim-fullscreen-iframe" src="" style="position:absolute;top:0;left:0;border:none;transform-origin:top left;" allowfullscreen></iframe>
+  </div>
+</div>
+  <script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+window.db = getFirestore(app);
+window.addDoc = addDoc;
+window.collection = collection;
+
+onAuthStateChanged(auth, async (user) => {
+
+  console.log('Firebase user:', user?.email);
+
+  if (!user) return;
+
+  await loadPMUsers();
+
+  const consultant = Object.values(PM_USERS).find(
+    u => u.email &&
+         u.email.toLowerCase() === user.email.toLowerCase()
+  );
+
+  if (!consultant) return;
+
+  doUnlock(consultant);
+
+});
+
+window.firebaseLogin = async function(){
+
+  const email =
+    document.getElementById('rem-email').value.trim();
+
+  const password =
+    document.getElementById('rem-password').value;
+
+  try{
+
+    const cred =
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    document.getElementById('rem-error').style.display='none';
+
+    await loadPMUsers();
+
+    const consultant = Object.values(PM_USERS).find(
+      u => u.email &&
+           u.email.toLowerCase() === cred.user.email.toLowerCase()
+    );
+
+    if (!consultant) {
+      console.log('Aucun consultant correspondant à cet email dans PM_USERS');
+      document.getElementById('rem-error').textContent = "Compte non reconnu. Contactez l'administrateur.";
+      document.getElementById('rem-error').style.display = 'block';
+      return;
+    }
+
+    doUnlock(consultant);
+
+  }catch(err){
+    document.getElementById('rem-error').style.display='block';
+
+  }
+}
+
+window.firebaseResetPassword = async function(){
+  const email =
+    document.getElementById('rem-email').value.trim();
+
+  if(!email){
+    alert('Entrez votre email');
+    return;
+  }
+
+  try{
+
+    await sendPasswordResetEmail(
+      auth,
+      email
+    );
+
+    alert('Email envoyé');
+
+  }catch(err){
+
+    alert(err.message);
+
+  }
+}
+
+window.openSimulator = function(url){
+
+  document.getElementById('simFrame').src = url;
+
+  document.getElementById('simModal').style.display = 'block';
+
+};
+
+window.closeSimulator = function(){
+
+  document.getElementById('simModal').style.display = 'none';
+
+  document.getElementById('simFrame').src = '';
+
+};
+
+window.forceRefreshApp = function(){
+
+  if('caches' in window){
+    caches.keys().then(names=>{
+      names.forEach(name=>caches.delete(name));
+    });
+  }
+
+  location.reload();
+
+};
+async function loadNews() {
+
+  try {
+
+    if (window.innerWidth <= 768) {
+      return;
+    }
+    const res = await fetch('news.json?v=' + Date.now());
+    const news = await res.json();
+    const active = news.find(n => n.active);
+    if (!active) return;
+    const banner =
+      document.getElementById('news-banner');
+    let bg = '#fff7ed';
+    let color = '#9a3412';
+    let border = '#f97316';
+    let icon = '🟠';
+
+    if(active.type === 'danger'){
+      bg = '#fef2f2';
+      color = '#991b1b';
+      border = '#ef4444';
+      icon = '🔴';
+    }
+
+    if(active.type === 'success'){
+      bg = '#ecfdf5';
+      color = '#166534';
+      border = '#22c55e';
+      icon = '🟢';
+    }
+
+    banner.style.display = 'block';
+    banner.style.background = bg;
+    banner.style.color = color;
+    banner.style.border = '1px solid ' + border;
+
+    banner.innerHTML =
+      icon + ' ' + active.title;
+
+  } catch(err){
+
+    console.log('News indisponibles');
+
+  }
+
+}
+
+loadNews();
+    
+</script>
+  <div id="simModal" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:white;
+z-index:99999;
+">
+
+  <div style="
+    height:60px;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    padding:10px;
+    border-bottom:1px solid #ddd;
+  ">
+
+    <button onclick="closeSimulator()"
+            style="
+              background:#f97316;
+              color:white;
+              border:none;
+              border-radius:8px;
+              padding:10px 18px;
+              cursor:pointer;
+            ">
+      ✖ Fermer
+    </button>
+
+  </div>
+
+  <iframe id="simFrame"
+          style="
+            width:100%;
+            height:calc(100% - 60px);
+            border:none;
+          ">
+  </iframe>
+
+</div>
+</body>
+</html>
