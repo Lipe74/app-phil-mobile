@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.5.3.2 Version Stable
+Build 5.9.5.3.3 Version Stable
      </span>
     </div>
     </div>
@@ -173,7 +173,7 @@ Build 5.9.5.3.2 Version Stable
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.5.3.2 Version Stable
+      Build 5.9.5.3.3 Version Stable
     </div>
   </div>
 
@@ -1371,6 +1371,8 @@ function renderDashboard() {
   const fastECDays = calcFastDays(120);
   // Retrieve full consultant data from PM_USERS to get pqsValidated etc.
   const fullData = Object.values(PM_USERS).find(x => x.fullName === u.fullName) || {};
+  console.log('fullData =', fullData);
+console.log('pm-dashboard-info =', document.getElementById('pm-dashboard-info'));
 
   // Sponsor block
   let sponsorHtml = '';
