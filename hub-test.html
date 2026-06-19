@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 6 Beta 2.7  - 
+Build 6 Beta 2.8  - 
      </span>
     </div>
     </div>
@@ -166,7 +166,7 @@ Build 6 Beta 2.7  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 6 Beta 2.7 
+      Build 6 Beta 2.8 
     </div>
   </div>
 
@@ -1226,12 +1226,11 @@ function deleteCookie(name) {
 
 async function logout() {
 
-  await signOut(auth);
+  await window.signOut();
 
   deleteCookie('pm_user');
 
-  window.location.href =
-    'https://app.phil-mobile.be/wp_consultant_hub.html';
+  window.location.reload();
 
 }
 
@@ -2098,6 +2097,7 @@ window.collection = collection;
 window.getDocs = getDocs;
 window.setDoc = setDoc;
 window.doc = doc;
+window.signOut = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
 
