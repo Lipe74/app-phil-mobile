@@ -172,6 +172,23 @@
   </div>
 </div>
 
+<!-- Modal : reconnexion admin -->
+<div class="modal-overlay" id="reconnect-modal">
+  <div class="modal-box" style="max-width:360px;text-align:center;">
+    <h3>🔐 Reconnexion admin</h3>
+    <p style="font-size:13px;color:#666;">
+      Le consultant a bien été créé. Confirme ton mot de passe pour te reconnecter.
+    </p>
+    <div class="form-row" style="text-align:left;">
+      <label>Mot de passe admin</label>
+      <input type="password" id="reconnect-password" onkeydown="if(event.key==='Enter') confirmReconnect();">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" style="width:100%;" onclick="confirmReconnect()">Se reconnecter</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
@@ -218,6 +235,7 @@ window.updateDoc = updateDoc;
 
 let currentProspectForActivation = null;
 let isAdminUser = false;
+let suspendAuthCheck = false;
 
 // --- Connexion ---
 window.adminLogin = async function () {
@@ -238,6 +256,8 @@ window.adminLogout = async function () {
 };
 
 onAuthStateChanged(auth, async (user) => {
+  if (suspendAuthCheck) return;
+
   if (!user) {
     document.getElementById('login-screen').style.display = 'block';
     document.getElementById('admin-app').style.display = 'none';
@@ -375,9 +395,11 @@ window.confirmActivate = async function () {
     return;
   }
 
+  let adminUserEmail;
+  suspendAuthCheck = true;
   try {
     // 1. Créer le compte Firebase Auth (cela connecte temporairement ce nouvel utilisateur)
-    const adminUserEmail = auth.currentUser.email;
+    adminUserEmail = auth.currentUser.email;
     await createUserWithEmailAndPassword(auth, email, password);
 
     // 2. Créer le document Firestore consultants
@@ -397,21 +419,40 @@ window.confirmActivate = async function () {
       await updateDoc(doc(db, 'prospects', currentProspectForActivation), { status: 'activated' });
     }
 
-    // 4. Se reconnecter en tant qu'admin (la création du compte t'a déconnecté)
-    showToast('Consultant créé. Reconnexion admin...');
-    await signOut(auth);
-    const adminPassword = prompt('Confirme ton mot de passe admin pour te reconnecter:');
-    if (adminPassword) {
-      await signInWithEmailAndPassword(auth, adminUserEmail, adminPassword);
-    }
-
-    closeActivateModal();
-    showToast('✅ Consultant créé avec succès !');
-    loadProspects();
-    loadConsultants();
-
   } catch (err) {
-    alert('Erreur: ' + err.message);
+    suspendAuthCheck = false;
+    alert('Erreur lors de la création: ' + err.message);
+    return;
+  }
+
+  // Fermer le modal d'activation tout de suite : le consultant est créé à ce stade
+  closeActivateModal();
+  showToast('✅ Consultant créé avec succès !');
+  loadProspects();
+  loadConsultants();
+
+  // 4. Se reconnecter en tant qu'admin (la création du compte t'a déconnecté)
+  pendingAdminEmail = adminUserEmail;
+  document.getElementById('reconnect-password').value = '';
+  document.getElementById('reconnect-modal').classList.add('open');
+  setTimeout(() => document.getElementById('reconnect-password').focus(), 100);
+};
+
+let pendingAdminEmail = null;
+
+window.confirmReconnect = async function () {
+  const pwd = document.getElementById('reconnect-password').value;
+  if (!pwd) {
+    alert('Merci de saisir ton mot de passe.');
+    return;
+  }
+  try {
+    await signInWithEmailAndPassword(auth, pendingAdminEmail, pwd);
+    suspendAuthCheck = false;
+    document.getElementById('reconnect-modal').classList.remove('open');
+    showToast('Reconnecté en tant qu\'admin.');
+  } catch (err) {
+    alert('Mot de passe incorrect: ' + err.message);
   }
 };
 
