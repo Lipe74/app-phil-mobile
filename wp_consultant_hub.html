@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.6 Stable  - 
+Build 5.9.7 Stable  - 
      </span>
     </div>
     </div>
@@ -166,7 +166,7 @@ Build 5.9.6 Stable  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.6 Stable 
+      Build 5.9.7 Stable 
     </div>
   </div>
 
@@ -1158,28 +1158,54 @@ const SESSION_DAYS = 7;
 
 async function loadPMUsers() {
   try {
-    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
-    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
-PM_USERS[c.id] = {
-  id: c.id,
-  name: c.name,
-  fullName: c.fullName,
-  email: c.email,
-  agent: c.fullName,
-  isAdmin: !!c.isAdmin
-};
+    // Attendre que le module Firebase ait exposé window.db / window.getDocs (chargement parallèle)
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.getDocs) throw new Error('Firestore non disponible');
+
+    const snap = await window.getDocs(window.collection(window.db, "consultants"));
+    PM_USERS = {};
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      if (!c.active) return;
+      PM_USERS[c.id || docSnap.id] = {
+        id: c.id || docSnap.id,
+        name: c.name,
+        fullName: c.fullName,
+        email: c.email,
+        agent: c.fullName,
+        isAdmin: !!c.isAdmin
+      };
     });
   } catch(e) {
-    // fallback: allow admin access
-    PM_USERS = {
-  'delta835': {
-    name: 'Philippe',
-    fullName: 'Philippe Tomaszewsky',
-    email: 'infos@phil-mobile.be',
-    agent: 'Philippe Tomaszewsky',
-    isAdmin: true
-  }
-};
+    console.log('Chargement Firestore impossible, fallback JSON:', e.message);
+    try {
+      const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+      (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+        PM_USERS[c.id] = {
+          id: c.id,
+          name: c.name,
+          fullName: c.fullName,
+          email: c.email,
+          agent: c.fullName,
+          isAdmin: !!c.isAdmin
+        };
+      });
+    } catch(e2) {
+      // fallback ultime: allow admin access
+      PM_USERS = {
+        'delta835': {
+          name: 'Philippe',
+          fullName: 'Philippe Tomaszewsky',
+          email: 'infos@phil-mobile.be',
+          agent: 'Philippe Tomaszewsky',
+          isAdmin: true
+        }
+      };
+    }
   }
 }
 
@@ -1200,12 +1226,11 @@ function deleteCookie(name) {
 
 async function logout() {
 
-  await signOut(auth);
+  await window.signOut();
 
   deleteCookie('pm_user');
 
-  window.location.href =
-    'https://app.phil-mobile.be/wp_consultant_hub.html';
+  window.location.reload();
 
 }
 
@@ -2048,7 +2073,10 @@ from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   getFirestore,
   collection,
-  addDoc
+  addDoc,
+  getDocs,
+  setDoc,
+  doc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
@@ -2066,6 +2094,10 @@ const auth = getAuth(app);
 window.db = getFirestore(app);
 window.addDoc = addDoc;
 window.collection = collection;
+window.getDocs = getDocs;
+window.setDoc = setDoc;
+window.doc = doc;
+window.signOut = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
 
