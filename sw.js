@@ -1,4 +1,8 @@
-const CACHE_NAME = 'phil-mobile-Build 6.0';
+// Charge version.js (variable APP_VERSION) pour construire le nom du cache dynamiquement.
+// Modifier UNIQUEMENT version.js pour changer la version partout (pages HTML + ce cache).
+importScripts('version.js');
+
+const CACHE_NAME = 'phil-mobile-Build ' + (self.APP_VERSION || '6.0');
 const ASSETS = [
   '/',
   '/wp_home.html',

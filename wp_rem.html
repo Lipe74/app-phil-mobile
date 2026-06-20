@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculateur de Commissions</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="version.js"></script>
 <style>
   :root {
     --orange: #FF6B00;
@@ -274,7 +275,7 @@
     padding:4px 12px;
     font-size:11px;
     font-weight:700;">
-    Build 6.0 Stable - Juin 2026
+    Build <span id="app-version-1">…</span> Stable - Juin 2026
   </span>
 </div>
   <button class="reset-btn" onclick="resetAll()">↺ Réinitialiser</button>
@@ -457,5 +458,11 @@ function resetAll() {
 buildTable();
 recalc();
 </script>
+<script>
+document.querySelectorAll('[id^="app-version"]').forEach(el => {
+  el.textContent = window.APP_VERSION || '?';
+});
+</script>
+
 </body>
 </html>

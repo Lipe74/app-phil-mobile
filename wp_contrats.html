@@ -6,6 +6,7 @@
       type="image/png"
       href="images/logo.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.0</title>
+<script src="version.js"></script>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
 .app{max-width:1100px;margin:auto;padding:12px 20px;}
@@ -209,7 +210,7 @@ select:focus{
 
 <div class="header">
   <h1>📋 Mes contrats</h1>
-  <div>Build 6.0</div>
+  <div>Build <span id="app-version-1">…</span></div>
 </div>
 
 <div class="asp-total-banner">
@@ -848,6 +849,12 @@ window.showTab = showTab;
 window.searchContracts = searchContracts;
 window.chg = chg;
 window.updateAspPreview = updateAspPreview;
+</script>
+
+<script>
+document.querySelectorAll('[id^="app-version"]').forEach(el => {
+  el.textContent = window.APP_VERSION || '?';
+});
 </script>
 
 </body>

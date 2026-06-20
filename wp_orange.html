@@ -9,6 +9,7 @@
 
 <link rel="icon" type="image/png" href="images/logo.png">
 <link rel="apple-touch-icon" href="images/logo.png">
+<script src="version.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
@@ -70,7 +71,7 @@
       </div>
 
       <div style="margin-top:8px;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
-        Build 6.0 Stable - Juin 2026
+        Build <span id="app-version-1">…</span> Stable - Juin 2026
       </div>
     </div>
 
@@ -843,5 +844,12 @@ font-style:normal !important;
 }
 
 </style>
+
+<script>
+document.querySelectorAll('[id^="app-version"]').forEach(el => {
+  el.textContent = window.APP_VERSION || '?';
+});
+</script>
+
   </body>
 </html>
