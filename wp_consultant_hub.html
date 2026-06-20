@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.7 Stable  - 
+Build 5.9.8 Stable - 
      </span>
     </div>
     </div>
@@ -166,7 +166,7 @@ Build 5.9.7 Stable  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.7 Stable 
+      Build 5.9.8 Stable
     </div>
   </div>
 
@@ -1516,18 +1516,40 @@ let PM_AGENT_PROFILES = {
   'Philippe Tomaszewsky': { initials:'PT', startDate:'29/11/2025', aspInit:82 },
   'Julien Couvreur':      { initials:'JC', startDate:'24/04/2026', aspInit:16 }
 };
-// Sera mis à jour après le chargement de pm_consultants.json
+// Sera mis à jour après le chargement de Firestore (collection consultants)
 async function refreshAgentProfiles() {
   try {
-    const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.getDocs) throw new Error('Firestore non disponible');
+
+    const snap = await window.getDocs(window.collection(window.db, 'consultants'));
     const newProfiles = {};
-    (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      if (!c.active || !c.fullName) return;
       const parts = c.fullName.trim().split(' ');
       const initials = parts.map(p=>p[0]).join('').toUpperCase().slice(0,2);
       newProfiles[c.fullName] = { initials, startDate: c.startDate||'—', aspInit: c.aspInit||0 };
     });
     if(Object.keys(newProfiles).length > 0) PM_AGENT_PROFILES = newProfiles;
-  } catch(e) {}
+
+  } catch(e) {
+    console.log('Chargement Firestore impossible pour les profils agents, fallback JSON:', e.message);
+    try {
+      const data = await fetch('pm_consultants.json?v='+Date.now()).then(r=>r.json());
+      const newProfiles = {};
+      (data.consultants||[]).filter(c=>c.active).forEach(c=>{
+        const parts = c.fullName.trim().split(' ');
+        const initials = parts.map(p=>p[0]).join('').toUpperCase().slice(0,2);
+        newProfiles[c.fullName] = { initials, startDate: c.startDate||'—', aspInit: c.aspInit||0 };
+      });
+      if(Object.keys(newProfiles).length > 0) PM_AGENT_PROFILES = newProfiles;
+    } catch(e2) {}
+  }
 }
 const PM_NIVEAUX = [
   {code:'BC',label:'BC',pts:0},{code:'SC',label:'SC',pts:70},{code:'EC',label:'EC',pts:200},
