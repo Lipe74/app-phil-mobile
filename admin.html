@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.7</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.8</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -221,6 +221,14 @@
     <div class="form-row">
       <label>Nom complet</label>
       <input type="text" id="e-fullname">
+    </div>
+    <div class="form-row">
+      <label>Email</label>
+      <input type="email" id="e-email">
+    </div>
+    <div class="form-row">
+      <label>Téléphone</label>
+      <input type="text" id="e-phone" placeholder="ex: 0475 24 02 05">
     </div>
     <div class="form-row">
       <label>Date d'entrée (jj/mm/aaaa)</label>
@@ -666,7 +674,7 @@ async function loadConsultants() {
           <strong>${escapeHtml(c.fullName || c.name || '')}</strong>
           <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
           ${c.isAdmin ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">Admin</span>' : ''}
-          <div class="meta">${escapeHtml(c.email || '')} · ID: ${escapeHtml(c.id || c.docId)}</div>
+          <div class="meta">${escapeHtml(c.email || '')} · ${c.phone ? '📞 ' + escapeHtml(c.phone) : '<span style="color:#c0392b;">📞 Tél. manquant</span>'} · ID: ${escapeHtml(c.id || c.docId)}</div>
           <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP actuel: ${escapeHtml(String(c.aspInit ?? 0))}</div>
           <div class="meta">
             ${c.pqsValidated ? '✅ PQS' : '⬜ PQS'} ·
@@ -697,15 +705,19 @@ window.toggleActive = async function (docId, newState) {
 };
 
 let currentEditDocId = null;
+let currentEditOriginalEmail = null;
 
 window.openEditModal = function (docId) {
   const c = (window._consultantsCache || []).find(x => x.docId === docId);
   if (!c) return;
   currentEditDocId = docId;
+  currentEditOriginalEmail = c.email || '';
   document.getElementById('edit-name-display').textContent =
-    'ID: ' + (c.id || c.docId) + ' · ' + (c.email || '');
+    'ID: ' + (c.id || c.docId);
   document.getElementById('e-name').value = c.name || '';
   document.getElementById('e-fullname').value = c.fullName || '';
+  document.getElementById('e-email').value = c.email || '';
+  document.getElementById('e-phone').value = c.phone || c.uplineTel || '';
   document.getElementById('e-startdate').value = c.startDate || '';
   document.getElementById('e-aspinit').value = c.aspInit ?? 0;
   document.getElementById('e-pqs').checked = !!c.pqsValidated;
@@ -728,6 +740,8 @@ window.confirmEdit = async function () {
 
   const name = document.getElementById('e-name').value.trim();
   const fullName = document.getElementById('e-fullname').value.trim();
+  const email = document.getElementById('e-email').value.trim();
+  const phone = document.getElementById('e-phone').value.trim();
   const startDate = document.getElementById('e-startdate').value.trim();
   const aspInit = Number(document.getElementById('e-aspinit').value) || 0;
   const pqsValidated = document.getElementById('e-pqs').checked;
@@ -739,6 +753,22 @@ window.confirmEdit = async function () {
   if (!name || !fullName) {
     alert('Le prénom et le nom complet sont obligatoires.');
     return;
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert('Adresse email invalide.');
+    return;
+  }
+
+  // Avertissement si l'email change : ça ne modifie PAS le compte Firebase Authentication
+  if (email && currentEditOriginalEmail && email.toLowerCase() !== currentEditOriginalEmail.toLowerCase()) {
+    const confirmed = confirm(
+      "⚠️ Attention : tu modifies l'email de connexion.\n\n" +
+      "Ceci ne change PAS le compte Firebase Authentication (utilisé pour se connecter), seulement les coordonnées affichées sur les offres.\n\n" +
+      "Si le consultant doit aussi changer son email de connexion, fais-le manuellement dans Firebase Authentication, sinon il ne pourra plus se connecter avec ce nouvel email.\n\n" +
+      "Continuer la mise à jour des coordonnées quand même ?"
+    );
+    if (!confirmed) return;
   }
 
   let expirationDate = null;
@@ -753,7 +783,7 @@ window.confirmEdit = async function () {
 
   try {
     await updateDoc(doc(db, 'consultants', currentEditDocId), {
-      name, fullName, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
+      name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
       expirationDate, isTestAccount
     });
     closeEditModal();
