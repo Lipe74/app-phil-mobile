@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.7 Stable  - 
+Build 6 Beta 2.7  - 
      </span>
     </div>
     </div>
@@ -166,7 +166,7 @@ Build 5.9.7 Stable  -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.7 Stable 
+      Build 6 Beta 2.7 
     </div>
   </div>
 
@@ -2067,7 +2067,8 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  createUserWithEmailAndPassword
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
@@ -2076,7 +2077,8 @@ import {
   addDoc,
   getDocs,
   setDoc,
-  doc
+  doc,
+  getDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
@@ -2097,7 +2099,10 @@ window.collection = collection;
 window.getDocs = getDocs;
 window.setDoc = setDoc;
 window.doc = doc;
+window.getDoc = getDoc;
 window.signOut = () => signOut(auth);
+window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
 onAuthStateChanged(auth, async (user) => {
 
@@ -2218,10 +2223,36 @@ async function loadNews() {
     if (window.innerWidth <= 768) {
       return;
     }
-    const res = await fetch('news.json?v=' + Date.now());
-    const news = await res.json();
-    const active = news.find(n => n.active);
+
+    // Attendre que Firestore soit prêt (chargement parallèle du module Firebase)
+    let tries = 0;
+    while ((!window.db || !window.getDoc) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+
+    let active = null;
+
+    if (window.db && window.getDoc) {
+      try {
+        const snap = await window.getDoc(window.doc(window.db, 'news', 'current'));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.active) active = data;
+        }
+      } catch (e) {
+        console.log('Lecture news Firestore impossible, fallback JSON:', e.message);
+      }
+    }
+
+    if (!active) {
+      const res = await fetch('news.json?v=' + Date.now());
+      const news = await res.json();
+      active = news.find(n => n.active);
+    }
+
     if (!active) return;
+
     const banner =
       document.getElementById('news-banner');
     let bg = '#fff7ed';

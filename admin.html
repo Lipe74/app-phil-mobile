@@ -107,12 +107,35 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.3</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
 
   <div class="container">
+
+    <div class="section">
+      <div class="section-title">📢 Annonce du bandeau (page principale)</div>
+      <div class="card">
+        <div class="checkbox-row" style="margin-bottom:12px;">
+          <input type="checkbox" id="news-active">
+          <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
+        </div>
+        <div class="form-row">
+          <label>Message</label>
+          <input type="text" id="news-title" placeholder="ex: Version 5.9.7 Stable disponible">
+        </div>
+        <div class="form-row">
+          <label>Type</label>
+          <select id="news-type">
+            <option value="info">🟠 Info (orange)</option>
+            <option value="success">🟢 Succès (vert)</option>
+            <option value="danger">🔴 Alerte (rouge)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
+      </div>
+    </div>
 
     <div class="section">
       <div class="section-title">📝 Demandes en attente</div>
@@ -211,7 +234,8 @@ import {
   getDocs,
   setDoc,
   doc,
-  updateDoc
+  updateDoc,
+  getDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -285,6 +309,7 @@ onAuthStateChanged(auth, async (user) => {
   isAdminUser = true;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
+  loadNewsAdmin();
   loadProspects();
   loadConsultants();
 });
@@ -296,6 +321,39 @@ function showToast(msg) {
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
 }
+
+// --- Annonce du bandeau (news) ---
+async function loadNewsAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'news', 'current'));
+    if (snap.exists()) {
+      const data = snap.data();
+      document.getElementById('news-active').checked = !!data.active;
+      document.getElementById('news-title').value = data.title || '';
+      document.getElementById('news-type').value = data.type || 'info';
+    }
+  } catch (err) {
+    console.log('Pas encore de news enregistrée:', err.message);
+  }
+}
+
+window.saveNews = async function () {
+  const active = document.getElementById('news-active').checked;
+  const title = document.getElementById('news-title').value.trim();
+  const type = document.getElementById('news-type').value;
+
+  if (active && !title) {
+    alert('Merci de saisir un message si l\'annonce doit être affichée.');
+    return;
+  }
+
+  try {
+    await setDoc(doc(db, 'news', 'current'), { active, title, type });
+    showToast('✅ Annonce enregistrée.');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
 
 // --- Prospects en attente ---
 async function loadProspects() {
