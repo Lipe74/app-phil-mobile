@@ -128,6 +128,51 @@ select:focus{
 .asp-total-banner .val{font-size:28px;font-weight:700;}
 .asp-total-banner .label{font-size:12px;opacity:.9;}
 
+.product-block{
+  border:1px solid #ffd1b8;
+  border-radius:14px;
+  padding:12px 14px;
+  margin-bottom:10px;
+  background:#fffaf7;
+}
+.product-block-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:700;
+  color:#ff5a14;
+  margin-bottom:8px;
+}
+.add-unit-btn{
+  background:#ff5a14;color:#fff;border:none;border-radius:8px;
+  padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;
+}
+.unit-row{
+  background:#fff;
+  border:1px solid #ffe2cc;
+  border-radius:10px;
+  padding:8px 12px;
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  font-size:12px;
+}
+.unit-row .unit-num{
+  font-weight:700;color:#ff5a14;min-width:60px;
+}
+.unit-row label{
+  display:flex;align-items:center;gap:4px;width:auto;cursor:pointer;font-weight:600;color:#555;
+}
+.unit-row .unit-eur{
+  margin-left:auto;font-weight:700;color:#ff5a14;font-family:monospace;
+}
+.unit-row .remove-unit{
+  background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;
+  padding:3px 8px;cursor:pointer;font-size:11px;
+}
+
 /* Login */
 #login-screen{
   max-width:360px;margin:80px auto;text-align:center;
@@ -164,7 +209,7 @@ select:focus{
 
 <div class="header">
   <h1>📋 Mes contrats</h1>
-  <div>Build V2.0</div>
+  <div>Build V2.2</div>
 </div>
 
 <div class="asp-total-banner">
@@ -248,29 +293,13 @@ select:focus{
 
 </div>
 
-<div class="client-type">
-<label class="type-card">
-<input type="radio"
-       name="typeClient"
-       value="Particulier"
-       checked
-       onchange="updateAspPreview()">
-👤 Particulier
-</label>
-
-<label class="type-card">
-<input type="radio"
-       name="typeClient"
-       value="SoHo"
-       onchange="updateAspPreview()">
-🏢 SoHo
-</label>
-
 </div>
 
+<div class="asp-badge" id="contract-summary" style="display:block;width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px 14px;font-size:13px;">
+  Statut actuel : <b id="consultant-statut-label">—</b> · Total contrat : <b><span id="contract-asp-preview">0</span> ASP</b> · <b><span id="contract-eur-preview">0,00 €</span></b>
 </div>
 
-<h2>📱 Produits <span class="asp-badge" id="asp-preview">+0 ASP</span></h2>
+<h2>📱 Produits</h2>
 <div id="products"></div>
 
 <button class="tabbtn" onclick="saveContract()">💾 Enregistrer le contrat</button>
@@ -309,7 +338,8 @@ import {
   doc,
   updateDoc,
   query,
-  where
+  where,
+  deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -335,6 +365,7 @@ window.getDocs = getDocs;
 window.updateDoc = updateDoc;
 window.query = query;
 window.where = where;
+window.deleteDoc = deleteDoc;
 
 let currentConsultant = null;
 
@@ -386,38 +417,20 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
 
+  // Calcul du statut (BC ou SC+) à partir de l'ASP total actuel, même seuil que wp_consultant_hub.html (SC à 70 pts)
+  const aspTotal = (found.aspInit || 0) + (found.aspFromContracts || 0);
+  window._currentConsultantStatut = aspTotal >= 70 ? 'SC' : 'BC';
+  const statutLabelEl = document.getElementById('consultant-statut-label');
+  if (statutLabelEl) {
+    statutLabelEl.textContent = window._currentConsultantStatut === 'SC' ? 'SC ou +' : 'BC';
+  }
+
   // Pré-remplir la date du jour
   document.getElementById('dateContrat').value = new Date().toISOString().slice(0, 10);
 
   window.refreshAspTotal();
+  if (window.updateContractPreview) window.updateContractPreview();
 });
-
-// --- Barème ASP par produit ---
-const ASP_BAREME = {
-  small:          { base: 1, bonusSoho: 0 },
-  medium:         { base: 1, bonusSoho: 0.5 },
-  large:          { base: 1, bonusSoho: 0.5 },
-  unlimited:      { base: 1, bonusSoho: 0.5 },
-  internetStart:  { base: 1, bonusSoho: 0.5 },
-  internetZen:    { base: 1, bonusSoho: 0.5 },
-  internetGiga:   { base: 1, bonusSoho: 0.5 },
-  tv:             { base: 1, bonusSoho: 0 },
-  fixe:           { base: 0, bonusSoho: 0 },
-  flybox:         { base: 1, bonusSoho: 0.5 }
-};
-
-window.calcContractASP = function (produits, typeClient) {
-  let total = 0;
-  const isSoho = typeClient === 'SoHo';
-  Object.keys(produits).forEach(p => {
-    const q = produits[p] || 0;
-    const bareme = ASP_BAREME[p];
-    if (!bareme || q <= 0) return;
-    const aspParUnite = bareme.base + (isSoho ? bareme.bonusSoho : 0);
-    total += aspParUnite * q;
-  });
-  return total;
-};
 
 // --- Recalcul du total ASP (départ + somme des contrats actifs) ---
 window.refreshAspTotal = async function () {
@@ -454,73 +467,146 @@ window.refreshAspTotal = async function () {
 </script>
 
 <script>
-const productNames=[
-  "small",
-  "medium",
-  "large",
-  "unlimited",
-
-  "internetStart",
-  "internetZen",
-  "internetGiga",
-
-  "tv",
-  "fixe",
-  "flybox"
+// Barème exact repris de wp_rem.html : rates = [BC, SC+, Convergence, Portabilité, SoHo-Indép]
+// null = bonus non applicable à ce produit
+const PRODUCTS = [
+  { id: "flybox",    label: "📡 Home Flybox",        cat: "fixe",   rates: [25,  30,   null, null, null], asp: 1, aspSoho: 0.5 },
+  { id: "internet",  label: "🌐 Internet",            cat: "fixe",   rates: [15,  20,   15,   12,   null], asp: 1, aspSoho: 0.5 },
+  { id: "tv",        label: "📺 TV Orange",           cat: "fixe",   rates: [10,  10,   null, null, null], asp: 1, aspSoho: 0 },
+  { id: "child",     label: "👶 Mobile Child",        cat: "mobile", rates: [1,   5,    null, null, null], asp: 0, aspSoho: 0 },
+  { id: "small",     label: "📱 Mobile Small",        cat: "mobile", rates: [10,  15,   null, null, null], asp: 1, aspSoho: 0 },
+  { id: "medium",    label: "📱 Mobile Medium",       cat: "mobile", rates: [35,  40,   12,   20,   15],   asp: 1, aspSoho: 0.5 },
+  { id: "unlimited", label: "♾️ Mobile Unlimited",     cat: "mobile", rates: [60,  65,   12,   20,   15],   asp: 1, aspSoho: 0.5 },
+  { id: "large",     label: "📱 Mobile Large",        cat: "mobile", rates: [50,  55,   12,   20,   15],   asp: 1, aspSoho: 0.5 },
+  { id: "eneco_elec",label: "⚡ Eneco Électricité",    cat: "energy", rates: [20,  25,   null, null, 20],   asp: 0.5, aspSoho: 0 },
+  { id: "eneco_gaz", label: "🔥 Eneco Gaz",            cat: "energy", rates: [20,  25,   null, null, 20],   asp: 0.5, aspSoho: 0 },
+  { id: "chaudiere", label: "🔧 Entretien chaudière",  cat: "energy", rates: [20,  25,   null, null, null], asp: 0.5, aspSoho: 0 },
+  { id: "ebilling",  label: "📧 eBilling",             cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 },
+  { id: "domicil",   label: "🏦 Domiciliation",        cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 }
 ];
 
-const labels={
+// units[productId] = liste d'objets { convergence: bool, portabilite: bool, sohoIndep: bool }
+let units = {};
+PRODUCTS.forEach(p => units[p.id] = []);
 
-  small:"📱 Mobile Small",
-  medium:"📱 Mobile Medium",
-  large:"📱 Mobile Large",
-  unlimited:"♾️ Mobile Unlimited",
-
-  internetStart:"🌐 Internet Start",
-  internetZen:"🌐 Internet Zen",
-  internetGiga:"🚀 Internet Giga",
-
-  tv:"📺 TV",
-  fixe:"☎️ Fixe",
-  flybox:"📡 Flybox"
-
-};
-
-let qty={};
-
-productNames.forEach(p=>qty[p]=0);
-
-const container=document.getElementById('products');
-productNames.forEach(p=>{
- const d=document.createElement('div');
- d.className='row';
- d.innerHTML=`<span>${labels[p]}</span>
- <span class="counter">
- <button onclick="chg('${p}',-1)">-</button>
- <span id="${p}">0</span>
- <button onclick="chg('${p}',1)">+</button>
- </span>`;
- container.appendChild(d);
-});
-
-function chg(id,d){
- qty[id]=Math.max(0,qty[id]+d);
- document.getElementById(id).textContent=qty[id];
- updateAspPreview();
+function getConsultantTarifIndex(){
+  // 0 = BC, 1 = SC ou +
+  if (window._currentConsultantStatut && window._currentConsultantStatut !== 'BC') return 1;
+  return 0;
 }
 
-function getSelectedTypeClient(){
-  const radios = document.getElementsByName('typeClient');
-  for (const r of radios) if (r.checked) return r.value;
-  return 'Particulier';
+function addUnit(productId){
+  units[productId].push({ convergence:false, portabilite:false, sohoIndep:false });
+  renderProductBlock(productId);
+  updateContractPreview();
 }
 
-function updateAspPreview(){
-  const typeClient = getSelectedTypeClient();
-  const asp = window.calcContractASP ? window.calcContractASP(qty, typeClient) : 0;
-  const el = document.getElementById('asp-preview');
-  if (el) el.textContent = `+${Math.round(asp*10)/10} ASP`;
+function removeUnit(productId, index){
+  units[productId].splice(index, 1);
+  renderProductBlock(productId);
+  updateContractPreview();
 }
+
+function toggleUnitFlag(productId, index, flag){
+  units[productId][index][flag] = !units[productId][index][flag];
+  renderProductBlock(productId);
+  updateContractPreview();
+}
+
+function calcUnitEUR(product, unit){
+  const tarifIdx = getConsultantTarifIndex();
+  let total = product.rates[tarifIdx] || 0;
+  if (unit.convergence && product.rates[2] !== null) total += product.rates[2];
+  if (unit.portabilite && product.rates[3] !== null) total += product.rates[3];
+  if (unit.sohoIndep && product.rates[4] !== null) total += product.rates[4];
+  return total;
+}
+
+function hasInternetInContract(){
+  return units['internet'] && units['internet'].length > 0;
+}
+
+function renderProductBlock(productId){
+  const product = PRODUCTS.find(p => p.id === productId);
+  const blockBody = document.getElementById('block-body-' + productId);
+  if (!blockBody) return;
+
+  const list = units[productId];
+  if (list.length === 0) {
+    blockBody.innerHTML = '<div style="font-size:11px;color:#aaa;">Aucune unité ajoutée.</div>';
+    return;
+  }
+
+  const convergenceOK = product.rates[2] !== null && hasInternetInContract();
+  const portabiliteOK = product.rates[3] !== null;
+  const sohoOK = product.rates[4] !== null;
+
+  let html = '';
+  list.forEach((unit, i) => {
+    const eur = calcUnitEUR(product, unit);
+    html += `<div class="unit-row">
+      <span class="unit-num">#${i+1}</span>`;
+    if (convergenceOK) {
+      html += `<label><input type="checkbox" ${unit.convergence?'checked':''} onchange="toggleUnitFlag('${productId}',${i},'convergence')"> Convergence (+${product.rates[2]}€)</label>`;
+    }
+    if (portabiliteOK) {
+      html += `<label><input type="checkbox" ${unit.portabilite?'checked':''} onchange="toggleUnitFlag('${productId}',${i},'portabilite')"> Portabilité (+${product.rates[3]}€)</label>`;
+    }
+    if (sohoOK) {
+      html += `<label><input type="checkbox" ${unit.sohoIndep?'checked':''} onchange="toggleUnitFlag('${productId}',${i},'sohoIndep')"> SoHo-Indép. (+${product.rates[4]}€)</label>`;
+    }
+    html += `<span class="unit-eur">${eur.toFixed(2)} €</span>
+      <button class="remove-unit" onclick="removeUnit('${productId}',${i})">🗑</button>
+    </div>`;
+  });
+
+  blockBody.innerHTML = html;
+}
+
+function buildProductsUI(){
+  const container = document.getElementById('products');
+  container.innerHTML = '';
+  PRODUCTS.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'product-block';
+    div.innerHTML = `
+      <div class="product-block-header">
+        <span>${p.label}</span>
+        <button class="add-unit-btn" onclick="addUnit('${p.id}')">+ Ajouter</button>
+      </div>
+      <div id="block-body-${p.id}"></div>
+    `;
+    container.appendChild(div);
+    renderProductBlock(p.id);
+  });
+}
+
+function updateContractPreview(){
+  let totalEur = 0;
+  let totalAsp = 0;
+  PRODUCTS.forEach(p => {
+    units[p.id].forEach(unit => {
+      totalEur += calcUnitEUR(p, unit);
+      totalAsp += p.asp + (unit.sohoIndep ? p.aspSoho : 0);
+    });
+  });
+
+  // Si Internet présent, ré-affiche les blocs (la disponibilité de Convergence dépend de la présence d'Internet)
+  PRODUCTS.forEach(p => renderProductBlock(p.id));
+
+  const aspEl = document.getElementById('contract-asp-preview');
+  const eurEl = document.getElementById('contract-eur-preview');
+  if (aspEl) aspEl.textContent = Math.round(totalAsp*10)/10;
+  if (eurEl) eurEl.textContent = totalEur.toLocaleString('fr-FR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €';
+}
+
+window.addUnit = addUnit;
+window.removeUnit = removeUnit;
+window.toggleUnitFlag = toggleUnitFlag;
+window.updateContractPreview = updateContractPreview;
+
+buildProductsUI();
+updateContractPreview();
 
 function showTab(id){
  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
@@ -545,11 +631,27 @@ async function saveContract(){
    return;
  }
 
- const typeClient = getSelectedTypeClient();
- const aspTotal = window.calcContractASP(qty, typeClient);
+ let aspTotal = 0;
+ let eurTotal = 0;
+ const produitsDetail = {};
+
+ PRODUCTS.forEach(p => {
+   if (units[p.id].length === 0) return;
+   produitsDetail[p.id] = units[p.id].map(u => ({...u}));
+   units[p.id].forEach(unit => {
+     eurTotal += calcUnitEUR(p, unit);
+     aspTotal += p.asp + (unit.sohoIndep ? p.aspSoho : 0);
+   });
+ });
+
+ if (Object.keys(produitsDetail).length === 0) {
+   alert('Merci d\'ajouter au moins un produit au contrat.');
+   return;
+ }
 
  const data = {
    consultantId: window._currentConsultantId,
+   consultantStatutAuMoment: window._currentConsultantStatut || 'BC',
    date: new Date().toISOString(),
    nom,
    societe: document.getElementById('societe').value.trim(),
@@ -561,21 +663,22 @@ async function saveContract(){
    adresse: document.getElementById('adresse').value.trim(),
    dateContrat: document.getElementById('dateContrat').value,
    etatContrat: document.getElementById('etatContrat').value,
-   typeClient,
-   produits: {...qty},
-   aspTotal
+   produitsDetail,
+   aspTotal: Math.round(aspTotal*10)/10,
+   eurTotal: Math.round(eurTotal*100)/100
  };
 
  try {
    await window.addDoc(window.collection(window.db, 'contrats'), data);
-   showToast(`✅ Contrat enregistré (+${Math.round(aspTotal*10)/10} ASP)`);
+   showToast(`✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
 
    // Réinitialiser le formulaire
    ['nom','societe','tel','tva','clientOrange','contratSmart','email','adresse'].forEach(id => {
      document.getElementById(id).value = '';
    });
-   productNames.forEach(p=>{ qty[p]=0; document.getElementById(p).textContent='0'; });
-   updateAspPreview();
+   PRODUCTS.forEach(p => units[p.id] = []);
+   buildProductsUI();
+   updateContractPreview();
 
    if (window.refreshAspTotal) await window.refreshAspTotal();
 
@@ -607,20 +710,29 @@ async function renderHistory(){
     <div class="card">
 
       <b>👤 ${escapeHtml(c.nom||'Sans nom')}</b>
-      <span class="asp-badge">+${Math.round((c.aspTotal||0)*10)/10} ASP</span><br>
+      <span class="asp-badge">+${Math.round((c.aspTotal||0)*10)/10} ASP</span>
+      <span class="asp-badge" style="background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;">${(c.eurTotal||0).toFixed(2)} €</span><br>
 
       🏢 ${escapeHtml(c.societe||'-')}<br>
 
       📅 ${c.dateContrat ? new Date(c.dateContrat).toLocaleDateString() : new Date(c.date).toLocaleDateString()}<br>
 
-      📊 ${escapeHtml(c.etatContrat||'Encodé')} · ${escapeHtml(c.typeClient||'Particulier')}<br><br>
+      📊
+      <select onchange="changeStatus('${c.docId}', this.value)" style="width:auto;display:inline-block;margin:0 0 0 4px;padding:4px 8px;font-size:12px;">
+        <option value="Encodé" ${c.etatContrat==='Encodé'?'selected':''}>📝 Encodé</option>
+        <option value="Activé" ${c.etatContrat==='Activé'?'selected':''}>✅ Activé</option>
+        <option value="En attente" ${c.etatContrat==='En attente'?'selected':''}>⏳ En attente</option>
+        <option value="Annulé" ${c.etatContrat==='Annulé'?'selected':''}>❌ Annulé</option>
+        <option value="Refusé" ${c.etatContrat==='Refusé'?'selected':''}>🚫 Refusé</option>
+      </select>
+      · Statut au moment : ${escapeHtml(c.consultantStatutAuMoment||'BC')}<br><br>
 
       <button onclick="viewContract('${c.docId}')">
       👁 Voir
       </button>
 
-      <button onclick="changeStatus('${c.docId}')">
-      🔄 Changer statut
+      <button onclick="deleteContract('${c.docId}')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">
+      🗑 Supprimer
       </button>
 
     </div>
@@ -642,27 +754,25 @@ function escapeHtml(str){
 function viewContract(docId){
   const c = window._allContracts.find(x => x.docId === docId);
   if (!c) return;
-  const produitsTxt = Object.keys(c.produits||{})
-    .filter(p => c.produits[p] > 0)
-    .map(p => `${labels[p]||p}: ${c.produits[p]}`)
+  const produitsTxt = Object.keys(c.produitsDetail||{})
+    .map(pid => {
+      const product = PRODUCTS.find(p => p.id === pid);
+      const label = product ? product.label : pid;
+      const list = c.produitsDetail[pid];
+      return `${label}: ${list.length} unité(s)`;
+    })
     .join('\n');
   alert(
     `Client: ${c.nom}\nSociété: ${c.societe||'-'}\nTél: ${c.tel||'-'}\nEmail: ${c.email||'-'}\n` +
-    `TVA: ${c.tva||'-'}\nType: ${c.typeClient}\nÉtat: ${c.etatContrat}\n` +
-    `ASP: ${c.aspTotal}\n\nProduits:\n${produitsTxt || 'Aucun'}`
+    `TVA: ${c.tva||'-'}\nÉtat: ${c.etatContrat}\nStatut au moment: ${c.consultantStatutAuMoment||'BC'}\n` +
+    `ASP: ${c.aspTotal} · Montant: ${(c.eurTotal||0).toFixed(2)}€\n\nProduits:\n${produitsTxt || 'Aucun'}`
   );
 }
 
-async function changeStatus(docId){
-  const c = window._allContracts.find(x => x.docId === docId);
-  if (!c) return;
-  const options = ['Encodé','Activé','En attente','Annulé','Refusé'];
-  const choice = prompt('Nouveau statut (' + options.join(' / ') + '):', c.etatContrat);
-  if (!choice || !options.includes(choice)) return;
-
+async function changeStatus(docId, newStatus){
   try {
-    await window.updateDoc(window.doc(window.db, 'contrats', docId), { etatContrat: choice });
-    showToast('Statut mis à jour.');
+    await window.updateDoc(window.doc(window.db, 'contrats', docId), { etatContrat: newStatus });
+    showToast('Statut mis à jour : ' + newStatus);
     renderHistory();
     if (window.refreshAspTotal) await window.refreshAspTotal();
   } catch(err) {
@@ -670,19 +780,39 @@ async function changeStatus(docId){
   }
 }
 
+async function deleteContract(docId){
+  const c = window._allContracts.find(x => x.docId === docId);
+  const label = c ? `"${c.nom}" du ${c.dateContrat || ''}` : 'ce contrat';
+  if (!confirm(`Supprimer définitivement ${label} ?\n\nCette action est irréversible.`)) return;
+
+  try {
+    await window.deleteDoc(window.doc(window.db, 'contrats', docId));
+    showToast('🗑 Contrat supprimé.');
+    renderHistory();
+    if (window.refreshAspTotal) await window.refreshAspTotal();
+  } catch(err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+}
+
 async function renderStats(){
  const data = await loadContracts();
  let totals={};
- productNames.forEach(p=>totals[p]=0);
+ PRODUCTS.forEach(p=>totals[p.id]=0);
  let totalASP = 0;
+ let totalEUR = 0;
  data.forEach(c=>{
    if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé') return;
-   productNames.forEach(p=>totals[p]+=(c.produits&&c.produits[p])||0);
+   Object.keys(c.produitsDetail||{}).forEach(pid => {
+     totals[pid] = (totals[pid]||0) + c.produitsDetail[pid].length;
+   });
    totalASP += c.aspTotal || 0;
+   totalEUR += c.eurTotal || 0;
  });
  let html=`<div class="card"><b>Contrats actifs :</b> ${data.filter(c=>c.etatContrat!=='Annulé'&&c.etatContrat!=='Refusé').length}</div>`;
  html+=`<div class="card"><b>ASP généré par les contrats :</b> ${Math.round(totalASP*10)/10}</div>`;
- productNames.forEach(p=>{ if (totals[p] > 0) html+=`<div class="card">${labels[p]} : ${totals[p]}</div>`; });
+ html+=`<div class="card"><b>Montant total généré :</b> ${totalEUR.toFixed(2)} €</div>`;
+ PRODUCTS.forEach(p=>{ if (totals[p.id] > 0) html+=`<div class="card">${p.label} : ${totals[p.id]}</div>`; });
  document.getElementById('statsContent').innerHTML=html;
 }
 
@@ -713,6 +843,7 @@ function searchContracts(){
 window.saveContract = saveContract;
 window.viewContract = viewContract;
 window.changeStatus = changeStatus;
+window.deleteContract = deleteContract;
 window.showTab = showTab;
 window.searchContracts = searchContracts;
 window.chg = chg;
