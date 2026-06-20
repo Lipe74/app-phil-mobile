@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.15 Stable - 
+Build 5.9.16 Stable - 
      </span>
     </div>
     </div>
@@ -165,7 +165,7 @@ Build 5.9.15 Stable -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.15 Stable
+      Build 5.9.16 Stable
     </div>
   </div>
 
@@ -1501,13 +1501,6 @@ function renderDashboard() {
     }
   }
 
-  const mc = pmGetMC(pmCurYear, pmCurMonth);
-  const myMC = u.isAdmin ? mc : mc.filter(c => c.agent === u.agent);
-  const byProd = {}; myMC.forEach(c => { byProd[c.product] = (byProd[c.product]||0)+1; });
-  const totalO = PM_ALL_O.reduce((s,p2) => s+(byProd[p2]||0)+(byProd[p2+' SoHo']||0), 0);
-  const totalE = PM_ALL_E.reduce((s,p2) => s+(byProd[p2]||0)+(byProd[p2+' SoHo']||0), 0);
-  const aspMois = myMC.reduce((s,c) => s+(c.asp||0), 0);
-
   const el = document.getElementById('pm-dashboard-info');
   if (el) el.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
@@ -1575,10 +1568,56 @@ function renderDashboard() {
     }
   }
 
-  // Métriques
+  // Métriques (Contrats ce mois / Orange / Eneco / ASP ce mois) — lues depuis Firestore (wp_contrats.html)
+  refreshAccueilMetrics(u);
+}
+
+async function refreshAccueilMetrics(u) {
   const metricsEl = document.getElementById('pm-accueil-metrics');
-  if (metricsEl) metricsEl.innerHTML = `
-    <div class="pm-mc"><div class="pm-mc-label">Contrats ce mois</div><div class="pm-mc-val">${totalO+totalE}</div></div>
+  if (!metricsEl) return;
+
+  let totalO = 0, totalE = 0, aspMois = 0, contratsCeMois = 0;
+
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.getDocs) throw new Error('Firestore non disponible');
+
+    const consultantId = u.isAdmin ? null : (u.id || pmCurrentUser?.id);
+    const snap = await window.getDocs(window.collection(window.db, 'contrats'));
+    const now = new Date();
+    const curYear = now.getFullYear(), curMonth = now.getMonth();
+
+    snap.forEach(d => {
+      const c = d.data();
+      if (!u.isAdmin && c.consultantId !== consultantId) return;
+      if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé') return;
+
+      const cDate = c.dateContrat ? new Date(c.dateContrat) : new Date(c.date);
+      if (cDate.getFullYear() !== curYear || cDate.getMonth() !== curMonth) return;
+
+      contratsCeMois++;
+      aspMois += c.aspTotal || 0;
+
+      Object.keys(c.produitsDetail || {}).forEach(pid => {
+        const qty = c.produitsDetail[pid].length;
+        if (pid === 'eneco_elec' || pid === 'eneco_gaz' || pid === 'chaudiere') {
+          totalE += qty;
+        } else {
+          totalO += qty;
+        }
+      });
+    });
+
+  } catch(e) {
+    console.log('Lecture des métriques Firestore impossible:', e.message);
+  }
+
+  metricsEl.innerHTML = `
+    <div class="pm-mc"><div class="pm-mc-label">Contrats ce mois</div><div class="pm-mc-val">${contratsCeMois}</div></div>
     <div class="pm-mc"><div class="pm-mc-label">Orange</div><div class="pm-mc-val" style="color:#E65100;">${totalO}</div></div>
     <div class="pm-mc"><div class="pm-mc-label">Eneco</div><div class="pm-mc-val" style="color:#2E7D32;">${totalE}</div></div>
     <div class="pm-mc"><div class="pm-mc-label">ASP ce mois</div><div class="pm-mc-val" style="color:#f97316;">${Math.round(aspMois*10)/10}</div></div>
