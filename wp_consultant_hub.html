@@ -108,26 +108,11 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.9 Stable - 
+Build 5.9.10 Stable - 
      </span>
     </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-
-<div id="news-banner"
-     style="
-       display:none;
-       min-width:250px;
-       max-width:500px;
-       padding:8px 14px;
-       border-radius:8px;
-       font-size:12px;
-       font-weight:700;
-       text-align:center;
-       white-space:nowrap;
-       overflow:hidden;
-       text-overflow:ellipsis;">
-</div>
 
 </div>
     <button onclick="forceRefreshApp()"
@@ -151,6 +136,20 @@ Build 5.9.9 Stable -
     🚪 Déconnexion
   </button>
 
+<div id="news-banner"
+     style="
+       display:none;
+       width:100%;
+       box-sizing:border-box;
+       padding:8px 16px;
+       font-size:12px;
+       font-weight:700;
+       text-align:center;
+       white-space:normal;
+       word-wrap:break-word;
+       line-height:1.4;">
+</div>
+
 <!-- TABLEAU DE BORD -->
 
   <!-- LAYOUT OUTILS (always visible) -->
@@ -166,7 +165,7 @@ Build 5.9.9 Stable -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.9 Stable
+      Build 5.9.10 Stable
     </div>
   </div>
 
@@ -2251,10 +2250,6 @@ window.forceRefreshApp = function(){
 async function loadNews() {
 
   try {
-
-    if (window.innerWidth <= 768) {
-      return;
-    }
 
     // Attendre que Firestore soit prêt (chargement parallèle du module Firebase)
     let tries = 0;
