@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.13 Stable - 
+Build 5.9.14 Stable - 
      </span>
     </div>
     </div>
@@ -165,7 +165,7 @@ Build 5.9.13 Stable -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.13 Stable
+      Build 5.9.14 Stable
     </div>
   </div>
 
@@ -2348,6 +2348,15 @@ window.firebaseResetPassword = async function(){
 }
 
 window.openSimulator = function(url){
+
+  if (pmCurrentUser) {
+    const params = new URLSearchParams({
+      consultantId: pmCurrentUser.id || '',
+      consultantName: pmCurrentUser.fullName || pmCurrentUser.name || '',
+      consultantEmail: pmCurrentUser.email || ''
+    });
+    url += (url.includes('?') ? '&' : '?') + params.toString();
+  }
 
   document.getElementById('simFrame').src = url;
 

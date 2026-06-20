@@ -70,7 +70,7 @@
       </div>
 
       <div style="margin-top:8px;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
-        Build 5.9.5 Stable - Juin 2026
+        Build 5.9.6 Stable - Juin 2026
       </div>
     </div>
 
@@ -255,9 +255,79 @@
   <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
 
-<script>
-document.getElementById('logo-img').src = 'https://app.phil-mobile.be/images/logo.png';
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Infos par défaut (fallback si aucun consultant identifié dans l'URL)
+window.consultantInfo = {
+  id: null,
+  name: 'Phil-Mobile',
+  phone: '0475 24 02 05',
+  email: 'infos@phil-mobile.be',
+  logoUrl: 'https://app.phil-mobile.be/images/logo.png'
+};
+
+(async function loadConsultantInfo(){
+  const params = new URLSearchParams(window.location.search);
+  const consultantId = params.get('consultantId');
+  const consultantName = params.get('consultantName');
+  const consultantEmail = params.get('consultantEmail');
+
+  if (consultantId) {
+    window.consultantInfo.id = consultantId;
+    window.consultantInfo.name = consultantName || window.consultantInfo.name;
+    window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
+    window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+
+    // Récupérer le téléphone depuis Firestore (pas transmis dans l'URL)
+    try {
+      const snap = await getDocs(collection(db, 'consultants'));
+      snap.forEach(d => {
+        const c = d.data();
+        if ((c.id || d.id) === consultantId && c.phone) {
+          window.consultantInfo.phone = c.phone;
+        }
+      });
+    } catch(e) {
+      console.log('Lecture téléphone consultant impossible:', e.message);
+    }
+  }
+
+  // Logo : essaie le logo personnalisé, retombe sur le logo standard si absent
+  const logoImg = document.getElementById('logo-img');
+  const testImg = new Image();
+  testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
+  testImg.onerror = () => { logoImg.src = 'https://app.phil-mobile.be/images/logo.png'; };
+  testImg.src = window.consultantInfo.logoUrl;
+
+  // Met à jour l'affichage des coordonnées dans le footer si présent
+  document.querySelectorAll('.consultant-name').forEach(el => el.textContent = window.consultantInfo.name);
+  document.querySelectorAll('.consultant-phone').forEach(el => el.textContent = window.consultantInfo.phone);
+  document.querySelectorAll('.consultant-email').forEach(el => el.textContent = window.consultantInfo.email);
+})();
+</script>
+
+<script>
 
 async function resetCache() {
   if (!confirm("Vider le cache de l'application ?")) return;
@@ -289,6 +359,7 @@ const TVA = 1.21;
 function shareWhatsApp(){
   const client = document.getElementById('client-name')?.value || '';
   const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
 
   const msg =
 `================================
@@ -304,9 +375,9 @@ Téléphone : ${phone}
 
 ★ Tarif à vie : ${document.getElementById('s-total').textContent}
 
-Phil-Mobile
-0475 24 02 05
-infos@phil-mobile.be`;
+${ci.name}
+${ci.phone}
+${ci.email}`;
 
   window.open('https://wa.me/?text=' + encodeURIComponent(msg),'_blank');
 }
@@ -314,6 +385,7 @@ infos@phil-mobile.be`;
 function copyResume(){
   const client = document.getElementById('client-name')?.value || '';
   const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
 
   const txt =
 `================================
@@ -329,9 +401,9 @@ Téléphone : ${phone}
 
 ★ Tarif à vie : ${document.getElementById('s-total').textContent}
 
-Phil-Mobile
-0475 24 02 05
-infos@phil-mobile.be`;
+${ci.name}
+${ci.phone}
+${ci.email}`;
 
   navigator.clipboard.writeText(txt);
   alert('Résumé copié dans le presse-papiers');
@@ -345,6 +417,7 @@ const client=document.getElementById('client-name')?.value||'Client';
 const phone=document.getElementById('client-phone')?.value||'';
 const ref='PM-'+Date.now();
 const today=new Date().toLocaleDateString('fr-BE');
+const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
 
 let produits=[];
 Object.values(productList).flat().forEach(p=>{
@@ -371,7 +444,7 @@ h1{color:#ff5a14;text-align:center}
 .btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
 </style></head><body>
 <div style="text-align:center">
-<img src="https://app.phil-mobile.be/images/logo.png" width="120">
+<img src="${ci.logoUrl}" width="120" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
 <h1>OFFRE COMMERCIALE PHIL-MOBILE</h1>
 </div>
 
@@ -402,9 +475,9 @@ ${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
 </div>
 
 <div class="box">
-<b>PHIL-MOBILE</b><br>
-0475 24 02 05<br>
-infos@phil-mobile.be
+<b>${ci.name.toUpperCase()}</b><br>
+${ci.phone}<br>
+${ci.email}
 </div>
 
 <button class="btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
