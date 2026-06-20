@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.3</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.5</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -194,6 +194,37 @@
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeActivateModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmActivate()">Créer le consultant</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal : modifier un consultant -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <h3>✏️ Modifier le consultant</h3>
+    <div style="font-size:13px;color:#888;margin-bottom:14px;" id="edit-name-display"></div>
+    <div class="form-row">
+      <label>Prénom</label>
+      <input type="text" id="e-name">
+    </div>
+    <div class="form-row">
+      <label>Nom complet</label>
+      <input type="text" id="e-fullname">
+    </div>
+    <div class="form-row">
+      <label>Date d'entrée (jj/mm/aaaa)</label>
+      <input type="text" id="e-startdate">
+    </div>
+    <div class="form-row">
+      <label>ASP actuel</label>
+      <input type="number" id="e-aspinit">
+    </div>
+    <div class="checkbox-row"><input type="checkbox" id="e-pqs"> PQS validé</div>
+    <div class="checkbox-row"><input type="checkbox" id="e-fastsc"> Fast SC validé</div>
+    <div class="checkbox-row"><input type="checkbox" id="e-fastec"> Fast EC validé</div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmEdit()">Enregistrer les modifications</button>
     </div>
   </div>
 </div>
@@ -548,10 +579,16 @@ async function loadConsultants() {
           <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
           ${c.isAdmin ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">Admin</span>' : ''}
           <div class="meta">${escapeHtml(c.email || '')} · ID: ${escapeHtml(c.id || c.docId)}</div>
-          <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP init: ${escapeHtml(String(c.aspInit ?? 0))}</div>
+          <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP actuel: ${escapeHtml(String(c.aspInit ?? 0))}</div>
+          <div class="meta">
+            ${c.pqsValidated ? '✅ PQS' : '⬜ PQS'} ·
+            ${c.fastSCValidated ? '✅ Fast SC' : '⬜ Fast SC'} ·
+            ${c.fastECValidated ? '✅ Fast EC' : '⬜ Fast EC'}
+          </div>
           ${c.paidAmount ? `<div class="meta">💰 Payé: ${escapeHtml(String(c.paidAmount))}€ le ${escapeHtml(c.paidDate || '—')}</div>` : ''}
         </div>
         <div class="card-actions">
+          <button class="btn btn-secondary" onclick="openEditModal('${c.docId}')">✏️ Modifier</button>
           <button class="btn ${c.active ? 'btn-danger' : 'btn-primary'}" onclick="toggleActive('${c.docId}', ${!c.active})">
             ${c.active ? '⏸ Désactiver' : '▶ Réactiver'}
           </button>
@@ -560,12 +597,65 @@ async function loadConsultants() {
     `;
     container.appendChild(card);
   });
+
+  window._consultantsCache = list;
 }
 
 window.toggleActive = async function (docId, newState) {
   await updateDoc(doc(db, 'consultants', docId), { active: newState });
   showToast(newState ? 'Consultant réactivé.' : 'Consultant désactivé.');
   loadConsultants();
+};
+
+let currentEditDocId = null;
+
+window.openEditModal = function (docId) {
+  const c = (window._consultantsCache || []).find(x => x.docId === docId);
+  if (!c) return;
+  currentEditDocId = docId;
+  document.getElementById('edit-name-display').textContent =
+    'ID: ' + (c.id || c.docId) + ' · ' + (c.email || '');
+  document.getElementById('e-name').value = c.name || '';
+  document.getElementById('e-fullname').value = c.fullName || '';
+  document.getElementById('e-startdate').value = c.startDate || '';
+  document.getElementById('e-aspinit').value = c.aspInit ?? 0;
+  document.getElementById('e-pqs').checked = !!c.pqsValidated;
+  document.getElementById('e-fastsc').checked = !!c.fastSCValidated;
+  document.getElementById('e-fastec').checked = !!c.fastECValidated;
+  document.getElementById('edit-modal').classList.add('open');
+};
+
+window.closeEditModal = function () {
+  document.getElementById('edit-modal').classList.remove('open');
+  currentEditDocId = null;
+};
+
+window.confirmEdit = async function () {
+  if (!currentEditDocId) return;
+
+  const name = document.getElementById('e-name').value.trim();
+  const fullName = document.getElementById('e-fullname').value.trim();
+  const startDate = document.getElementById('e-startdate').value.trim();
+  const aspInit = Number(document.getElementById('e-aspinit').value) || 0;
+  const pqsValidated = document.getElementById('e-pqs').checked;
+  const fastSCValidated = document.getElementById('e-fastsc').checked;
+  const fastECValidated = document.getElementById('e-fastec').checked;
+
+  if (!name || !fullName) {
+    alert('Le prénom et le nom complet sont obligatoires.');
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, 'consultants', currentEditDocId), {
+      name, fullName, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated
+    });
+    closeEditModal();
+    showToast('✅ Consultant mis à jour.');
+    loadConsultants();
+  } catch (err) {
+    alert('Erreur lors de la mise à jour: ' + err.message);
+  }
 };
 
 function escapeHtml(str) {
