@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.5</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.6</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -191,6 +191,17 @@
       <input type="text" id="f-paiddate" placeholder="ex: 19/06/2026">
     </div>
     <div class="checkbox-row"><input type="checkbox" id="f-isadmin"> Administrateur</div>
+    <div class="checkbox-row"><input type="checkbox" id="f-istest" onchange="onTestAccountToggle()"> Compte de test (durée limitée)</div>
+    <div class="form-row" id="f-duration-row">
+      <label id="f-duration-label">Durée de l'accès</label>
+      <select id="f-duration" onchange="document.getElementById('f-customdate').style.display = this.value === 'custom' ? 'block' : 'none';">
+        <option value="3">3 jours (essai)</option>
+        <option value="7">7 jours (essai)</option>
+        <option value="365" selected>12 mois (abonnement)</option>
+        <option value="custom">Date personnalisée…</option>
+      </select>
+      <input type="text" id="f-customdate" placeholder="jj/mm/aaaa" style="display:none;margin-top:6px;">
+    </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeActivateModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmActivate()">Créer le consultant</button>
@@ -222,6 +233,11 @@
     <div class="checkbox-row"><input type="checkbox" id="e-pqs"> PQS validé</div>
     <div class="checkbox-row"><input type="checkbox" id="e-fastsc"> Fast SC validé</div>
     <div class="checkbox-row"><input type="checkbox" id="e-fastec"> Fast EC validé</div>
+    <div class="form-row" style="margin-top:10px;">
+      <label>Date d'expiration de l'accès (jj/mm/aaaa, vide = pas d'expiration)</label>
+      <input type="text" id="e-expirationdate" placeholder="ex: 19/06/2027">
+    </div>
+    <div class="checkbox-row"><input type="checkbox" id="e-istest"> Compte de test (durée limitée)</div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmEdit()">Enregistrer les modifications</button>
@@ -343,7 +359,32 @@ onAuthStateChanged(auth, async (user) => {
   loadNewsAdmin();
   loadProspects();
   loadConsultants();
+  checkExpiredConsultants();
 });
+
+async function checkExpiredConsultants() {
+  try {
+    const snap = await getDocs(collection(db, 'consultants'));
+    const expiredActive = [];
+    const now = new Date();
+    snap.forEach(d => {
+      const c = d.data();
+      if (!c.active || !c.expirationDate) return;
+      const expDate = new Date(c.expirationDate);
+      if (expDate < now) expiredActive.push(c.fullName || c.name || d.id);
+    });
+
+    if (expiredActive.length > 0) {
+      alert(
+        '⚠️ Accès expiré détecté !\n\n' +
+        expiredActive.join('\n') +
+        '\n\nCes comptes ont été automatiquement désactivés à leur dernière tentative de connexion, ou le seront à la prochaine. Vérifiez/relancez-les si besoin dans la liste ci-dessous.'
+      );
+    }
+  } catch (err) {
+    console.log('Vérification des expirations impossible:', err.message);
+  }
+}
 
 // --- Toast ---
 function showToast(msg) {
@@ -448,6 +489,9 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-paidamount').value = 149;
   document.getElementById('f-paiddate').value = '';
   document.getElementById('f-isadmin').checked = false;
+  document.getElementById('f-istest').checked = false;
+  document.getElementById('f-duration').value = '365';
+  document.getElementById('f-customdate').style.display = 'none';
   document.getElementById('activate-modal').classList.add('open');
 };
 
@@ -463,7 +507,19 @@ window.openCreateModal = function () {
   document.getElementById('f-paidamount').value = 149;
   document.getElementById('f-paiddate').value = '';
   document.getElementById('f-isadmin').checked = false;
+  document.getElementById('f-istest').checked = false;
+  document.getElementById('f-duration').value = '365';
+  document.getElementById('f-customdate').style.display = 'none';
   document.getElementById('activate-modal').classList.add('open');
+};
+
+window.onTestAccountToggle = function () {
+  const isTest = document.getElementById('f-istest').checked;
+  if (isTest) {
+    document.getElementById('f-duration').value = '3';
+  } else {
+    document.getElementById('f-duration').value = '365';
+  }
 };
 
 window.closeActivateModal = function () {
@@ -481,10 +537,24 @@ window.confirmActivate = async function () {
   const paidAmount = Number(document.getElementById('f-paidamount').value) || 0;
   const paidDate = document.getElementById('f-paiddate').value.trim();
   const isAdmin = document.getElementById('f-isadmin').checked;
+  const isTestAccount = document.getElementById('f-istest').checked;
+  const duration = document.getElementById('f-duration').value;
 
   if (!id || !name || !email || !password) {
     alert('ID, prénom, email et mot de passe sont obligatoires.');
     return;
+  }
+
+  let expirationDate = null;
+  if (duration === 'custom') {
+    const customStr = document.getElementById('f-customdate').value.trim();
+    const parts = customStr.split('/');
+    if (parts.length === 3) {
+      expirationDate = new Date(parts[2], parts[1]-1, parts[0]).toISOString();
+    }
+  } else {
+    const days = Number(duration);
+    expirationDate = new Date(Date.now() + days * 86400000).toISOString();
   }
 
   let adminUserEmail;
@@ -506,7 +576,8 @@ window.confirmActivate = async function () {
       uplineEmail: 'infos@phil-mobile.be',
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
       pqsValidated: false, fastSCValidated: false, fastECValidated: false,
-      paidAmount, paidDate
+      paidAmount, paidDate,
+      expirationDate, isTestAccount
     });
 
   } catch (err) {
@@ -556,6 +627,22 @@ window.confirmReconnect = async function () {
 };
 
 // --- Consultants actifs ---
+function renderExpirationBadge(c) {
+  if (!c.expirationDate) return '';
+  const expDate = new Date(c.expirationDate);
+  const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
+  const dateStr = expDate.toLocaleDateString('fr-FR');
+  const testTag = c.isTestAccount ? '🧪 Test · ' : '';
+
+  if (daysLeft < 0) {
+    return `<div class="meta" style="color:#c0392b;font-weight:700;">⛔ ${testTag}Expiré le ${dateStr}</div>`;
+  }
+  if (daysLeft <= 14) {
+    return `<div class="meta" style="color:#B45309;font-weight:700;">⚠️ ${testTag}Expire dans ${daysLeft}j (${dateStr})</div>`;
+  }
+  return `<div class="meta">${testTag}Expire le ${dateStr}</div>`;
+}
+
 async function loadConsultants() {
   const container = document.getElementById('consultants-list');
   container.innerHTML = '<div class="empty">Chargement...</div>';
@@ -586,6 +673,7 @@ async function loadConsultants() {
             ${c.fastECValidated ? '✅ Fast EC' : '⬜ Fast EC'}
           </div>
           ${c.paidAmount ? `<div class="meta">💰 Payé: ${escapeHtml(String(c.paidAmount))}€ le ${escapeHtml(c.paidDate || '—')}</div>` : ''}
+          ${renderExpirationBadge(c)}
         </div>
         <div class="card-actions">
           <button class="btn btn-secondary" onclick="openEditModal('${c.docId}')">✏️ Modifier</button>
@@ -622,6 +710,10 @@ window.openEditModal = function (docId) {
   document.getElementById('e-pqs').checked = !!c.pqsValidated;
   document.getElementById('e-fastsc').checked = !!c.fastSCValidated;
   document.getElementById('e-fastec').checked = !!c.fastECValidated;
+  document.getElementById('e-expirationdate').value = c.expirationDate
+    ? new Date(c.expirationDate).toLocaleDateString('fr-FR').split('/').join('/')
+    : '';
+  document.getElementById('e-istest').checked = !!c.isTestAccount;
   document.getElementById('edit-modal').classList.add('open');
 };
 
@@ -640,15 +732,28 @@ window.confirmEdit = async function () {
   const pqsValidated = document.getElementById('e-pqs').checked;
   const fastSCValidated = document.getElementById('e-fastsc').checked;
   const fastECValidated = document.getElementById('e-fastec').checked;
+  const isTestAccount = document.getElementById('e-istest').checked;
+  const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
 
   if (!name || !fullName) {
     alert('Le prénom et le nom complet sont obligatoires.');
     return;
   }
 
+  let expirationDate = null;
+  if (expirationDateStr) {
+    const parts = expirationDateStr.split('/');
+    if (parts.length === 3) {
+      expirationDate = new Date(parts[2], parts[1]-1, parts[0]).toISOString();
+    } else {
+      alert('Format de date d\'expiration invalide (attendu jj/mm/aaaa). Champ ignoré.');
+    }
+  }
+
   try {
     await updateDoc(doc(db, 'consultants', currentEditDocId), {
-      name, fullName, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated
+      name, fullName, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
+      expirationDate, isTestAccount
     });
     closeEditModal();
     showToast('✅ Consultant mis à jour.');

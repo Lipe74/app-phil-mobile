@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.11 Stable - 
+Build 5.9.12 Stable - 
      </span>
     </div>
     </div>
@@ -165,7 +165,7 @@ Build 5.9.11 Stable -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.11 Stable
+      Build 5.9.12 Stable
     </div>
   </div>
 
@@ -1155,6 +1155,79 @@ Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre
 let PM_USERS = {};
 const SESSION_DAYS = 7;
 
+// --- Vérification d'expiration d'accès (abonnement annuel ou compte test) ---
+window.checkAndApplyExpiration = async function(consultantId) {
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDoc) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.getDoc) return { expired: false, daysLeft: null };
+
+    const snap = await window.getDoc(window.doc(window.db, 'consultants', consultantId));
+    if (!snap.exists()) return { expired: false, daysLeft: null };
+
+    const data = snap.data();
+    if (!data.expirationDate) return { expired: false, daysLeft: null };
+
+    const expDate = new Date(data.expirationDate);
+    const now = new Date();
+    const daysLeft = Math.ceil((expDate - now) / 86400000);
+
+    if (daysLeft < 0) {
+      // Expiré : désactivation automatique
+      try {
+        await window.updateDoc(window.doc(window.db, 'consultants', consultantId), { active: false });
+      } catch(e) {
+        console.log('Désactivation automatique impossible:', e.message);
+      }
+      return { expired: true, daysLeft, isTestAccount: !!data.isTestAccount };
+    }
+
+    return { expired: false, daysLeft, isTestAccount: !!data.isTestAccount };
+
+  } catch(e) {
+    console.log('Vérification expiration impossible:', e.message);
+    return { expired: false, daysLeft: null };
+  }
+};
+
+function showExpirationBanner(info) {
+  if (info.daysLeft === null) return;
+
+  const threshold = info.isTestAccount ? 999 : 14; // compte test : toujours visible ; abonnement : 14 derniers jours
+  if (info.daysLeft > threshold) return;
+
+  const existing = document.getElementById('expiration-banner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'expiration-banner';
+  banner.style = `
+    width:100%;box-sizing:border-box;padding:8px 16px;font-size:12px;font-weight:700;
+    text-align:center;background:${info.daysLeft <= 3 ? '#fef2f2' : '#fff7ed'};
+    color:${info.daysLeft <= 3 ? '#991b1b' : '#9a3412'};
+    border-top:1px solid ${info.daysLeft <= 3 ? '#ef4444' : '#f97316'};
+    border-bottom:1px solid ${info.daysLeft <= 3 ? '#ef4444' : '#f97316'};
+  `;
+
+  if (info.isTestAccount) {
+    banner.textContent = info.daysLeft <= 0
+      ? "⏱️ Votre période d'essai se termine aujourd'hui."
+      : `⏱️ Période d'essai : encore ${info.daysLeft} jour(s).`;
+  } else {
+    banner.textContent = `⚠️ Votre abonnement expire dans ${info.daysLeft} jour(s). Contactez l'administrateur pour le renouveler.`;
+  }
+
+  const newsBanner = document.getElementById('news-banner');
+  if (newsBanner && newsBanner.parentNode) {
+    newsBanner.parentNode.insertBefore(banner, newsBanner.nextSibling);
+  } else {
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+}
+
 async function loadPMUsers() {
   try {
     // Attendre que le module Firebase ait exposé window.db / window.getDocs (chargement parallèle)
@@ -2109,7 +2182,8 @@ import {
   getDocs,
   setDoc,
   doc,
-  getDoc
+  getDoc,
+  updateDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
@@ -2131,6 +2205,7 @@ window.getDocs = getDocs;
 window.setDoc = setDoc;
 window.doc = doc;
 window.getDoc = getDoc;
+window.updateDoc = updateDoc;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
@@ -2150,7 +2225,18 @@ onAuthStateChanged(auth, async (user) => {
 
   if (!consultant) return;
 
+  const expirationCheck = await window.checkAndApplyExpiration(consultant.id);
+  if (expirationCheck.expired) {
+    document.getElementById('rem-error').textContent =
+      "Votre accès a expiré. Merci de contacter l'administrateur pour le renouveler.";
+    document.getElementById('rem-error').style.display = 'block';
+    await signOut(auth);
+    return;
+  }
+
   doUnlock(consultant);
+  window._expirationInfo = expirationCheck;
+  showExpirationBanner(expirationCheck);
 
 });
 
@@ -2187,7 +2273,18 @@ window.firebaseLogin = async function(){
       return;
     }
 
+    const expirationCheck = await window.checkAndApplyExpiration(consultant.id);
+    if (expirationCheck.expired) {
+      document.getElementById('rem-error').textContent =
+        "Votre accès a expiré. Merci de contacter l'administrateur pour le renouveler.";
+      document.getElementById('rem-error').style.display = 'block';
+      await signOut(auth);
+      return;
+    }
+
     doUnlock(consultant);
+    window._expirationInfo = expirationCheck;
+    showExpirationBanner(expirationCheck);
 
   }catch(err){
     document.getElementById('rem-error').style.display='block';
