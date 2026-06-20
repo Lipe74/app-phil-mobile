@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.12 Stable - 
+Build 5.9.13 Stable - 
      </span>
     </div>
     </div>
@@ -165,7 +165,7 @@ Build 5.9.12 Stable -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.12 Stable
+      Build 5.9.13 Stable
     </div>
   </div>
 
@@ -327,19 +327,22 @@ Build 5.9.12 Stable -
 📝 Demande d'accès
 </h3>
 
-<input id="req-firstname" placeholder="Prénom" style="width:100%;margin:5px 0;padding:10px;">
-<input id="req-lastname" placeholder="Nom" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-smartid" placeholder="Mettez ici votre ID Smart *" required style="width:100%;margin:5px 0;padding:10px;">
+
+<input id="req-firstname" placeholder="Prénom *" required style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-lastname" placeholder="Nom *" required style="width:100%;margin:5px 0;padding:10px;">
 
 <input id="req-company" placeholder="Société" style="width:100%;margin:5px 0;padding:10px;">
-<input id="req-vat" placeholder="TVA" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-vat" placeholder="TVA *" required style="width:100%;margin:5px 0;padding:10px;">
 
-<input id="req-email" placeholder="Email" style="width:100%;margin:5px 0;padding:10px;">
-<input id="req-phone" placeholder="Téléphone" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-email" type="email" placeholder="Email * (c'est avec celui-ci que vous vous connecterez)" required style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-phone" placeholder="Téléphone *" required style="width:100%;margin:5px 0;padding:10px;">
 
-<input id="req-asp" placeholder="ASP actuel" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-asp" placeholder="ASP actuel *" required style="width:100%;margin:5px 0;padding:10px;">
 <input
   id="req-startdate"
-  placeholder="Date d'entrée chez Smart (jj/mm/aaaa)"
+  placeholder="Date d'entrée chez Smart (jj/mm/aaaa) *"
+  required
   style="width:100%;margin:5px 0;padding:10px;">  
 
 <h4>Qualifications</h4>
@@ -2082,12 +2085,39 @@ function copyText(id, btn) {
 
 window.submitAccessRequest = async function(){
 
-  console.log("db =", window.db);
-  console.log("addDoc =", window.addDoc);
+  // Validation des champs obligatoires
+  const requiredFields = [
+    { id: 'req-smartid',   label: 'ID Smart' },
+    { id: 'req-firstname', label: 'Prénom' },
+    { id: 'req-lastname',  label: 'Nom' },
+    { id: 'req-vat',       label: 'TVA' },
+    { id: 'req-email',     label: 'Email' },
+    { id: 'req-phone',     label: 'Téléphone' },
+    { id: 'req-asp',       label: 'ASP actuel' },
+    { id: 'req-startdate', label: 'Date d\'entrée' }
+  ];
+
+  const missing = requiredFields.filter(f => !document.getElementById(f.id).value.trim());
+
+  if (missing.length > 0) {
+    alert(
+      "⚠️ Merci de compléter les champs obligatoires suivants :\n\n" +
+      missing.map(f => "• " + f.label).join("\n")
+    );
+    return;
+  }
+
+  const email = document.getElementById('req-email').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert("⚠️ Merci de saisir une adresse email valide.");
+    return;
+  }
 
   try {
 
     await window.addDoc(window.collection(window.db, "prospects"), {
+
+      smartId: document.getElementById('req-smartid').value.trim(),
 
       firstName: document.getElementById('req-firstname').value.trim(),
       lastName: document.getElementById('req-lastname').value.trim(),

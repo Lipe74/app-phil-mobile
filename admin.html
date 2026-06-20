@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.6</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.7</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -451,6 +451,7 @@ async function loadProspects() {
       <div class="card-row">
         <div class="card-info">
           <strong>${escapeHtml(p.firstName || '')} ${escapeHtml(p.lastName || '')}</strong>
+          ${p.smartId ? `<span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(p.smartId)}</span>` : ''}
           <div class="meta">${escapeHtml(p.company || '—')} · ${escapeHtml(p.email || '')} · ${escapeHtml(p.phone || '')}</div>
           <div class="meta">ASP actuel: ${escapeHtml(String(p.asp ?? '—'))} · Entrée Smart: ${escapeHtml(p.startDate || '—')}</div>
           <div class="meta">Upline: ${escapeHtml(p.upline || '—')} (${escapeHtml(p.uplinePhone || '—')})</div>
@@ -479,7 +480,7 @@ window.dismissProspect = async function (docId) {
 window.openActivateModal = function (docId) {
   const p = (window._prospectsCache || []).find(x => x.docId === docId);
   currentProspectForActivation = docId;
-  document.getElementById('f-id').value = '';
+  document.getElementById('f-id').value = p?.smartId || '';
   document.getElementById('f-name').value = p?.firstName || '';
   document.getElementById('f-fullname').value = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
   document.getElementById('f-email').value = p?.email || '';
