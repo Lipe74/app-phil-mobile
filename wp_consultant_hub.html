@@ -108,7 +108,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build 5.9.8 Stable - 
+Build 5.9.9 Stable - 
      </span>
     </div>
     </div>
@@ -166,7 +166,7 @@ Build 5.9.8 Stable -
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build 5.9.8 Stable
+      Build 5.9.9 Stable
     </div>
   </div>
 
@@ -1177,7 +1177,10 @@ async function loadPMUsers() {
         fullName: c.fullName,
         email: c.email,
         agent: c.fullName,
-        isAdmin: !!c.isAdmin
+        isAdmin: !!c.isAdmin,
+        pqsValidated: !!c.pqsValidated,
+        fastSCValidated: !!c.fastSCValidated,
+        fastECValidated: !!c.fastECValidated
       };
     });
   } catch(e) {
@@ -1191,7 +1194,10 @@ async function loadPMUsers() {
           fullName: c.fullName,
           email: c.email,
           agent: c.fullName,
-          isAdmin: !!c.isAdmin
+          isAdmin: !!c.isAdmin,
+          pqsValidated: !!c.pqsValidated,
+          fastSCValidated: !!c.fastSCValidated,
+          fastECValidated: !!c.fastECValidated
         };
       });
     } catch(e2) {
@@ -1456,17 +1462,21 @@ function renderDashboard() {
       </div>
     </div>`:''}
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-      ${pqs&&!pqs.daysLeft<=0||true
-        ? pqs&&pqs.daysLeft>0
+      ${fullData.pqsValidated
+        ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ PQS réussi</span>'
+        : pqs && pqs.daysLeft > 0
           ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#FFF3E0;color:#B45309;font-weight:600;border:1px solid #f0d080;">⏱ PQS — ${pqs.daysLeft}j restants</span>`
-          : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ PQS réussi</span>'
-        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#fff0f0;color:#E24B4A;font-weight:600;border:1px solid #ffcdd2;">❌ PQS non réussi</span>'}
-      ${fastSCDays!==null&&fastSCDays>0
-        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC — ${fastSCDays}j</span>`
-        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC expiré</span>'}
-      ${fastECDays!==null&&fastECDays>0
-        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC — ${fastECDays}j</span>`
-        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC expiré</span>'}
+          : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#fff0f0;color:#E24B4A;font-weight:600;border:1px solid #ffcdd2;">❌ PQS non réussi</span>'}
+      ${fullData.fastSCValidated
+        ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ Fast SC réussi</span>'
+        : fastSCDays !== null && fastSCDays > 0
+          ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC — ${fastSCDays}j</span>`
+          : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC expiré</span>'}
+      ${fullData.fastECValidated
+        ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ Fast EC réussi</span>'
+        : fastECDays !== null && fastECDays > 0
+          ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC — ${fastECDays}j</span>`
+          : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC expiré</span>'}
     </div>
     ${sponsorHtml}
   `;
