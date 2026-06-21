@@ -1,11 +1,10 @@
 // IMPORTANT : importScripts('version.js') a été retiré — il empêchait l'installation PWA sur Android
 // (Chrome Android est strict : un échec d'importScripts bloque toute la PWA, contrairement à Chrome desktop).
 // Le CACHE_NAME doit donc être synchronisé MANUELLEMENT avec version.js à chaque changement de version.
-const CACHE_NAME = 'phil-mobile-Build 6.6';
+const CACHE_NAME = 'phil-mobile-Build 6.7';
 const ASSETS = [
   '/',
-  '/wp_home.html',
-  '/wp_consultant_hub.html',
+    '/wp_consultant_hub.html',
   '/wp_rem.html',
   '/wp_orange.html',
   '/wp_eneco.html',
