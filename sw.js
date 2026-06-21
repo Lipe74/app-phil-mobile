@@ -1,6 +1,7 @@
-// TEST TEMPORAIRE — importScripts retiré pour diagnostiquer un souci d'installation PWA sur Android.
-// Si ce test résout le souci, on saura que c'était importScripts('version.js') la cause.
-const CACHE_NAME = 'phil-mobile-Build 6.5-test';
+// IMPORTANT : importScripts('version.js') a été retiré — il empêchait l'installation PWA sur Android
+// (Chrome Android est strict : un échec d'importScripts bloque toute la PWA, contrairement à Chrome desktop).
+// Le CACHE_NAME doit donc être synchronisé MANUELLEMENT avec version.js à chaque changement de version.
+const CACHE_NAME = 'phil-mobile-Build 6.6';
 const ASSETS = [
   '/',
   '/wp_home.html',
