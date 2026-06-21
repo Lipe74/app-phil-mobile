@@ -1,8 +1,6 @@
-// Charge version.js (variable APP_VERSION) pour construire le nom du cache dynamiquement.
-// Modifier UNIQUEMENT version.js pour changer la version partout (pages HTML + ce cache).
-importScripts('version.js');
-
-const CACHE_NAME = 'phil-mobile-Build ' + (self.APP_VERSION || '6.0');
+// TEST TEMPORAIRE — importScripts retiré pour diagnostiquer un souci d'installation PWA sur Android.
+// Si ce test résout le souci, on saura que c'était importScripts('version.js') la cause.
+const CACHE_NAME = 'phil-mobile-Build 6.5-test';
 const ASSETS = [
   '/',
   '/wp_home.html',
