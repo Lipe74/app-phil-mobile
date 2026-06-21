@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+  <link rel="icon"
+      type="image/png"
+      href="images/logo.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Prospects Consultants - V1.0</title>
+<script src="version.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
+.app{max-width:1100px;margin:auto;padding:12px 20px;}
+.header{
+  background:#fff;
+  color:#ff5a14;
+  padding:20px;
+  border-radius:20px;
+  border:2px solid #ffb680;
+  margin-bottom:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.header h1{
+  margin:0;
+  color:#ff5a14;
+}
+.tabs{display:flex;gap:10px;margin:15px 0;flex-wrap:wrap}
+.tabbtn{padding:10px 15px;border:none;border-radius:10px;background:#ff5a14;color:#fff;cursor:pointer}
+.section{background:#fff;border:1px solid #ffb680;border-radius:18px;padding:20px;margin-bottom:15px}
+.hidden{display:none}
+input,textarea{
+  width:100%;
+  padding:8px;
+  margin:2px 0 6px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  box-sizing:border-box;
+  font-family:inherit;
+}
+select{
+  width:100%;
+  padding:8px;
+  margin:2px 0 6px;
+  border:1px solid #ccc;
+  border-radius:8px;
+  box-sizing:border-box;
+}
+.card{background:#fafafa;border-radius:10px;padding:10px;margin:8px 0}
+
+input:focus,
+select:focus,
+textarea:focus{
+  outline:none;
+  border-color:#ff5a14;
+  box-shadow:0 0 0 4px rgba(255,90,20,.15);
+}
+
+.card-client{
+  background:white;
+  border-radius:18px;
+  padding:20px;
+  border:2px solid #ffb680;
+  margin-bottom:20px;
+}
+
+.card-client h3{
+  color:#ff5a14;
+  margin-bottom:15px;
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+@media(max-width:768px){
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.stats-banner{
+  background:linear-gradient(90deg,#ff5a14,#ff8c47);
+  color:#fff;
+  border-radius:16px;
+  padding:16px 20px;
+  margin-bottom:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px;
+}
+.stats-banner .val{font-size:24px;font-weight:700;}
+.stats-banner .label{font-size:11px;opacity:.9;}
+.stats-banner .stat{text-align:center;}
+
+.status-badge{
+  display:inline-block;
+  border-radius:99px;
+  padding:2px 10px;
+  font-size:11px;
+  font-weight:700;
+  margin-left:8px;
+  border:1px solid;
+}
+.status-Nouveau{background:#e8f0fe;color:#1a73e8;border-color:#c2d9fb;}
+.status-Contacté{background:#fff3e8;color:#ff5a14;border-color:#ffb680;}
+.status-Converti{background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;}
+.status-Perdu{background:#f1f1f1;color:#757575;border-color:#ddd;}
+
+.filter-bar{
+  display:flex;
+  gap:10px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.filter-bar select{width:auto;min-width:160px;}
+.filter-bar input{flex:1;min-width:180px;margin:0;}
+
+.import-zone{
+  border:2px dashed #ffb680;
+  border-radius:14px;
+  padding:24px;
+  text-align:center;
+  background:#fffaf7;
+}
+.import-zone input[type=file]{margin-top:10px;}
+.import-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;}
+.import-table th,.import-table td{border-bottom:1px solid #eee;padding:6px 8px;text-align:left;}
+.import-table th{color:#ff5a14;}
+.import-actions{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.import-summary{font-size:12px;color:#666;margin-top:10px;}
+
+/* Login */
+#login-screen{
+  max-width:360px;margin:80px auto;text-align:center;
+  background:#fff;border:2px solid #ff5a14;border-radius:18px;padding:30px 24px;
+}
+#login-screen input{text-align:center;}
+#login-screen button{
+  background:#ff5a14;color:#fff;border:none;padding:11px 28px;
+  border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;width:100%;
+}
+#login-error{color:#e24b4a;font-size:12px;margin-bottom:10px;display:none;}
+
+#app-content{display:none;}
+
+
+#toast{
+  position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;
+  padding:12px 18px;border-radius:8px;font-size:13px;display:none;z-index:2000;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<div id="login-screen">
+  <h2 style="color:#ff5a14;">🔐 Prospects Consultants</h2>
+  <div id="login-error">Identifiants incorrects.</div>
+  <input type="email" id="login-email" placeholder="Email" autocomplete="email">
+  <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin();">
+  <button onclick="doLogin()">Connexion</button>
+</div>
+
+<div id="app-content">
+
+<div class="header">
+  <h1>🎯 Prospects Consultants</h1>
+  <div><span id="app-version-1">…</span> Stable</div>
+</div>
+
+<div class="stats-banner">
+  <div class="stat"><div class="val" id="stat-total">0</div><div class="label">Total</div></div>
+  <div class="stat"><div class="val" id="stat-Nouveau">0</div><div class="label">Nouveau</div></div>
+  <div class="stat"><div class="val" id="stat-Contacté">0</div><div class="label">Contacté</div></div>
+  <div class="stat"><div class="val" id="stat-Converti">0</div><div class="label">Converti</div></div>
+  <div class="stat"><div class="val" id="stat-Perdu">0</div><div class="label">Perdu</div></div>
+</div>
+
+<div class="tabs">
+<button class="tabbtn" onclick="showTab('nouveau')">🆕 Nouveau</button>
+<button class="tabbtn" onclick="showTab('liste')">📋 Liste</button>
+<button class="tabbtn" onclick="showTab('import')">📥 Import Excel/CSV</button>
+</div>
+
+<div id="nouveau" class="section">
+
+<div class="card-client">
+
+<h3>👤 Nouveau prospect</h3>
+
+<div class="form-grid">
+
+  <input id="p-nom" placeholder="👤 Nom du prospect (ex : Jean Dupont)">
+  <input id="p-tel" placeholder="📞 Téléphone (ex : 0475 24 02 05)">
+  <input id="p-email" placeholder="📧 E-mail">
+
+<select id="p-source">
+  <option value="Facebook">📘 Facebook</option>
+  <option value="WhatsApp">💬 WhatsApp</option>
+  <option value="Recommandation">🤝 Recommandation</option>
+  <option value="Terrain">🚶 Terrain</option>
+  <option value="Site Web">🌐 Site Web</option>
+  <option value="Autre">✨ Autre</option>
+</select>
+<select id="p-statut-pro">
+  <option value="Indépendant">💼 Indépendant</option>
+  <option value="Société">🏢 Société</option>
+  <option value="Employé">👔 Employé</option>
+  <option value="Étudiant">🎓 Étudiant</option>
+  <option value="Sans activité">📄 Sans activité</option>
+</select>
+<select id="p-presentation">
+<option value="Non présentée">🎯 Non présentée</option>
+ <option value="Terrain">🤝 Présentée sur le terrain</option>
+  <option value="Zoom">💻 Présentée en Zoom</option>
+  <option value="Bureau">🏢 Présentée au bureau</option>
+</select>
+</div>
+
+<textarea id="p-commentaire" rows="3" placeholder="📝 Commentaire (contexte, où/comment rencontré, etc.)"></textarea>
+
+</div>
+
+<button class="tabbtn" onclick="saveProspect()">💾 Enregistrer le prospect</button>
+</div>
+
+<div id="liste" class="section hidden">
+<h2>📋 Mes prospects</h2>
+
+<div class="filter-bar">
+  <select id="filterStatut" onchange="filterList()">
+    <option value="">Tous les statuts</option>
+    <option value="Nouveau">🆕 Nouveau</option>
+    <option value="Contacté">📞 Contacté</option>
+    <option value="Converti">✅ Converti</option>
+    <option value="Perdu">❌ Perdu</option>
+  </select>
+  <input id="searchBox" type="text" placeholder="🔍 Rechercher un nom, tél, email..." onkeyup="filterList()">
+</div>
+
+<div id="prospectsList"></div>
+</div>
+
+<div id="import" class="section hidden">
+<h2>📥 Import Excel/CSV</h2>
+
+<div class="import-zone">
+  <div>Sélectionne un fichier <b>.xlsx</b> ou <b>.csv</b> avec en en-têtes : <b>Nom</b>, <b>Téléphone</b>, <b>Email</b>, <b>Source</b>, <b>Commentaire</b> (Téléphone/Email/Source/Commentaire facultatifs, l'ordre des colonnes n'a pas d'importance).</div>
+  <input type="file" id="importFile" accept=".xlsx,.xls,.csv">
+  <br>
+  <button class="tabbtn" onclick="parseImportFile()">📖 Lire le fichier</button>
+</div>
+
+<div id="importPreviewZone"></div>
+
+</div>
+
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  query,
+  where,
+  deleteDoc
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.db = db;
+window.doc = doc;
+window.collection = collection;
+window.addDoc = addDoc;
+window.getDocs = getDocs;
+window.updateDoc = updateDoc;
+window.query = query;
+window.where = where;
+window.deleteDoc = deleteDoc;
+
+let currentConsultant = null;
+
+window.doLogin = async function () {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    document.getElementById('login-error').style.display = 'none';
+  } catch (err) {
+    document.getElementById('login-error').textContent = 'Email ou mot de passe incorrect.';
+    document.getElementById('login-error').style.display = 'block';
+  }
+};
+
+window.doLogout = async function () {
+  await signOut(auth);
+  location.reload();
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('app-content').style.display = 'none';
+    return;
+  }
+
+  // Retrouver le profil consultant correspondant à cet email
+  const snap = await getDocs(collection(db, 'consultants'));
+  let found = null;
+  let foundDocId = null;
+  snap.forEach(d => {
+    const c = d.data();
+    if (c.email && c.email.toLowerCase() === user.email.toLowerCase()) {
+      found = c;
+      foundDocId = d.id;
+    }
+  });
+
+  if (!found) {
+    document.getElementById('login-error').textContent = 'Aucun profil consultant trouvé pour ce compte.';
+    document.getElementById('login-error').style.display = 'block';
+    await signOut(auth);
+    return;
+  }
+
+  currentConsultant = { ...found, docId: foundDocId };
+  window._currentConsultantId = found.id || foundDocId;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+
+  if (window.renderList) window.renderList();
+});
+</script>
+
+<script>
+window._allProspects = [];
+let currentEditId = null;
+
+function showTab(id){
+ document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
+ document.getElementById(id).classList.remove('hidden');
+ if(id==='liste') renderList();
+}
+function editProspect(id){
+
+  const p = window._allProspects.find(x => x.docId === id);
+
+  if(!p) return;
+
+  document.getElementById('p-nom').value = p.nom || '';
+  document.getElementById('p-tel').value = p.tel || '';
+  document.getElementById('p-email').value = p.email || '';
+  document.getElementById('p-source').value = p.source || '';
+  document.getElementById('p-statut-pro').value = p.statutPro || '';
+  document.getElementById('p-commentaire').value = p.commentaire || '';
+
+  currentEditId = id;
+
+  showTab('nouveau');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+async function saveProspect(){
+  const nom = document.getElementById('p-nom').value.trim();
+  if (!nom) {
+    alert('Merci de renseigner au moins le nom du prospect.');
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const data = {
+    consultantId: window._currentConsultantId,
+    nom,
+    tel: document.getElementById('p-tel').value.trim(),
+    email: document.getElementById('p-email').value.trim(),
+    source: document.getElementById('p-source').value,
+    commentaire: document.getElementById('p-commentaire').value.trim(),
+	statutPro: document.getElementById('p-statut-pro').value,
+	
+    statut: 'Nouveau',
+    dateCreation: now,
+    dateMaj: now
+  };
+
+  try {
+    if(currentEditId){
+
+  await window.updateDoc(
+    window.doc(window.db, 'prospectsConsultants', currentEditId),
+    data
+  );
+
+}else{
+
+  await window.addDoc(
+    window.collection(window.db, 'prospectsConsultants'),
+    data
+  );
+
+}
+    showToast('✅ Prospect enregistré.');
+    ['p-nom','p-tel','p-email','p-commentaire'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('p-source').value = 'Orange';
+  } catch(err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+}
+
+async function loadProspects(){
+  const snap = await window.getDocs(window.query(
+    window.collection(window.db, 'prospectsConsultants'),
+    window.where('consultantId', '==', window._currentConsultantId)
+  ));
+  const list = [];
+  snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+  list.sort((a,b) => new Date(b.dateCreation) - new Date(a.dateCreation));
+  window._allProspects = list;
+  return list;
+}
+
+function updateStats(list){
+  const counts = { Nouveau:0, Contacté:0, Converti:0, Perdu:0 };
+  list.forEach(p => { if (counts[p.statut] !== undefined) counts[p.statut]++; });
+  document.getElementById('stat-total').textContent = list.length;
+  document.getElementById('stat-Nouveau').textContent = counts.Nouveau;
+  document.getElementById('stat-Contacté').textContent = counts.Contacté;
+  document.getElementById('stat-Converti').textContent = counts.Converti;
+  document.getElementById('stat-Perdu').textContent = counts.Perdu;
+}
+
+async function renderList(){
+  const data = await loadProspects();
+  updateStats(data);
+  let html = '';
+
+  data.forEach((p) => {
+    html += `
+    <div class="card" data-statut="${escapeHtml(p.statut||'Nouveau')}">
+
+      <b>👤 ${escapeHtml(p.nom||'Sans nom')}</b>
+      <span class="status-badge status-${escapeHtml(p.statut||'Nouveau')}">${escapeHtml(p.statut||'Nouveau')}</span><br>
+
+      ${p.tel ? '📞 ' + escapeHtml(p.tel) + '<br>' : ''}
+      ${p.email ? '📧 ' + escapeHtml(p.email) + '<br>' : ''}
+      🏷 ${escapeHtml(p.source||'-')}<br>
+      ${p.commentaire ? '📝 ' + escapeHtml(p.commentaire) + '<br>' : ''}
+      📅 ${p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : '-'}<br><br>
+
+      📊
+      <select onchange="changeStatus('${p.docId}', this.value)" style="width:auto;display:inline-block;margin:0 0 8px 4px;padding:4px 8px;font-size:12px;">
+        <option value="Nouveau" ${p.statut==='Nouveau'?'selected':''}>🆕 Nouveau</option>
+        <option value="Contacté" ${p.statut==='Contacté'?'selected':''}>📞 Contacté</option>
+        <option value="Converti" ${p.statut==='Converti'?'selected':''}>✅ Converti</option>
+        <option value="Perdu" ${p.statut==='Perdu'?'selected':''}>❌ Perdu</option>
+      </select>
+	 <button onclick="editProspect('${p.docId}')">
+  ✏️ Modifier
+</button>
+      <button onclick="deleteProspect('${p.docId}')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">
+      🗑 Supprimer
+      </button>
+
+    </div>
+    `;
+  });
+
+  document.getElementById('prospectsList').innerHTML = html || 'Aucun prospect pour le moment.';
+  filterList();
+}
+
+function filterList(){
+  const term = document.getElementById('searchBox').value.toLowerCase();
+  const statutFilter = document.getElementById('filterStatut').value;
+  const cards = document.querySelectorAll('#prospectsList .card');
+
+  cards.forEach(card => {
+    const txt = card.textContent.toLowerCase();
+    const matchesTerm = txt.includes(term);
+    const matchesStatut = !statutFilter || card.dataset.statut === statutFilter;
+    card.style.display = (matchesTerm && matchesStatut) ? 'block' : 'none';
+  });
+}
+
+async function changeStatus(docId, newStatus){
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsConsultants', docId), {
+      statut: newStatus,
+      dateMaj: new Date().toISOString()
+    });
+    showToast('Statut mis à jour : ' + newStatus);
+    renderList();
+  } catch(err) {
+    alert('Erreur: ' + err.message);
+  }
+}
+
+async function deleteProspect(docId){
+  const p = window._allProspects.find(x => x.docId === docId);
+  const label = p ? `"${p.nom}"` : 'ce prospect';
+  if (!confirm(`Supprimer définitivement ${label} ?\n\nCette action est irréversible.`)) return;
+
+  try {
+    await window.deleteDoc(window.doc(window.db, 'prospectsConsultants', docId));
+    showToast('🗑 Prospect supprimé.');
+    renderList();
+  } catch(err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+}
+
+// --- Import Excel/CSV ---
+window._importRows = [];
+
+function findColumn(headers, candidates){
+  const lower = headers.map(h => (h||'').toString().toLowerCase().trim());
+  for (const cand of candidates) {
+    const idx = lower.findIndex(h => h.includes(cand));
+    if (idx !== -1) return headers[idx];
+  }
+  return null;
+}
+
+function parseImportFile(){
+  const fileInput = document.getElementById('importFile');
+  const file = fileInput.files[0];
+  if (!file) {
+    alert('Merci de choisir un fichier .xlsx ou .csv.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '' });
+
+      if (rows.length === 0) {
+        document.getElementById('importPreviewZone').innerHTML = '<div class="import-summary">Le fichier ne contient aucune ligne exploitable.</div>';
+        return;
+      }
+
+      const headers = Object.keys(rows[0]);
+      const colNom = findColumn(headers, ['nom']);
+      const colTel = findColumn(headers, ['tel', 'téléphone', 'telephone', 'gsm']);
+      const colEmail = findColumn(headers, ['email', 'mail']);
+      const colSource = findColumn(headers, ['source']);
+      const colCommentaire = findColumn(headers, ['comment', 'note']);
+
+      if (!colNom) {
+        document.getElementById('importPreviewZone').innerHTML = '<div class="import-summary">⚠️ Aucune colonne "Nom" trouvée dans le fichier. Vérifie les en-têtes.</div>';
+        return;
+      }
+
+      const normalized = rows
+        .map(r => ({
+          nom: (r[colNom] || '').toString().trim(),
+          tel: colTel ? (r[colTel] || '').toString().trim() : '',
+          email: colEmail ? (r[colEmail] || '').toString().trim() : '',
+          source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
+          commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
+        }))
+        .filter(r => r.nom);
+
+      window._importRows = normalized;
+      renderImportPreview(normalized);
+
+    } catch(err) {
+      document.getElementById('importPreviewZone').innerHTML =
+        '<div class="import-summary">❌ Erreur de lecture du fichier : ' + escapeHtml(err.message) + '</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderImportPreview(rows){
+  let html = `<div class="import-summary">${rows.length} ligne(s) détectée(s) et prête(s) à être importée(s) :</div>`;
+  html += '<table class="import-table"><tr><th></th><th>Nom</th><th>Téléphone</th><th>Email</th><th>Source</th></tr>';
+  rows.slice(0, 50).forEach((r, i) => {
+    html += `<tr>
+      <td><input type="checkbox" class="import-check" data-idx="${i}" checked></td>
+      <td>${escapeHtml(r.nom)}</td>
+      <td>${escapeHtml(r.tel)}</td>
+      <td>${escapeHtml(r.email)}</td>
+      <td>${escapeHtml(r.source)}</td>
+    </tr>`;
+  });
+  html += '</table>';
+  if (rows.length > 50) {
+    html += `<div class="import-summary">Aperçu limité aux 50 premières lignes (les ${rows.length} lignes seront importées).</div>`;
+  }
+  html += `<div class="import-actions">
+    <button class="tabbtn" onclick="confirmImport()">📥 Importer les prospects cochés</button>
+    <span id="importStatus" class="import-summary"></span>
+  </div>`;
+  document.getElementById('importPreviewZone').innerHTML = html;
+}
+
+async function confirmImport(){
+  const checks = document.querySelectorAll('.import-check');
+  const toImport = [];
+  checks.forEach(c => {
+    if (c.checked) toImport.push(window._importRows[parseInt(c.dataset.idx, 10)]);
+  });
+
+  if (toImport.length === 0) {
+    alert('Aucune ligne cochée à importer.');
+    return;
+  }
+
+  const statusEl = document.getElementById('importStatus');
+  let done = 0;
+
+  for (const row of toImport) {
+    const now = new Date().toISOString();
+    try {
+      await window.addDoc(window.collection(window.db, 'prospectsConsultants'), {
+        consultantId: window._currentConsultantId,
+        nom: row.nom,
+        tel: row.tel,
+        email: row.email,
+        source: row.source || 'Autre',
+        commentaire: row.commentaire,
+        statut: 'Nouveau',
+        dateCreation: now,
+        dateMaj: now
+      });
+      done++;
+      if (statusEl) statusEl.textContent = `Import en cours… ${done}/${toImport.length}`;
+    } catch(err) {
+      console.warn('Erreur import ligne', row, err.message);
+    }
+  }
+
+  showToast(`✅ ${done} prospect(s) importé(s).`);
+  document.getElementById('importPreviewZone').innerHTML = '';
+  document.getElementById('importFile').value = '';
+  window._importRows = [];
+  showTab('liste');
+}
+
+window.saveProspect = saveProspect;
+window.renderList = renderList;
+window.filterList = filterList;
+window.changeStatus = changeStatus;
+window.deleteProspect = deleteProspect;
+window.showTab = showTab;
+window.parseImportFile = parseImportFile;
+window.confirmImport = confirmImport;
+</script>
+
+<script>
+document.querySelectorAll('[id^="app-version"]').forEach(el => {
+  el.textContent = window.APP_VERSION || '?';
+});
+</script>
+
+</body>
+</html>
