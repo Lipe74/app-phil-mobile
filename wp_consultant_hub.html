@@ -556,24 +556,24 @@ Build <span id="app-version-1">…</span> Stable -
         <!-- COLONNE DROITE : contenu -->
         <div style="flex:1;min-width:280px;">
 
-          <!-- Panel Contacts Phil-Mobile -->
+          <!-- Panel Contacts Upline (dynamique selon le sponsor du consultant connecté) -->
           <div id="panel-contacts-pm" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="text-align:center;margin-bottom:20px;">
               <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 12px;">
-                <img src="images/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
+                <img id="upline-contact-logo" src="images/logo.png" alt="Upline" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/logo.png'">
               </div>
-              <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Philippe Tomaszewsky</div>
-              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Phil-Mobile · Votre upline</div>
+              <div id="upline-contact-name" style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Philippe Tomaszewsky</div>
+              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Votre upline</div>
             </div>
-            <a href="https://wa.me/32475240205" style="display:flex;align-items:center;gap:10px;background:#25d366;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+            <a id="upline-contact-whatsapp" href="https://wa.me/32475240205" style="display:flex;align-items:center;gap:10px;background:#25d366;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-              WhatsApp · +32 475 24 02 05
+              <span id="upline-contact-whatsapp-label">WhatsApp · +32 475 24 02 05</span>
             </a>
-            <a href="tel:+32475240205" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
-              📞 +32 475 24 02 05
+            <a id="upline-contact-tel" href="tel:+32475240205" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
+              📞 <span id="upline-contact-tel-label">+32 475 24 02 05</span>
             </a>
-            <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
-              📧 infos@phil-mobile.be
+            <a id="upline-contact-email" href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+              📧 <span id="upline-contact-email-label">infos@phil-mobile.be</span>
             </a>
           </div>
 
@@ -1448,6 +1448,40 @@ function doUnlock(user) {
   pmNiveauAgent = user.agent;
 }
 
+// Remplit le panel "Contacts" (sidebar) avec les coordonnées du vrai upline du consultant connecté.
+// Si aucun upline n'est renseigné, retombe sur Philippe / Phil-Mobile par défaut.
+function fillUplineContactPanel(uplineName, uplineTel, uplineEmail, uplineId) {
+  const DEFAULT_NAME = 'Philippe Tomaszewsky';
+  const DEFAULT_TEL = '+32475240205';
+  const DEFAULT_TEL_LABEL = '+32 475 24 02 05';
+  const DEFAULT_MAIL = 'infos@phil-mobile.be';
+  const DEFAULT_LOGO = 'images/logo.png';
+
+  const name = uplineName || DEFAULT_NAME;
+  const tel = uplineTel ? uplineTel.replace(/\s+/g, '') : DEFAULT_TEL;
+  const telLabel = uplineTel || DEFAULT_TEL_LABEL;
+  const mail = uplineEmail || DEFAULT_MAIL;
+  const logo = (uplineId && uplineName) ? `images/${uplineId}.png` : DEFAULT_LOGO;
+
+  const elName = document.getElementById('upline-contact-name');
+  const elLogo = document.getElementById('upline-contact-logo');
+  const elWhatsapp = document.getElementById('upline-contact-whatsapp');
+  const elWhatsappLabel = document.getElementById('upline-contact-whatsapp-label');
+  const elTel = document.getElementById('upline-contact-tel');
+  const elTelLabel = document.getElementById('upline-contact-tel-label');
+  const elEmail = document.getElementById('upline-contact-email');
+  const elEmailLabel = document.getElementById('upline-contact-email-label');
+
+  if (elName) elName.textContent = name;
+  if (elLogo) elLogo.src = logo;
+  if (elWhatsapp) elWhatsapp.href = 'https://wa.me/' + tel.replace('+', '');
+  if (elWhatsappLabel) elWhatsappLabel.textContent = 'WhatsApp · ' + telLabel;
+  if (elTel) elTel.href = 'tel:' + tel;
+  if (elTelLabel) elTelLabel.textContent = telLabel;
+  if (elEmail) elEmail.href = 'mailto:' + mail;
+  if (elEmailLabel) elEmailLabel.textContent = mail;
+}
+
 function renderDashboard() {
   if (!pmCurrentUser) return;
   const u = pmCurrentUser;
@@ -1498,6 +1532,9 @@ function renderDashboard() {
       </div>`;
     }
   }
+
+  // Remplir dynamiquement le panel "Contacts" (upline réel, ou Philippe/Phil-Mobile par défaut)
+  fillUplineContactPanel(u.uplineName || p.upline, u.uplineTel || p.uplineTel, u.uplineEmail || p.uplineEmail, fullData.id || u.id);
 
   const el = document.getElementById('pm-dashboard-info');
   if (el) el.innerHTML = `
