@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.8</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.9</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -241,6 +241,27 @@
     <div class="checkbox-row"><input type="checkbox" id="e-pqs"> PQS validé</div>
     <div class="checkbox-row"><input type="checkbox" id="e-fastsc"> Fast SC validé</div>
     <div class="checkbox-row"><input type="checkbox" id="e-fastec"> Fast EC validé</div>
+
+    <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin:14px 0 6px;border-top:1px solid #eee;padding-top:10px;">
+      Upline (sponsor affiché au consultant)
+    </div>
+    <div class="form-row">
+      <label>Nom de l'upline</label>
+      <input type="text" id="e-upline" placeholder="ex: Philippe Tomaszewsky (vide = Philippe par défaut)">
+    </div>
+    <div class="form-row">
+      <label>ID de l'upline (pour son logo, ex: delta835)</label>
+      <input type="text" id="e-uplineid" placeholder="ex: delta835">
+    </div>
+    <div class="form-row">
+      <label>Téléphone de l'upline</label>
+      <input type="text" id="e-uplinetel" placeholder="ex: +32 475 24 02 05">
+    </div>
+    <div class="form-row">
+      <label>Email de l'upline</label>
+      <input type="email" id="e-uplineemail" placeholder="ex: infos@phil-mobile.be">
+    </div>
+
     <div class="form-row" style="margin-top:10px;">
       <label>Date d'expiration de l'accès (jj/mm/aaaa, vide = pas d'expiration)</label>
       <input type="text" id="e-expirationdate" placeholder="ex: 19/06/2027">
@@ -723,6 +744,10 @@ window.openEditModal = function (docId) {
   document.getElementById('e-pqs').checked = !!c.pqsValidated;
   document.getElementById('e-fastsc').checked = !!c.fastSCValidated;
   document.getElementById('e-fastec').checked = !!c.fastECValidated;
+  document.getElementById('e-upline').value = c.upline || '';
+  document.getElementById('e-uplineid').value = c.uplineId || '';
+  document.getElementById('e-uplinetel').value = c.uplineTel || '';
+  document.getElementById('e-uplineemail').value = c.uplineEmail || '';
   document.getElementById('e-expirationdate').value = c.expirationDate
     ? new Date(c.expirationDate).toLocaleDateString('fr-FR').split('/').join('/')
     : '';
@@ -749,6 +774,15 @@ window.confirmEdit = async function () {
   const fastECValidated = document.getElementById('e-fastec').checked;
   const isTestAccount = document.getElementById('e-istest').checked;
   const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
+  const upline = document.getElementById('e-upline').value.trim();
+  const uplineId = document.getElementById('e-uplineid').value.trim();
+  const uplineTel = document.getElementById('e-uplinetel').value.trim();
+  const uplineEmail = document.getElementById('e-uplineemail').value.trim();
+
+  if (uplineEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uplineEmail)) {
+    alert('Adresse email de l\'upline invalide.');
+    return;
+  }
 
   if (!name || !fullName) {
     alert('Le prénom et le nom complet sont obligatoires.');
@@ -784,7 +818,7 @@ window.confirmEdit = async function () {
   try {
     await updateDoc(doc(db, 'consultants', currentEditDocId), {
       name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
-      expirationDate, isTestAccount
+      expirationDate, isTestAccount, upline, uplineId, uplineTel, uplineEmail
     });
     closeEditModal();
     showToast('✅ Consultant mis à jour.');

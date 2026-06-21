@@ -1253,7 +1253,11 @@ async function loadPMUsers() {
         isAdmin: !!c.isAdmin,
         pqsValidated: !!c.pqsValidated,
         fastSCValidated: !!c.fastSCValidated,
-        fastECValidated: !!c.fastECValidated
+        fastECValidated: !!c.fastECValidated,
+        uplineName: c.upline || '',
+        uplineId: c.uplineId || '',
+        uplineTel: c.uplineTel || '',
+        uplineEmail: c.uplineEmail || ''
       };
     });
   } catch(e) {
@@ -1270,7 +1274,11 @@ async function loadPMUsers() {
           isAdmin: !!c.isAdmin,
           pqsValidated: !!c.pqsValidated,
           fastSCValidated: !!c.fastSCValidated,
-          fastECValidated: !!c.fastECValidated
+          fastECValidated: !!c.fastECValidated,
+          uplineName: c.upline || '',
+          uplineId: c.uplineId || '',
+          uplineTel: c.uplineTel || '',
+          uplineEmail: c.uplineEmail || ''
         };
       });
     } catch(e2) {
@@ -1534,7 +1542,7 @@ function renderDashboard() {
   }
 
   // Remplir dynamiquement le panel "Contacts" (upline réel, ou Philippe/Phil-Mobile par défaut)
-  fillUplineContactPanel(u.uplineName || p.upline, u.uplineTel || p.uplineTel, u.uplineEmail || p.uplineEmail, fullData.id || u.id);
+  fillUplineContactPanel(u.uplineName || p.upline, u.uplineTel || p.uplineTel, u.uplineEmail || p.uplineEmail, u.uplineId);
 
   const el = document.getElementById('pm-dashboard-info');
   if (el) el.innerHTML = `
