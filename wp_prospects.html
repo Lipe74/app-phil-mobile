@@ -186,7 +186,7 @@ textarea:focus{
 </div>
 
 <div class="tabs">
-<button class="tabbtn" onclick="showTab('nouveau')">🆕 Nouveau</button>
+<button class="tabbtn" onclick="startNewProspect()">🆕 Nouveau</button>
 <button class="tabbtn" onclick="showTab('liste')">📋 Liste</button>
 <button class="tabbtn" onclick="showTab('import')">📥 Import Excel/CSV</button>
 </div>
@@ -205,7 +205,7 @@ textarea:focus{
   <input id="p-nom" placeholder="👤 Nom du prospect (ex : Jean Dupont)">
   <input id="p-tel" placeholder="📞 Téléphone (ex : 0475 24 02 05)">
   <input id="p-email" placeholder="📧 E-mail">
-  <select id="p-type">
+  <select id="p-type" onchange="toggleSocieteFields()">
   <option value="Particulier">👤 Particulier</option>
   <option value="Société">🏢 Société</option>
 </select>
@@ -384,6 +384,27 @@ onAuthStateChanged(auth, async (user) => {
 
 <script>
 window._allProspects = [];
+let currentEditId = null;
+
+function toggleSocieteFields(){
+  const isSociete = document.getElementById('p-type').value === 'Société';
+  document.getElementById('societe-fields').style.display = isSociete ? 'block' : 'none';
+}
+
+function resetProspectForm(){
+  ['p-nom','p-tel','p-email','p-commentaire','p-societe','p-tva','p-ville'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('p-source').value = 'Orange';
+  document.getElementById('p-type').value = 'Particulier';
+  toggleSocieteFields();
+}
+
+function startNewProspect(){
+  currentEditId = null;
+  resetProspectForm();
+  showTab('nouveau');
+}
 
 function showTab(id){
  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
@@ -402,6 +423,10 @@ function editProspect(id){
   document.getElementById('p-ville').value = p.ville || '';
   document.getElementById('p-source').value = p.source || '';
   document.getElementById('p-commentaire').value = p.commentaire || '';
+  document.getElementById('p-type').value = p.type || 'Particulier';
+  document.getElementById('p-societe').value = p.societe || '';
+  document.getElementById('p-tva').value = p.tva || '';
+  toggleSocieteFields();
 
   currentEditId = id;
 
@@ -446,12 +471,14 @@ async function saveProspect(){
   dateMaj: now
 };
   try {
-    await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
+    if (currentEditId) {
+      await window.updateDoc(window.doc(window.db, 'prospectsClients', currentEditId), data);
+    } else {
+      await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
+    }
     showToast('✅ Prospect enregistré.');
-    ['p-nom','p-tel','p-email','p-commentaire'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('p-source').value = 'Orange';
+    currentEditId = null;
+    resetProspectForm();
   } catch(err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
@@ -493,6 +520,8 @@ async function renderList(){
 
       ${p.tel ? '📞 ' + escapeHtml(p.tel) + '<br>' : ''}
       ${p.email ? '📧 ' + escapeHtml(p.email) + '<br>' : ''}
+      ${p.ville ? '📍 ' + escapeHtml(p.ville) + '<br>' : ''}
+      ${p.type === 'Société' ? '🏢 ' + escapeHtml(p.societe||'-') + (p.tva ? ' · ' + escapeHtml(p.tva) : '') + '<br>' : ''}
       🏷 ${escapeHtml(p.source||'-')}<br>
       ${p.commentaire ? '📝 ' + escapeHtml(p.commentaire) + '<br>' : ''}
       📅 ${p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : '-'}<br><br>
@@ -697,6 +726,9 @@ window.filterList = filterList;
 window.changeStatus = changeStatus;
 window.deleteProspect = deleteProspect;
 window.showTab = showTab;
+window.editProspect = editProspect;
+window.startNewProspect = startNewProspect;
+window.toggleSocieteFields = toggleSocieteFields;
 window.parseImportFile = parseImportFile;
 window.confirmImport = confirmImport;
 </script>

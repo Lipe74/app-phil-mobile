@@ -188,7 +188,7 @@ textarea:focus{
 </div>
 
 <div class="tabs">
-<button class="tabbtn" onclick="showTab('nouveau')">🆕 Nouveau</button>
+<button class="tabbtn" onclick="startNewProspect()">🆕 Nouveau</button>
 <button class="tabbtn" onclick="showTab('liste')">📋 Liste</button>
 <button class="tabbtn" onclick="showTab('import')">📥 Import Excel/CSV</button>
 </div>
@@ -376,6 +376,21 @@ onAuthStateChanged(auth, async (user) => {
 window._allProspects = [];
 let currentEditId = null;
 
+function resetProspectForm(){
+  ['p-nom','p-tel','p-email','p-commentaire'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('p-source').value = 'Facebook';
+  document.getElementById('p-statut-pro').value = 'Indépendant';
+  document.getElementById('p-presentation').value = 'Non présentée';
+}
+
+function startNewProspect(){
+  currentEditId = null;
+  resetProspectForm();
+  showTab('nouveau');
+}
+
 function showTab(id){
  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
  document.getElementById(id).classList.remove('hidden');
@@ -392,6 +407,7 @@ function editProspect(id){
   document.getElementById('p-email').value = p.email || '';
   document.getElementById('p-source').value = p.source || '';
   document.getElementById('p-statut-pro').value = p.statutPro || '';
+  document.getElementById('p-presentation').value = p.presentation || 'Non présentée';
   document.getElementById('p-commentaire').value = p.commentaire || '';
 
   currentEditId = id;
@@ -427,7 +443,8 @@ async function saveProspect(){
     source: document.getElementById('p-source').value,
     commentaire: document.getElementById('p-commentaire').value.trim(),
 	statutPro: document.getElementById('p-statut-pro').value,
-	
+	presentation: document.getElementById('p-presentation').value,
+
     statut: 'Nouveau',
     dateCreation: now,
     dateMaj: now
@@ -450,10 +467,8 @@ async function saveProspect(){
 
 }
     showToast('✅ Prospect enregistré.');
-    ['p-nom','p-tel','p-email','p-commentaire'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('p-source').value = 'Orange';
+    currentEditId = null;
+    resetProspectForm();
   } catch(err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
@@ -496,6 +511,8 @@ async function renderList(){
       ${p.tel ? '📞 ' + escapeHtml(p.tel) + '<br>' : ''}
       ${p.email ? '📧 ' + escapeHtml(p.email) + '<br>' : ''}
       🏷 ${escapeHtml(p.source||'-')}<br>
+      ${p.statutPro ? '💼 ' + escapeHtml(p.statutPro) + '<br>' : ''}
+      ${p.presentation && p.presentation !== 'Non présentée' ? '🎯 ' + escapeHtml(p.presentation) + '<br>' : ''}
       ${p.commentaire ? '📝 ' + escapeHtml(p.commentaire) + '<br>' : ''}
       📅 ${p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : '-'}<br><br>
 
@@ -699,6 +716,8 @@ window.filterList = filterList;
 window.changeStatus = changeStatus;
 window.deleteProspect = deleteProspect;
 window.showTab = showTab;
+window.editProspect = editProspect;
+window.startNewProspect = startNewProspect;
 window.parseImportFile = parseImportFile;
 window.confirmImport = confirmImport;
 </script>
