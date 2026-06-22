@@ -2502,14 +2502,20 @@ async function loadNews() {
     let active = null;
 
     if (window.db && window.getDoc) {
-      try {
-        const snap = await window.getDoc(window.doc(window.db, 'news', 'current'));
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.active) active = data;
+      // Réessaie jusqu'à 3 fois : l'authentification Firebase peut mettre un instant de plus
+      // à être réellement prête côté Firestore, même une fois pmCurrentUser rempli.
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const snap = await window.getDoc(window.doc(window.db, 'news', 'current'));
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.active) active = data;
+          }
+          break;
+        } catch (e) {
+          console.log(`Lecture news Firestore impossible (essai ${attempt}/3):`, e.message);
+          if (attempt < 3) await new Promise(r => setTimeout(r, 500));
         }
-      } catch (e) {
-        console.log('Lecture news Firestore impossible, fallback JSON:', e.message);
       }
     }
 
