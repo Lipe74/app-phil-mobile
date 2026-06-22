@@ -261,6 +261,11 @@
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {
+  getAuth,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
   getFirestore,
   doc,
   getDoc
@@ -278,6 +283,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Infos par défaut (fallback si aucun consultant identifié dans l'URL)
@@ -301,6 +307,14 @@ window.consultantInfo = {
     window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
     window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
 
+    // Attendre que Firebase confirme une éventuelle session déjà ouverte (même domaine que le hub) avant de lire Firestore
+    await new Promise(resolve => {
+      const unsubscribe = onAuthStateChanged(auth, () => {
+        unsubscribe();
+        resolve();
+      });
+    });
+
     // Récupérer le téléphone depuis Firestore (pas transmis dans l'URL)
     try {
       const snap = await getDoc(doc(db, 'consultants', consultantId));
@@ -314,10 +328,12 @@ window.consultantInfo = {
 
   // Logo : essaie le logo personnalisé, retombe sur le logo standard si absent
   const logoImg = document.getElementById('logo-img');
-  const testImg = new Image();
-  testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
-  testImg.onerror = () => { logoImg.src = 'https://app.phil-mobile.be/images/logo.png'; };
-  testImg.src = window.consultantInfo.logoUrl;
+  if (logoImg) {
+    const testImg = new Image();
+    testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
+    testImg.onerror = () => { logoImg.src = 'https://app.phil-mobile.be/images/logo.png'; };
+    testImg.src = window.consultantInfo.logoUrl;
+  }
 
   // Met à jour l'affichage des coordonnées dans le footer si présent
   document.querySelectorAll('.consultant-name').forEach(el => el.textContent = window.consultantInfo.name);
