@@ -171,6 +171,10 @@
       <input type="email" id="f-email">
     </div>
     <div class="form-row">
+      <label>Téléphone (affiché sur ses offres)</label>
+      <input type="text" id="f-phone" placeholder="ex: 0475 24 02 05">
+    </div>
+    <div class="form-row">
       <label>Mot de passe temporaire</label>
       <input type="text" id="f-password" value="Smart2026!">
     </div>
@@ -202,6 +206,27 @@
       </select>
       <input type="text" id="f-customdate" placeholder="jj/mm/aaaa" style="display:none;margin-top:6px;">
     </div>
+
+    <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin:14px 0 6px;border-top:1px solid #eee;padding-top:10px;">
+      Upline (sponsor affiché au consultant)
+    </div>
+    <div class="form-row">
+      <label>Nom de l'upline</label>
+      <input type="text" id="f-upline" placeholder="ex: Philippe Tomaszewsky (vide = Philippe par défaut)">
+    </div>
+    <div class="form-row">
+      <label>ID de l'upline (pour son logo, ex: delta835)</label>
+      <input type="text" id="f-uplineid" placeholder="ex: delta835">
+    </div>
+    <div class="form-row">
+      <label>Téléphone de l'upline</label>
+      <input type="text" id="f-uplinetel" placeholder="ex: +32 475 24 02 05">
+    </div>
+    <div class="form-row">
+      <label>Email de l'upline</label>
+      <input type="email" id="f-uplineemail" placeholder="ex: infos@phil-mobile.be">
+    </div>
+
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeActivateModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmActivate()">Créer le consultant</button>
@@ -513,8 +538,8 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-name').value = p?.firstName || '';
   document.getElementById('f-fullname').value = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
   document.getElementById('f-email').value = p?.email || '';
+  document.getElementById('f-phone').value = p?.phone || '';
   document.getElementById('f-password').value = 'Smart2026!';
-  document.getElementById('f-startdate').value = p?.startDate || '';
   document.getElementById('f-aspinit').value = p?.asp || 0;
   document.getElementById('f-paidamount').value = 149;
   document.getElementById('f-paiddate').value = '';
@@ -522,6 +547,10 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-istest').checked = false;
   document.getElementById('f-duration').value = '365';
   document.getElementById('f-customdate').style.display = 'none';
+  document.getElementById('f-upline').value = p?.upline || 'Philippe Tomaszewsky';
+  document.getElementById('f-uplineid').value = p?.uplineId || '';
+  document.getElementById('f-uplinetel').value = p?.uplinePhone || '+32 475 24 02 05';
+  document.getElementById('f-uplineemail').value = p?.uplineEmail || 'infos@phil-mobile.be';
   document.getElementById('activate-modal').classList.add('open');
 };
 
@@ -531,8 +560,8 @@ window.openCreateModal = function () {
   document.getElementById('f-name').value = '';
   document.getElementById('f-fullname').value = '';
   document.getElementById('f-email').value = '';
+  document.getElementById('f-phone').value = '';
   document.getElementById('f-password').value = 'Smart2026!';
-  document.getElementById('f-startdate').value = '';
   document.getElementById('f-aspinit').value = 0;
   document.getElementById('f-paidamount').value = 149;
   document.getElementById('f-paiddate').value = '';
@@ -540,6 +569,10 @@ window.openCreateModal = function () {
   document.getElementById('f-istest').checked = false;
   document.getElementById('f-duration').value = '365';
   document.getElementById('f-customdate').style.display = 'none';
+  document.getElementById('f-upline').value = 'Philippe Tomaszewsky';
+  document.getElementById('f-uplineid').value = '';
+  document.getElementById('f-uplinetel').value = '+32 475 24 02 05';
+  document.getElementById('f-uplineemail').value = 'infos@phil-mobile.be';
   document.getElementById('activate-modal').classList.add('open');
 };
 
@@ -561,6 +594,7 @@ window.confirmActivate = async function () {
   const name = document.getElementById('f-name').value.trim();
   const fullName = document.getElementById('f-fullname').value.trim();
   const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
   const password = document.getElementById('f-password').value;
   const startDate = document.getElementById('f-startdate').value.trim();
   const aspInit = Number(document.getElementById('f-aspinit').value) || 0;
@@ -569,9 +603,18 @@ window.confirmActivate = async function () {
   const isAdmin = document.getElementById('f-isadmin').checked;
   const isTestAccount = document.getElementById('f-istest').checked;
   const duration = document.getElementById('f-duration').value;
+  const upline = document.getElementById('f-upline').value.trim();
+  const uplineId = document.getElementById('f-uplineid').value.trim();
+  const uplineTel = document.getElementById('f-uplinetel').value.trim();
+  const uplineEmail = document.getElementById('f-uplineemail').value.trim();
 
   if (!id || !name || !email || !password) {
     alert('ID, prénom, email et mot de passe sont obligatoires.');
+    return;
+  }
+
+  if (uplineEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uplineEmail)) {
+    alert('Adresse email de l\'upline invalide.');
     return;
   }
 
@@ -599,11 +642,9 @@ window.confirmActivate = async function () {
     await new Promise(r => setTimeout(r, 600));
 
     await setDoc(doc(db, 'consultants', id), {
-      id, name, fullName, email, startDate, aspInit,
+      id, name, fullName, email, phone, startDate, aspInit,
       isAdmin, active: true,
-      upline: 'Philippe Tomaszewsky',
-      uplineTel: '+32 475 24 02 05',
-      uplineEmail: 'infos@phil-mobile.be',
+      upline, uplineId, uplineTel, uplineEmail,
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
       pqsValidated: false, fastSCValidated: false, fastECValidated: false,
       paidAmount, paidDate,
