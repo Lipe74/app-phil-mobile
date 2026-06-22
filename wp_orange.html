@@ -363,7 +363,10 @@ async function resetCache() {
   sessionStorage.clear();
 
   alert("Cache vidé. Rechargement...");
-  location.href = location.pathname + '?refresh=' + Date.now();
+  const params = new URLSearchParams(location.search);
+  params.delete('refresh');
+  params.set('refresh', Date.now());
+  location.href = location.pathname + '?' + params.toString();
 }
 
 let isTVAC = true;

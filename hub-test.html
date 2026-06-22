@@ -2492,9 +2492,9 @@ async function loadNews() {
 
   try {
 
-    // Attendre que Firestore soit prêt (chargement parallèle du module Firebase)
+    // Attendre que Firestore soit prêt ET que l'utilisateur soit authentifié (sinon lecture refusée par les règles Firestore)
     let tries = 0;
-    while ((!window.db || !window.getDoc) && tries < 30) {
+    while ((!window.db || !window.getDoc || !pmCurrentUser) && tries < 30) {
       await new Promise(r => setTimeout(r, 100));
       tries++;
     }
