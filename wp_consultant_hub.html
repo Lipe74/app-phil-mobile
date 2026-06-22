@@ -116,11 +116,21 @@ Build <span id="app-version-1">…</span> Stable
     <div style="display:flex;align-items:center;gap:10px;">
 
 </div>
-    <button onclick="forceRefreshApp()"
+    <div style="position:relative;display:inline-block;">
+    <button onclick="toggleRefreshMenu()"
         title="Actualiser l'application"
         style="border:none;background:#fff3e8;color:#f97316;width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;font-weight:bold;">
   🔄
 </button>
+    <div id="refresh-menu" style="display:none;position:absolute;right:0;top:46px;background:#fff;border:1px solid #eee;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:3000;min-width:240px;overflow:hidden;">
+      <button onclick="toggleRefreshMenu();forceRefreshApp()" style="display:block;width:100%;text-align:left;padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#1a1a1a;border-bottom:1px solid #f3f3f3;">
+        🔄 Actualiser<br><span style="font-weight:400;color:#9ca3af;font-size:11px;">Rapide, reste connecté</span>
+      </button>
+      <button onclick="toggleRefreshMenu();forceFullReset()" style="display:block;width:100%;text-align:left;padding:12px 16px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:#dc2626;">
+        🔌 Déconnexion<br><span style="font-weight:400;color:#9ca3af;font-size:11px;">Vide tout le cache et reconnecte-toi</span>
+      </button>
+    </div>
+  </div>
   </div>
 
   <button onclick="logout()"
@@ -2470,6 +2480,45 @@ window.forceRefreshApp = function(){
   location.reload();
 
 };
+
+window.toggleRefreshMenu = function(){
+  const menu = document.getElementById('refresh-menu');
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+};
+
+window.forceFullReset = async function(){
+  if (!confirm("Réinitialisation complète : tout le cache sera vidé et vous serez déconnecté(e). Vous devrez vous reconnecter avec votre email et mot de passe. Continuer ?")) return;
+
+  try {
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    if (window.signOut) {
+      try { await window.signOut(); } catch(e) {}
+    }
+    localStorage.clear();
+    sessionStorage.clear();
+  } catch(e) {
+    console.log('Erreur pendant la réinitialisation complète:', e.message);
+  }
+
+  location.href = location.pathname + '?reset=' + Date.now();
+};
+
+// Fermer le petit menu si on clique ailleurs sur la page
+document.addEventListener('click', function(e){
+  const menu = document.getElementById('refresh-menu');
+  if (!menu || menu.style.display !== 'block') return;
+  if (!e.target.closest('#refresh-menu') && e.target.getAttribute('onclick') !== 'toggleRefreshMenu()') {
+    menu.style.display = 'none';
+  }
+});
 async function loadNews() {
 
   try {
