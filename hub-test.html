@@ -2372,6 +2372,7 @@ onAuthStateChanged(auth, async (user) => {
   doUnlock(consultant);
   window._expirationInfo = expirationCheck;
   showExpirationBanner(expirationCheck);
+  loadNews();
 
 });
 
@@ -2420,6 +2421,7 @@ window.firebaseLogin = async function(){
     doUnlock(consultant);
     window._expirationInfo = expirationCheck;
     showExpirationBanner(expirationCheck);
+    loadNews();
 
   }catch(err){
     document.getElementById('rem-error').style.display='block';
