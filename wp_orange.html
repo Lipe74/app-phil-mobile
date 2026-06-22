@@ -262,8 +262,8 @@ import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {
   getFirestore,
-  collection,
-  getDocs
+  doc,
+  getDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -303,13 +303,10 @@ window.consultantInfo = {
 
     // Récupérer le téléphone depuis Firestore (pas transmis dans l'URL)
     try {
-      const snap = await getDocs(collection(db, 'consultants'));
-      snap.forEach(d => {
-        const c = d.data();
-        if ((c.id || d.id) === consultantId && c.phone) {
-          window.consultantInfo.phone = c.phone;
-        }
-      });
+      const snap = await getDoc(doc(db, 'consultants', consultantId));
+      if (snap.exists() && snap.data().phone) {
+        window.consultantInfo.phone = snap.data().phone;
+      }
     } catch(e) {
       console.log('Lecture téléphone consultant impossible:', e.message);
     }
