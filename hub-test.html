@@ -580,7 +580,7 @@ Build <span id="app-version-1">…</span> Stable
           <div id="panel-contacts-pm" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="text-align:center;margin-bottom:20px;">
               <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 12px;">
-                <img id="upline-contact-logo" src="images/logo.png" alt="Upline" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/logo.png'">
+                <img id="upline-contact-logo" src="images/smart.png" alt="Upline" style="width:100%;height:100%;object-fit:contain;" onerror="this.src='images/smart.png'">
               </div>
               <div id="upline-contact-name" style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Philippe Tomaszewsky</div>
               <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Votre upline</div>
@@ -1483,7 +1483,7 @@ function fillUplineContactPanel(uplineName, uplineTel, uplineEmail, uplineId) {
   const DEFAULT_TEL = '+32475240205';
   const DEFAULT_TEL_LABEL = '+32 475 24 02 05';
   const DEFAULT_MAIL = 'infos@phil-mobile.be';
-  const DEFAULT_LOGO = 'images/logo.png';
+  const DEFAULT_LOGO = 'images/smart.png';
 
   const name = uplineName || DEFAULT_NAME;
   const tel = uplineTel ? uplineTel.replace(/\s+/g, '') : DEFAULT_TEL;
@@ -1550,10 +1550,11 @@ function renderDashboard() {
     const upName = u.uplineName || p.upline || '';
     const upTel  = u.uplineTel  || p.uplineTel  || '';
     const upMail = u.uplineEmail|| p.uplineEmail || '';
+    const upId   = u.uplineId   || '';
     const upWhatsapp = upTel ? upTel.replace(/\s+/g, '').replace('+', '') : '';
     if (upName) {
       sponsorHtml = `<div style="margin-top:10px;background:#fef9f5;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #fde8cc;">
-        <div style="font-size:20px;">👤</div>
+        <img src="images/${upId || 'smart'}.png" onerror="this.src='images/smart.png'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
         <div style="flex:1;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Votre sponsor</div>
         <div style="font-size:13px;font-weight:700;color:#f97316;">${upName}</div></div>
         ${upTel?`<a href="https://wa.me/${upWhatsapp}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#25d366;color:white;border-radius:99px;text-decoration:none;font-size:12px;font-weight:600;">💬 WhatsApp</a>`:''}
@@ -1569,9 +1570,9 @@ function renderDashboard() {
   const el = document.getElementById('pm-dashboard-info');
   if (el) el.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-<img src="images/${pmCurrentUser?.id || 'logo'}.png"
+<img src="images/${pmCurrentUser?.id || 'smart'}.png"
      style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;"
-     onerror="this.src='images/logo.png'">      <div style="flex:1;">
+     onerror="this.src='images/smart.png'">      <div style="flex:1;">
 <div style="font-size:15px;font-weight:700;color:#1a1a1a;">
   Bonjour ${u.name} 👋
 </div>
