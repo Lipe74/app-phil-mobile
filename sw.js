@@ -1,7 +1,7 @@
 // IMPORTANT : importScripts('version.js') a été retiré — il empêchait l'installation PWA sur Android
 // (Chrome Android est strict : un échec d'importScripts bloque toute la PWA, contrairement à Chrome desktop).
 // Le CACHE_NAME doit donc être synchronisé MANUELLEMENT avec version.js à chaque changement de version.
-const CACHE_NAME = 'phil-mobile-Build 6.17';
+const CACHE_NAME = 'phil-mobile-Build 6.18';
 const ASSETS = [
   '/',
     '/wp_consultant_hub.html',
@@ -50,22 +50,37 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch — Cache First pour assets statiques
+// Fetch — Network First pour HTML/JS (toujours la dernière version en ligne, cache en secours hors-ligne),
+// Cache First pour les assets vraiment statiques (images, PDF, libs externes qui ne changent jamais)
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
 
-  const isStatic =
-    ASSETS.some(a => event.request.url.includes(a)) ||
+  const isAppShell =
     event.request.url.endsWith('.html') ||
-    event.request.url.endsWith('.pdf') ||
-    event.request.url.endsWith('.png') ||
-    event.request.url.endsWith('.js') ||
-    event.request.url.endsWith('.css');
+    event.request.url.endsWith('.js');
 
-  if (isStatic) {
+  const isStatic =
+    !isAppShell && (
+      ASSETS.some(a => event.request.url.includes(a)) ||
+      event.request.url.endsWith('.pdf') ||
+      event.request.url.endsWith('.png') ||
+      event.request.url.endsWith('.css')
+    );
+
+  if (isAppShell) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+  } else if (isStatic) {
     event.respondWith(
       caches.match(event.request).then(cached => {
         if (cached) return cached;
