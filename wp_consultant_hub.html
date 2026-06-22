@@ -421,6 +421,27 @@ Build <span id="app-version-1">…</span> Stable
           <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
           <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
           
+<!-- CRM -->
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Mon Crm</div>
+
+<button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">
+📊 Mon CRM
+</button>
+<div id="crmMenu" class="submenu">
+  <button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">
+    📋 Contrats & ASP
+  </button>
+
+  <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects.html')" class="menu-item">
+    👥 Prospects Clients
+  </button>
+
+  <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects_consultant.html')" class="menu-item">
+    🎯 Prospects Consultants
+  </button>
+
+</div>
+
 <!-- SIMULATEURS -->
 
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Simulateurs</div>
@@ -438,9 +459,6 @@ Build <span id="app-version-1">…</span> Stable
   </button>
 
 <button onclick="openSimulator('https://app.phil-mobile.be/wp_eneco.html')" class="menu-item">    ⚡ Simulateur Eneco
-  </button>
-
-<button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">    📋 Contrats & ASP (BETA)
   </button>
 
 </div>
