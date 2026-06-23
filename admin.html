@@ -146,6 +146,7 @@
             <option value="Formations">🎓 Formations</option>
             <option value="Team meetings">🤝 Team meetings</option>
             <option value="Événements">🎉 Événements</option>
+            <option value="Événements spéciaux">✨ Événements spéciaux</option>
           </select>
         </div>
         <div class="form-row">
@@ -170,6 +171,19 @@
         <button class="btn btn-primary" id="ag-submit-btn" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
         <button class="btn btn-secondary" id="ag-cancel-btn" onclick="cancelAgendaEdit()" style="display:none;">Annuler la modification</button>
       </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
+        <div style="font-size:11px;color:#888;margin-bottom:10px;">
+          Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
+          Catégories valides : Formations, Team meetings, Événements, Événements spéciaux
+        </div>
+        <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
+Team meeting Gosselies avec présentation de société | 24/06/2026 | 18:00-20:30 | Team meetings
+Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportAgenda()">📥 Importer la liste</button>
+      </div>
+
       <div id="agenda-list"><div class="empty">Chargement...</div></div>
     </div>
 
@@ -523,8 +537,8 @@ window.saveNews = async function () {
 };
 
 // --- Agenda des événements ---
-const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements'];
-const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '🤝', 'Événements': '🎉' };
+const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements', 'Événements spéciaux'];
+const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '🤝', 'Événements': '🎉', 'Événements spéciaux': '✨' };
 
 function formatDateFR(iso) {
   if (!iso) return '';
@@ -659,6 +673,96 @@ window.addAgendaEvent = async function () {
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
+};
+
+function normalizeAgendaTitle(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire les accents
+    .replace(/[-–—_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+window.bulkImportAgenda = async function () {
+  const raw = document.getElementById('ag-bulk-text').value.trim();
+  if (!raw) {
+    alert('Le champ est vide.');
+    return;
+  }
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const valid = [];
+  const errors = [];
+  const duplicates = [];
+
+  // Clé de comparaison : titre normalisé + date + horaires
+  const existingKeys = new Set(
+    agendaEventsCache.map(e => `${normalizeAgendaTitle(e.title)}|${e.date}|${e.timeStart}|${e.timeEnd}`)
+  );
+  const seenInBatch = new Set();
+
+  lines.forEach((line, idx) => {
+    const parts = line.split('|').map(p => p.trim());
+    if (parts.length < 4) {
+      errors.push(`Ligne ${idx + 1} : format incorrect (4 parties attendues, séparées par "|")`);
+      return;
+    }
+    const [title, dateRaw, timeRaw, categoryRaw] = parts;
+
+    const dateMatch = dateRaw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!title || !dateMatch) {
+      errors.push(`Ligne ${idx + 1} : date invalide ("${dateRaw}", attendu JJ/MM/AAAA)`);
+      return;
+    }
+    const date = `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
+
+    const timeMatch = timeRaw.match(/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/);
+    if (!timeMatch) {
+      errors.push(`Ligne ${idx + 1} : horaire invalide ("${timeRaw}", attendu HH:MM-HH:MM)`);
+      return;
+    }
+
+    let category = categoryRaw;
+    if (!AGENDA_CATEGORY_ORDER.includes(category)) {
+      errors.push(`Ligne ${idx + 1} : catégorie "${categoryRaw}" non reconnue → mise dans "Événements" par défaut`);
+      category = 'Événements';
+    }
+
+    const key = `${normalizeAgendaTitle(title)}|${date}|${timeMatch[1]}|${timeMatch[2]}`;
+    if (existingKeys.has(key) || seenInBatch.has(key)) {
+      duplicates.push(`Ligne ${idx + 1} : "${title}" le ${dateRaw} existe déjà → ignoré`);
+      return;
+    }
+    seenInBatch.add(key);
+
+    valid.push({ title, date, timeStart: timeMatch[1], timeEnd: timeMatch[2], category });
+  });
+
+  let msg = `${valid.length} événement(s) prêt(s) à être importé(s).`;
+  if (duplicates.length > 0) msg += `\n\n🔁 ${duplicates.length} doublon(s) détecté(s) et ignoré(s) :\n` + duplicates.join('\n');
+  if (errors.length > 0) msg += `\n\n⚠️ ${errors.length} ligne(s) avec souci :\n` + errors.join('\n');
+  msg += '\n\nContinuer l\'import ?';
+
+  if (valid.length === 0) {
+    alert(msg);
+    return;
+  }
+  if (!confirm(msg)) return;
+
+  let done = 0;
+  for (const ev of valid) {
+    try {
+      await addDoc(collection(db, 'agendaEvents'), { ...ev, createdAt: new Date().toISOString() });
+      done++;
+    } catch (err) {
+      console.log('Erreur import ligne:', ev, err.message);
+    }
+  }
+
+  showToast(`✅ ${done} événement(s) importé(s).`);
+  document.getElementById('ag-bulk-text').value = '';
+  loadAgendaAdmin();
 };
 
 window.deleteAgendaEvent = async function (docId) {
