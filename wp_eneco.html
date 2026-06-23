@@ -108,6 +108,21 @@ input[type=number]:focus, select:focus { border-color:#27ae60; background:white;
   </span>
 
 </div>
+<!-- INFOS CLIENT -->
+<div class="card">
+  <div class="section-title">👤 Informations client</div>
+  <div class="row-2">
+    <div>
+      <label>Nom du client</label>
+      <input type="text" id="client-name" placeholder="ex: Jean Dupont">
+    </div>
+    <div>
+      <label>Téléphone</label>
+      <input type="text" id="client-phone" placeholder="ex: 0475 24 02 05">
+    </div>
+  </div>
+</div>
+
 <!-- FOURNISSEUR ACTUEL -->
 <div class="card">
   <div class="section-title">⚡ Situation actuelle du client</div>
@@ -370,6 +385,10 @@ input[type=number]:focus, select:focus { border-color:#27ae60; background:white;
     </div>
   </div>
 
+  <button onclick="shareWhatsApp()" style="width:100%;border:none;padding:13px;border-radius:14px;background:#25D366;color:white;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;margin-bottom:8px;">📲 Envoyer sur WhatsApp</button>
+  <button onclick="copyResume()" style="width:100%;border:none;padding:13px;border-radius:14px;background:#2196f3;color:white;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">📋 Copier le résumé</button>
+  <button onclick="generateClientOffer()" style="width:100%;border:none;padding:13px;border-radius:14px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;">📄 Générer Offre Client</button>
+
 </div>
 
 <script>
@@ -614,11 +633,182 @@ function comparer(){
   document.getElementById('results').style.display='block';
   document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+function shareWhatsApp(){
+  const txt = buildEnecoResume();
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt),'_blank');
+}
+
+function copyResume(){
+  const txt = buildEnecoResume();
+  navigator.clipboard.writeText(txt);
+  alert('Résumé copié dans le presse-papiers');
+}
+
+function buildEnecoResume(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+
+  return (
+`================================
+COMPARATIF ÉNERGIE ENECO
+================================
+
+Client : ${client}
+Téléphone : ${phone}
+
+⚡ Fournisseur actuel : ${document.getElementById('res-current').textContent}/mois
+🟢 Eneco Flex : ${document.getElementById('res-flex').textContent}/mois
+🔵 Eneco Fixe : ${document.getElementById('res-fixe').textContent}/mois
+
+🏆 Offre recommandée : ${document.getElementById('best-offer').textContent}
+
+${ci.name}
+${ci.phone}
+${ci.email}`
+  );
+}
+
+function generateClientOffer(){
+  const client = document.getElementById('client-name')?.value || 'Client';
+  const phone = document.getElementById('client-phone')?.value || '';
+  const ref = 'PM-' + Date.now();
+  const today = new Date().toLocaleDateString('fr-BE');
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
+
+  const current = document.getElementById('res-current').textContent;
+  const flex = document.getElementById('res-flex').textContent;
+  const fixe = document.getElementById('res-fixe').textContent;
+  const bestOffer = document.getElementById('best-offer').textContent;
+  const ecoFlexMois = document.getElementById('eco-flex-mois').textContent;
+  const ecoFlexAn = document.getElementById('eco-flex-an').textContent;
+  const ecoFixeMois = document.getElementById('eco-fixe-mois').textContent;
+  const ecoFixeAn = document.getElementById('eco-fixe-an').textContent;
+
+  const w = window.open('', '_blank');
+  w.document.write(`
+<html><head><title>Offre Client</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
+.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px}
+h1{color:#27ae60;text-align:center}
+.btn{background:#27ae60;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
+table{width:100%;border-collapse:collapse;}
+td{padding:8px;border-bottom:1px solid #eee;}
+.best{background:#e8f5e9;font-weight:700;}
+</style></head><body>
+<div style="text-align:center">
+<img src="${ci.logoUrl}" width="120" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
+<h1>OFFRE ÉNERGIE ENECO</h1>
+</div>
+
+<div class="box">
+<b>Référence :</b> ${ref}<br>
+<b>Date :</b> ${today}<br>
+<b>Client :</b> ${client}<br>
+<b>Téléphone :</b> ${phone}
+</div>
+
+<div class="box">
+<h3>💰 Comparatif mensuel</h3>
+<table>
+<tr><td>⚡ Fournisseur actuel</td><td style="text-align:right;">${current}/mois</td></tr>
+<tr><td>🟢 Eneco Flex</td><td style="text-align:right;">${flex}/mois (économie : ${ecoFlexMois}/mois soit ${ecoFlexAn}/an)</td></tr>
+<tr><td>🔵 Eneco Fixe</td><td style="text-align:right;">${fixe}/mois (économie : ${ecoFixeMois}/mois soit ${ecoFixeAn}/an)</td></tr>
+</table>
+</div>
+
+<div class="box best">
+🏆 Offre recommandée : ${bestOffer}
+</div>
+
+<div class="box">
+<b>${ci.name.toUpperCase()}</b><br>
+${ci.phone}<br>
+${ci.email}
+</div>
+
+<button class="btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+</body></html>`);
+  w.document.close();
+}
 </script>
 <script>
 document.querySelectorAll('[id^="app-version"]').forEach(el => {
   el.textContent = window.APP_VERSION || '?';
 });
+</script>
+
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Infos par défaut (fallback si aucun consultant identifié dans l'URL)
+window.consultantInfo = {
+  id: null,
+  name: 'Phil-Mobile',
+  phone: '0475 24 02 05',
+  email: 'infos@phil-mobile.be',
+  logoUrl: 'https://app.phil-mobile.be/images/logo.png'
+};
+
+(async function loadConsultantInfo(){
+  const params = new URLSearchParams(window.location.search);
+  const consultantId = params.get('consultantId');
+  const consultantName = params.get('consultantName');
+  const consultantEmail = params.get('consultantEmail');
+
+  if (consultantId) {
+    window.consultantInfo.id = consultantId;
+    window.consultantInfo.name = consultantName || window.consultantInfo.name;
+    window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
+    window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+
+    // Attendre que Firebase confirme une éventuelle session déjà ouverte (même domaine que le hub) avant de lire Firestore
+    await new Promise(resolve => {
+      const unsubscribe = onAuthStateChanged(auth, () => {
+        unsubscribe();
+        resolve();
+      });
+    });
+
+    // Récupérer le téléphone depuis Firestore (pas transmis dans l'URL)
+    try {
+      const snap = await getDoc(doc(db, 'consultants', consultantId));
+      if (snap.exists() && snap.data().phone) {
+        window.consultantInfo.phone = snap.data().phone;
+      }
+    } catch(e) {
+      console.log('Lecture téléphone consultant impossible:', e.message);
+    }
+  }
+})();
 </script>
 
 </body>
