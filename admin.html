@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.9</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 2</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -135,6 +135,41 @@
         </div>
         <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
       </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📅 Agenda des événements</div>
+      <div class="card">
+        <div class="form-row">
+          <label>Catégorie</label>
+          <select id="ag-category">
+            <option value="Formations">🎓 Formations</option>
+            <option value="Team meetings">🤝 Team meetings</option>
+            <option value="Événements">🎉 Événements</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Titre de l'événement</label>
+          <input type="text" id="ag-title" list="ag-title-list" placeholder="ex: Orange MasterClass — Bruxelles" autocomplete="off" onchange="prefillFromAgendaTitle()">
+          <datalist id="ag-title-list"></datalist>
+        </div>
+        <div class="form-row">
+          <label>Date</label>
+          <input type="date" id="ag-date">
+        </div>
+        <div class="card-row">
+          <div class="form-row" style="flex:1;min-width:100px;">
+            <label>Heure début</label>
+            <input type="time" id="ag-time-start" value="19:00">
+          </div>
+          <div class="form-row" style="flex:1;min-width:100px;">
+            <label>Heure fin</label>
+            <input type="time" id="ag-time-end" value="21:00">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
+      </div>
+      <div id="agenda-list"><div class="empty">Chargement...</div></div>
     </div>
 
     <div class="section">
@@ -336,7 +371,9 @@ import {
   setDoc,
   doc,
   updateDoc,
-  getDoc
+  getDoc,
+  addDoc,
+  deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -360,6 +397,8 @@ window.setDoc = setDoc;
 window.collection = collection;
 window.getDocs = getDocs;
 window.updateDoc = updateDoc;
+window.addDoc = addDoc;
+window.deleteDoc = deleteDoc;
 
 let currentProspectForActivation = null;
 let isAdminUser = false;
@@ -411,6 +450,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
   loadNewsAdmin();
+  loadAgendaAdmin();
   loadProspects();
   loadConsultants();
   checkExpiredConsultants();
@@ -478,6 +518,122 @@ window.saveNews = async function () {
     showToast('✅ Annonce enregistrée.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// --- Agenda des événements ---
+const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements'];
+const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '🤝', 'Événements': '🎉' };
+
+function formatDateFR(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+let agendaEventsCache = [];
+
+async function loadAgendaAdmin() {
+  try {
+    const snap = await getDocs(collection(db, 'agendaEvents'));
+    const events = [];
+    snap.forEach(d => events.push({ docId: d.id, ...d.data() }));
+    events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    agendaEventsCache = events;
+
+    // Suggestions de titres déjà utilisés (datalist), pour ne pas retaper à chaque fois
+    const titles = [...new Set(events.map(e => e.title).filter(Boolean))].sort();
+    document.getElementById('ag-title-list').innerHTML =
+      titles.map(t => `<option value="${escapeHtmlAdmin(t)}"></option>`).join('');
+
+    if (events.length === 0) {
+      document.getElementById('agenda-list').innerHTML = '<div class="empty">Aucun événement pour le moment.</div>';
+      return;
+    }
+
+    let html = '';
+    AGENDA_CATEGORY_ORDER.forEach(cat => {
+      const inCat = events.filter(e => e.category === cat);
+      if (inCat.length === 0) return;
+
+      html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${AGENDA_CATEGORY_ICON[cat] || ''} ${cat}</div>`;
+
+      inCat.forEach(e => {
+        html += `
+        <div class="card">
+          <div class="card-row">
+            <div class="card-info">
+              <strong>${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
+              <div class="meta">📍 ${formatDateFR(e.date)} · ⏰ ${e.timeStart || '?'} - ${e.timeEnd || '?'}</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger" onclick="deleteAgendaEvent('${e.docId}')">🗑 Supprimer</button>
+            </div>
+          </div>
+        </div>`;
+      });
+    });
+
+    document.getElementById('agenda-list').innerHTML = html;
+  } catch (err) {
+    document.getElementById('agenda-list').innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement agenda impossible:', err.message);
+  }
+}
+
+function escapeHtmlAdmin(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+window.prefillFromAgendaTitle = function () {
+  const title = document.getElementById('ag-title').value.trim();
+  if (!title) return;
+
+  // Cherche l'événement le plus récent avec exactement ce titre
+  const match = [...agendaEventsCache].reverse().find(e => e.title === title);
+  if (!match) return;
+
+  document.getElementById('ag-category').value = match.category || 'Formations';
+  document.getElementById('ag-time-start').value = match.timeStart || '19:00';
+  document.getElementById('ag-time-end').value = match.timeEnd || '21:00';
+};
+
+window.addAgendaEvent = async function () {
+  const category = document.getElementById('ag-category').value;
+  const title = document.getElementById('ag-title').value.trim();
+  const date = document.getElementById('ag-date').value;
+  const timeStart = document.getElementById('ag-time-start').value;
+  const timeEnd = document.getElementById('ag-time-end').value;
+
+  if (!title || !date) {
+    alert('Merci de renseigner au moins le titre et la date.');
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, 'agendaEvents'), {
+      category, title, date, timeStart, timeEnd,
+      createdAt: new Date().toISOString()
+    });
+    showToast('✅ Événement ajouté.');
+    document.getElementById('ag-title').value = '';
+    document.getElementById('ag-date').value = '';
+    loadAgendaAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'ajout: ' + err.message);
+  }
+};
+
+window.deleteAgendaEvent = async function (docId) {
+  if (!confirm('Supprimer cet événement ?')) return;
+  try {
+    await deleteDoc(doc(db, 'agendaEvents', docId));
+    showToast('🗑 Événement supprimé.');
+    loadAgendaAdmin();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
   }
 };
 
