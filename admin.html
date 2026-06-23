@@ -24,7 +24,9 @@
     border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700;
     cursor: pointer;
   }
-  .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+  .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+  @media (max-width: 900px) { .admin-columns { grid-template-columns: 1fr; } }
   .section { margin-bottom: 30px; }
   .section-title {
     font-size: 13px; font-weight: 700; color: #f97316;
@@ -114,87 +116,99 @@
 
   <div class="container">
 
-    <div class="section">
-      <div class="section-title">📢 Annonce du bandeau (page principale)</div>
-      <div class="card">
-        <div class="checkbox-row" style="margin-bottom:12px;">
-          <input type="checkbox" id="news-active">
-          <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
-        </div>
-        <div class="form-row">
-          <label>Message</label>
-          <input type="text" id="news-title" placeholder="ex: Version 5.9.7 Stable disponible">
-        </div>
-        <div class="form-row">
-          <label>Type</label>
-          <select id="news-type">
-            <option value="info">🟠 Info (orange)</option>
-            <option value="success">🟢 Succès (vert)</option>
-            <option value="danger">🔴 Alerte (rouge)</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
-      </div>
-    </div>
+    <div class="admin-columns">
 
-    <div class="section">
-      <div class="section-title">📅 Agenda des événements</div>
-      <div class="card">
-        <div class="form-row">
-          <label>Catégorie</label>
-          <select id="ag-category">
-            <option value="Formations">🎓 Formations</option>
-            <option value="Team meetings">🤝 Team meetings</option>
-            <option value="Événements">🎉 Événements</option>
-            <option value="Événements spéciaux">✨ Événements spéciaux</option>
-          </select>
+      <div class="admin-col">
+
+        <div class="section">
+          <div class="section-title">📝 Demandes en attente</div>
+          <div id="prospects-list"><div class="empty">Chargement...</div></div>
         </div>
-        <div class="form-row">
-          <label>Titre de l'événement</label>
-          <input type="text" id="ag-title" list="ag-title-list" placeholder="ex: Orange MasterClass — Bruxelles" autocomplete="off" onchange="prefillFromAgendaTitle()">
-          <datalist id="ag-title-list"></datalist>
+
+        <div class="section">
+          <div class="section-title">👥 Consultants actifs / inactifs</div>
+          <div id="consultants-list"><div class="empty">Chargement...</div></div>
         </div>
-        <div class="form-row">
-          <label>Date</label>
-          <input type="date" id="ag-date">
-        </div>
-        <div class="card-row">
-          <div class="form-row" style="flex:1;min-width:100px;">
-            <label>Heure début</label>
-            <input type="time" id="ag-time-start" value="19:00">
-          </div>
-          <div class="form-row" style="flex:1;min-width:100px;">
-            <label>Heure fin</label>
-            <input type="time" id="ag-time-end" value="21:00">
-          </div>
-        </div>
-        <button class="btn btn-primary" id="ag-submit-btn" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
-        <button class="btn btn-secondary" id="ag-cancel-btn" onclick="cancelAgendaEdit()" style="display:none;">Annuler la modification</button>
+
       </div>
 
-      <div class="card" style="margin-top:14px;">
-        <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
-        <div style="font-size:11px;color:#888;margin-bottom:10px;">
-          Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
-          Catégories valides : Formations, Team meetings, Événements, Événements spéciaux
+      <div class="admin-col">
+
+        <div class="section">
+          <div class="section-title">📢 Annonce du bandeau (page principale)</div>
+          <div class="card">
+            <div class="checkbox-row" style="margin-bottom:12px;">
+              <input type="checkbox" id="news-active">
+              <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
+            </div>
+            <div class="form-row">
+              <label>Message</label>
+              <input type="text" id="news-title" placeholder="ex: Version 5.9.7 Stable disponible">
+            </div>
+            <div class="form-row">
+              <label>Type</label>
+              <select id="news-type">
+                <option value="info">🟠 Info (orange)</option>
+                <option value="success">🟢 Succès (vert)</option>
+                <option value="danger">🔴 Alerte (rouge)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
+          </div>
         </div>
-        <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
+
+        <div class="section">
+          <div class="section-title">📅 Agenda des événements</div>
+          <div class="card">
+            <div class="form-row">
+              <label>Catégorie</label>
+              <select id="ag-category">
+                <option value="Formations">🎓 Formations</option>
+                <option value="Team meetings">🤝 Team meetings</option>
+                <option value="Événements">🎉 Événements</option>
+                <option value="Événements spéciaux">✨ Événements spéciaux</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Titre de l'événement</label>
+              <input type="text" id="ag-title" list="ag-title-list" placeholder="ex: Orange MasterClass — Bruxelles" autocomplete="off" onchange="prefillFromAgendaTitle()">
+              <datalist id="ag-title-list"></datalist>
+            </div>
+            <div class="form-row">
+              <label>Date</label>
+              <input type="date" id="ag-date">
+            </div>
+            <div class="card-row">
+              <div class="form-row" style="flex:1;min-width:100px;">
+                <label>Heure début</label>
+                <input type="time" id="ag-time-start" value="19:00">
+              </div>
+              <div class="form-row" style="flex:1;min-width:100px;">
+                <label>Heure fin</label>
+                <input type="time" id="ag-time-end" value="21:00">
+              </div>
+            </div>
+            <button class="btn btn-primary" id="ag-submit-btn" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
+            <button class="btn btn-secondary" id="ag-cancel-btn" onclick="cancelAgendaEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
+              Catégories valides : Formations, Team meetings, Événements, Événements spéciaux
+            </div>
+            <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
 Team meeting Gosselies avec présentation de société | 24/06/2026 | 18:00-20:30 | Team meetings
 Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
-        <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportAgenda()">📥 Importer la liste</button>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportAgenda()">📥 Importer la liste</button>
+          </div>
+
+          <div id="agenda-list"><div class="empty">Chargement...</div></div>
+        </div>
+
       </div>
 
-      <div id="agenda-list"><div class="empty">Chargement...</div></div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">📝 Demandes en attente</div>
-      <div id="prospects-list"><div class="empty">Chargement...</div></div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">👥 Consultants actifs / inactifs</div>
-      <div id="consultants-list"><div class="empty">Chargement...</div></div>
     </div>
 
   </div>
