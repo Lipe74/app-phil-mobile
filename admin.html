@@ -107,7 +107,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">admin.html v2.0 - Ajout CRM Agenda des événements</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 2.0</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -167,7 +167,8 @@
             <input type="time" id="ag-time-end" value="21:00">
           </div>
         </div>
-        <button class="btn btn-primary" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
+        <button class="btn btn-primary" id="ag-submit-btn" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
+        <button class="btn btn-secondary" id="ag-cancel-btn" onclick="cancelAgendaEdit()" style="display:none;">Annuler la modification</button>
       </div>
       <div id="agenda-list"><div class="empty">Chargement...</div></div>
     </div>
@@ -532,6 +533,31 @@ function formatDateFR(iso) {
 }
 
 let agendaEventsCache = [];
+let currentEditAgendaId = null;
+
+window.editAgendaEvent = function (docId) {
+  const e = agendaEventsCache.find(x => x.docId === docId);
+  if (!e) return;
+
+  document.getElementById('ag-category').value = e.category || 'Formations';
+  document.getElementById('ag-title').value = e.title || '';
+  document.getElementById('ag-date').value = e.date || '';
+  document.getElementById('ag-time-start').value = e.timeStart || '19:00';
+  document.getElementById('ag-time-end').value = e.timeEnd || '21:00';
+
+  currentEditAgendaId = docId;
+  document.getElementById('ag-submit-btn').textContent = '💾 Enregistrer les modifications';
+  document.getElementById('ag-cancel-btn').style.display = 'inline-block';
+  document.getElementById('ag-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelAgendaEdit = function () {
+  currentEditAgendaId = null;
+  document.getElementById('ag-title').value = '';
+  document.getElementById('ag-date').value = '';
+  document.getElementById('ag-submit-btn').textContent = '➕ Ajouter l\'événement';
+  document.getElementById('ag-cancel-btn').style.display = 'none';
+};
 
 async function loadAgendaAdmin() {
   try {
@@ -567,6 +593,7 @@ async function loadAgendaAdmin() {
               <div class="meta">📍 ${formatDateFR(e.date)} · ⏰ ${e.timeStart || '?'} - ${e.timeEnd || '?'}</div>
             </div>
             <div class="card-actions">
+              <button class="btn btn-secondary" onclick="editAgendaEvent('${e.docId}')">✏️ Modifier</button>
               <button class="btn btn-danger" onclick="deleteAgendaEvent('${e.docId}')">🗑 Supprimer</button>
             </div>
           </div>
@@ -613,16 +640,24 @@ window.addAgendaEvent = async function () {
   }
 
   try {
-    await addDoc(collection(db, 'agendaEvents'), {
-      category, title, date, timeStart, timeEnd,
-      createdAt: new Date().toISOString()
-    });
-    showToast('✅ Événement ajouté.');
-    document.getElementById('ag-title').value = '';
-    document.getElementById('ag-date').value = '';
+    if (currentEditAgendaId) {
+      await updateDoc(doc(db, 'agendaEvents', currentEditAgendaId), {
+        category, title, date, timeStart, timeEnd
+      });
+      showToast('✅ Événement modifié.');
+      cancelAgendaEdit();
+    } else {
+      await addDoc(collection(db, 'agendaEvents'), {
+        category, title, date, timeStart, timeEnd,
+        createdAt: new Date().toISOString()
+      });
+      showToast('✅ Événement ajouté.');
+      document.getElementById('ag-title').value = '';
+      document.getElementById('ag-date').value = '';
+    }
     loadAgendaAdmin();
   } catch (err) {
-    alert('Erreur lors de l\'ajout: ' + err.message);
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
 };
 
