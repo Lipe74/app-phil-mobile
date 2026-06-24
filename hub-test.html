@@ -2624,46 +2624,30 @@ async function loadNews() {
 
     const banner =
       document.getElementById('news-banner');
-    let bg = '#fff7ed';
-    let color = '#9a3412';
-    let border = '#f97316';
-    let icon = '🟠';
 
-    if(active.type === 'danger' || active.type === 'alert'){
-      bg = '#fef2f2';
-      color = '#991b1b';
-      border = '#ef4444';
-      icon = '🔴';
-    }
+    // Doit rester synchronisé avec NEWS_META dans admin.html / admin-test.html.
+    // Le label n'est jamais stocké dans active.title : il est ajouté ici uniquement, selon le type.
+    const NEWS_META = {
+      orange:  { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
+      smart:   { label: 'Infos Smart SN',    icon: '🔵', bg: '#eff6ff', color: '#1e3a8a', border: '#1e3a8a' },
+      app:     { label: 'Infos Application', icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
+      release: { label: 'Infos Release',     icon: '⚪', bg: '#f9fafb', color: '#374151', border: '#6b7280' },
+      alert:   { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' },
+      // Alias rétro-compatibilité avec les anciennes valeurs déjà enregistrées dans Firestore
+      danger:  { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' },
+      success: { label: 'Infos Application', icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
+      info:    { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' }
+    };
 
-    if(active.type === 'success' || active.type === 'app'){
-      bg = '#f5f3ff';
-      color = '#5b21b6';
-      border = '#7c3aed';
-      icon = '🟣';
-    }
-
-    if(active.type === 'smart'){
-      bg = '#eff6ff';
-      color = '#1e3a8a';
-      border = '#1e3a8a';
-      icon = '🔵';
-    }
-
-    if(active.type === 'release'){
-      bg = '#f9fafb';
-      color = '#374151';
-      border = '#6b7280';
-      icon = '⚪';
-    }
+    const meta = NEWS_META[active.type] || NEWS_META.orange;
 
     banner.style.display = 'block';
-    banner.style.background = bg;
-    banner.style.color = color;
-    banner.style.border = '1px solid ' + border;
+    banner.style.background = meta.bg;
+    banner.style.color = meta.color;
+    banner.style.border = '1px solid ' + meta.border;
 
     banner.innerHTML =
-      icon + ' ' + active.title;
+      meta.icon + ' ' + (meta.label ? meta.label + ' : ' : '') + active.title;
 
   } catch(err){
 
