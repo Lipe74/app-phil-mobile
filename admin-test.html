@@ -24,7 +24,9 @@
     border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700;
     cursor: pointer;
   }
-  .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .container { max-width: 1300px; margin: 0 auto; padding: 20px; }
+  .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+  @media (max-width: 900px) { .admin-columns { grid-template-columns: 1fr; } }
   .section { margin-bottom: 30px; }
   .section-title {
     font-size: 13px; font-weight: 700; color: #f97316;
@@ -107,44 +109,108 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 1.9</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 2.0</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
 
   <div class="container">
 
-    <div class="section">
-      <div class="section-title">📢 Annonce du bandeau (page principale)</div>
-      <div class="card">
-        <div class="checkbox-row" style="margin-bottom:12px;">
-          <input type="checkbox" id="news-active">
-          <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
+    <div class="admin-columns">
+
+      <div class="admin-col">
+
+        <div class="section">
+          <div class="section-title">📝 Demandes en attente</div>
+          <div id="prospects-list"><div class="empty">Chargement...</div></div>
         </div>
-        <div class="form-row">
-          <label>Message</label>
-          <input type="text" id="news-title" placeholder="ex: Version 5.9.7 Stable disponible">
+
+        <div class="section">
+          <div class="section-title">👥 Consultants actifs / inactifs</div>
+          <div id="consultants-list"><div class="empty">Chargement...</div></div>
         </div>
-        <div class="form-row">
-          <label>Type</label>
-          <select id="news-type">
-            <option value="info">🟠 Info (orange)</option>
-            <option value="success">🟢 Succès (vert)</option>
-            <option value="danger">🔴 Alerte (rouge)</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
+
       </div>
-    </div>
 
-    <div class="section">
-      <div class="section-title">📝 Demandes en attente</div>
-      <div id="prospects-list"><div class="empty">Chargement...</div></div>
-    </div>
+      <div class="admin-col">
 
-    <div class="section">
-      <div class="section-title">👥 Consultants actifs / inactifs</div>
-      <div id="consultants-list"><div class="empty">Chargement...</div></div>
+        <div class="section">
+          <div class="section-title">📢 Annonce du bandeau (page principale)</div>
+          <div class="card">
+            <div class="checkbox-row" style="margin-bottom:12px;">
+              <input type="checkbox" id="news-active">
+              <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
+            </div>
+            <div class="form-row">
+              <label>Message</label>
+              <input type="text" id="news-title" placeholder="ex: Version 5.9.7 Stable disponible">
+            </div>
+            <div class="form-row">
+              <label>Type</label>
+              <select id="news-type" onchange="onNewsTypeChange()">
+                <option value="orange">🟠 Infos Orange</option>
+                <option value="smart">🔵 Infos Smart SN</option>
+                <option value="app">🟣 Infos Application</option>
+                <option value="release">⚪ Infos Release</option>
+                <option value="alert">🔴 Soucis / problème</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">📅 Agenda des événements</div>
+          <div class="card">
+            <div class="form-row">
+              <label>Catégorie</label>
+              <select id="ag-category">
+                <option value="Formations">🎓 Formations</option>
+                <option value="Team meetings">🤝 Team meetings</option>
+                <option value="Événements">🎉 Événements</option>
+                <option value="Événements spéciaux">✨ Événements spéciaux</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Titre de l'événement</label>
+              <input type="text" id="ag-title" list="ag-title-list" placeholder="ex: Orange MasterClass — Bruxelles" autocomplete="off" onchange="prefillFromAgendaTitle()">
+              <datalist id="ag-title-list"></datalist>
+            </div>
+            <div class="form-row">
+              <label>Date</label>
+              <input type="date" id="ag-date">
+            </div>
+            <div class="card-row">
+              <div class="form-row" style="flex:1;min-width:100px;">
+                <label>Heure début</label>
+                <input type="time" id="ag-time-start" value="19:00">
+              </div>
+              <div class="form-row" style="flex:1;min-width:100px;">
+                <label>Heure fin</label>
+                <input type="time" id="ag-time-end" value="21:00">
+              </div>
+            </div>
+            <button class="btn btn-primary" id="ag-submit-btn" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
+            <button class="btn btn-secondary" id="ag-cancel-btn" onclick="cancelAgendaEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
+              Catégories valides : Formations, Team meetings, Événements, Événements spéciaux
+            </div>
+            <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
+Team meeting Gosselies avec présentation de société | 24/06/2026 | 18:00-20:30 | Team meetings
+Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportAgenda()">📥 Importer la liste</button>
+          </div>
+
+          <div id="agenda-list"><div class="empty">Chargement...</div></div>
+        </div>
+
+      </div>
+
     </div>
 
   </div>
@@ -169,6 +235,10 @@
     <div class="form-row">
       <label>Email</label>
       <input type="email" id="f-email">
+    </div>
+    <div class="form-row">
+      <label>Téléphone (affiché sur ses offres)</label>
+      <input type="text" id="f-phone" placeholder="ex: 0475 24 02 05">
     </div>
     <div class="form-row">
       <label>Mot de passe temporaire</label>
@@ -202,6 +272,27 @@
       </select>
       <input type="text" id="f-customdate" placeholder="jj/mm/aaaa" style="display:none;margin-top:6px;">
     </div>
+
+    <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin:14px 0 6px;border-top:1px solid #eee;padding-top:10px;">
+      Upline (sponsor affiché au consultant)
+    </div>
+    <div class="form-row">
+      <label>Nom de l'upline</label>
+      <input type="text" id="f-upline" placeholder="ex: Philippe Tomaszewsky (vide = Philippe par défaut)">
+    </div>
+    <div class="form-row">
+      <label>ID de l'upline (pour son logo, ex: delta835)</label>
+      <input type="text" id="f-uplineid" placeholder="ex: delta835">
+    </div>
+    <div class="form-row">
+      <label>Téléphone de l'upline</label>
+      <input type="text" id="f-uplinetel" placeholder="ex: +32 475 24 02 05">
+    </div>
+    <div class="form-row">
+      <label>Email de l'upline</label>
+      <input type="email" id="f-uplineemail" placeholder="ex: infos@phil-mobile.be">
+    </div>
+
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeActivateModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmActivate()">Créer le consultant</button>
@@ -311,7 +402,9 @@ import {
   setDoc,
   doc,
   updateDoc,
-  getDoc
+  getDoc,
+  addDoc,
+  deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -335,6 +428,8 @@ window.setDoc = setDoc;
 window.collection = collection;
 window.getDocs = getDocs;
 window.updateDoc = updateDoc;
+window.addDoc = addDoc;
+window.deleteDoc = deleteDoc;
 
 let currentProspectForActivation = null;
 let isAdminUser = false;
@@ -386,6 +481,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
   loadNewsAdmin();
+  loadAgendaAdmin();
   loadProspects();
   loadConsultants();
   checkExpiredConsultants();
@@ -424,6 +520,29 @@ function showToast(msg) {
 }
 
 // --- Annonce du bandeau (news) ---
+const NEWS_PREFIXES = {
+  orange: 'Infos Orange : ',
+  smart: 'Infos Smart SN : ',
+  app: 'Infos Application : ',
+  release: 'Infos Release : ',
+  alert: ''
+};
+
+window.onNewsTypeChange = function () {
+  const type = document.getElementById('news-type').value;
+  const titleInput = document.getElementById('news-title');
+  const prefix = NEWS_PREFIXES[type] || '';
+  let stripped = titleInput.value;
+
+  Object.values(NEWS_PREFIXES).forEach(p => {
+    if (p && stripped.startsWith(p)) stripped = stripped.slice(p.length);
+  });
+
+  titleInput.value = prefix + stripped;
+  titleInput.focus();
+  titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
+};
+
 async function loadNewsAdmin() {
   try {
     const snap = await getDoc(doc(db, 'news', 'current'));
@@ -431,7 +550,7 @@ async function loadNewsAdmin() {
       const data = snap.data();
       document.getElementById('news-active').checked = !!data.active;
       document.getElementById('news-title').value = data.title || '';
-      document.getElementById('news-type').value = data.type || 'info';
+      document.getElementById('news-type').value = data.type || 'orange';
     }
   } catch (err) {
     console.log('Pas encore de news enregistrée:', err.message);
@@ -453,6 +572,246 @@ window.saveNews = async function () {
     showToast('✅ Annonce enregistrée.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// --- Agenda des événements ---
+const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements', 'Événements spéciaux'];
+const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '🤝', 'Événements': '🎉', 'Événements spéciaux': '✨' };
+
+function formatDateFR(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+let agendaEventsCache = [];
+let currentEditAgendaId = null;
+
+window.editAgendaEvent = function (docId) {
+  const e = agendaEventsCache.find(x => x.docId === docId);
+  if (!e) return;
+
+  document.getElementById('ag-category').value = e.category || 'Formations';
+  document.getElementById('ag-title').value = e.title || '';
+  document.getElementById('ag-date').value = e.date || '';
+  document.getElementById('ag-time-start').value = e.timeStart || '19:00';
+  document.getElementById('ag-time-end').value = e.timeEnd || '21:00';
+
+  currentEditAgendaId = docId;
+  document.getElementById('ag-submit-btn').textContent = '💾 Enregistrer les modifications';
+  document.getElementById('ag-cancel-btn').style.display = 'inline-block';
+  document.getElementById('ag-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelAgendaEdit = function () {
+  currentEditAgendaId = null;
+  document.getElementById('ag-title').value = '';
+  document.getElementById('ag-date').value = '';
+  document.getElementById('ag-submit-btn').textContent = '➕ Ajouter l\'événement';
+  document.getElementById('ag-cancel-btn').style.display = 'none';
+};
+
+async function loadAgendaAdmin() {
+  try {
+    const snap = await getDocs(collection(db, 'agendaEvents'));
+    const events = [];
+    snap.forEach(d => events.push({ docId: d.id, ...d.data() }));
+    events.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    agendaEventsCache = events;
+
+    // Suggestions de titres déjà utilisés (datalist), pour ne pas retaper à chaque fois
+    const titles = [...new Set(events.map(e => e.title).filter(Boolean))].sort();
+    document.getElementById('ag-title-list').innerHTML =
+      titles.map(t => `<option value="${escapeHtmlAdmin(t)}"></option>`).join('');
+
+    if (events.length === 0) {
+      document.getElementById('agenda-list').innerHTML = '<div class="empty">Aucun événement pour le moment.</div>';
+      return;
+    }
+
+    let html = '';
+    AGENDA_CATEGORY_ORDER.forEach(cat => {
+      const inCat = events.filter(e => e.category === cat);
+      if (inCat.length === 0) return;
+
+      html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${AGENDA_CATEGORY_ICON[cat] || ''} ${cat}</div>`;
+
+      inCat.forEach(e => {
+        html += `
+        <div class="card">
+          <div class="card-row">
+            <div class="card-info">
+              <strong>${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
+              <div class="meta">📍 ${formatDateFR(e.date)} · ⏰ ${e.timeStart || '?'} - ${e.timeEnd || '?'}</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary" onclick="editAgendaEvent('${e.docId}')">✏️ Modifier</button>
+              <button class="btn btn-danger" onclick="deleteAgendaEvent('${e.docId}')">🗑 Supprimer</button>
+            </div>
+          </div>
+        </div>`;
+      });
+    });
+
+    document.getElementById('agenda-list').innerHTML = html;
+  } catch (err) {
+    document.getElementById('agenda-list').innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement agenda impossible:', err.message);
+  }
+}
+
+function escapeHtmlAdmin(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+window.prefillFromAgendaTitle = function () {
+  const title = document.getElementById('ag-title').value.trim();
+  if (!title) return;
+
+  // Cherche l'événement le plus récent avec exactement ce titre
+  const match = [...agendaEventsCache].reverse().find(e => e.title === title);
+  if (!match) return;
+
+  document.getElementById('ag-category').value = match.category || 'Formations';
+  document.getElementById('ag-time-start').value = match.timeStart || '19:00';
+  document.getElementById('ag-time-end').value = match.timeEnd || '21:00';
+};
+
+window.addAgendaEvent = async function () {
+  const category = document.getElementById('ag-category').value;
+  const title = document.getElementById('ag-title').value.trim();
+  const date = document.getElementById('ag-date').value;
+  const timeStart = document.getElementById('ag-time-start').value;
+  const timeEnd = document.getElementById('ag-time-end').value;
+
+  if (!title || !date) {
+    alert('Merci de renseigner au moins le titre et la date.');
+    return;
+  }
+
+  try {
+    if (currentEditAgendaId) {
+      await updateDoc(doc(db, 'agendaEvents', currentEditAgendaId), {
+        category, title, date, timeStart, timeEnd
+      });
+      showToast('✅ Événement modifié.');
+      cancelAgendaEdit();
+    } else {
+      await addDoc(collection(db, 'agendaEvents'), {
+        category, title, date, timeStart, timeEnd,
+        createdAt: new Date().toISOString()
+      });
+      showToast('✅ Événement ajouté.');
+      document.getElementById('ag-title').value = '';
+      document.getElementById('ag-date').value = '';
+    }
+    loadAgendaAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+function normalizeAgendaTitle(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire les accents
+    .replace(/[-–—_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+window.bulkImportAgenda = async function () {
+  const raw = document.getElementById('ag-bulk-text').value.trim();
+  if (!raw) {
+    alert('Le champ est vide.');
+    return;
+  }
+
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const valid = [];
+  const errors = [];
+  const duplicates = [];
+
+  // Clé de comparaison : titre normalisé + date + horaires
+  const existingKeys = new Set(
+    agendaEventsCache.map(e => `${normalizeAgendaTitle(e.title)}|${e.date}|${e.timeStart}|${e.timeEnd}`)
+  );
+  const seenInBatch = new Set();
+
+  lines.forEach((line, idx) => {
+    const parts = line.split('|').map(p => p.trim());
+    if (parts.length < 4) {
+      errors.push(`Ligne ${idx + 1} : format incorrect (4 parties attendues, séparées par "|")`);
+      return;
+    }
+    const [title, dateRaw, timeRaw, categoryRaw] = parts;
+
+    const dateMatch = dateRaw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!title || !dateMatch) {
+      errors.push(`Ligne ${idx + 1} : date invalide ("${dateRaw}", attendu JJ/MM/AAAA)`);
+      return;
+    }
+    const date = `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
+
+    const timeMatch = timeRaw.match(/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/);
+    if (!timeMatch) {
+      errors.push(`Ligne ${idx + 1} : horaire invalide ("${timeRaw}", attendu HH:MM-HH:MM)`);
+      return;
+    }
+
+    let category = categoryRaw;
+    if (!AGENDA_CATEGORY_ORDER.includes(category)) {
+      errors.push(`Ligne ${idx + 1} : catégorie "${categoryRaw}" non reconnue → mise dans "Événements" par défaut`);
+      category = 'Événements';
+    }
+
+    const key = `${normalizeAgendaTitle(title)}|${date}|${timeMatch[1]}|${timeMatch[2]}`;
+    if (existingKeys.has(key) || seenInBatch.has(key)) {
+      duplicates.push(`Ligne ${idx + 1} : "${title}" le ${dateRaw} existe déjà → ignoré`);
+      return;
+    }
+    seenInBatch.add(key);
+
+    valid.push({ title, date, timeStart: timeMatch[1], timeEnd: timeMatch[2], category });
+  });
+
+  let msg = `${valid.length} événement(s) prêt(s) à être importé(s).`;
+  if (duplicates.length > 0) msg += `\n\n🔁 ${duplicates.length} doublon(s) détecté(s) et ignoré(s) :\n` + duplicates.join('\n');
+  if (errors.length > 0) msg += `\n\n⚠️ ${errors.length} ligne(s) avec souci :\n` + errors.join('\n');
+  msg += '\n\nContinuer l\'import ?';
+
+  if (valid.length === 0) {
+    alert(msg);
+    return;
+  }
+  if (!confirm(msg)) return;
+
+  let done = 0;
+  for (const ev of valid) {
+    try {
+      await addDoc(collection(db, 'agendaEvents'), { ...ev, createdAt: new Date().toISOString() });
+      done++;
+    } catch (err) {
+      console.log('Erreur import ligne:', ev, err.message);
+    }
+  }
+
+  showToast(`✅ ${done} événement(s) importé(s).`);
+  document.getElementById('ag-bulk-text').value = '';
+  loadAgendaAdmin();
+};
+
+window.deleteAgendaEvent = async function (docId) {
+  if (!confirm('Supprimer cet événement ?')) return;
+  try {
+    await deleteDoc(doc(db, 'agendaEvents', docId));
+    showToast('🗑 Événement supprimé.');
+    loadAgendaAdmin();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
   }
 };
 
@@ -513,8 +872,8 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-name').value = p?.firstName || '';
   document.getElementById('f-fullname').value = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
   document.getElementById('f-email').value = p?.email || '';
+  document.getElementById('f-phone').value = p?.phone || '';
   document.getElementById('f-password').value = 'Smart2026!';
-  document.getElementById('f-startdate').value = p?.startDate || '';
   document.getElementById('f-aspinit').value = p?.asp || 0;
   document.getElementById('f-paidamount').value = 149;
   document.getElementById('f-paiddate').value = '';
@@ -522,6 +881,10 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-istest').checked = false;
   document.getElementById('f-duration').value = '365';
   document.getElementById('f-customdate').style.display = 'none';
+  document.getElementById('f-upline').value = p?.upline || 'Philippe Tomaszewsky';
+  document.getElementById('f-uplineid').value = p?.uplineId || '';
+  document.getElementById('f-uplinetel').value = p?.uplinePhone || '+32 475 24 02 05';
+  document.getElementById('f-uplineemail').value = p?.uplineEmail || 'infos@phil-mobile.be';
   document.getElementById('activate-modal').classList.add('open');
 };
 
@@ -531,8 +894,8 @@ window.openCreateModal = function () {
   document.getElementById('f-name').value = '';
   document.getElementById('f-fullname').value = '';
   document.getElementById('f-email').value = '';
+  document.getElementById('f-phone').value = '';
   document.getElementById('f-password').value = 'Smart2026!';
-  document.getElementById('f-startdate').value = '';
   document.getElementById('f-aspinit').value = 0;
   document.getElementById('f-paidamount').value = 149;
   document.getElementById('f-paiddate').value = '';
@@ -540,6 +903,10 @@ window.openCreateModal = function () {
   document.getElementById('f-istest').checked = false;
   document.getElementById('f-duration').value = '365';
   document.getElementById('f-customdate').style.display = 'none';
+  document.getElementById('f-upline').value = 'Philippe Tomaszewsky';
+  document.getElementById('f-uplineid').value = '';
+  document.getElementById('f-uplinetel').value = '+32 475 24 02 05';
+  document.getElementById('f-uplineemail').value = 'infos@phil-mobile.be';
   document.getElementById('activate-modal').classList.add('open');
 };
 
@@ -561,6 +928,7 @@ window.confirmActivate = async function () {
   const name = document.getElementById('f-name').value.trim();
   const fullName = document.getElementById('f-fullname').value.trim();
   const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
   const password = document.getElementById('f-password').value;
   const startDate = document.getElementById('f-startdate').value.trim();
   const aspInit = Number(document.getElementById('f-aspinit').value) || 0;
@@ -569,9 +937,18 @@ window.confirmActivate = async function () {
   const isAdmin = document.getElementById('f-isadmin').checked;
   const isTestAccount = document.getElementById('f-istest').checked;
   const duration = document.getElementById('f-duration').value;
+  const upline = document.getElementById('f-upline').value.trim();
+  const uplineId = document.getElementById('f-uplineid').value.trim();
+  const uplineTel = document.getElementById('f-uplinetel').value.trim();
+  const uplineEmail = document.getElementById('f-uplineemail').value.trim();
 
   if (!id || !name || !email || !password) {
     alert('ID, prénom, email et mot de passe sont obligatoires.');
+    return;
+  }
+
+  if (uplineEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(uplineEmail)) {
+    alert('Adresse email de l\'upline invalide.');
     return;
   }
 
@@ -599,11 +976,9 @@ window.confirmActivate = async function () {
     await new Promise(r => setTimeout(r, 600));
 
     await setDoc(doc(db, 'consultants', id), {
-      id, name, fullName, email, startDate, aspInit,
+      id, name, fullName, email, phone, startDate, aspInit,
       isAdmin, active: true,
-      upline: 'Philippe Tomaszewsky',
-      uplineTel: '+32 475 24 02 05',
-      uplineEmail: 'infos@phil-mobile.be',
+      upline, uplineId, uplineTel, uplineEmail,
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
       pqsValidated: false, fastSCValidated: false, fastECValidated: false,
       paidAmount, paidDate,
