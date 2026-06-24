@@ -257,38 +257,10 @@
     margin-bottom: 20px;
   }
   .reset-btn:hover { border-color: var(--orange); color: var(--orange); }
-
-  /* Login */
-  #login-screen{
-    max-width:360px;margin:80px auto;text-align:center;
-    background:#fff;border:2px solid var(--orange);border-radius:18px;padding:30px 24px;
-    font-family:'Syne',sans-serif;
-  }
-  #login-screen input{
-    width:100%;padding:11px 14px;font-size:14px;border:1px solid var(--orange);
-    border-radius:8px;margin-bottom:10px;box-sizing:border-box;text-align:center;
-    font-family:'Syne',sans-serif;
-  }
-  #login-screen button{
-    background:var(--orange);color:#fff;border:none;padding:11px 28px;
-    border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;width:100%;
-    font-family:'Syne',sans-serif;
-  }
-  #login-error{color:#e24b4a;font-size:12px;margin-bottom:10px;display:none;}
-  #app-content{display:none;}
 </style>
 </head>
 <body>
 
-<div id="login-screen">
-  <h2 style="color:var(--orange);margin-bottom:14px;">🔐 Calculateur de Commissions</h2>
-  <div id="login-error">Email ou mot de passe incorrect.</div>
-  <input type="email" id="login-email" placeholder="Email" autocomplete="email">
-  <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin();">
-  <button onclick="doLogin()">Connexion</button>
-</div>
-
-<div id="app-content">
 <div class="container">
 
   <div class="instructions">
@@ -357,50 +329,6 @@
   </div>
 
 </div>
-</div>
-
-<script type="module">
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged
-}
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
-  authDomain: "phil-mobile.firebaseapp.com",
-  projectId: "phil-mobile",
-  storageBucket: "phil-mobile.firebasestorage.app",
-  messagingSenderId: "193213939481",
-  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
-  measurementId: "G-6TJR9GTK90"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-window.doLogin = async function () {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    document.getElementById('login-error').style.display = 'none';
-  } catch (err) {
-    document.getElementById('login-error').textContent = 'Email ou mot de passe incorrect.';
-    document.getElementById('login-error').style.display = 'block';
-  }
-};
-
-// Accès restreint : tant que l'utilisateur n'est pas connecté (compte consultant Firebase),
-// le contenu du calculateur reste masqué. Session partagée avec le hub (même domaine).
-onAuthStateChanged(auth, (user) => {
-  document.getElementById('login-screen').style.display = user ? 'none' : 'block';
-  document.getElementById('app-content').style.display = user ? 'block' : 'none';
-});
-</script>
 
 <script>
 const products = [
