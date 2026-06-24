@@ -142,16 +142,23 @@
               <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
             </div>
             <div class="form-row">
-              <label>Message</label>
-              <input type="text" id="news-title" placeholder="ex: Version 5.9.7 Stable disponible">
+              <label>Message (texte libre, sans préfixe — il est ajouté automatiquement à l'affichage)</label>
+              <input type="text" id="news-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin ! Activez-le pour vos clients" oninput="updateNewsPreview()">
             </div>
             <div class="form-row">
               <label>Type</label>
-              <select id="news-type">
-                <option value="info">🟠 Info (orange)</option>
-                <option value="success">🟢 Succès (vert)</option>
-                <option value="danger">🔴 Alerte (rouge)</option>
+              <select id="news-type" onchange="updateNewsPreview()">
+                <option value="orange">🟠 Infos Orange</option>
+                <option value="eneco">🟣 Infos Eneco</option>
+                <option value="smart">🔵 Infos Smart SN</option>
+                <option value="phil">🟢 Infos Phil-Mobile</option>
+                <option value="release">⚪ Infos Release</option>
+                <option value="alert">🔴 Soucis / problème</option>
               </select>
+            </div>
+            <div class="form-row">
+              <label>Aperçu du bandeau</label>
+              <div id="news-preview" style="padding:10px 14px;border-radius:8px;font-size:13px;font-weight:700;"></div>
             </div>
             <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
           </div>
@@ -518,6 +525,30 @@ function showToast(msg) {
 }
 
 // --- Annonce du bandeau (news) ---
+// Ce mapping doit rester identique à celui utilisé dans loadNews() (hub-test.html / wp_consultant_hub.html).
+// Le label n'est JAMAIS stocké dans le titre : il est généré uniquement à l'affichage, ici et sur le bandeau réel.
+const NEWS_META = {
+  orange: { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
+  eneco:  { label: 'Infos Eneco',       icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
+  smart:  { label: 'Infos Smart SN',    icon: '🔵', bg: '#eff6ff', color: '#1e3a8a', border: '#1e3a8a' },
+  phil:   { label: 'Infos Phil-Mobile', icon: '🟢', bg: '#ecfdf5', color: '#166534', border: '#22c55e' },
+  release:{ label: 'Infos Release',     icon: '⚪', bg: '#f9fafb', color: '#374151', border: '#6b7280' },
+  alert:  { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' }
+};
+
+window.updateNewsPreview = function () {
+  const type = document.getElementById('news-type').value;
+  const title = document.getElementById('news-title').value.trim();
+  const meta = NEWS_META[type] || NEWS_META.orange;
+  const preview = document.getElementById('news-preview');
+
+  preview.style.background = meta.bg;
+  preview.style.color = meta.color;
+  preview.style.border = '1px solid ' + meta.border;
+  preview.innerHTML = meta.icon + ' ' + (meta.label ? meta.label + ' : ' : '') +
+    (title || '<span style="opacity:.5;font-weight:400;">(votre message apparaîtra ici)</span>');
+};
+
 async function loadNewsAdmin() {
   try {
     const snap = await getDoc(doc(db, 'news', 'current'));
@@ -525,11 +556,12 @@ async function loadNewsAdmin() {
       const data = snap.data();
       document.getElementById('news-active').checked = !!data.active;
       document.getElementById('news-title').value = data.title || '';
-      document.getElementById('news-type').value = data.type || 'info';
+      document.getElementById('news-type').value = data.type || 'orange';
     }
   } catch (err) {
     console.log('Pas encore de news enregistrée:', err.message);
   }
+  updateNewsPreview();
 }
 
 window.saveNews = async function () {
