@@ -149,8 +149,9 @@
               <label>Type</label>
               <select id="news-type" onchange="updateNewsPreview()">
                 <option value="orange">🟠 Infos Orange</option>
+                <option value="eneco">🟣 Infos Eneco</option>
                 <option value="smart">🔵 Infos Smart SN</option>
-                <option value="app">🟣 Infos Application</option>
+                <option value="phil">🟢 Infos Phil-Mobile</option>
                 <option value="release">⚪ Infos Release</option>
                 <option value="alert">🔴 Soucis / problème</option>
               </select>
@@ -527,11 +528,12 @@ function showToast(msg) {
 // Ce mapping doit rester identique à celui utilisé dans loadNews() (hub-test.html / wp_consultant_hub.html).
 // Le label n'est JAMAIS stocké dans le titre : il est généré uniquement à l'affichage, ici et sur le bandeau réel.
 const NEWS_META = {
-  orange: { label: 'Infos Orange',     icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
-  smart:  { label: 'Infos Smart SN',   icon: '🔵', bg: '#eff6ff', color: '#1e3a8a', border: '#1e3a8a' },
-  app:    { label: 'Infos Application', icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
-  release:{ label: 'Infos Release',    icon: '⚪', bg: '#f9fafb', color: '#374151', border: '#6b7280' },
-  alert:  { label: null,               icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' }
+  orange: { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
+  eneco:  { label: 'Infos Eneco',       icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
+  smart:  { label: 'Infos Smart SN',    icon: '🔵', bg: '#eff6ff', color: '#1e3a8a', border: '#1e3a8a' },
+  phil:   { label: 'Infos Phil-Mobile', icon: '🟢', bg: '#ecfdf5', color: '#166534', border: '#22c55e' },
+  release:{ label: 'Infos Release',     icon: '⚪', bg: '#f9fafb', color: '#374151', border: '#6b7280' },
+  alert:  { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' }
 };
 
 window.updateNewsPreview = function () {
