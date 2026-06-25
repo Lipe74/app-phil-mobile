@@ -126,6 +126,11 @@
         </div>
 
         <div class="section">
+          <div class="section-title">🐞 Bugs &amp; Suggestions</div>
+          <div id="feedback-list"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="section">
           <div class="section-title">👥 Consultants actifs / inactifs</div>
           <div id="consultants-list"><div class="empty">Chargement...</div></div>
         </div>
@@ -488,6 +493,7 @@ onAuthStateChanged(auth, async (user) => {
   loadNewsAdmin();
   loadAgendaAdmin();
   loadProspects();
+  loadFeedback();
   loadConsultants();
   checkExpiredConsultants();
 });
@@ -870,6 +876,71 @@ window.dismissProspect = async function (docId) {
   showToast('Demande ignorée.');
   loadProspects();
 };
+
+// --- Bugs & Suggestions (feedback envoyé par les consultants via le contact "Phil-Mobile") ---
+const FEEDBACK_TYPE_META = {
+  bug:        { label: 'Bug',        icon: '🐞', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' },
+  suggestion: { label: 'Suggestion', icon: '💡', bg: '#eff6ff', color: '#1e3a8a', border: '#3b82f6' }
+};
+
+async function loadFeedback() {
+  const container = document.getElementById('feedback-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'appFeedback'));
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucun message pour le moment.</div>';
+      return;
+    }
+
+    window._feedbackCache = list;
+
+    container.innerHTML = list.map(f => {
+      const meta = FEEDBACK_TYPE_META[f.type] || FEEDBACK_TYPE_META.bug;
+      const handled = !!f.handled;
+      const dateStr = f.createdAt ? new Date(f.createdAt).toLocaleString('fr-FR') : '—';
+      const subject = encodeURIComponent(`Re: ${meta.label} signalé sur Phil-Mobile`);
+      const body = encodeURIComponent(`Bonjour ${f.consultantName || ''},\n\nSuite à votre message :\n« ${f.message || ''} »\n\n`);
+      const mailLink = f.consultantEmail ? `mailto:${f.consultantEmail}?subject=${subject}&body=${body}` : null;
+
+      return `
+      <div class="card" style="${handled ? 'opacity:.55;' : ''}">
+        <div class="card-row">
+          <div class="card-info">
+            <span class="badge" style="background:${meta.bg};color:${meta.color};border:1px solid ${meta.border};">${meta.icon} ${meta.label}</span>
+            ${handled ? '<span class="badge badge-active">Traité</span>' : '<span class="badge" style="background:#fff3e8;color:#f97316;">Nouveau</span>'}
+            <div style="margin-top:8px;font-size:13px;color:#1a1a1a;white-space:pre-line;">${escapeHtml(f.message || '')}</div>
+            <div class="meta" style="margin-top:6px;">${escapeHtml(f.consultantName || 'Consultant inconnu')} · ${escapeHtml(f.consultantEmail || '—')} · ${dateStr}</div>
+          </div>
+          <div class="card-actions">
+            ${mailLink ? `<button class="btn btn-secondary" onclick="window.location.href='${mailLink}'">✉️ Répondre</button>` : ''}
+            <button class="btn ${handled ? 'btn-secondary' : 'btn-primary'}" onclick="toggleFeedbackHandled('${f.docId}', ${!handled})">
+              ${handled ? '↩️ Remettre en attente' : '✅ Marquer traité'}
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement feedback impossible:', err.message);
+  }
+}
+
+window.toggleFeedbackHandled = async function (docId, newState) {
+  try {
+    await updateDoc(doc(db, 'appFeedback', docId), { handled: newState });
+    showToast(newState ? '✅ Marqué comme traité.' : '↩️ Remis en attente.');
+    loadFeedback();
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
 
 // --- Modal activation ---
 window.openActivateModal = function (docId) {
