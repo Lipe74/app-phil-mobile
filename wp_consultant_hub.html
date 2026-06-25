@@ -419,9 +419,13 @@ Build <span id="app-version-1">…</span> Stable — Formations
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Contacts</div>
           <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Mon Upline</button>
           <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
-          <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
-          <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
-          
+          <button onclick="showScript('panel-contacts-philmobile')" class="menu-item" id="menu-contacts-philmobile">🛠️ Phil-Mobile</button>
+
+<!-- AGENDA & FORMATIONS -->
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda &amp; Formations</div>
+<button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
+<button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
+
 <!-- CRM -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Mon Crm</div>
 
@@ -622,6 +626,39 @@ Build <span id="app-version-1">…</span> Stable — Formations
             <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
               📧 rem@smartsn.be
             </a>
+          </div>
+
+          <!-- Panel Contacts Phil-Mobile -->
+          <div id="panel-contacts-philmobile" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="text-align:center;margin-bottom:20px;">
+              <div style="width:64px;height:64px;border-radius:50%;background:#fff;border:2px solid rgba(249,115,22,0.4);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 auto 12px;">
+                <img src="images/logo.png" alt="Phil-Mobile" style="width:100%;height:100%;object-fit:contain;">
+              </div>
+              <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:2px;">Philippe Tomaszewsky</div>
+              <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Développeur de l'application Phil-Mobile</div>
+            </div>
+            <a href="https://wa.me/32475240205" style="display:flex;align-items:center;gap:10px;background:#25d366;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.126 1.535 5.862L.057 23.737a.75.75 0 00.921.921l5.875-1.478A11.944 11.944 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.886 0-3.66-.499-5.197-1.373l-.373-.217-3.876.974.993-3.768-.237-.388A9.956 9.956 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              <span>WhatsApp · +32 475 24 02 05</span>
+            </a>
+            <a href="tel:+32475240205" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
+              📞 +32 475 24 02 05
+            </a>
+            <a href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
+              📧 infos@phil-mobile.be
+            </a>
+
+            <div style="margin-top:20px;border-top:1px solid #f3f4f6;padding-top:16px;">
+              <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">🐞 Signaler un bug / une suggestion</div>
+              <select id="pm-feedback-type" style="width:100%;padding:9px 10px;border:1px solid #f97316;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;margin-bottom:8px;">
+                <option value="bug">🐞 Signaler un bug</option>
+                <option value="suggestion">💡 Proposer une amélioration</option>
+              </select>
+              <textarea id="pm-feedback-message" placeholder="Décrivez votre message ici..." style="width:100%;padding:10px;height:90px;border:1px solid #f97316;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+              <button onclick="submitFeedback()" style="margin-top:10px;width:100%;padding:11px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">✉️ Envoyer le message</button>
+              <div id="pm-feedback-success" style="display:none;margin-top:8px;font-size:12px;color:#16a34a;font-weight:600;text-align:center;">✅ Message envoyé, merci !</div>
+              <div id="pm-feedback-error" style="display:none;margin-top:8px;font-size:12px;color:#e24b4a;font-weight:600;text-align:center;">❌ Erreur lors de l'envoi, réessayez.</div>
+            </div>
           </div>
 
           <!-- Panel Agenda -->
@@ -2458,6 +2495,42 @@ window.submitAccessRequest = async function(){
 
   }
 
+}
+
+window.submitFeedback = async function(){
+  const typeEl = document.getElementById('pm-feedback-type');
+  const msgEl = document.getElementById('pm-feedback-message');
+  const successEl = document.getElementById('pm-feedback-success');
+  const errorEl = document.getElementById('pm-feedback-error');
+
+  const message = msgEl.value.trim();
+  if (!message) {
+    alert("⚠️ Merci de décrire votre message avant d'envoyer.");
+    return;
+  }
+
+  if (successEl) successEl.style.display = 'none';
+  if (errorEl) errorEl.style.display = 'none';
+
+  try {
+    await window.addDoc(window.collection(window.db, "appFeedback"), {
+      type: typeEl ? typeEl.value : 'bug',
+      message: message,
+      consultantId: pmCurrentUser?.id || '',
+      consultantName: pmCurrentUser?.fullName || pmCurrentUser?.name || '',
+      consultantEmail: pmCurrentUser?.email || '',
+      createdAt: new Date().toISOString()
+    });
+
+    msgEl.value = '';
+    if (successEl) {
+      successEl.style.display = 'block';
+      setTimeout(() => { successEl.style.display = 'none'; }, 4000);
+    }
+  } catch(err) {
+    console.error(err);
+    if (errorEl) errorEl.style.display = 'block';
+  }
 }
 </script>
 
