@@ -420,6 +420,7 @@ Build <span id="app-version-1">…</span> Stable — CRM & Agenda
           <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Mon Upline</button>
           <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
           <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
+          <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
           
 <!-- CRM -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Mon Crm</div>
@@ -638,6 +639,107 @@ Build <span id="app-version-1">…</span> Stable — CRM & Agenda
                 <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:500px;border:none;" frameborder="0"></iframe>
               </div>
             </div>
+          </div>
+
+          <!-- Panel Formation -->
+          <div id="panel-formation" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🎓 Formations disponibles</div>
+            <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une formation pour en savoir plus</div>
+
+            <!-- Success Training - mis en avant -->
+            <div class="pm-formation-item" style="border:2px solid #f97316;border-radius:10px;margin-bottom:10px;overflow:hidden;background:#fff3e8;">
+              <button onclick="toggleFormation('form-success')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:16px;">🏆</span>
+                  <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Success Training Orange</span>
+                </span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;">
+                <span style="font-size:10px;font-weight:700;background:#f97316;color:#fff;padding:3px 8px;border-radius:99px;">⚠️ Obligatoire pour valider le PQS</span>
+                <span style="font-size:10px;font-weight:600;background:#fff;color:#f97316;border:1px solid #f97316;padding:3px 8px;border-radius:99px;">📅 Mercredi &amp; Samedi</span>
+                <span style="font-size:10px;font-weight:600;background:#fff;color:#f97316;border:1px solid #f97316;padding:3px 8px;border-radius:99px;">📍 Bruxelles</span>
+              </div>
+              <div id="form-success" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Le Success Training Orange est une formation organisée directement dans les bureaux d'Orange, spécialement destinée aux nouveaux consultants Smart SN. Son objectif est de permettre aux consultants de bien démarrer en découvrant les produits et services Orange, les différentes offres commerciales, ainsi que les bonnes pratiques et astuces du terrain. La formation aborde également les outils, les procédures, les techniques de vente et les conseils indispensables pour être rapidement efficace auprès des clients. C'est une étape essentielle pour acquérir les bases du métier et démarrer son activité dans les meilleures conditions.
+                <br><br>
+                En résumé, un consultant qui participe au Success Training apprend notamment :<br>
+                📱 Les produits et abonnements Orange (mobile, internet, TV, fibre…)<br>
+                💰 Les promotions et les offres commerciales<br>
+                🛠️ Les outils utilisés au quotidien<br>
+                🤝 Les techniques de vente et d'analyse des besoins<br>
+                💡 Les astuces et bonnes pratiques des consultants expérimentés<br>
+                📋 Les procédures administratives et le suivi des contrats<br>
+                ❓ Les réponses aux questions les plus fréquentes des clients
+              </div>
+            </div>
+
+            <!-- Training vente -->
+            <div class="pm-formation-item" style="border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;overflow:hidden;background:#fff;">
+              <button onclick="toggleFormation('form-vente')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">🗣️ Training vente</span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div id="form-vente" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Au cours de cette formation, vous apprendrez les techniques de vente orientée client (télécommunications, énergie et références) associées à une communication convaincante. Vous affinerez votre approche, apprendrez à conclure avec assurance et mettrez en œuvre des méthodes éprouvées que vous pourrez appliquer immédiatement. Pratique, interactive et axée sur les résultats, cette formation vous permettra de faire passer vos ventes au niveau supérieur.
+              </div>
+            </div>
+
+            <!-- Training fiscalité -->
+            <div class="pm-formation-item" style="border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;overflow:hidden;background:#fff;">
+              <button onclick="toggleFormation('form-fiscalite')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">📊 Training fiscalité</span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div id="form-fiscalite" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Au cours de cette formation, vous découvrirez comment utiliser intelligemment les règles fiscales à votre avantage. Vous apprendrez quels frais vous pouvez déclarer, comment gérer au mieux vos revenus complémentaires et pourquoi le statut d'indépendant est en réalité un atout. Concrète, pratique et immédiatement applicable, cette formation vous permettra de conserver une plus grande partie de vos revenus.
+              </div>
+            </div>
+
+            <!-- Orange MasterClass -->
+            <div class="pm-formation-item" style="border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;overflow:hidden;background:#fff;">
+              <button onclick="toggleFormation('form-masterclass')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">🟠 Orange MasterClass</span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div id="form-masterclass" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Au cours de cette formation interactive, vous approfondirez vos connaissances des services Orange, tant sur le plan technique que commercial. De la technologie hybride coax-fibre et la structure de l'offre Love aux règles d'itinérance, en passant par les options de données et les simulations tarifaires. Vous affinerez vos connaissances et apprendrez à expliquer clairement des situations complexes aux clients. Les thèmes abordés peuvent varier en fonction des besoins du groupe, afin que vous tiriez toujours le meilleur parti de la session. Cette formation est idéale pour les consultants qui veulent aller au-delà des bases et se démarquer en tant qu'experts.
+              </div>
+            </div>
+
+            <!-- Training acomptes et entretien de chaudière -->
+            <div class="pm-formation-item" style="border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;overflow:hidden;background:#fff;">
+              <button onclick="toggleFormation('form-chaudiere')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">🔥 Acomptes &amp; entretien de chaudière</span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div id="form-chaudiere" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Cette formation propose une immersion approfondie dans les aspects pratiques et de communication client liés à deux sujets : les factures d'acompte hivernales et l'entretien des chaudières. Elle démystifie le processus de facturation hivernale, en expliquant notamment pourquoi les factures d'acompte peuvent différer des simulations de prix, afin de t'aider à expliquer cela avec assurance aux clients et ainsi réduire les incompréhensions ou l'insatisfaction. La deuxième partie présente HomeServe comme un partenaire de confiance et aborde les modalités et raisons de l'entretien des chaudières.
+              </div>
+            </div>
+
+            <!-- How to Sell Eneco -->
+            <div class="pm-formation-item" style="border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;overflow:hidden;background:#fff;">
+              <button onclick="toggleFormation('form-eneco')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">⚡ How to Sell Eneco</span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div id="form-eneco" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Cette formation se concentre sur la vente en comprenant véritablement les besoins du client et en y répondant efficacement. Elle te guidera à travers l'art de poser les bonnes questions, de formuler une offre personnalisée et de conclure la vente de manière efficace. Chaque module comprend des exercices permettant d'appliquer les apprentissages à des situations réalistes. La dernière section te permettra d'apprendre à communiquer clairement toutes les informations de suivi nécessaires, afin de garantir une expérience fluide après la vente.
+              </div>
+            </div>
+
+            <!-- Training MLM -->
+            <div class="pm-formation-item" style="border:1px solid #f0f0f0;border-radius:10px;margin-bottom:0;overflow:hidden;background:#fff;">
+              <button onclick="toggleFormation('form-mlm')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+                <span style="font-size:13px;font-weight:700;color:#1a1a1a;">🚀 Training MLM</span>
+                <span class="pm-formation-chevron" style="font-size:12px;color:#f97316;transition:transform .2s;display:inline-block;">▾</span>
+              </button>
+              <div id="form-mlm" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">
+                Au cours de cette formation, tu découvriras comment construire non seulement ton propre succès dans le MLM, mais aussi celui des autres. Grâce aux conseils pratiques et aux clés du succès, tu apprendras à faire les premiers pas, à inspirer de nouvelles personnes et à les guider efficacement vers un démarrage rapide. C'est ainsi que tu construiras une équipe solide et durable qui continuera à se développer et à produire des résultats !
+              </div>
+            </div>
+
           </div>
 
           <!-- TABLEAU DE BORD (affiché dès connexion) -->
@@ -1341,6 +1443,15 @@ function toggleMenu(id){
     .getElementById(id)
     .classList
     .toggle('open');
+}
+
+function toggleFormation(id){
+  const body = document.getElementById(id);
+  const item = body.closest('.pm-formation-item');
+  const chevron = item ? item.querySelector('.pm-formation-chevron') : null;
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
 function frameLoaded() {
