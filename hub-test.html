@@ -1651,7 +1651,7 @@ async function renderNewsHistory() {
           </span>
           <span class="pm-formation-chevron" style="font-size:12px;color:${meta.color};transition:transform .2s;display:inline-block;flex-shrink:0;">▾</span>
         </button>
-        <div id="${bodyId}" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;white-space:pre-line;">${escapeHtmlNews(n.fullText || '')}</div>
+        <div id="${bodyId}" class="pm-formation-body rte-content" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;">${n.fullText || ''}</div>
       </div>`;
     }).join('');
   } catch (err) {

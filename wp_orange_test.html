@@ -114,6 +114,10 @@
     <div id="netflix-rows"></div>
   </div>
   <div class="section">
+    <div class="section-title">✨ Disney+</div>
+    <div id="disney-rows"></div>
+  </div>
+  <div class="section">
     <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> Options</div>
 
     <div style="margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
@@ -578,7 +582,7 @@ function setTVAC(tvac) {
   document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
   document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
   document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
-  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-unique-rows','options-monthly-rows','promos-rows','promos-permanent-rows'].forEach(id => {
+  ['internet-rows','tv-rows','mobile-rows','netflix-rows','disney-rows','options-unique-rows','options-monthly-rows','promos-rows','promos-permanent-rows'].forEach(id => {
     document.getElementById(id).innerHTML = '';
   });
   
@@ -625,6 +629,11 @@ const productList = {
     { id:'net_ess',  name:'Netflix Essentiel', price:10.99, max:1 },
     { id:'net_std',  name:'Netflix Standard',  price:16.99, max:1 },
     { id:'net_prem', name:'Netflix Premium',   price:21.99, max:1 },
+  ],
+  disney: [
+    { id:'disney_std_ads', name:'Disney+ Standard avec Pub', price:6.99,  max:1 },
+    { id:'disney_std',     name:'Disney+ Standard',          price:10.99, max:1 },
+    { id:'disney_prem',    name:'Disney+ Premium',           price:15.99, max:1 },
   ],
 };
 
@@ -779,6 +788,7 @@ function calcInternet() {
   (productList.internet || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
   (productList.tv || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
   (productList.netflix || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.disney || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
   return t;
 }
 

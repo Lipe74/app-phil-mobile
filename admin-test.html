@@ -29,6 +29,11 @@
   @media (max-width: 1300px) { .admin-columns { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 700px) { .admin-columns { grid-template-columns: 1fr; } }
   .count-badge { display: inline-block; background: #f97316; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 4px; vertical-align: middle; }
+  .rte-btn { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 9px; font-size: 12px; cursor: pointer; color: #333; }
+  .rte-btn:hover { background: #f3f4f6; }
+  .rte-editor:focus { outline: 2px solid #f97316; outline-offset: -1px; }
+  .rte-editor:empty:before { content: attr(data-placeholder); color: #999; }
+  .rte-editor ul, .rte-editor ol { margin-left: 18px; }
   .section { margin-bottom: 30px; }
   .section-title {
     font-size: 13px; font-weight: 700; color: #f97316;
@@ -162,28 +167,35 @@
               </select>
             </div>
 
-            <div class="form-row" id="promo-products-row">
-              <label>Produit(s) concerné(s) <span style="font-weight:400;color:#888;">(coche-en plusieurs pour créer la même promo sur chacun en une fois)</span></label>
+            <div class="form-row" id="promo-product-mobile-row" style="display:none;">
+              <label>Abonnement mobile concerné</label>
+              <select id="promo-product-mobile">
+                <option value="mob_child" data-label="Mobile Child 5GB">Mobile Child 5GB</option>
+                <option value="mob_small" data-label="Mobile Small 12GB">Mobile Small 12GB</option>
+                <option value="mob_medium" data-label="Mobile Medium 70GB">Mobile Medium 70GB</option>
+                <option value="mob_large" data-label="Mobile Large 140GB">Mobile Large 140GB</option>
+                <option value="mob_unlim" data-label="Mobile Unlimited 300GB">Mobile Unlimited 300GB</option>
+              </select>
+            </div>
 
-              <div id="promo-products-mobile" style="display:none;">
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_child" data-label="Mobile Child 5GB"> Mobile Child 5GB</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_small" data-label="Mobile Small 12GB"> Mobile Small 12GB</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_medium" data-label="Mobile Medium 70GB"> Mobile Medium 70GB</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_large" data-label="Mobile Large 140GB"> Mobile Large 140GB</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_unlim" data-label="Mobile Unlimited 300GB"> Mobile Unlimited 300GB</div>
-              </div>
-
-              <div id="promo-products-monthly" style="display:none;">
-                <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin:4px 0 4px;">🌐 Internet</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="internet" value="inet_start" data-label="Internet Start"> Internet Start</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="internet" value="inet_zen" data-label="Internet Zen"> Internet Zen</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="internet" value="inet_giga" data-label="Internet Giga"> Internet Giga</div>
-                <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin:10px 0 4px;">🎁 Divers</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="net_ess" data-label="Netflix Essentiel"> Netflix Essentiel</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="net_std" data-label="Netflix Standard"> Netflix Standard</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="net_prem" data-label="Netflix Premium"> Netflix Premium</div>
-                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="opt_confort" data-label="My Comfort Service"> My Comfort Service</div>
-              </div>
+            <div class="form-row" id="promo-product-monthly-row" style="display:none;">
+              <label>Produit concerné</label>
+              <select id="promo-product-monthly">
+                <optgroup label="🌐 Internet">
+                  <option value="inet_start" data-family="internet" data-label="Internet Start">Internet Start</option>
+                  <option value="inet_zen" data-family="internet" data-label="Internet Zen">Internet Zen</option>
+                  <option value="inet_giga" data-family="internet" data-label="Internet Giga">Internet Giga</option>
+                </optgroup>
+                <optgroup label="🎁 Divers">
+                  <option value="net_ess" data-family="divers" data-label="Netflix Essentiel">Netflix Essentiel</option>
+                  <option value="net_std" data-family="divers" data-label="Netflix Standard">Netflix Standard</option>
+                  <option value="net_prem" data-family="divers" data-label="Netflix Premium">Netflix Premium</option>
+                  <option value="opt_confort" data-family="divers" data-label="My Comfort Service">My Comfort Service</option>
+                  <option value="disney_std_ads" data-family="divers" data-label="Disney+ Standard avec Pub">Disney+ Standard avec Pub</option>
+                  <option value="disney_std" data-family="divers" data-label="Disney+ Standard">Disney+ Standard</option>
+                  <option value="disney_prem" data-family="divers" data-label="Disney+ Premium">Disney+ Premium</option>
+                </optgroup>
+              </select>
             </div>
 
             <div class="form-row" id="promo-name-row" style="display:none;">
@@ -284,7 +296,16 @@
             </div>
             <div class="form-row">
               <label>Texte complet</label>
-              <textarea id="newsitem-fulltext" rows="5" placeholder="Le détail complet de la news..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+              </div>
+              <div id="newsitem-fulltext" contenteditable="true" class="rte-editor" data-placeholder="Le détail complet de la news..." style="width:100%;min-height:110px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;overflow-y:auto;"></div>
             </div>
             <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
             <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
@@ -758,7 +779,7 @@ async function loadNewsItemsAdmin() {
             <span class="badge" style="background:${meta.bg};color:${meta.color};border:1px solid ${meta.border};">${meta.icon} ${meta.label || ''}</span>
             <span class="meta">${dateStr}</span>
             <div style="margin-top:6px;"><strong>${escapeHtmlAdmin(n.title || '')}</strong></div>
-            <div style="margin-top:4px;font-size:13px;color:#444;white-space:pre-line;">${escapeHtmlAdmin(n.fullText || '')}</div>
+            <div style="margin-top:4px;font-size:13px;color:#444;">${n.fullText || ''}</div>
           </div>
           <div class="card-actions">
             <button class="btn btn-secondary" onclick="editNewsItem('${n.docId}')">✏️ Modifier</button>
@@ -779,7 +800,7 @@ window.editNewsItem = function (docId) {
   currentEditNewsItemId = docId;
   document.getElementById('newsitem-title').value = n.title || '';
   document.getElementById('newsitem-type').value = n.type || 'orange';
-  document.getElementById('newsitem-fulltext').value = n.fullText || '';
+  document.getElementById('newsitem-fulltext').innerHTML = n.fullText || '';
   document.getElementById('newsitem-submit-btn').textContent = '💾 Enregistrer les modifications';
   document.getElementById('newsitem-cancel-btn').style.display = 'inline-block';
   document.getElementById('newsitem-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -788,7 +809,7 @@ window.editNewsItem = function (docId) {
 window.cancelNewsItemEdit = function () {
   currentEditNewsItemId = null;
   document.getElementById('newsitem-title').value = '';
-  document.getElementById('newsitem-fulltext').value = '';
+  document.getElementById('newsitem-fulltext').innerHTML = '';
   document.getElementById('newsitem-submit-btn').textContent = '➕ Publier dans l\'historique';
   document.getElementById('newsitem-cancel-btn').style.display = 'none';
 };
@@ -796,7 +817,7 @@ window.cancelNewsItemEdit = function () {
 window.addOrUpdateNewsItem = async function () {
   const title = document.getElementById('newsitem-title').value.trim();
   const type = document.getElementById('newsitem-type').value;
-  const fullText = document.getElementById('newsitem-fulltext').value.trim();
+  const fullText = document.getElementById('newsitem-fulltext').innerHTML.trim();
 
   if (!title || !fullText) {
     alert('Merci de renseigner au moins le titre et le texte complet.');
@@ -812,7 +833,7 @@ window.addOrUpdateNewsItem = async function () {
       await addDoc(collection(db, 'newsHistory'), { title, type, fullText, createdAt: new Date().toISOString() });
       showToast('✅ News publiée dans l\'historique.');
       document.getElementById('newsitem-title').value = '';
-      document.getElementById('newsitem-fulltext').value = '';
+      document.getElementById('newsitem-fulltext').innerHTML = '';
     }
     loadNewsItemsAdmin();
   } catch (err) {
@@ -1234,9 +1255,8 @@ window.onPromoTypeChange = function () {
   document.getElementById('promo-duration-row').style.display = type === 'unique' ? 'none' : 'block';
   document.getElementById('promo-requireschild-row').style.display = type === 'mobile' ? 'block' : 'none';
 
-  document.getElementById('promo-products-row').style.display = (!isEditing && type !== 'unique') ? 'block' : 'none';
-  document.getElementById('promo-products-mobile').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
-  document.getElementById('promo-products-monthly').style.display = (!isEditing && type === 'monthly') ? 'block' : 'none';
+  document.getElementById('promo-product-mobile-row').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
+  document.getElementById('promo-product-monthly-row').style.display = (!isEditing && type === 'monthly') ? 'block' : 'none';
   document.getElementById('promo-name-row').style.display = (isEditing || type === 'unique') ? 'block' : 'none';
 };
 
@@ -1324,8 +1344,9 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-sub').value = '';
   document.getElementById('promo-price').value = '';
   document.getElementById('promo-requireschild').checked = false;
-  document.querySelectorAll('.promo-product-cb').forEach(cb => cb.checked = false);
-  document.getElementById('promo-submit-btn').textContent = '➕ Ajouter la/les promo(s)';
+  document.getElementById('promo-product-mobile').selectedIndex = 0;
+  document.getElementById('promo-product-monthly').selectedIndex = 0;
+  document.getElementById('promo-submit-btn').textContent = '➕ Ajouter la promo';
   document.getElementById('promo-cancel-btn').style.display = 'none';
   onPromoTypeChange();
 };
@@ -1389,44 +1410,36 @@ window.addOrUpdatePromo = async function () {
     return;
   }
 
-  // --- Mode création : un ou plusieurs produits cochés → une promo par produit ---
-  const containerId = type === 'mobile' ? 'promo-products-mobile' : 'promo-products-monthly';
-  const checked = Array.from(document.querySelectorAll('#' + containerId + ' .promo-product-cb:checked'));
+  // --- Mode création : produit choisi via menu déroulant (Mobile ou Internet/Divers) ---
+  const sel = type === 'mobile'
+    ? document.getElementById('promo-product-mobile')
+    : document.getElementById('promo-product-monthly');
+  const opt = sel.selectedOptions[0];
+  const productId = opt.value;
+  const label = opt.dataset.label || opt.textContent;
+  const family = type === 'mobile' ? 'mobile' : (opt.dataset.family || 'divers');
 
-  if (checked.length === 0) {
-    alert('Coche au moins un produit concerné.');
-    return;
+  const data = {
+    category, type, name: label, sub, price, duration,
+    mobileId: type === 'mobile' ? productId : null,
+    requiresChild,
+    productFamily: family,
+    perAbo: type === 'mobile',
+    isUnique: false,
+    active: true,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    await addDoc(collection(db, 'promosOrange'), data);
+    showToast('✅ Promo ajoutée.');
+    document.getElementById('promo-sub').value = '';
+    document.getElementById('promo-price').value = '';
+    document.getElementById('promo-requireschild').checked = false;
+    loadPromosAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
-
-  let done = 0;
-  for (const cb of checked) {
-    const productId = cb.value;
-    const label = cb.dataset.label;
-    const family = type === 'mobile' ? 'mobile' : (cb.dataset.family || 'divers');
-    const data = {
-      category, type, name: label, sub, price, duration,
-      mobileId: type === 'mobile' ? productId : null,
-      requiresChild,
-      productFamily: family,
-      perAbo: type === 'mobile',
-      isUnique: false,
-      active: true,
-      createdAt: new Date().toISOString()
-    };
-    try {
-      await addDoc(collection(db, 'promosOrange'), data);
-      done++;
-    } catch (err) {
-      console.log('Erreur création promo', label, err.message);
-    }
-  }
-
-  showToast(`✅ ${done} promo(s) ajoutée(s).`);
-  document.querySelectorAll('.promo-product-cb').forEach(cb => cb.checked = false);
-  document.getElementById('promo-sub').value = '';
-  document.getElementById('promo-price').value = '';
-  document.getElementById('promo-requireschild').checked = false;
-  loadPromosAdmin();
 };
 
 window.togglePromoActive = async function (docId, newState) {
