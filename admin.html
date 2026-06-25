@@ -294,6 +294,38 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
           <div id="agenda-list"><div class="empty">Chargement...</div></div>
         </div>
 
+        <div class="section">
+          <div class="section-title">📰 Historique des News</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Séparé du bandeau ci-dessus — sert d'archive consultable par les consultants dans le hub (panneau "News").
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="newsitem-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin !">
+            </div>
+            <div class="form-row">
+              <label>Type</label>
+              <select id="newsitem-type">
+                <option value="orange">🟠 Infos Orange</option>
+                <option value="eneco">🟣 Infos Eneco</option>
+                <option value="smart">🔵 Infos Smart SN</option>
+                <option value="phil">🟢 Infos Phil-Mobile</option>
+                <option value="release">⚪ Infos Release</option>
+                <option value="alert">🔴 Soucis / problème</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Texte complet</label>
+              <textarea id="newsitem-fulltext" rows="5" placeholder="Le détail complet de la news..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+            </div>
+            <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
+            <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div id="newsitems-list"><div class="empty">Chargement...</div></div>
+        </div>
+
       </div>
 
     </div>
@@ -570,6 +602,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProspects();
   loadFeedback();
   loadPromosAdmin();
+  loadNewsItemsAdmin();
   loadConsultants();
   checkExpiredConsultants();
 });
@@ -661,6 +694,108 @@ window.saveNews = async function () {
     showToast('✅ Annonce enregistrée.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// --- Historique des News (archive consultable dans le hub, séparée du bandeau ci-dessus) ---
+let newsItemsCache = [];
+let currentEditNewsItemId = null;
+
+async function loadNewsItemsAdmin() {
+  const container = document.getElementById('newsitems-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'newsHistory'));
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    newsItemsCache = list;
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucune news publiée pour le moment.</div>';
+      return;
+    }
+
+    container.innerHTML = list.map(n => {
+      const meta = NEWS_META[n.type] || NEWS_META.orange;
+      const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR') : '—';
+      return `
+      <div class="card">
+        <div class="card-row">
+          <div class="card-info">
+            <span class="badge" style="background:${meta.bg};color:${meta.color};border:1px solid ${meta.border};">${meta.icon} ${meta.label || ''}</span>
+            <span class="meta">${dateStr}</span>
+            <div style="margin-top:6px;"><strong>${escapeHtmlAdmin(n.title || '')}</strong></div>
+            <div style="margin-top:4px;font-size:13px;color:#444;white-space:pre-line;">${escapeHtmlAdmin(n.fullText || '')}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" onclick="editNewsItem('${n.docId}')">✏️ Modifier</button>
+            <button class="btn btn-danger" onclick="deleteNewsItem('${n.docId}')">🗑 Supprimer</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement historique news impossible:', err.message);
+  }
+}
+
+window.editNewsItem = function (docId) {
+  const n = newsItemsCache.find(x => x.docId === docId);
+  if (!n) return;
+  currentEditNewsItemId = docId;
+  document.getElementById('newsitem-title').value = n.title || '';
+  document.getElementById('newsitem-type').value = n.type || 'orange';
+  document.getElementById('newsitem-fulltext').value = n.fullText || '';
+  document.getElementById('newsitem-submit-btn').textContent = '💾 Enregistrer les modifications';
+  document.getElementById('newsitem-cancel-btn').style.display = 'inline-block';
+  document.getElementById('newsitem-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelNewsItemEdit = function () {
+  currentEditNewsItemId = null;
+  document.getElementById('newsitem-title').value = '';
+  document.getElementById('newsitem-fulltext').value = '';
+  document.getElementById('newsitem-submit-btn').textContent = '➕ Publier dans l\'historique';
+  document.getElementById('newsitem-cancel-btn').style.display = 'none';
+};
+
+window.addOrUpdateNewsItem = async function () {
+  const title = document.getElementById('newsitem-title').value.trim();
+  const type = document.getElementById('newsitem-type').value;
+  const fullText = document.getElementById('newsitem-fulltext').value.trim();
+
+  if (!title || !fullText) {
+    alert('Merci de renseigner au moins le titre et le texte complet.');
+    return;
+  }
+
+  try {
+    if (currentEditNewsItemId) {
+      await updateDoc(doc(db, 'newsHistory', currentEditNewsItemId), { title, type, fullText });
+      showToast('✅ News modifiée.');
+      cancelNewsItemEdit();
+    } else {
+      await addDoc(collection(db, 'newsHistory'), { title, type, fullText, createdAt: new Date().toISOString() });
+      showToast('✅ News publiée dans l\'historique.');
+      document.getElementById('newsitem-title').value = '';
+      document.getElementById('newsitem-fulltext').value = '';
+    }
+    loadNewsItemsAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+window.deleteNewsItem = async function (docId) {
+  if (!confirm('Supprimer définitivement cette news de l\'historique ?')) return;
+  try {
+    await deleteDoc(doc(db, 'newsHistory', docId));
+    showToast('🗑 News supprimée.');
+    loadNewsItemsAdmin();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
   }
 };
 
