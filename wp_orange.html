@@ -54,34 +54,8 @@
 .sum-total-label { font-size:24px; font-weight:bold; color:#fff; }
 .reset-btn { width: 100%; padding: 11px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 14px; cursor: pointer; }
 .active-line { background: #fff8f4; border-radius: 6px; }
-
-/* Login */
-#login-screen{
-  max-width:360px;margin:80px auto;text-align:center;
-  background:#fff;border:2px solid #ff5a14;border-radius:18px;padding:30px 24px;
-  font-family:Arial,sans-serif;
-}
-#login-screen input{
-  width:100%;padding:11px 14px;font-size:14px;border:1px solid #ff5a14;
-  border-radius:8px;margin-bottom:10px;box-sizing:border-box;text-align:center;
-}
-#login-screen button{
-  background:#ff5a14;color:#fff;border:none;padding:11px 28px;
-  border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;width:100%;
-}
-#login-error{color:#e24b4a;font-size:12px;margin-bottom:10px;display:none;}
-#app-content{display:none;}
 </style>
 
-<div id="login-screen">
-  <h2 style="color:#ff5a14;margin-bottom:14px;">🔐 Simulateur Orange</h2>
-  <div id="login-error">Email ou mot de passe incorrect.</div>
-  <input type="email" id="login-email" placeholder="Email" autocomplete="email">
-  <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin();">
-  <button onclick="doLogin()">Connexion</button>
-</div>
-
-<div id="app-content">
 <div class="app">
   <div class="header">
 
@@ -282,21 +256,21 @@
 
   <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
-</div>
 
 <script type="module">
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {
   getAuth,
-  signInWithEmailAndPassword,
   onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   getFirestore,
   doc,
-  getDoc
+  getDoc,
+  collection,
+  getDocs
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -314,24 +288,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-window.doLogin = async function () {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    document.getElementById('login-error').style.display = 'none';
-  } catch (err) {
-    document.getElementById('login-error').textContent = 'Email ou mot de passe incorrect.';
-    document.getElementById('login-error').style.display = 'block';
-  }
-};
-
-// Accès restreint : tant que l'utilisateur n'est pas connecté (compte consultant Firebase),
-// le contenu du simulateur reste masqué. Session partagée avec le hub (même domaine).
-onAuthStateChanged(auth, (user) => {
-  document.getElementById('login-screen').style.display = user ? 'none' : 'block';
-  document.getElementById('app-content').style.display = user ? 'block' : 'none';
-});
+// Exposés globalement pour que le script classique plus bas (promos dynamiques) puisse les utiliser
+window.db = db;
+window.collection = collection;
+window.getDocs = getDocs;
 
 // Infos par défaut (fallback si aucun consultant identifié dans l'URL)
 window.consultantInfo = {
@@ -387,6 +347,65 @@ window.consultantInfo = {
   document.querySelectorAll('.consultant-phone').forEach(el => el.textContent = window.consultantInfo.phone);
   document.querySelectorAll('.consultant-email').forEach(el => el.textContent = window.consultantInfo.email);
 })();
+
+// --- Promotions dynamiques depuis Firestore (admin.html) ---
+// Si la lecture échoue ou que la collection est vide, les promos codées en dur dans le script
+// classique plus bas (variables `promos` / `promosPermanent`) restent affichées tel quel : aucun risque de page vide.
+async function loadPromosFromFirestore() {
+  try {
+    let tries = 0;
+    while ((!window.buildToggleRows || !window.promos || !window.promosPermanent) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.buildToggleRows) throw new Error('Script principal pas encore prêt');
+
+    const snap = await getDocs(collection(db, 'promosOrange'));
+    const fetchedTemp = [];
+    const fetchedPermanent = [];
+
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      if (p.active === false) return;
+      const item = {
+        id: docSnap.id,
+        name: window.wrapPromoName(p.name || ''),
+        sub: window.escapeHtmlOrange(p.sub || ''),
+        price: Number(p.price) || 0,
+        perAbo: !!p.perAbo,
+        mobileId: p.mobileId || undefined,
+        requiresChild: !!p.requiresChild,
+        duration: p.duration || undefined,
+        isUnique: !!p.isUnique
+      };
+      if (p.category === 'permanente') fetchedPermanent.push(item);
+      else fetchedTemp.push(item);
+    });
+
+    // Collection vide (pas encore importée côté admin) : on garde les valeurs par défaut codées en dur
+    if (fetchedTemp.length === 0 && fetchedPermanent.length === 0) return;
+
+    window.promos.length = 0;
+    window.promos.push(...fetchedTemp);
+    window.promosPermanent.length = 0;
+    window.promosPermanent.push(...fetchedPermanent);
+
+    Object.keys(window.togMap).forEach(k => delete window.togMap[k]);
+    [...window.promos, ...window.promosPermanent].forEach(p => window.togMap[p.id] = false);
+
+    document.getElementById('promos-rows').innerHTML = '';
+    document.getElementById('promos-permanent-rows').innerHTML = '';
+    window.buildToggleRows('promos-permanent-rows', window.promosPermanent);
+    window.buildToggleRows('promos-rows', window.promos);
+    window.renderOrangeApp();
+  } catch (err) {
+    console.log('Chargement promos Firestore impossible, conservation des promos par défaut:', err.message);
+  }
+}
+
+onAuthStateChanged(auth, () => {
+  loadPromosFromFirestore();
+});
 </script>
 
 <script>
@@ -620,7 +639,7 @@ const options = [
 
 const promosPermanent = [
   { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'-10€/mois · À vie', price:10, perAbo:false, duration:12 },
-  { id:'pr_activation', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">🎁 Frais d’activation offerts</span>', sub:'-39€ · Remise unique', price:39, perAbo:false },
+  { id:'pr_activation', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">🎁 Frais d’activation offerts</span>', sub:'-39€ · Remise unique', price:39, perAbo:false, isUnique:true },
   { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'-5,99€/mois · À vie', price:5.99, perAbo:false, duration:6 },
 ];
 
@@ -730,7 +749,7 @@ function calcPromos() {
   [...promos,...promosPermanent].forEach(p=>{
     if(!togMap[p.id]) return;
 
-    if(p.id==='pr_activation'){ unique += p.price; return; }
+    if(p.isUnique){ unique += p.price; return; }
 
     let montant=0;
     if(p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
@@ -875,6 +894,21 @@ buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confo
 buildToggleRows('promos-permanent-rows', promosPermanent);
 buildToggleRows('promos-rows', promos);
 render();
+
+// Exposés globalement pour permettre le rafraîchissement dynamique des promos depuis Firestore (voir module plus haut)
+window.promos = promos;
+window.promosPermanent = promosPermanent;
+window.togMap = togMap;
+window.buildToggleRows = buildToggleRows;
+window.renderOrangeApp = render;
+window.escapeHtmlOrange = function(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+};
+window.wrapPromoName = function(text) {
+  return '<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">' + window.escapeHtmlOrange(text) + '</span>';
+};
 </script>
 
 
