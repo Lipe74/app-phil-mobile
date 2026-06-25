@@ -128,8 +128,11 @@
         </div>
 
         <div class="section">
-          <div class="section-title">👥 Consultants actifs / inactifs</div>
-          <div id="consultants-list"><div class="empty">Chargement...</div></div>
+          <div class="section-title" onclick="toggleSection('consultants-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>👥 Consultants actifs / inactifs</span>
+            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+          </div>
+          <div id="consultants-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
       </div>
@@ -164,6 +167,38 @@
             </div>
             <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
           </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">📰 Historique des News</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Séparé du bandeau ci-dessus — sert d'archive consultable par les consultants dans le hub (panneau "News").
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="newsitem-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin !">
+            </div>
+            <div class="form-row">
+              <label>Type</label>
+              <select id="newsitem-type">
+                <option value="orange">🟠 Infos Orange</option>
+                <option value="eneco">🟣 Infos Eneco</option>
+                <option value="smart">🔵 Infos Smart SN</option>
+                <option value="phil">🟢 Infos Phil-Mobile</option>
+                <option value="release">⚪ Infos Release</option>
+                <option value="alert">🔴 Soucis / problème</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Texte complet</label>
+              <textarea id="newsitem-fulltext" rows="5" placeholder="Le détail complet de la news..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+            </div>
+            <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
+            <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div id="newsitems-list"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="section">
@@ -310,38 +345,6 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
           </div>
 
           <div id="agenda-list"><div class="empty">Chargement...</div></div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">📰 Historique des News</div>
-          <div class="card">
-            <div style="font-size:11px;color:#888;margin-bottom:10px;">
-              Séparé du bandeau ci-dessus — sert d'archive consultable par les consultants dans le hub (panneau "News").
-            </div>
-            <div class="form-row">
-              <label>Titre</label>
-              <input type="text" id="newsitem-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin !">
-            </div>
-            <div class="form-row">
-              <label>Type</label>
-              <select id="newsitem-type">
-                <option value="orange">🟠 Infos Orange</option>
-                <option value="eneco">🟣 Infos Eneco</option>
-                <option value="smart">🔵 Infos Smart SN</option>
-                <option value="phil">🟢 Infos Phil-Mobile</option>
-                <option value="release">⚪ Infos Release</option>
-                <option value="alert">🔴 Soucis / problème</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <label>Texte complet</label>
-              <textarea id="newsitem-fulltext" rows="5" placeholder="Le détail complet de la news..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
-            </div>
-            <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
-            <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
-          </div>
-
-          <div id="newsitems-list"><div class="empty">Chargement...</div></div>
         </div>
 
       </div>
@@ -658,6 +661,16 @@ function showToast(msg) {
   setTimeout(() => t.style.display = 'none', 3000);
 }
 
+// --- Sections pliables (listes longues : Consultants, catégories Agenda) ---
+window.toggleSection = function (containerId, headerEl) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'block' : 'none';
+  const chevron = headerEl ? headerEl.querySelector('.section-chevron') : null;
+  if (chevron) chevron.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+};
+
 // --- Annonce du bandeau (news) ---
 // Ce mapping doit rester identique à celui utilisé dans loadNews() (hub-test.html / wp_consultant_hub.html).
 // Le label n'est JAMAIS stocké dans le titre : il est généré uniquement à l'affichage, ici et sur le bandeau réel.
@@ -874,11 +887,18 @@ async function loadAgendaAdmin() {
     }
 
     let html = '';
-    AGENDA_CATEGORY_ORDER.forEach(cat => {
+    AGENDA_CATEGORY_ORDER.forEach((cat, idx) => {
       const inCat = events.filter(e => e.category === cat);
       if (inCat.length === 0) return;
 
-      html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${AGENDA_CATEGORY_ICON[cat] || ''} ${cat}</div>`;
+      const bodyId = 'agenda-cat-body-' + idx;
+      html += `
+      <div style="margin:14px 0 8px;">
+        <div onclick="toggleSection('${bodyId}', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">${AGENDA_CATEGORY_ICON[cat] || ''} ${cat} <span class="count-badge">${inCat.length}</span></span>
+          <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+        </div>
+        <div id="${bodyId}" style="display:none;margin-top:8px;">`;
 
       inCat.forEach(e => {
         html += `
@@ -895,6 +915,8 @@ async function loadAgendaAdmin() {
           </div>
         </div>`;
       });
+
+      html += `</div></div>`;
     });
 
     document.getElementById('agenda-list').innerHTML = html;
