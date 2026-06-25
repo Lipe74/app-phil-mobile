@@ -128,82 +128,16 @@
         </div>
 
         <div class="section">
+          <div class="section-title">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></div>
+          <div id="feedback-list"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="section">
           <div class="section-title" onclick="toggleSection('consultants-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
             <span>👥 Consultants actifs / inactifs</span>
             <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
           </div>
           <div id="consultants-list" style="display:none;"><div class="empty">Chargement...</div></div>
-        </div>
-
-      </div>
-
-      <div class="admin-col">
-
-        <div class="section">
-          <div class="section-title">📢 Annonce du bandeau (page principale)</div>
-          <div class="card">
-            <div class="checkbox-row" style="margin-bottom:12px;">
-              <input type="checkbox" id="news-active">
-              <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
-            </div>
-            <div class="form-row">
-              <label>Message (texte libre, sans préfixe — il est ajouté automatiquement à l'affichage)</label>
-              <input type="text" id="news-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin ! Activez-le pour vos clients" oninput="updateNewsPreview()">
-            </div>
-            <div class="form-row">
-              <label>Type</label>
-              <select id="news-type" onchange="updateNewsPreview()">
-                <option value="orange">🟠 Infos Orange</option>
-                <option value="eneco">🟣 Infos Eneco</option>
-                <option value="smart">🔵 Infos Smart SN</option>
-                <option value="phil">🟢 Infos Phil-Mobile</option>
-                <option value="release">⚪ Infos Release</option>
-                <option value="alert">🔴 Soucis / problème</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <label>Aperçu du bandeau</label>
-              <div id="news-preview" style="padding:10px 14px;border-radius:8px;font-size:13px;font-weight:700;"></div>
-            </div>
-            <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">📰 Historique des News</div>
-          <div class="card">
-            <div style="font-size:11px;color:#888;margin-bottom:10px;">
-              Séparé du bandeau ci-dessus — sert d'archive consultable par les consultants dans le hub (panneau "News").
-            </div>
-            <div class="form-row">
-              <label>Titre</label>
-              <input type="text" id="newsitem-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin !">
-            </div>
-            <div class="form-row">
-              <label>Type</label>
-              <select id="newsitem-type">
-                <option value="orange">🟠 Infos Orange</option>
-                <option value="eneco">🟣 Infos Eneco</option>
-                <option value="smart">🔵 Infos Smart SN</option>
-                <option value="phil">🟢 Infos Phil-Mobile</option>
-                <option value="release">⚪ Infos Release</option>
-                <option value="alert">🔴 Soucis / problème</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <label>Texte complet</label>
-              <textarea id="newsitem-fulltext" rows="5" placeholder="Le détail complet de la news..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
-            </div>
-            <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
-            <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
-          </div>
-
-          <div id="newsitems-list"><div class="empty">Chargement...</div></div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></div>
-          <div id="feedback-list"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="section">
@@ -291,6 +225,72 @@
           </div>
 
           <div id="promos-list"><div class="empty">Chargement...</div></div>
+        </div>
+
+      </div>
+
+      <div class="admin-col">
+
+        <div class="section">
+          <div class="section-title">📢 Annonce du bandeau (page principale)</div>
+          <div class="card">
+            <div class="checkbox-row" style="margin-bottom:12px;">
+              <input type="checkbox" id="news-active">
+              <label for="news-active" style="font-weight:700;">Afficher ce message sur le bandeau</label>
+            </div>
+            <div class="form-row">
+              <label>Message (texte libre, sans préfixe — il est ajouté automatiquement à l'affichage)</label>
+              <input type="text" id="news-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin ! Activez-le pour vos clients" oninput="updateNewsPreview()">
+            </div>
+            <div class="form-row">
+              <label>Type</label>
+              <select id="news-type" onchange="updateNewsPreview()">
+                <option value="orange">🟠 Infos Orange</option>
+                <option value="eneco">🟣 Infos Eneco</option>
+                <option value="smart">🔵 Infos Smart SN</option>
+                <option value="phil">🟢 Infos Phil-Mobile</option>
+                <option value="release">⚪ Infos Release</option>
+                <option value="alert">🔴 Soucis / problème</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Aperçu du bandeau</label>
+              <div id="news-preview" style="padding:10px 14px;border-radius:8px;font-size:13px;font-weight:700;"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">📰 Historique des News</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Séparé du bandeau ci-dessus — sert d'archive consultable par les consultants dans le hub (panneau "News").
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="newsitem-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin !">
+            </div>
+            <div class="form-row">
+              <label>Type</label>
+              <select id="newsitem-type">
+                <option value="orange">🟠 Infos Orange</option>
+                <option value="eneco">🟣 Infos Eneco</option>
+                <option value="smart">🔵 Infos Smart SN</option>
+                <option value="phil">🟢 Infos Phil-Mobile</option>
+                <option value="release">⚪ Infos Release</option>
+                <option value="alert">🔴 Soucis / problème</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Texte complet</label>
+              <textarea id="newsitem-fulltext" rows="5" placeholder="Le détail complet de la news..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+            </div>
+            <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
+            <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div id="newsitems-list"><div class="empty">Chargement...</div></div>
         </div>
 
       </div>
