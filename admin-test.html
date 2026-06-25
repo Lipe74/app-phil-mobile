@@ -24,9 +24,11 @@
     border-radius: 99px; padding: 6px 14px; font-size: 12px; font-weight: 700;
     cursor: pointer;
   }
-  .container { max-width: 1300px; margin: 0 auto; padding: 20px; }
-  .admin-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
-  @media (max-width: 900px) { .admin-columns { grid-template-columns: 1fr; } }
+  .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+  .admin-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 1300px) { .admin-columns { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 700px) { .admin-columns { grid-template-columns: 1fr; } }
+  .count-badge { display: inline-block; background: #f97316; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 4px; vertical-align: middle; }
   .section { margin-bottom: 30px; }
   .section-title {
     font-size: 13px; font-weight: 700; color: #f97316;
@@ -121,13 +123,8 @@
       <div class="admin-col">
 
         <div class="section">
-          <div class="section-title">📝 Demandes en attente</div>
+          <div class="section-title">📝 Demandes en attente <span id="prospects-count"></span></div>
           <div id="prospects-list"><div class="empty">Chargement...</div></div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">🐞 Bugs &amp; Suggestions</div>
-          <div id="feedback-list"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="section">
@@ -168,6 +165,15 @@
             <button class="btn btn-primary" onclick="saveNews()">Enregistrer l'annonce</button>
           </div>
         </div>
+
+        <div class="section">
+          <div class="section-title">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></div>
+          <div id="feedback-list"><div class="empty">Chargement...</div></div>
+        </div>
+
+      </div>
+
+      <div class="admin-col">
 
         <div class="section">
           <div class="section-title">📅 Agenda des événements</div>
@@ -839,6 +845,9 @@ async function loadProspects() {
     if (p.status === 'pending' || !p.status) pending.push({ docId: d.id, ...p });
   });
 
+  const countEl = document.getElementById('prospects-count');
+  if (countEl) countEl.innerHTML = pending.length > 0 ? `<span class="count-badge">${pending.length}</span>` : '';
+
   if (pending.length === 0) {
     container.innerHTML = '<div class="empty">Aucune demande en attente.</div>';
     return;
@@ -891,6 +900,10 @@ async function loadFeedback() {
     const list = [];
     snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
     list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+    const unhandledCount = list.filter(f => !f.handled).length;
+    const countEl = document.getElementById('feedback-count');
+    if (countEl) countEl.innerHTML = unhandledCount > 0 ? `<span class="count-badge">${unhandledCount}</span>` : '';
 
     if (list.length === 0) {
       container.innerHTML = '<div class="empty">Aucun message pour le moment.</div>';
