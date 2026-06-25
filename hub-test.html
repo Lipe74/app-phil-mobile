@@ -421,10 +421,11 @@ Build <span id="app-version-1">…</span> Stable — Formations
           <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
           <button onclick="showScript('panel-contacts-philmobile')" class="menu-item" id="menu-contacts-philmobile">🛠️ Phil-Mobile</button>
 
-<!-- AGENDA & FORMATIONS -->
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda &amp; Formations</div>
+<!-- AGENDA, FORMATIONS & NEWS -->
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
+<button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
 
 <!-- CRM -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Mon Crm</div>
@@ -801,6 +802,15 @@ Build <span id="app-version-1">…</span> Stable — Formations
               </div>
             </div>
 
+          </div>
+
+          <!-- Panel News -->
+          <div id="panel-news" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">📰 Historique des News</div>
+            <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
+            <div id="news-history-dynamic">
+              <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
+            </div>
           </div>
 
           <!-- TABLEAU DE BORD (affiché dès connexion) -->
@@ -1584,6 +1594,86 @@ function showAgenda(btn) {
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById('panel-agenda').style.display = 'block';
   renderAgenda();
+}
+
+function showNews(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-news').style.display = 'block';
+  renderNewsHistory();
+}
+
+// Doit rester synchronisé avec NEWS_META dans admin.html / admin-test.html et avec loadNews() plus bas.
+const NEWS_HISTORY_META = {
+  orange:  { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
+  eneco:   { label: 'Infos Eneco',       icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
+  smart:   { label: 'Infos Smart SN',    icon: '🔵', bg: '#eff6ff', color: '#1e3a8a', border: '#1e3a8a' },
+  phil:    { label: 'Infos Phil-Mobile', icon: '🟢', bg: '#ecfdf5', color: '#166534', border: '#22c55e' },
+  release: { label: 'Infos Release',     icon: '⚪', bg: '#f9fafb', color: '#374151', border: '#6b7280' },
+  alert:   { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' }
+};
+
+async function renderNewsHistory() {
+  const el = document.getElementById('news-history-dynamic');
+  if (!el) return;
+
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+
+    const snap = await window.getDocs(window.collection(window.db, 'newsHistory'));
+    const items = [];
+    snap.forEach(d => items.push({ docId: d.id, ...d.data() }));
+    items.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+    if (items.length === 0) {
+      el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucune news pour le moment.</div>';
+      return;
+    }
+
+    el.innerHTML = items.map((n, i) => {
+      const meta = NEWS_HISTORY_META[n.type] || NEWS_HISTORY_META.orange;
+      const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleDateString('fr-FR') : '';
+      const bodyId = 'news-item-' + (n.docId || i);
+      return `
+      <div class="pm-formation-item" style="border:1px solid ${meta.border};border-radius:10px;margin-bottom:8px;overflow:hidden;background:${meta.bg};">
+        <button onclick="toggleNewsItem('${bodyId}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:none;border:none;cursor:pointer;text-align:left;font-family:Arial,sans-serif;">
+          <span style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
+            <span style="font-size:10px;font-weight:700;color:${meta.color};">${meta.icon} ${meta.label || ''}${dateStr ? ' · ' + dateStr : ''}</span>
+            <span style="font-size:13px;font-weight:700;color:#1a1a1a;">${escapeHtmlNews(n.title || '')}</span>
+          </span>
+          <span class="pm-formation-chevron" style="font-size:12px;color:${meta.color};transition:transform .2s;display:inline-block;flex-shrink:0;">▾</span>
+        </button>
+        <div id="${bodyId}" class="pm-formation-body" style="display:none;padding:0 14px 14px;font-size:12px;color:#374151;line-height:1.7;white-space:pre-line;">${escapeHtmlNews(n.fullText || '')}</div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">News momentanément indisponibles.</div>';
+    console.log('Lecture historique news impossible:', err.message);
+  }
+}
+
+function toggleNewsItem(id) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  const item = body.closest('.pm-formation-item');
+  const chevron = item ? item.querySelector('.pm-formation-chevron') : null;
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+function escapeHtmlNews(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
 }
 
 const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements', 'Événements spéciaux'];
