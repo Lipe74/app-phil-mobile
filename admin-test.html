@@ -171,6 +171,75 @@
           <div id="feedback-list"><div class="empty">Chargement...</div></div>
         </div>
 
+        <div class="section">
+          <div class="section-title">🎁 Promotions Orange</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
+            </div>
+            <div class="form-row">
+              <label>Catégorie</label>
+              <select id="promo-category">
+                <option value="temporaire">🟠 Temporaire</option>
+                <option value="permanente">✅ Permanente</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Type de remise</label>
+              <select id="promo-type" onchange="onPromoTypeChange()">
+                <option value="monthly">📅 Mensuelle simple</option>
+                <option value="mobile">📱 Liée à un abonnement mobile précis</option>
+                <option value="unique">🎁 Remise unique (frais, etc.)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Nom de la promo</label>
+              <input type="text" id="promo-name" placeholder="ex: Internet Start">
+            </div>
+            <div class="form-row">
+              <label>Description / conditions (affiché sous le nom)</label>
+              <input type="text" id="promo-sub" placeholder="ex: -15€/mois pendant 6 mois (Client LOVE uniquement)">
+            </div>
+            <div class="form-row">
+              <label>Montant de la remise (€)</label>
+              <input type="number" id="promo-price" step="0.01" placeholder="ex: 15">
+            </div>
+            <div class="form-row" id="promo-duration-row">
+              <label>Durée</label>
+              <select id="promo-duration">
+                <option value="6">6 mois</option>
+                <option value="12">12 mois</option>
+                <option value="">À vie (pas de durée)</option>
+              </select>
+            </div>
+            <div class="form-row" id="promo-mobile-row" style="display:none;">
+              <label>Abonnement mobile concerné</label>
+              <select id="promo-mobile">
+                <option value="mob_child">Mobile Child 5GB</option>
+                <option value="mob_small">Mobile Small 12GB</option>
+                <option value="mob_medium">Mobile Medium 70GB</option>
+                <option value="mob_large">Mobile Large 140GB</option>
+                <option value="mob_unlim">Mobile Unlimited 300GB</option>
+              </select>
+              <div class="checkbox-row" style="margin-top:8px;">
+                <input type="checkbox" id="promo-requireschild">
+                <label for="promo-requireschild" style="font-weight:400;">Nécessite un Mobile Child associé (sinon : LOVE uniquement)</label>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="promo-submit-btn" onclick="addOrUpdatePromo()">➕ Ajouter la promo</button>
+            <button class="btn btn-secondary" id="promo-cancel-btn" onclick="cancelPromoEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div style="font-size:11px;color:#888;margin-bottom:8px;">
+              À utiliser une seule fois, pour démarrer avec les promos actuellement codées dans wp_orange.html.
+            </div>
+            <button class="btn btn-secondary" style="width:100%;" onclick="seedCurrentPromos()">🌱 Importer les promos actuelles (une seule fois)</button>
+          </div>
+
+          <div id="promos-list"><div class="empty">Chargement...</div></div>
+        </div>
+
       </div>
 
       <div class="admin-col">
@@ -500,6 +569,7 @@ onAuthStateChanged(auth, async (user) => {
   loadAgendaAdmin();
   loadProspects();
   loadFeedback();
+  loadPromosAdmin();
   loadConsultants();
   checkExpiredConsultants();
 });
@@ -953,6 +1023,216 @@ window.toggleFeedbackHandled = async function (docId, newState) {
     alert('Erreur: ' + err.message);
   }
 };
+
+// --- Promotions Orange (éditables par Philippe, lues par wp_orange.html) ---
+const PROMO_MOBILE_LABELS = {
+  mob_child:  'Mobile Child 5GB',
+  mob_small:  'Mobile Small 12GB',
+  mob_medium: 'Mobile Medium 70GB',
+  mob_large:  'Mobile Large 140GB',
+  mob_unlim:  'Mobile Unlimited 300GB'
+};
+const PROMO_TYPE_LABEL = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '🎁 Unique' };
+
+let promosCache = [];
+let currentEditPromoId = null;
+
+window.onPromoTypeChange = function () {
+  const type = document.getElementById('promo-type').value;
+  document.getElementById('promo-mobile-row').style.display = type === 'mobile' ? 'block' : 'none';
+  document.getElementById('promo-duration-row').style.display = type === 'unique' ? 'none' : 'block';
+};
+
+async function loadPromosAdmin() {
+  const container = document.getElementById('promos-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'promosOrange'));
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    promosCache = list;
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucune promo enregistrée. Utilise le bouton d\'import ci-dessus pour démarrer.</div>';
+      return;
+    }
+
+    let html = '';
+    [['temporaire', '🟠 Temporaires'], ['permanente', '✅ Permanentes']].forEach(([cat, label]) => {
+      const inCat = list.filter(p => p.category === cat);
+      if (inCat.length === 0) return;
+
+      html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${label}</div>`;
+
+      inCat.forEach(p => {
+        const durLabel = p.type === 'unique' ? 'Remise unique' : (p.duration ? p.duration + ' mois' : 'À vie');
+        const mobileLabel = p.type === 'mobile'
+          ? ` · ${PROMO_MOBILE_LABELS[p.mobileId] || p.mobileId}${p.requiresChild ? ' (+ Mobile Child requis)' : ' (LOVE uniquement)'}`
+          : '';
+        const inactive = p.active === false;
+
+        html += `
+        <div class="card" style="${inactive ? 'opacity:.5;' : ''}">
+          <div class="card-row">
+            <div class="card-info">
+              <strong>${escapeHtmlAdmin(p.name || '')}</strong>
+              <span class="badge" style="background:#fff3e8;color:#f97316;">${PROMO_TYPE_LABEL[p.type] || p.type}</span>
+              ${inactive ? '<span class="badge badge-inactive">Désactivée</span>' : ''}
+              <div class="meta">${escapeHtmlAdmin(p.sub || '')}</div>
+              <div class="meta">-${p.price}€ · ${durLabel}${mobileLabel}</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary" onclick="editPromo('${p.docId}')">✏️ Modifier</button>
+              <button class="btn ${inactive ? 'btn-primary' : 'btn-secondary'}" onclick="togglePromoActive('${p.docId}', ${inactive})">
+                ${inactive ? '▶ Réactiver' : '⏸ Désactiver'}
+              </button>
+              <button class="btn btn-danger" onclick="deletePromo('${p.docId}')">🗑 Supprimer</button>
+            </div>
+          </div>
+        </div>`;
+      });
+    });
+
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement promos impossible:', err.message);
+  }
+}
+
+window.editPromo = function (docId) {
+  const p = promosCache.find(x => x.docId === docId);
+  if (!p) return;
+  currentEditPromoId = docId;
+  document.getElementById('promo-category').value = p.category || 'temporaire';
+  document.getElementById('promo-type').value = p.type || 'monthly';
+  document.getElementById('promo-name').value = p.name || '';
+  document.getElementById('promo-sub').value = p.sub || '';
+  document.getElementById('promo-price').value = p.price ?? 0;
+  document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
+  document.getElementById('promo-mobile').value = p.mobileId || 'mob_medium';
+  document.getElementById('promo-requireschild').checked = !!p.requiresChild;
+  onPromoTypeChange();
+  document.getElementById('promo-submit-btn').textContent = '💾 Enregistrer les modifications';
+  document.getElementById('promo-cancel-btn').style.display = 'inline-block';
+  document.getElementById('promo-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelPromoEdit = function () {
+  currentEditPromoId = null;
+  document.getElementById('promo-name').value = '';
+  document.getElementById('promo-sub').value = '';
+  document.getElementById('promo-price').value = '';
+  document.getElementById('promo-requireschild').checked = false;
+  document.getElementById('promo-submit-btn').textContent = '➕ Ajouter la promo';
+  document.getElementById('promo-cancel-btn').style.display = 'none';
+};
+
+window.addOrUpdatePromo = async function () {
+  const category = document.getElementById('promo-category').value;
+  const type = document.getElementById('promo-type').value;
+  const name = document.getElementById('promo-name').value.trim();
+  const sub = document.getElementById('promo-sub').value.trim();
+  const price = Number(document.getElementById('promo-price').value);
+  const durationRaw = document.getElementById('promo-duration').value;
+  const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
+  const mobileId = type === 'mobile' ? document.getElementById('promo-mobile').value : null;
+  const requiresChild = type === 'mobile' ? document.getElementById('promo-requireschild').checked : false;
+
+  if (!name || !price) {
+    alert('Merci de renseigner au moins le nom et le montant de la remise.');
+    return;
+  }
+
+  const data = {
+    category, type, name, sub, price, duration,
+    mobileId, requiresChild,
+    perAbo: type === 'mobile',
+    isUnique: type === 'unique'
+  };
+
+  try {
+    if (currentEditPromoId) {
+      await updateDoc(doc(db, 'promosOrange', currentEditPromoId), data);
+      showToast('✅ Promo modifiée.');
+      cancelPromoEdit();
+    } else {
+      await addDoc(collection(db, 'promosOrange'), { ...data, active: true, createdAt: new Date().toISOString() });
+      showToast('✅ Promo ajoutée.');
+      document.getElementById('promo-name').value = '';
+      document.getElementById('promo-sub').value = '';
+      document.getElementById('promo-price').value = '';
+      document.getElementById('promo-requireschild').checked = false;
+    }
+    loadPromosAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+window.togglePromoActive = async function (docId, newState) {
+  try {
+    await updateDoc(doc(db, 'promosOrange', docId), { active: newState });
+    showToast(newState ? '▶ Promo réactivée.' : '⏸ Promo désactivée.');
+    loadPromosAdmin();
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+window.deletePromo = async function (docId) {
+  if (!confirm('Supprimer définitivement cette promo ?')) return;
+  try {
+    await deleteDoc(doc(db, 'promosOrange', docId));
+    showToast('🗑 Promo supprimée.');
+    loadPromosAdmin();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
+window.seedCurrentPromos = async function () {
+  if (promosCache.length > 0) {
+    if (!confirm('Des promos existent déjà. Importer quand même les promos par défaut (risque de doublons) ?')) return;
+  } else if (!confirm('Importer les promos actuellement codées dans wp_orange.html (Juin 2026) ? À faire une seule fois.')) {
+    return;
+  }
+
+  const seed = [
+    { category: 'permanente', type: 'monthly', name: 'Promotion 2ème Internet', sub: '-10€/mois · À vie', price: 10, duration: 12 },
+    { category: 'permanente', type: 'unique', name: "🎁 Frais d'activation offerts", sub: '-39€ · Remise unique', price: 39, duration: null },
+    { category: 'permanente', type: 'monthly', name: 'Netflix avec Internet Giga', sub: '-5,99€/mois · À vie', price: 5.99, duration: 6 },
+    { category: 'temporaire', type: 'monthly', name: 'Internet Start', sub: '-15€/mois pendant 6 mois (Client LOVE uniquement)', price: 15, duration: 6 },
+    { category: 'temporaire', type: 'monthly', name: 'Internet Zen', sub: '-15€/mois pendant 6 mois (Client LOVE uniquement)', price: 15, duration: 6 },
+    { category: 'temporaire', type: 'monthly', name: 'Internet Giga', sub: '-15€/mois pendant 12 mois (Client LOVE uniquement)', price: 15, duration: 12 },
+    { category: 'temporaire', type: 'mobile', name: 'Mobile Medium Client LOVE', sub: '-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price: 5, duration: 6, mobileId: 'mob_medium', requiresChild: false },
+    { category: 'temporaire', type: 'mobile', name: 'Mobile Medium Client NO LOVE', sub: '-5€/mois pendant 6 mois (nécessite un Mobile Child)', price: 5, duration: 6, mobileId: 'mob_medium', requiresChild: true },
+    { category: 'temporaire', type: 'mobile', name: 'Mobile Large', sub: '-5€/mois pendant 12 mois (cumulable)', price: 5, duration: 12, mobileId: 'mob_large', requiresChild: false },
+    { category: 'temporaire', type: 'monthly', name: 'Netflix avec Internet Zen', sub: '-5,99€/mois pendant 6 mois', price: 5.99, duration: 6 },
+    { category: 'temporaire', type: 'monthly', name: 'My Comfort Service', sub: 'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price: 10, duration: 12 }
+  ];
+
+  let done = 0;
+  for (const p of seed) {
+    try {
+      await addDoc(collection(db, 'promosOrange'), {
+        ...p,
+        mobileId: p.mobileId || null,
+        requiresChild: !!p.requiresChild,
+        perAbo: p.type === 'mobile',
+        isUnique: p.type === 'unique',
+        active: true,
+        createdAt: new Date().toISOString()
+      });
+      done++;
+    } catch (err) {
+      console.log('Erreur import promo:', p, err.message);
+    }
+  }
+  showToast(`✅ ${done} promo(s) importée(s).`);
+  loadPromosAdmin();
+};
+
 
 
 // --- Modal activation ---

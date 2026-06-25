@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simulateur Orange (by Phil-Mobile)</title>
+
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
+<script src="version.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
+.header { background:#ff5a14; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; }
+.header-logo { width:64px; height:64px; border-radius:14px; background:white; padding:4px; object-fit:contain; flex-shrink:0; }
+.header-text { flex: 1; }
+.header-title { color:#fff; font-size:30px; font-weight:bold; }
+.header-by { color:rgba(255,255,255,0.8); font-size:14px;  }
+.header-sub { color:rgba(255,255,255,0.9); font-size:15px; }
+.section { background:white; border:1.5px solid #ffb680; border-radius:22px; padding:26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(0,0,0,0.06); }
+.section-title { font-size:24px; font-weight:700; color:#222; margin-bottom:22px; display:flex; align-items:center; gap:8px; }
+.product-row { display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid #f0f0f0; }
+.product-row:last-child { border-bottom: none; }
+.product-name { flex:1; font-size:18px; color:#222; line-height:1.3; }
+.product-sub { font-size:15px; color:#777; margin-top:4px; font-weight:500; line-height:1.4; }
+.product-price { font-size:18px; font-weight:bold; color:#333; min-width:100px; text-align:right; }
+.qty-ctrl { display: flex; align-items: center; gap: 5px; }
+.qty-btn { width:36px; height:36px; border-radius:10px; border:1px solid #ddd; background:white; color:#222; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.qty-btn:active { transform: scale(0.93); }
+.qty-val { font-size:18px; font-weight:bold; min-width:24px; text-align:center; color:#222; }
+.toggle-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); cursor: pointer; }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-name { flex: 1; font-size: 13px; color: var(--color-text-primary); line-height: 1.3; }
+.toggle-price { font-size: 26px !important; font-weight:700 !important; min-width: 140px; text-align: right; color: #cc4400; }
+.toggle-btn { width: 36px; height: 22px; border-radius: 11px; border: none; cursor: pointer; position: relative; flex-shrink: 0; }
+.toggle-btn.off { background: var(--color-border-secondary); }
+.toggle-btn.on { background: #ff6600; }
+.toggle-knob { position: absolute; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.toggle-btn.off .toggle-knob { left: 3px; }
+.toggle-btn.on .toggle-knob { left: 17px; }
+.love-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+.love-line { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: var(--color-text-tertiary); }
+.love-line.active { color: #cc4400; font-weight: 500; }
+.love-none { font-size: 12px; color: var(--color-text-tertiary);  padding: 4px 0; }
+.love-total { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; border-top: 0.5px solid var(--color-border-tertiary); margin-top: 6px; padding-top: 6px; color: var(--color-text-primary); }
+.summary { background:#ff5a14; border-radius:24px; padding:28px; margin-bottom:16px; }
+.sum-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.sum-label { font-size:18px; color:rgba(255,255,255,0.92); }
+.sum-val { font-size:18px; font-weight:bold; color:#fff; }
+.sum-divider { border: none; border-top: 0.5px solid rgba(255,255,255,0.3); margin: 8px 0; }
+.sum-total-val { font-size:48px; font-weight:bold; color:#fff; }
+.sum-total-label { font-size:24px; font-weight:bold; color:#fff; }
+.reset-btn { width: 100%; padding: 11px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 14px; cursor: pointer; }
+.active-line { background: #fff8f4; border-radius: 6px; }
+</style>
+
+<div class="app">
+  <div class="header">
+
+<!--
+<img class="header-logo" id="logo-img" src="" alt="Phil-Mobile logo" />
+-->
+    <div class="header-text" style="flex:1;">
+      <div class="header-title">
+        Simulateur Orange 
+      </div>
+
+     <div class="header-sub" style="font-size:16px;margin-top:4px;">
+        By Phil-Mobile.
+      </div>
+
+      <div style="margin-top:8px;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
+        Build <span id="app-version-1">…</span> Stable - Juin 2026
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+
+      <button onclick="resetCache()"
+        style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        🔧 Actualiser l'application
+      </button>
+
+      <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
+        <button id="btn-tvac" onclick="setTVAC(true)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:white;color:#ff5a14;">
+          TVAC
+        </button>
+
+        <button id="btn-htva" onclick="setTVAC(false)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:white;">
+          HTVA
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-wifi" aria-hidden="true"></i> Internet</div>
+    <div id="internet-rows"></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-device-tv" aria-hidden="true"></i> TV</div>
+    <div id="tv-rows"></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-device-mobile" aria-hidden="true"></i> Mobile</div>
+    <div id="mobile-rows"></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-brand-netflix" aria-hidden="true"></i> Netflix</div>
+    <div id="netflix-rows"></div>
+  </div>
+  <div class="section">
+    <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> Options</div>
+
+    <div style="margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
+      📌 FRAIS UNIQUES
+    </div>
+    
+<div style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;">
+ℹ️ Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.
+</div>
+<div id="options-unique-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
+      📅 OPTIONS MENSUELLES
+    </div>
+    <div id="options-monthly-rows"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-heart" aria-hidden="true"></i> Remises Love — automatiques</div>
+    <div class="love-box" id="love-detail">
+      <div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS PERMANENTES</div>
+    <div style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;">
+      ✅ Promotions permanentes et réductions uniques.
+    </div>
+    <div id="promos-permanent-rows"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 PROMOTIONS TEMPORAIRES</div>
+
+    <div style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;">
+      📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.
+    </div>
+
+    <div id="promos-rows"></div>
+
+    <div style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
+      ⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.
+    </div>
+  </div>
+
+  
+<div class="section">
+  <div class="section-title">👤 Informations client</div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Nom du client
+    </label>
+    <input id="client-name" type="text"
+      placeholder="Ex : Jean Dupont"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Société
+    </label>
+    <input id="client-company" type="text"
+      placeholder="Ex : Garage Dupont SRL"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Téléphone
+    </label>
+    <input id="client-phone" type="text"
+      placeholder="Ex : 0499 12 34 56"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Email
+    </label>
+    <input id="client-email" type="email"
+      placeholder="Ex : contact@societe.be"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      N° TVA
+    </label>
+    <input id="client-tva" type="text"
+      placeholder="Ex : BE0123.456.789"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+</div>
+
+<div class="summary">
+
+    <div class="sum-row" style="margin-bottom:10px;">
+      <span class="sum-total-label" style="font-size:18px;">Prix affichés</span>
+      <span id="tva-badge" style="background:rgba(255,255,255,0.25);color:white;font-weight:700;font-size:14px;padding:5px 16px;border-radius:20px;">TVAC (21%)</span>
+    </div>
+    <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet, TV & Acc.</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row"><span class="sum-label">Options mensuelles</span><span class="sum-val" id="s-options">+ 0,00 €</span></div><div class="sum-row" id="home-row" style="display:none;"><span class="sum-label">🌐 Supplément Internet Home</span><span class="sum-val" id="s-home">+ 4,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
+    <div class="sum-row"><span class="sum-label">Remises Love (à vie)</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
+    
+<div class="sum-row">
+<span class="sum-label">🟠 Promotions 6 mois</span>
+<span class="sum-val" id="s-promos6">- 0,00 €</span>
+</div>
+<div class="sum-row">
+<span class="sum-label">🔴 Promotions 12 mois</span>
+<span class="sum-val" id="s-promos12">- 0,00 €</span>
+</div>
+<div class="sum-row"><span class="sum-label">🎁 Promotions uniques</span><span class="sum-val" id="s-promos-unique">- 0,00 €</span></div>
+    <hr class="sum-divider">
+    <div class="sum-row">
+      <span class="sum-total-label">🏁 Tarif à vie</span>
+      <span class="sum-total-val" id="s-total">0,00 €</span>
+    </div>
+    
+    <div class="sum-row" style="margin-top:12px;border-top:1px solid rgba(255,255,255,.35);padding-top:14px">
+      <span class="sum-label" style="color:#7CFF7C;font-weight:700;">🟢 Aujourd'hui</span>
+      <span class="sum-val" id="s-now" style="font-size:22px;font-weight:800;color:#7CFF7C;">0,00 €</span>
+    </div>
+    <div class="sum-row">
+      <span class="sum-label" style="color:#FFD166;font-weight:700;">🟠 Après 6 mois</span>
+      <span class="sum-val" id="s-6months" style="font-size:22px;font-weight:800;color:#FFD166;">0,00 €</span>
+    </div>
+    <div class="sum-row">
+      <span class="sum-label" style="color:#FF8A8A;font-weight:700;">🔴 Après 12 mois</span>
+      <span class="sum-val" id="s-12months" style="font-size:22px;font-weight:800;color:#FF8A8A;">0,00 €</span>
+    </div>
+
+    
+  </div>
+
+  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+</div>
+
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Exposés globalement pour que le script classique plus bas (promos dynamiques) puisse les utiliser
+window.db = db;
+window.collection = collection;
+window.getDocs = getDocs;
+
+// Infos par défaut (fallback si aucun consultant identifié dans l'URL)
+window.consultantInfo = {
+  id: null,
+  name: 'Phil-Mobile',
+  phone: '0475 24 02 05',
+  email: 'infos@phil-mobile.be',
+  logoUrl: 'https://app.phil-mobile.be/images/logo.png'
+};
+
+(async function loadConsultantInfo(){
+  const params = new URLSearchParams(window.location.search);
+  const consultantId = params.get('consultantId');
+  const consultantName = params.get('consultantName');
+  const consultantEmail = params.get('consultantEmail');
+
+  if (consultantId) {
+    window.consultantInfo.id = consultantId;
+    window.consultantInfo.name = consultantName || window.consultantInfo.name;
+    window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
+    window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+
+    // Attendre que Firebase confirme une éventuelle session déjà ouverte (même domaine que le hub) avant de lire Firestore
+    await new Promise(resolve => {
+      const unsubscribe = onAuthStateChanged(auth, () => {
+        unsubscribe();
+        resolve();
+      });
+    });
+
+    // Récupérer le téléphone depuis Firestore (pas transmis dans l'URL)
+    try {
+      const snap = await getDoc(doc(db, 'consultants', consultantId));
+      if (snap.exists() && snap.data().phone) {
+        window.consultantInfo.phone = snap.data().phone;
+      }
+    } catch(e) {
+      console.log('Lecture téléphone consultant impossible:', e.message);
+    }
+  }
+
+  // Logo : essaie le logo personnalisé, retombe sur le logo standard si absent
+  const logoImg = document.getElementById('logo-img');
+  if (logoImg) {
+    const testImg = new Image();
+    testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
+    testImg.onerror = () => { logoImg.src = 'https://app.phil-mobile.be/images/logo.png'; };
+    testImg.src = window.consultantInfo.logoUrl;
+  }
+
+  // Met à jour l'affichage des coordonnées dans le footer si présent
+  document.querySelectorAll('.consultant-name').forEach(el => el.textContent = window.consultantInfo.name);
+  document.querySelectorAll('.consultant-phone').forEach(el => el.textContent = window.consultantInfo.phone);
+  document.querySelectorAll('.consultant-email').forEach(el => el.textContent = window.consultantInfo.email);
+})();
+
+// --- Promotions dynamiques depuis Firestore (admin.html) ---
+// Si la lecture échoue ou que la collection est vide, les promos codées en dur dans le script
+// classique plus bas (variables `promos` / `promosPermanent`) restent affichées tel quel : aucun risque de page vide.
+async function loadPromosFromFirestore() {
+  try {
+    let tries = 0;
+    while ((!window.buildToggleRows || !window.promos || !window.promosPermanent) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.buildToggleRows) throw new Error('Script principal pas encore prêt');
+
+    const snap = await getDocs(collection(db, 'promosOrange'));
+    const fetchedTemp = [];
+    const fetchedPermanent = [];
+
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      if (p.active === false) return;
+      const item = {
+        id: docSnap.id,
+        name: window.wrapPromoName(p.name || ''),
+        sub: window.escapeHtmlOrange(p.sub || ''),
+        price: Number(p.price) || 0,
+        perAbo: !!p.perAbo,
+        mobileId: p.mobileId || undefined,
+        requiresChild: !!p.requiresChild,
+        duration: p.duration || undefined,
+        isUnique: !!p.isUnique
+      };
+      if (p.category === 'permanente') fetchedPermanent.push(item);
+      else fetchedTemp.push(item);
+    });
+
+    // Collection vide (pas encore importée côté admin) : on garde les valeurs par défaut codées en dur
+    if (fetchedTemp.length === 0 && fetchedPermanent.length === 0) return;
+
+    window.promos.length = 0;
+    window.promos.push(...fetchedTemp);
+    window.promosPermanent.length = 0;
+    window.promosPermanent.push(...fetchedPermanent);
+
+    Object.keys(window.togMap).forEach(k => delete window.togMap[k]);
+    [...window.promos, ...window.promosPermanent].forEach(p => window.togMap[p.id] = false);
+
+    document.getElementById('promos-rows').innerHTML = '';
+    document.getElementById('promos-permanent-rows').innerHTML = '';
+    window.buildToggleRows('promos-permanent-rows', window.promosPermanent);
+    window.buildToggleRows('promos-rows', window.promos);
+    window.renderOrangeApp();
+  } catch (err) {
+    console.log('Chargement promos Firestore impossible, conservation des promos par défaut:', err.message);
+  }
+}
+
+onAuthStateChanged(auth, () => {
+  loadPromosFromFirestore();
+});
+</script>
+
+<script>
+
+async function resetCache() {
+  if (!confirm("Vider le cache de l'application ?")) return;
+
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      await reg.unregister();
+    }
+  }
+
+  localStorage.clear();
+  sessionStorage.clear();
+
+  alert("Cache vidé. Rechargement...");
+  const params = new URLSearchParams(location.search);
+  params.delete('refresh');
+  params.set('refresh', Date.now());
+  location.href = location.pathname + '?' + params.toString();
+}
+
+let isTVAC = true;
+
+const TVA = 1.21;
+
+
+function shareWhatsApp(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+
+  const msg =
+`================================
+SIMULATION ORANGE
+================================
+
+Client : ${client}
+Téléphone : ${phone}
+
+✓ Aujourd'hui : ${document.getElementById('s-now').textContent}
+✓ Après 6 mois : ${document.getElementById('s-6months').textContent}
+✓ Après 12 mois : ${document.getElementById('s-12months').textContent}
+
+★ Tarif à vie : ${document.getElementById('s-total').textContent}
+
+${ci.name}
+${ci.phone}
+${ci.email}`;
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg),'_blank');
+}
+
+function copyResume(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+
+  const txt =
+`================================
+SIMULATION ORANGE
+================================
+
+Client : ${client}
+Téléphone : ${phone}
+
+✓ Aujourd'hui : ${document.getElementById('s-now').textContent}
+✓ Après 6 mois : ${document.getElementById('s-6months').textContent}
+✓ Après 12 mois : ${document.getElementById('s-12months').textContent}
+
+★ Tarif à vie : ${document.getElementById('s-total').textContent}
+
+${ci.name}
+${ci.phone}
+${ci.email}`;
+
+  navigator.clipboard.writeText(txt);
+  alert('Résumé copié dans le presse-papiers');
+}
+
+
+
+
+function generateClientOffer(){
+const client=document.getElementById('client-name')?.value||'Client';
+const phone=document.getElementById('client-phone')?.value||'';
+const ref='PM-'+Date.now();
+const today=new Date().toLocaleDateString('fr-BE');
+const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
+
+let produits=[];
+Object.values(productList).flat().forEach(p=>{
+ const q=qtyMap[p.id]||0;
+ if(q>0) produits.push(p.name.replace(/<[^>]*>/g,'')+' x'+q);
+});
+options.forEach(p=>{
+ const q=qtyMap[p.id]||0;
+ if(q>0) produits.push(p.name.replace(/<[^>]*>/g,'')+' x'+q);
+});
+
+let promosTxt=[];
+[...promos,...promosPermanent].forEach(p=>{
+ if(togMap[p.id]) promosTxt.push(p.name.replace(/<[^>]*>/g,''));
+});
+
+const w=window.open('','_blank');
+w.document.write(`
+<html><head><title>Offre Client</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
+.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px}
+h1{color:#ff5a14;text-align:center}
+.btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
+</style></head><body>
+<div style="text-align:center">
+<img src="${ci.logoUrl}" width="120" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
+<h1>OFFRE COMMERCIALE</h1>
+</div>
+
+<div class="box">
+<b>Référence :</b> ${ref}<br>
+<b>Date :</b> ${today}<br>
+<b>Client :</b> ${client}<br>
+<b>Téléphone :</b> ${phone}
+</div>
+
+<div class="box">
+<h3>📦 Produits sélectionnés</h3>
+${produits.length?produits.join('<br>'):'Aucun produit sélectionné'}
+</div>
+
+<div class="box">
+<h3>🎁 Promotions activées</h3>
+${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
+</div>
+
+<div class="box">
+<h3>💰 Tarification</h3>
+🟢 Aujourd'hui : ${document.getElementById('s-now').textContent}<br><br>
+🟠 Après 6 mois : ${document.getElementById('s-6months').textContent}<br><br>
+🔴 Après 12 mois : ${document.getElementById('s-12months').textContent}<br><br>
+<hr>
+<b>🏁 Tarif à vie : ${document.getElementById('s-total').textContent}</b>
+</div>
+
+<div class="box">
+<b>${ci.name.toUpperCase()}</b><br>
+${ci.phone}<br>
+${ci.email}
+</div>
+
+<button class="btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+</body></html>`);
+w.document.close();
+}
+
+
+
+function setTVAC(tvac) {
+  isTVAC = tvac;
+  document.getElementById('btn-tvac').style.background = tvac ? 'white' : 'transparent';
+  document.getElementById('btn-tvac').style.color = tvac ? '#ff5a14' : 'white';
+  document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
+  document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
+  document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
+  ['internet-rows','tv-rows','mobile-rows','netflix-rows','options-unique-rows','options-monthly-rows','promos-rows','promos-permanent-rows'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+  
+
+
+Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
+  buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
+buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
+  buildToggleRows('promos-permanent-rows', promosPermanent);
+  buildToggleRows('promos-rows', promos);
+  // Restaurer les quantités
+  document.querySelectorAll('.qty-val').forEach(el => {
+    const id = el.id.replace('qty-','');
+    el.textContent = qtyMap[id] || 0;
+  });
+  render();
+}
+
+function priceFmt(p) {
+  const val = isTVAC ? p : p / TVA;
+  return fmt(Math.abs(val));
+}
+
+const productList = {
+  internet: [
+    { id:'inet_start', name:'Internet Start', sub:'Vitesse jusqu\'à 200MB', price:49, max:2 },
+    { id:'inet_zen',   name:'Internet Zen',   sub:'Vitesse jusqu\'à 500MB', price:58, max:2 },
+    { id:'inet_giga',  name:'Internet Giga',  sub:'Vitesse jusqu\'à 1000MB', price:68, max:2 },
+    { id:'inet_fixe',  name:'Ligne Fixe',     sub:'Téléphone fixe', price:12, max:2 },
+  ],
+  tv: [
+    { id:'tv_deco',   name:'TV Deco Sup', price:9,  max:1 },
+    { id:'tv_light',  name:'TV Light',    price:10, max:1 },
+    { id:'tv_orange', name:'TV Orange',   price:20, max:1 },
+  ],
+  mobile: [
+    { id:'mob_small',  name:'Mobile Small 12GB',      price:15, max:9 },
+    { id:'mob_medium', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium</span> 70GB',     price:23, max:9 },
+    { id:'mob_large',  name:'Mobile Large 140GB',     price:29, max:9 },
+    { id:'mob_unlim',  name:'Mobile Unlimited 300GB', price:40, max:9 },
+    { id:'mob_child',  name:'Mobile Child 5GB',       price:5,  max:9 },
+  ],
+  netflix: [
+    { id:'net_ess',  name:'Netflix Essentiel', price:10.99, max:1 },
+    { id:'net_std',  name:'Netflix Standard',  price:16.99, max:1 },
+    { id:'net_prem', name:'Netflix Premium',   price:21.99, max:1 },
+  ],
+};
+
+const options = [
+  { id:'opt_install_m', name:"Frais d'activation",         sub:'Frais Unique',   price:39 },
+  { id:'opt_raccord',   name:'Frais de Raccordement',        sub:'Si pas de cable dans la maison (Frais d\'installation)', price:99, oneshot:true },
+  { id:'opt_booster',   name:'WiFi Booster',                 sub:'Prix / booster', price:3, max:5 },
+  { id:'opt_confort',   name:'Option WiFi Confort',          sub:'3 Booster + Boitier 4G (Prix / mois)', price:10 },
+  
+  { id:'opt_surf',      name:'Carte Extra Surf Mobile',      sub:'Prix par carte', price:3, max:9 },
+];
+
+const promosPermanent = [
+  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'-10€/mois · À vie', price:10, perAbo:false, duration:12 },
+  { id:'pr_activation', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">🎁 Frais d’activation offerts</span>', sub:'-39€ · Remise unique', price:39, perAbo:false, isUnique:true },
+  { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'-5,99€/mois · À vie', price:5.99, perAbo:false, duration:6 },
+];
+
+const promos = [
+  { id:'pr_start', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Start</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6 },
+  { id:'pr_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Zen</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6 },
+  { id:'pr_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Giga</span>', sub:'-15€/mois pendant 12 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:12 },
+  { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium", duration:6 },
+  { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true, duration:6 },
+  { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large", duration:12 },
+  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6 },
+  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12 }
+];
+
+const loveRates = {
+  mob_small:  { rateNoInet: 1,    rateInet1: 3,    rateInet2: 4    },
+  mob_medium: { rateNoInet: 2,    rateInet1: 6,    rateInet2: 8    },
+  mob_large:  { rateNoInet: 2.5,  rateInet1: 6.5,  rateInet2: 9    },
+  mob_unlim:  { rateNoInet: 3,    rateInet1: 7,    rateInet2: 10   },
+};
+
+const qtyMap = {};
+[...Object.values(productList).flat(), ...options].forEach(p => qtyMap[p.id] = 0);
+const togMap = {};
+[...promos, ...promosPermanent].forEach(p => togMap[p.id] = false);
+
+function fmt(v) { return Math.abs(v).toFixed(2).replace('.',',') + ' €'; }
+function hasInternet() { return ['inet_start','inet_zen','inet_giga'].some(id => qtyMap[id] > 0); }
+function totalMobileAbo() { return ['mob_small','mob_medium','mob_large','mob_unlim','mob_child'].reduce((s,id) => s + (qtyMap[id]||0), 0); }
+
+function calcLove() {
+  const inet = hasInternet();
+  const totalAbo = totalMobileAbo();
+  let total = 0;
+  const lines = [];
+  [{ id:'mob_small', label:'Small' },{ id:'mob_medium', label:'Medium' },{ id:'mob_large', label:'Large' },{ id:'mob_unlim', label:'Unlimited' }].forEach(({ id, label }) => {
+    const qty = qtyMap[id] || 0;
+    if (qty === 0) return;
+    const rates = loveRates[id];
+    let ratePerAbo = 0, palier = '';
+    if (inet && totalAbo >= 2) {
+      ratePerAbo = rates.rateInet2;
+      palier = '×' + qty + ' + internet (2+ abo) → ' + fmt(rates.rateInet2) + '/abo';
+    } else if (inet && totalAbo === 1) {
+      ratePerAbo = rates.rateInet1;
+      palier = '×' + qty + ' + internet → ' + fmt(rates.rateInet1) + '/abo';
+    } else if (!inet && totalAbo >= 2) {
+      ratePerAbo = rates.rateNoInet;
+      palier = '×' + qty + ' sans internet → ' + fmt(rates.rateNoInet) + '/abo';
+    } else {
+      lines.push({ text: label + ' ×1 — internet requis pour remise', disc: 0, active: false });
+      return;
+    }
+    const disc = qty * ratePerAbo;
+    total += disc;
+    lines.push({ text: label + ' ' + palier, disc, active: true });
+  });
+  const box = document.getElementById('love-detail');
+  if (lines.length === 0) {
+    box.innerHTML = '<div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>';
+  } else {
+    let html = lines.map(l =>
+      `<div class="love-line${l.active ? ' active' : ''}"><span>${l.text}</span><span>${l.active ? '- ' + fmt(l.disc) : '—'}</span></div>`
+    ).join('');
+    html += `<div class="love-total"><span>Total remises Love</span><span>- ${fmt(total)}</span></div>`;
+    box.innerHTML = html;
+  }
+  return total;
+}
+
+function calcProducts() {
+  let t = 0;
+  Object.values(productList).flat().forEach(p => { t += p.price * (qtyMap[p.id]||0); });
+  return t;
+}
+function calcOptions() {
+  let t = 0;
+  ['opt_booster','opt_confort','opt_surf'].forEach(id=>{
+    const o=options.find(x=>x.id===id);
+    if(o) t+=o.price*(qtyMap[id]||0);
+  });
+  return t;
+}
+
+function calcFraisUniques() {
+
+  const hasInternet =
+    (qtyMap['inet_start'] || 0) +
+    (qtyMap['inet_zen'] || 0) +
+    (qtyMap['inet_giga'] || 0) > 0;
+
+  let frais = 0;
+
+  if (hasInternet) {
+    frais += 39;
+  }
+
+  frais += (qtyMap['opt_raccord'] || 0) * 99;
+
+  return frais;
+}
+function calcPromos() {
+  let mensuel=0, unique=0, promo6=0, promo12=0;
+  const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
+  const hasChild=(qtyMap['mob_child']||0)>0;
+
+  [...promos,...promosPermanent].forEach(p=>{
+    if(!togMap[p.id]) return;
+
+    if(p.isUnique){ unique += p.price; return; }
+
+    let montant=0;
+    if(p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
+    else if(p.requiresChild){
+      if(hasChild) montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else if(p.perAbo && p.mobileId){
+      montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else montant = p.price;
+
+    mensuel += montant;
+
+    if(p.duration===6) promo6 += montant;
+    if(p.duration===12) promo12 += montant;
+  });
+
+  return {mensuel, unique, promo6, promo12};
+}
+
+function calcMobiles() {
+  let t = 0;
+  (productList.mobile || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+
+function calcInternet() {
+  let t = 0;
+  (productList.internet || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.tv || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.netflix || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+
+function render() {
+  const prod = calcProducts(), opts = calcOptions(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel;
+  const prom6 = promosCalc.promo6 || 0;
+  const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
+  const mob = calcMobiles(), inet = calcInternet();
+  const hasInet = (qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0)+(qtyMap['inet_giga']||0) > 0;
+  const mobileCount = totalMobileAbo();
+  const homeFee = (hasInet && mobileCount===0) ? 4 : 0;
+  const total = Math.max(0, prod + opts + homeFee - love - prom);
+  const after = Math.max(0, prod + opts + homeFee - love);
+  const r = isTVAC ? 1 : 1/TVA;
+  document.getElementById('s-products').textContent = fmt(prod*r);
+  document.getElementById('s-mobiles').textContent = fmt(mob*r);
+  document.getElementById('s-internet').textContent = fmt(inet*r);
+  document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts)*r);
+  const hr=document.getElementById('home-row');
+  if(hr){hr.style.display=homeFee?'flex':'none';}
+  const sh=document.getElementById('s-home');
+  if(sh){sh.textContent='+ ' + fmt(homeFee*r);}
+  document.getElementById('s-love').textContent = '- ' + fmt(love*r);
+  const p6=document.getElementById('s-promos6');
+  const p12=document.getElementById('s-promos12');
+  if(p6) p6.textContent='- ' + fmt(prom6*r);
+  if(p12) p12.textContent='- ' + fmt(prom12*r); document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
+  document.getElementById('s-total').textContent = fmt(after*r);
+  
+
+  const after12 = after;
+  const after6 = Math.max(0, after - prom12);
+  const today = Math.max(0, after - prom6 - prom12);
+
+  const n=document.getElementById('s-now');
+  const m6=document.getElementById('s-6months');
+  const m12=document.getElementById('s-12months');
+
+  if(n) n.textContent = fmt(today*r);
+  if(m6) m6.textContent = fmt(after6*r);
+  if(m12) m12.textContent = fmt(after12*r);
+  [...promos, ...promosPermanent].forEach(p => {
+    if (!p.perAbo || !p.mobileId) return;
+    const qty = qtyMap[p.mobileId] || 0;
+    const el = document.querySelector('[data-id="'+p.id+'"] .toggle-name');
+    if (el) {
+      const calc = togMap[p.id] && qty > 0 ? ' = - ' + fmt(p.price * qty) : '';
+      el.innerHTML = p.name + (qty > 1 ? ' ×'+qty : '') + calc + '<br><span class="product-sub">'+p.sub+'</span>';
+    }
+  });
+  document.querySelectorAll('.product-row').forEach(row => {
+    if (row.dataset.id) row.classList.toggle('active-line', (qtyMap[row.dataset.id]||0) > 0);
+  });
+  document.querySelectorAll('.toggle-row').forEach(row => {
+    if (row.dataset.id) {
+      row.classList.toggle('active-line', togMap[row.dataset.id]);
+      const btn = row.querySelector('.toggle-btn');
+      if (btn) btn.className = 'toggle-btn ' + (togMap[row.dataset.id] ? 'on' : 'off');
+    }
+  });
+}
+
+function change(id, delta, max) {
+  qtyMap[id] = Math.max(0, Math.min(max || 9, (qtyMap[id]||0) + delta));
+  document.getElementById('qty-' + id).textContent = qtyMap[id];
+  render();
+}
+function togglePromo(id) { togMap[id] = !togMap[id]; render(); }
+function resetAll() {
+  Object.keys(qtyMap).forEach(k => qtyMap[k] = 0);
+  Object.keys(togMap).forEach(k => togMap[k] = false);
+  document.querySelectorAll('.qty-val').forEach(el => el.textContent = '0');
+  render();
+}
+
+function buildQtyRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  items.forEach(p => {
+    const max = p.max || 1;
+    const row = document.createElement('div');
+    row.className = 'product-row';
+    row.dataset.id = p.id;
+    row.innerHTML = `
+      <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}</div>
+      <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
+        <span class="qty-val" id="qty-${p.id}">0</span>
+        <button class="qty-btn" onclick="change('${p.id}',1,${max})" aria-label="Plus">+</button>
+      </div>`;
+    c.appendChild(row);
+  });
+}
+
+function buildToggleRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  items.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'toggle-row';
+    row.dataset.id = p.id;
+    row.onclick = () => togglePromo(p.id);
+    row.innerHTML = `
+      <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+      <div class="toggle-price">- ${priceFmt(p.price)}</div>
+      <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
+    c.appendChild(row);
+  });
+}
+
+Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
+buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
+buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
+buildToggleRows('promos-permanent-rows', promosPermanent);
+buildToggleRows('promos-rows', promos);
+render();
+
+// Exposés globalement pour permettre le rafraîchissement dynamique des promos depuis Firestore (voir module plus haut)
+window.promos = promos;
+window.promosPermanent = promosPermanent;
+window.togMap = togMap;
+window.buildToggleRows = buildToggleRows;
+window.renderOrangeApp = render;
+window.escapeHtmlOrange = function(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+};
+window.wrapPromoName = function(text) {
+  return '<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">' + window.escapeHtmlOrange(text) + '</span>';
+};
+</script>
+
+
+<style>
+.love-row,
+.promo-row{
+font-size:17px !important;
+font-weight:500 !important;
+line-height:1.5 !important;
+}
+</style>
+
+
+<style>
+
+/* Harmonisation LOVE + PROMOS */
+
+.section .product-name{
+font-size:18px !important;
+font-weight:500 !important;
+color:#222 !important;
+line-height:1.4 !important;
+}
+
+.section .product-sub{
+font-size:15px !important;
+font-weight:500 !important;
+color:#777 !important;
+line-height:1.4 !important;
+font-style:normal !important;
+}
+
+</style>
+
+<script>
+document.querySelectorAll('[id^="app-version"]').forEach(el => {
+  el.textContent = window.APP_VERSION || '?';
+});
+</script>
+
+  </body>
+</html>
