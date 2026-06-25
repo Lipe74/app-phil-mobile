@@ -187,15 +187,41 @@
             <div class="form-row">
               <label>Type de remise</label>
               <select id="promo-type" onchange="onPromoTypeChange()">
-                <option value="monthly">📅 Mensuelle simple</option>
+                <option value="monthly">📅 Mensuelle simple (Internet / Divers)</option>
                 <option value="mobile">📱 Liée à un abonnement mobile précis</option>
                 <option value="unique">🎁 Remise unique (frais, etc.)</option>
               </select>
             </div>
-            <div class="form-row">
-              <label>Nom de la promo</label>
-              <input type="text" id="promo-name" placeholder="ex: Internet Start">
+
+            <div class="form-row" id="promo-products-row">
+              <label>Produit(s) concerné(s) <span style="font-weight:400;color:#888;">(coche-en plusieurs pour créer la même promo sur chacun en une fois)</span></label>
+
+              <div id="promo-products-mobile" style="display:none;">
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_child" data-label="Mobile Child 5GB"> Mobile Child 5GB</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_small" data-label="Mobile Small 12GB"> Mobile Small 12GB</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_medium" data-label="Mobile Medium 70GB"> Mobile Medium 70GB</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_large" data-label="Mobile Large 140GB"> Mobile Large 140GB</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" value="mob_unlim" data-label="Mobile Unlimited 300GB"> Mobile Unlimited 300GB</div>
+              </div>
+
+              <div id="promo-products-monthly" style="display:none;">
+                <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin:4px 0 4px;">🌐 Internet</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="internet" value="inet_start" data-label="Internet Start"> Internet Start</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="internet" value="inet_zen" data-label="Internet Zen"> Internet Zen</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="internet" value="inet_giga" data-label="Internet Giga"> Internet Giga</div>
+                <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;margin:10px 0 4px;">🎁 Divers</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="net_ess" data-label="Netflix Essentiel"> Netflix Essentiel</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="net_std" data-label="Netflix Standard"> Netflix Standard</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="net_prem" data-label="Netflix Premium"> Netflix Premium</div>
+                <div class="checkbox-row"><input type="checkbox" class="promo-product-cb" data-family="divers" value="opt_confort" data-label="My Comfort Service"> My Comfort Service</div>
+              </div>
             </div>
+
+            <div class="form-row" id="promo-name-row" style="display:none;">
+              <label>Nom de la promo</label>
+              <input type="text" id="promo-name" placeholder="ex: 🎁 Frais d'activation offerts">
+            </div>
+
             <div class="form-row">
               <label>Description / conditions (affiché sous le nom)</label>
               <input type="text" id="promo-sub" placeholder="ex: -15€/mois pendant 6 mois (Client LOVE uniquement)">
@@ -212,21 +238,13 @@
                 <option value="">À vie (pas de durée)</option>
               </select>
             </div>
-            <div class="form-row" id="promo-mobile-row" style="display:none;">
-              <label>Abonnement mobile concerné</label>
-              <select id="promo-mobile">
-                <option value="mob_child">Mobile Child 5GB</option>
-                <option value="mob_small">Mobile Small 12GB</option>
-                <option value="mob_medium">Mobile Medium 70GB</option>
-                <option value="mob_large">Mobile Large 140GB</option>
-                <option value="mob_unlim">Mobile Unlimited 300GB</option>
-              </select>
-              <div class="checkbox-row" style="margin-top:8px;">
+            <div class="form-row" id="promo-requireschild-row" style="display:none;">
+              <div class="checkbox-row">
                 <input type="checkbox" id="promo-requireschild">
                 <label for="promo-requireschild" style="font-weight:400;">Nécessite un Mobile Child associé (sinon : LOVE uniquement)</label>
               </div>
             </div>
-            <button class="btn btn-primary" id="promo-submit-btn" onclick="addOrUpdatePromo()">➕ Ajouter la promo</button>
+            <button class="btn btn-primary" id="promo-submit-btn" onclick="addOrUpdatePromo()">➕ Ajouter la/les promo(s)</button>
             <button class="btn btn-secondary" id="promo-cancel-btn" onclick="cancelPromoEdit()" style="display:none;">Annuler la modification</button>
           </div>
 
@@ -602,6 +620,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProspects();
   loadFeedback();
   loadPromosAdmin();
+  onPromoTypeChange();
   loadNewsItemsAdmin();
   loadConsultants();
   checkExpiredConsultants();
@@ -1168,14 +1187,35 @@ const PROMO_MOBILE_LABELS = {
   mob_unlim:  'Mobile Unlimited 300GB'
 };
 const PROMO_TYPE_LABEL = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '🎁 Unique' };
+const PROMO_FAMILY_SECTIONS = [
+  ['mobile', '📱 Promo Mobile'],
+  ['internet', '🌐 Promo Internet'],
+  ['divers', '🎁 Promo Divers']
+];
 
 let promosCache = [];
 let currentEditPromoId = null;
 
+// Sécurité pour les promos déjà créées avant l'ajout du champ productFamily : déduit la famille à partir
+// des données existantes (type / nom) plutôt que de les laisser disparaître de l'affichage groupé.
+function derivePromoFamily(p) {
+  if (p.productFamily) return p.productFamily;
+  if (p.type === 'mobile') return 'mobile';
+  if ((p.name || '').toLowerCase().includes('internet')) return 'internet';
+  return 'divers';
+}
+
 window.onPromoTypeChange = function () {
   const type = document.getElementById('promo-type').value;
-  document.getElementById('promo-mobile-row').style.display = type === 'mobile' ? 'block' : 'none';
+  const isEditing = !!currentEditPromoId;
+
   document.getElementById('promo-duration-row').style.display = type === 'unique' ? 'none' : 'block';
+  document.getElementById('promo-requireschild-row').style.display = type === 'mobile' ? 'block' : 'none';
+
+  document.getElementById('promo-products-row').style.display = (!isEditing && type !== 'unique') ? 'block' : 'none';
+  document.getElementById('promo-products-mobile').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
+  document.getElementById('promo-products-monthly').style.display = (!isEditing && type === 'monthly') ? 'block' : 'none';
+  document.getElementById('promo-name-row').style.display = (isEditing || type === 'unique') ? 'block' : 'none';
 };
 
 async function loadPromosAdmin() {
@@ -1193,18 +1233,21 @@ async function loadPromosAdmin() {
     }
 
     let html = '';
-    [['temporaire', '🟠 Temporaires'], ['permanente', '✅ Permanentes']].forEach(([cat, label]) => {
-      const inCat = list.filter(p => p.category === cat);
-      if (inCat.length === 0) return;
+    PROMO_FAMILY_SECTIONS.forEach(([fam, label]) => {
+      const inFam = list.filter(p => derivePromoFamily(p) === fam);
+      if (inFam.length === 0) return;
 
       html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${label}</div>`;
 
-      inCat.forEach(p => {
+      inFam.forEach(p => {
         const durLabel = p.type === 'unique' ? 'Remise unique' : (p.duration ? p.duration + ' mois' : 'À vie');
         const mobileLabel = p.type === 'mobile'
           ? ` · ${PROMO_MOBILE_LABELS[p.mobileId] || p.mobileId}${p.requiresChild ? ' (+ Mobile Child requis)' : ' (LOVE uniquement)'}`
           : '';
         const inactive = p.active === false;
+        const catBadge = p.category === 'permanente'
+          ? '<span class="badge" style="background:#eef2ff;color:#3730a3;">✅ Permanente</span>'
+          : '<span class="badge" style="background:#fef3c7;color:#92400e;">🟠 Temporaire</span>';
 
         html += `
         <div class="card" style="${inactive ? 'opacity:.5;' : ''}">
@@ -1212,6 +1255,7 @@ async function loadPromosAdmin() {
             <div class="card-info">
               <strong>${escapeHtmlAdmin(p.name || '')}</strong>
               <span class="badge" style="background:#fff3e8;color:#f97316;">${PROMO_TYPE_LABEL[p.type] || p.type}</span>
+              ${catBadge}
               ${inactive ? '<span class="badge badge-inactive">Désactivée</span>' : ''}
               <div class="meta">${escapeHtmlAdmin(p.sub || '')}</div>
               <div class="meta">-${p.price}€ · ${durLabel}${mobileLabel}</div>
@@ -1245,7 +1289,6 @@ window.editPromo = function (docId) {
   document.getElementById('promo-sub').value = p.sub || '';
   document.getElementById('promo-price').value = p.price ?? 0;
   document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
-  document.getElementById('promo-mobile').value = p.mobileId || 'mob_medium';
   document.getElementById('promo-requireschild').checked = !!p.requiresChild;
   onPromoTypeChange();
   document.getElementById('promo-submit-btn').textContent = '💾 Enregistrer les modifications';
@@ -1259,50 +1302,109 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-sub').value = '';
   document.getElementById('promo-price').value = '';
   document.getElementById('promo-requireschild').checked = false;
-  document.getElementById('promo-submit-btn').textContent = '➕ Ajouter la promo';
+  document.querySelectorAll('.promo-product-cb').forEach(cb => cb.checked = false);
+  document.getElementById('promo-submit-btn').textContent = '➕ Ajouter la/les promo(s)';
   document.getElementById('promo-cancel-btn').style.display = 'none';
+  onPromoTypeChange();
 };
 
 window.addOrUpdatePromo = async function () {
   const category = document.getElementById('promo-category').value;
   const type = document.getElementById('promo-type').value;
-  const name = document.getElementById('promo-name').value.trim();
   const sub = document.getElementById('promo-sub').value.trim();
   const price = Number(document.getElementById('promo-price').value);
   const durationRaw = document.getElementById('promo-duration').value;
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
-  const mobileId = type === 'mobile' ? document.getElementById('promo-mobile').value : null;
   const requiresChild = type === 'mobile' ? document.getElementById('promo-requireschild').checked : false;
 
-  if (!name || !price) {
-    alert('Merci de renseigner au moins le nom et le montant de la remise.');
+  if (!price) {
+    alert('Merci de renseigner le montant de la remise.');
     return;
   }
 
-  const data = {
-    category, type, name, sub, price, duration,
-    mobileId, requiresChild,
-    perAbo: type === 'mobile',
-    isUnique: type === 'unique'
-  };
-
-  try {
-    if (currentEditPromoId) {
+  // --- Mode édition : toujours un seul document, comportement inchangé ---
+  if (currentEditPromoId) {
+    const name = document.getElementById('promo-name').value.trim();
+    if (!name) { alert('Merci de renseigner un nom.'); return; }
+    const existing = promosCache.find(p => p.docId === currentEditPromoId);
+    const data = {
+      category, type, name, sub, price, duration,
+      mobileId: existing?.mobileId || null,
+      requiresChild,
+      productFamily: existing ? derivePromoFamily(existing) : (type === 'mobile' ? 'mobile' : 'divers'),
+      perAbo: type === 'mobile',
+      isUnique: type === 'unique'
+    };
+    try {
       await updateDoc(doc(db, 'promosOrange', currentEditPromoId), data);
       showToast('✅ Promo modifiée.');
       cancelPromoEdit();
-    } else {
-      await addDoc(collection(db, 'promosOrange'), { ...data, active: true, createdAt: new Date().toISOString() });
+      loadPromosAdmin();
+    } catch (err) {
+      alert('Erreur lors de l\'enregistrement: ' + err.message);
+    }
+    return;
+  }
+
+  // --- Mode création : remise unique nommée manuellement ---
+  if (type === 'unique') {
+    const name = document.getElementById('promo-name').value.trim();
+    if (!name) { alert('Merci de renseigner un nom.'); return; }
+    try {
+      await addDoc(collection(db, 'promosOrange'), {
+        category, type, name, sub, price, duration: null,
+        mobileId: null, requiresChild: false, productFamily: 'divers',
+        perAbo: false, isUnique: true, active: true, createdAt: new Date().toISOString()
+      });
       showToast('✅ Promo ajoutée.');
       document.getElementById('promo-name').value = '';
       document.getElementById('promo-sub').value = '';
       document.getElementById('promo-price').value = '';
-      document.getElementById('promo-requireschild').checked = false;
+      loadPromosAdmin();
+    } catch (err) {
+      alert('Erreur lors de l\'enregistrement: ' + err.message);
     }
-    loadPromosAdmin();
-  } catch (err) {
-    alert('Erreur lors de l\'enregistrement: ' + err.message);
+    return;
   }
+
+  // --- Mode création : un ou plusieurs produits cochés → une promo par produit ---
+  const containerId = type === 'mobile' ? 'promo-products-mobile' : 'promo-products-monthly';
+  const checked = Array.from(document.querySelectorAll('#' + containerId + ' .promo-product-cb:checked'));
+
+  if (checked.length === 0) {
+    alert('Coche au moins un produit concerné.');
+    return;
+  }
+
+  let done = 0;
+  for (const cb of checked) {
+    const productId = cb.value;
+    const label = cb.dataset.label;
+    const family = type === 'mobile' ? 'mobile' : (cb.dataset.family || 'divers');
+    const data = {
+      category, type, name: label, sub, price, duration,
+      mobileId: type === 'mobile' ? productId : null,
+      requiresChild,
+      productFamily: family,
+      perAbo: type === 'mobile',
+      isUnique: false,
+      active: true,
+      createdAt: new Date().toISOString()
+    };
+    try {
+      await addDoc(collection(db, 'promosOrange'), data);
+      done++;
+    } catch (err) {
+      console.log('Erreur création promo', label, err.message);
+    }
+  }
+
+  showToast(`✅ ${done} promo(s) ajoutée(s).`);
+  document.querySelectorAll('.promo-product-cb').forEach(cb => cb.checked = false);
+  document.getElementById('promo-sub').value = '';
+  document.getElementById('promo-price').value = '';
+  document.getElementById('promo-requireschild').checked = false;
+  loadPromosAdmin();
 };
 
 window.togglePromoActive = async function (docId, newState) {
@@ -1334,17 +1436,17 @@ window.seedCurrentPromos = async function () {
   }
 
   const seed = [
-    { category: 'permanente', type: 'monthly', name: 'Promotion 2ème Internet', sub: '-10€/mois · À vie', price: 10, duration: 12 },
-    { category: 'permanente', type: 'unique', name: "🎁 Frais d'activation offerts", sub: '-39€ · Remise unique', price: 39, duration: null },
-    { category: 'permanente', type: 'monthly', name: 'Netflix avec Internet Giga', sub: '-5,99€/mois · À vie', price: 5.99, duration: 6 },
-    { category: 'temporaire', type: 'monthly', name: 'Internet Start', sub: '-15€/mois pendant 6 mois (Client LOVE uniquement)', price: 15, duration: 6 },
-    { category: 'temporaire', type: 'monthly', name: 'Internet Zen', sub: '-15€/mois pendant 6 mois (Client LOVE uniquement)', price: 15, duration: 6 },
-    { category: 'temporaire', type: 'monthly', name: 'Internet Giga', sub: '-15€/mois pendant 12 mois (Client LOVE uniquement)', price: 15, duration: 12 },
-    { category: 'temporaire', type: 'mobile', name: 'Mobile Medium Client LOVE', sub: '-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price: 5, duration: 6, mobileId: 'mob_medium', requiresChild: false },
-    { category: 'temporaire', type: 'mobile', name: 'Mobile Medium Client NO LOVE', sub: '-5€/mois pendant 6 mois (nécessite un Mobile Child)', price: 5, duration: 6, mobileId: 'mob_medium', requiresChild: true },
-    { category: 'temporaire', type: 'mobile', name: 'Mobile Large', sub: '-5€/mois pendant 12 mois (cumulable)', price: 5, duration: 12, mobileId: 'mob_large', requiresChild: false },
-    { category: 'temporaire', type: 'monthly', name: 'Netflix avec Internet Zen', sub: '-5,99€/mois pendant 6 mois', price: 5.99, duration: 6 },
-    { category: 'temporaire', type: 'monthly', name: 'My Comfort Service', sub: 'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price: 10, duration: 12 }
+    { category: 'permanente', type: 'monthly', name: 'Promotion 2ème Internet', sub: '-10€/mois · À vie', price: 10, duration: 12, productFamily: 'internet' },
+    { category: 'permanente', type: 'unique', name: "🎁 Frais d'activation offerts", sub: '-39€ · Remise unique', price: 39, duration: null, productFamily: 'divers' },
+    { category: 'permanente', type: 'monthly', name: 'Netflix avec Internet Giga', sub: '-5,99€/mois · À vie', price: 5.99, duration: 6, productFamily: 'divers' },
+    { category: 'temporaire', type: 'monthly', name: 'Internet Start', sub: '-15€/mois pendant 6 mois (Client LOVE uniquement)', price: 15, duration: 6, productFamily: 'internet' },
+    { category: 'temporaire', type: 'monthly', name: 'Internet Zen', sub: '-15€/mois pendant 6 mois (Client LOVE uniquement)', price: 15, duration: 6, productFamily: 'internet' },
+    { category: 'temporaire', type: 'monthly', name: 'Internet Giga', sub: '-15€/mois pendant 12 mois (Client LOVE uniquement)', price: 15, duration: 12, productFamily: 'internet' },
+    { category: 'temporaire', type: 'mobile', name: 'Mobile Medium Client LOVE', sub: '-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price: 5, duration: 6, mobileId: 'mob_medium', requiresChild: false, productFamily: 'mobile' },
+    { category: 'temporaire', type: 'mobile', name: 'Mobile Medium Client NO LOVE', sub: '-5€/mois pendant 6 mois (nécessite un Mobile Child)', price: 5, duration: 6, mobileId: 'mob_medium', requiresChild: true, productFamily: 'mobile' },
+    { category: 'temporaire', type: 'mobile', name: 'Mobile Large', sub: '-5€/mois pendant 12 mois (cumulable)', price: 5, duration: 12, mobileId: 'mob_large', requiresChild: false, productFamily: 'mobile' },
+    { category: 'temporaire', type: 'monthly', name: 'Netflix avec Internet Zen', sub: '-5,99€/mois pendant 6 mois', price: 5.99, duration: 6, productFamily: 'divers' },
+    { category: 'temporaire', type: 'monthly', name: 'My Comfort Service', sub: 'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price: 10, duration: 12, productFamily: 'divers' }
   ];
 
   let done = 0;
