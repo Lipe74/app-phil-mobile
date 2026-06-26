@@ -327,8 +327,11 @@
                 <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
                 <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
                 <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+                <button type="button" class="rte-btn" title="Insérer un lien" onmousedown="event.preventDefault()" onclick="rteInsertLink()">🔗 Lien</button>
+                <button type="button" class="rte-btn" title="Insérer une image" onmousedown="event.preventDefault()" onclick="rteInsertImage()">🖼️ Image</button>
               </div>
               <div id="newsitem-fulltext" contenteditable="true" class="rte-editor" data-placeholder="Le détail complet de la news..." style="width:100%;min-height:110px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;overflow-y:auto;"></div>
+              <div style="font-size:11px;color:#999;margin-top:4px;">🖼️ Pour une image : dépose le fichier dans <code>/images/news/</code> via GitHub Desktop, pousse-le, puis clique sur "Image" et colle le chemin (ex: <code>images/news/promo.png</code>).</div>
             </div>
             <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
             <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
@@ -816,6 +819,40 @@ window.saveNews = async function () {
 let newsItemsCache = [];
 let currentEditNewsItemId = null;
 
+// Insertion d'un lien ou d'une image dans l'éditeur riche des News.
+// Convention : les images sont déposées dans /images/news/ via GitHub Desktop (comme le reste des assets de l'app),
+// puis on colle ici simplement le chemin relatif (ex: images/news/promo-disney.png) ou une URL complète.
+window.rteInsertLink = function () {
+  const url = prompt('URL du lien (ex: https://www.orange.be/...) :', 'https://');
+  if (!url || !url.trim()) return;
+  document.execCommand('createLink', false, url.trim());
+};
+
+window.rteInsertImage = function () {
+  const url = prompt(
+    "Chemin ou URL de l'image (le fichier doit déjà être déposé dans /images/news/ et poussé sur GitHub) :\nex: images/news/promo-disney.png",
+    'images/news/'
+  );
+  if (!url || !url.trim()) return;
+  document.execCommand(
+    'insertHTML',
+    false,
+    '<img src="' + url.trim() + '" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;">'
+  );
+};
+
+// S'assure que tous les liens créés dans une news s'ouvrent dans un nouvel onglet
+// (quelle que soit la façon dont ils ont été insérés : bouton "Lien" ou collés directement).
+function normalizeNewsLinks(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  div.querySelectorAll('a').forEach(a => {
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
+  });
+  return div.innerHTML;
+}
+
 async function loadNewsItemsAdmin() {
   const container = document.getElementById('newsitems-list');
   container.innerHTML = '<div class="empty">Chargement...</div>';
@@ -879,7 +916,7 @@ window.cancelNewsItemEdit = function () {
 window.addOrUpdateNewsItem = async function () {
   const title = document.getElementById('newsitem-title').value.trim();
   const type = document.getElementById('newsitem-type').value;
-  const fullText = document.getElementById('newsitem-fulltext').innerHTML.trim();
+  const fullText = normalizeNewsLinks(document.getElementById('newsitem-fulltext').innerHTML.trim());
 
   if (!title || !fullText) {
     alert('Merci de renseigner au moins le titre et le texte complet.');
