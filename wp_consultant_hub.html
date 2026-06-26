@@ -81,6 +81,11 @@
 .pm-asp-chip{font-size:9px;background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:99px;}
 .pm-prod-stat{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid #f9f9f9;}
 .pm-prod-stat:last-child{border-bottom:none;}
+.rte-btn{border:1px solid #ddd;background:#fff;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;color:#333;font-family:Arial,sans-serif;}
+.rte-btn:hover{background:#f3f4f6;}
+.rte-editor:focus{outline:2px solid #f97316;outline-offset:-1px;}
+.rte-editor:empty:before{content:attr(data-placeholder);color:#999;}
+.rte-editor ul, .rte-editor ol{margin-left:18px;}
 </style>
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
@@ -109,7 +114,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> Stable — Formations
+Build <span id="app-version-1">…</span> Stable — Messagerie
      </span>
     </div>
     </div>
@@ -420,6 +425,7 @@ Build <span id="app-version-1">…</span> Stable — Formations
           <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Mon Upline</button>
           <button onclick="showContactsSmart(this)" class="menu-item" id="menu-contacts-smart">🏢 Smart SN</button>
           <button onclick="showScript('panel-contacts-philmobile')" class="menu-item" id="menu-contacts-philmobile">🛠️ Phil-Mobile</button>
+          <button onclick="showMessages(this)" class="menu-item" id="menu-messages">💬 Messages<span id="messages-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 
 <!-- AGENDA, FORMATIONS & NEWS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
@@ -466,6 +472,8 @@ Build <span id="app-version-1">…</span> Stable — Formations
 
 <button onclick="openSimulator('https://app.phil-mobile.be/wp_eneco.html')" class="menu-item">    ⚡ Simulateur Eneco
   </button>
+
+
 
 </div>
 <!-- Liens importants -->
@@ -659,6 +667,36 @@ Build <span id="app-version-1">…</span> Stable — Formations
               <button onclick="submitFeedback()" style="margin-top:10px;width:100%;padding:11px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">✉️ Envoyer le message</button>
               <div id="pm-feedback-success" style="display:none;margin-top:8px;font-size:12px;color:#16a34a;font-weight:600;text-align:center;">✅ Message envoyé, merci !</div>
               <div id="pm-feedback-error" style="display:none;margin-top:8px;font-size:12px;color:#e24b4a;font-weight:600;text-align:center;">❌ Erreur lors de l'envoi, réessayez.</div>
+            </div>
+          </div>
+
+          <!-- Panel Messages -->
+          <div id="panel-messages" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div id="messages-contacts-view">
+              <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">💬 Messages</div>
+              <div style="font-size:12px;color:#9ca3af;margin-bottom:16px;">Discutez directement avec votre upline, vos BC ou Phil-Mobile</div>
+              <div id="messages-contacts-list"><div style="font-size:12px;color:#9ca3af;">Chargement...</div></div>
+            </div>
+            <div id="messages-thread-view" style="display:none;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                <button onclick="closeConversationView()" style="background:none;border:1px solid #f97316;border-radius:8px;padding:5px 10px;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">‹ Retour</button>
+                <div id="messages-thread-title" style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;">—</div>
+              </div>
+              <div id="messages-thread" style="display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:50vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;"></div>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:flex-end;">
+                <div id="messages-input" contenteditable="true" class="rte-editor" data-placeholder="Écrire un message..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendMessage();}" style="flex:1;min-height:42px;max-height:120px;overflow-y:auto;padding:10px 12px;border:1px solid #f97316;border-radius:10px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;"></div>
+                <button onclick="sendMessage()" style="background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;flex-shrink:0;">Envoyer</button>
+              </div>
             </div>
           </div>
 
@@ -1605,6 +1643,19 @@ function showNews(btn) {
   renderNewsHistory();
 }
 
+function showMessages(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-messages').style.display = 'block';
+  document.getElementById('messages-contacts-view').style.display = 'block';
+  document.getElementById('messages-thread-view').style.display = 'none';
+  renderMessageContacts();
+}
+
 // Doit rester synchronisé avec NEWS_META dans admin.html / admin-test.html et avec loadNews() plus bas.
 const NEWS_HISTORY_META = {
   orange:  { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
@@ -1747,6 +1798,211 @@ function escapeHtmlAgenda(str) {
   return div.innerHTML;
 }
 
+// ===== MESSAGES (chat 1-à-1 : upline et/ou Phil-Mobile) =====
+let pmMessageContacts = [];
+let pmActiveConversationId = null;
+let pmActiveContactId = null;
+let pmMessagesUnsub = null;
+
+function pmConversationId(idA, idB) {
+  return [idA, idB].sort().join('_');
+}
+
+function escapeHtmlMessages(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+function pmFormatMsgTime(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit' }) + ' ' +
+           d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
+  } catch(e) { return ''; }
+}
+
+// Construit la liste des contacts possibles : l'upline (si renseigné et différent de soi)
+// + les administrateurs actifs (Phil-Mobile) + mes BC (si je suis upline de certains consultants), sans doublon.
+function buildMessageContacts() {
+  pmMessageContacts = [];
+  if (!pmCurrentUser) return;
+
+  const myId = pmCurrentUser.id;
+  const seen = new Set([myId]);
+
+  const uplineId = pmCurrentUser.uplineId;
+  const uplineName = pmCurrentUser.uplineName;
+  if (uplineId && !seen.has(uplineId)) {
+    pmMessageContacts.push({ id: uplineId, name: uplineName || 'Mon upline', role: 'Votre upline' });
+    seen.add(uplineId);
+  }
+
+  Object.values(PM_USERS).forEach(u => {
+    if (u.isAdmin && !seen.has(u.id)) {
+      pmMessageContacts.push({ id: u.id, name: u.fullName || u.name || 'Phil-Mobile', role: 'Phil-Mobile' });
+      seen.add(u.id);
+    }
+  });
+
+  // Mes BC : tout consultant actif dont l'upline déclaré, c'est moi.
+  Object.values(PM_USERS)
+    .filter(u => u.uplineId === myId && !seen.has(u.id))
+    .sort((a, b) => (a.fullName || a.name || '').localeCompare(b.fullName || b.name || ''))
+    .forEach(u => {
+      pmMessageContacts.push({ id: u.id, name: u.fullName || u.name || u.id, role: 'Votre BC' });
+      seen.add(u.id);
+    });
+}
+
+async function checkMessagesUnreadBadge() {
+  const badge = document.getElementById('messages-badge');
+  if (!badge || !pmCurrentUser) return;
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDoc) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    let hasUnread = false;
+    for (const c of pmMessageContacts) {
+      const convId = pmConversationId(pmCurrentUser.id, c.id);
+      try {
+        const snap = await window.getDoc(window.doc(window.db, 'conversations', convId));
+        if (snap.exists() && (snap.data().unreadBy || []).includes(pmCurrentUser.id)) {
+          hasUnread = true;
+          break;
+        }
+      } catch(e) {}
+    }
+    badge.style.display = hasUnread ? 'inline-block' : 'none';
+  } catch(e) {
+    console.log('Vérification messages non lus impossible:', e.message);
+  }
+}
+
+async function initMessages() {
+  buildMessageContacts();
+  checkMessagesUnreadBadge();
+}
+
+function renderMessageContacts() {
+  const el = document.getElementById('messages-contacts-list');
+  if (!el) return;
+  if (pmMessageContacts.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucun contact disponible pour le moment.</div>';
+    return;
+  }
+  el.innerHTML = pmMessageContacts.map(c => `
+    <div onclick="openConversation('${c.id}', '${c.name.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;">
+      <img src="images/${c.id}.png" onerror="this.src='images/smart.png'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:#1a1a1a;">${escapeHtmlMessages(c.name)}</div>
+        <div style="font-size:11px;color:#f97316;">${escapeHtmlMessages(c.role)}</div>
+      </div>
+      <span style="color:#f97316;font-size:14px;">›</span>
+    </div>
+  `).join('');
+}
+
+window.openConversation = async function(contactId, contactName) {
+  if (!pmCurrentUser) return;
+  pmActiveContactId = contactId;
+  pmActiveConversationId = pmConversationId(pmCurrentUser.id, contactId);
+
+  document.getElementById('messages-contacts-view').style.display = 'none';
+  document.getElementById('messages-thread-view').style.display = 'block';
+  document.getElementById('messages-thread-title').textContent = contactName;
+  document.getElementById('messages-thread').innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Chargement...</div>';
+
+  // Marquer comme lu côté serveur (retire mon id de unreadBy)
+  try {
+    await window.updateDoc(window.doc(window.db, 'conversations', pmActiveConversationId), {
+      unreadBy: window.arrayRemove(pmCurrentUser.id)
+    });
+  } catch(e) {
+    // Le document n'existe peut-être pas encore (aucun message échangé) : pas grave.
+  }
+  checkMessagesUnreadBadge();
+
+  subscribeMessages(pmActiveConversationId);
+};
+
+window.closeConversationView = function() {
+  if (pmMessagesUnsub) { pmMessagesUnsub(); pmMessagesUnsub = null; }
+  pmActiveConversationId = null;
+  pmActiveContactId = null;
+  document.getElementById('messages-contacts-view').style.display = 'block';
+  document.getElementById('messages-thread-view').style.display = 'none';
+  renderMessageContacts();
+  checkMessagesUnreadBadge();
+};
+
+function subscribeMessages(convId) {
+  if (pmMessagesUnsub) { pmMessagesUnsub(); pmMessagesUnsub = null; }
+  if (!window.onSnapshot || !window.query || !window.orderBy) return;
+
+  const q = window.query(
+    window.collection(window.db, 'conversations', convId, 'messages'),
+    window.orderBy('createdAt')
+  );
+
+  pmMessagesUnsub = window.onSnapshot(q, (snap) => {
+    const thread = document.getElementById('messages-thread');
+    if (!thread) return;
+    const msgs = [];
+    snap.forEach(d => msgs.push(d.data()));
+
+    if (msgs.length === 0) {
+      thread.innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Aucun message pour le moment — écrivez le premier !</div>';
+      return;
+    }
+
+    thread.innerHTML = msgs.map(m => {
+      const mine = m.senderId === pmCurrentUser.id;
+      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:78%;">
+        <div style="background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#1a1a1a'};border:${mine ? 'none' : '1px solid #f0f0f0'};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${m.text}</div>
+        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};">${pmFormatMsgTime(m.createdAt)}</div>
+      </div>`;
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+  }, (err) => {
+    console.log('Lecture messages impossible:', err.message);
+  });
+}
+
+window.sendMessage = async function() {
+  const input = document.getElementById('messages-input');
+  const text = input.innerHTML.trim();
+  const plain = input.innerText.trim();
+  if (!plain || !pmActiveConversationId || !pmCurrentUser) return;
+
+  input.innerHTML = '';
+
+  try {
+    await window.addDoc(
+      window.collection(window.db, 'conversations', pmActiveConversationId, 'messages'),
+      {
+        senderId: pmCurrentUser.id,
+        senderName: pmCurrentUser.fullName || pmCurrentUser.name || '',
+        text,
+        createdAt: new Date().toISOString()
+      }
+    );
+
+    await window.setDoc(window.doc(window.db, 'conversations', pmActiveConversationId), {
+      participants: [pmCurrentUser.id, pmActiveContactId].sort(),
+      lastMessage: plain.slice(0, 120),
+      lastMessageAt: new Date().toISOString(),
+      unreadBy: window.arrayUnion(pmActiveContactId)
+    }, { merge: true });
+
+  } catch(err) {
+    console.log('Envoi du message impossible:', err.message);
+    alert("❌ Impossible d'envoyer le message. Réessayez.");
+  }
+};
+
 function switchTab(tab) {
   // kept for compatibility but no-op now (single tab)
 }
@@ -1794,6 +2050,8 @@ function doUnlock(user) {
   });
   // Si non-admin : masquer les cartes agents autres que lui dans la progression
   pmNiveauAgent = user.agent;
+  // Module Messages (contacts + badge non-lu)
+  initMessages();
 }
 
 // Remplit le panel "Contacts" (sidebar) avec les coordonnées du vrai upline du consultant connecté.
@@ -2674,7 +2932,12 @@ import {
   setDoc,
   doc,
   getDoc,
-  updateDoc
+  updateDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  arrayUnion,
+  arrayRemove
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
@@ -2697,6 +2960,11 @@ window.setDoc = setDoc;
 window.doc = doc;
 window.getDoc = getDoc;
 window.updateDoc = updateDoc;
+window.onSnapshot = onSnapshot;
+window.query = query;
+window.orderBy = orderBy;
+window.arrayUnion = arrayUnion;
+window.arrayRemove = arrayRemove;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
