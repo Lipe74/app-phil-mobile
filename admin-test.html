@@ -128,13 +128,19 @@
       <div class="admin-col">
 
         <div class="section">
-          <div class="section-title">📝 Demandes en attente <span id="prospects-count"></span></div>
-          <div id="prospects-list"><div class="empty">Chargement...</div></div>
+          <div class="section-title" onclick="toggleSection('prospects-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>📝 Demandes en attente <span id="prospects-count"></span></span>
+            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+          </div>
+          <div id="prospects-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="section">
-          <div class="section-title">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></div>
-          <div id="feedback-list"><div class="empty">Chargement...</div></div>
+          <div class="section-title" onclick="toggleSection('feedback-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></span>
+            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+          </div>
+          <div id="feedback-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="section">
@@ -236,7 +242,11 @@
             <button class="btn btn-secondary" style="width:100%;" onclick="seedCurrentPromos()">🌱 Importer les promos actuelles (une seule fois)</button>
           </div>
 
-          <div id="promos-list"><div class="empty">Chargement...</div></div>
+          <div onclick="toggleSection('promos-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+            <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">📋 Promos créées</span>
+            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+          </div>
+          <div id="promos-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
       </div>
@@ -311,7 +321,11 @@
             <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
           </div>
 
-          <div id="newsitems-list"><div class="empty">Chargement...</div></div>
+          <div onclick="toggleSection('newsitems-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+            <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">📋 News déjà publiées</span>
+            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+          </div>
+          <div id="newsitems-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
       </div>
@@ -1201,6 +1215,7 @@ async function loadFeedback() {
             <button class="btn ${handled ? 'btn-secondary' : 'btn-primary'}" onclick="toggleFeedbackHandled('${f.docId}', ${!handled})">
               ${handled ? '↩️ Remettre en attente' : '✅ Marquer traité'}
             </button>
+            <button class="btn btn-danger" onclick="deleteFeedback('${f.docId}')">🗑 Supprimer</button>
           </div>
         </div>
       </div>`;
@@ -1218,6 +1233,17 @@ window.toggleFeedbackHandled = async function (docId, newState) {
     loadFeedback();
   } catch (err) {
     alert('Erreur: ' + err.message);
+  }
+};
+
+window.deleteFeedback = async function (docId) {
+  if (!confirm('Supprimer définitivement ce message ?')) return;
+  try {
+    await deleteDoc(doc(db, 'appFeedback', docId));
+    showToast('🗑 Message supprimé.');
+    loadFeedback();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
   }
 };
 
