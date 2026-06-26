@@ -85,6 +85,7 @@
 .rte-btn:hover{background:#f3f4f6;}
 .rte-editor:focus{outline:2px solid #f97316;outline-offset:-1px;}
 .rte-editor:empty:before{content:attr(data-placeholder);color:#999;}
+.rte-editor ul, .rte-editor ol{margin-left:18px;}
 </style>
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
@@ -673,7 +674,7 @@ Build <span id="app-version-1">…</span> Stable — Formations
           <div id="panel-messages" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div id="messages-contacts-view">
               <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">💬 Messages</div>
-              <div style="font-size:12px;color:#9ca3af;margin-bottom:16px;">Discutez directement avec votre upline ou avec Phil-Mobile</div>
+              <div style="font-size:12px;color:#9ca3af;margin-bottom:16px;">Discutez directement avec votre upline, vos BC ou Phil-Mobile</div>
               <div id="messages-contacts-list"><div style="font-size:12px;color:#9ca3af;">Chargement...</div></div>
             </div>
             <div id="messages-thread-view" style="display:none;">
@@ -682,9 +683,13 @@ Build <span id="app-version-1">…</span> Stable — Formations
                 <div id="messages-thread-title" style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;">—</div>
               </div>
               <div id="messages-thread" style="display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:50vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;"></div>
-              <div class="rte-toolbar" style="display:flex;gap:4px;margin-bottom:6px;">
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
                 <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
                 <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
                 <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
                 <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
               </div>
@@ -1818,7 +1823,7 @@ function pmFormatMsgTime(iso) {
 }
 
 // Construit la liste des contacts possibles : l'upline (si renseigné et différent de soi)
-// + les administrateurs actifs (Phil-Mobile), sans doublon.
+// + les administrateurs actifs (Phil-Mobile) + mes BC (si je suis upline de certains consultants), sans doublon.
 function buildMessageContacts() {
   pmMessageContacts = [];
   if (!pmCurrentUser) return;
@@ -1839,6 +1844,15 @@ function buildMessageContacts() {
       seen.add(u.id);
     }
   });
+
+  // Mes BC : tout consultant actif dont l'upline déclaré, c'est moi.
+  Object.values(PM_USERS)
+    .filter(u => u.uplineId === myId && !seen.has(u.id))
+    .sort((a, b) => (a.fullName || a.name || '').localeCompare(b.fullName || b.name || ''))
+    .forEach(u => {
+      pmMessageContacts.push({ id: u.id, name: u.fullName || u.name || u.id, role: 'Votre BC' });
+      seen.add(u.id);
+    });
 }
 
 async function checkMessagesUnreadBadge() {
