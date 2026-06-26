@@ -118,7 +118,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 2.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 2.3</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -252,6 +252,14 @@
             <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
           </div>
           <div id="promos-list" style="display:none;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title" onclick="toggleSection('messages-admin-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+            <span>💬 Messages</span>
+            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+          </div>
+          <div id="messages-admin-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
       </div>
@@ -560,6 +568,23 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
   </div>
 </div>
 
+<!-- Modal : discussion (chat) avec un consultant -->
+<div class="modal-overlay" id="chat-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <h3 style="margin:0;" id="chat-modal-title">💬 Discussion</h3>
+    </div>
+    <div id="chat-thread" style="display:flex;flex-direction:column;gap:8px;min-height:240px;max-height:50vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="chat-input" placeholder="Écrire un message..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatMessage();}" style="flex:1;resize:none;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:Arial,sans-serif;height:40px;box-sizing:border-box;"></textarea>
+      <button class="btn btn-primary" onclick="sendChatMessage()">Envoyer</button>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" style="width:100%;" onclick="closeChatModal()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
@@ -582,7 +607,12 @@ import {
   updateDoc,
   getDoc,
   addDoc,
-  deleteDoc
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  arrayUnion,
+  arrayRemove
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -612,6 +642,7 @@ window.deleteDoc = deleteDoc;
 let currentProspectForActivation = null;
 let isAdminUser = false;
 let suspendAuthCheck = false;
+let adminOwnId = null;
 
 // --- Connexion ---
 window.adminLogin = async function () {
@@ -656,6 +687,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   isAdminUser = true;
+  adminOwnId = found.id;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
   loadNewsAdmin();
@@ -666,6 +698,7 @@ onAuthStateChanged(auth, async (user) => {
   onPromoTypeChange();
   loadNewsItemsAdmin();
   loadConsultants();
+  loadMessagesAdmin();
   checkExpiredConsultants();
 });
 
@@ -1679,6 +1712,7 @@ window.confirmActivate = async function () {
   showToast('✅ Consultant créé avec succès !');
   loadProspects();
   loadConsultants();
+  loadMessagesAdmin();
 
   // 4. Se reconnecter en tant qu'admin (la création du compte t'a déconnecté)
   pendingAdminEmail = adminUserEmail;
@@ -1872,6 +1906,7 @@ window.confirmEdit = async function () {
     closeEditModal();
     showToast('✅ Consultant mis à jour.');
     loadConsultants();
+    loadMessagesAdmin();
   } catch (err) {
     alert('Erreur lors de la mise à jour: ' + err.message);
   }
@@ -1882,6 +1917,154 @@ function escapeHtml(str) {
   div.textContent = str ?? '';
   return div.innerHTML;
 }
+
+// ===== MESSAGES (chat admin ↔ consultants) =====
+let chatActiveConvId = null;
+let chatActiveConsultantId = null;
+let chatUnsub = null;
+
+function pmConvId(idA, idB) {
+  return [idA, idB].sort().join('_');
+}
+
+function formatChatTime(iso) {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' +
+           d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) { return ''; }
+}
+
+async function loadMessagesAdmin() {
+  const container = document.getElementById('messages-admin-list');
+  if (!container || !adminOwnId) return;
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+
+  try {
+    const snap = await getDocs(collection(db, 'consultants'));
+    const list = [];
+    snap.forEach(d => {
+      const c = d.data();
+      if (c.id && c.id !== adminOwnId) list.push(c);
+    });
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucun consultant.</div>';
+      return;
+    }
+
+    let html = '';
+    for (const c of list) {
+      const convId = pmConvId(adminOwnId, c.id);
+      let unread = false;
+      try {
+        const convSnap = await getDoc(doc(db, 'conversations', convId));
+        if (convSnap.exists() && (convSnap.data().unreadBy || []).includes(adminOwnId)) unread = true;
+      } catch (e) {}
+
+      const displayName = c.fullName || c.name || c.id;
+      html += `
+        <div class="card">
+          <div class="card-row">
+            <div class="card-info">
+              <strong>${escapeHtml(displayName)}</strong>
+              ${unread ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">● Nouveau message</span>' : ''}
+              <div class="meta">ID: ${escapeHtml(c.id)}</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary" onclick="openChatWithConsultant('${c.id}', '${displayName.replace(/'/g, "\\'")}')">💬 Discuter</button>
+            </div>
+          </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement messages admin impossible:', err.message);
+  }
+}
+
+window.openChatWithConsultant = async function (consultantId, consultantName) {
+  if (!adminOwnId) return;
+  chatActiveConsultantId = consultantId;
+  chatActiveConvId = pmConvId(adminOwnId, consultantId);
+
+  document.getElementById('chat-modal-title').textContent = '💬 ' + consultantName;
+  document.getElementById('chat-thread').innerHTML = '<div class="empty">Chargement...</div>';
+  document.getElementById('chat-modal').classList.add('open');
+
+  try {
+    await updateDoc(doc(db, 'conversations', chatActiveConvId), { unreadBy: arrayRemove(adminOwnId) });
+  } catch (e) {
+    // Pas de conversation existante encore : rien à faire.
+  }
+  loadMessagesAdmin();
+
+  subscribeChatMessages(chatActiveConvId);
+};
+
+window.closeChatModal = function () {
+  if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+  document.getElementById('chat-modal').classList.remove('open');
+  chatActiveConvId = null;
+  chatActiveConsultantId = null;
+};
+
+function subscribeChatMessages(convId) {
+  if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+
+  const q = query(collection(db, 'conversations', convId, 'messages'), orderBy('createdAt'));
+  chatUnsub = onSnapshot(q, (snap) => {
+    const thread = document.getElementById('chat-thread');
+    if (!thread) return;
+    const msgs = [];
+    snap.forEach(d => msgs.push(d.data()));
+
+    if (msgs.length === 0) {
+      thread.innerHTML = '<div class="empty">Aucun message pour le moment — écrivez le premier !</div>';
+      return;
+    }
+
+    thread.innerHTML = msgs.map(m => {
+      const mine = m.senderId === adminOwnId;
+      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:78%;">
+        <div style="background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#1a1a1a'};border:${mine ? 'none' : '1px solid #f0f0f0'};padding:8px 12px;border-radius:12px;font-size:13px;white-space:pre-wrap;word-break:break-word;">${escapeHtml(m.text)}</div>
+        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};">${formatChatTime(m.createdAt)}</div>
+      </div>`;
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+  }, (err) => {
+    console.log('Lecture messages impossible:', err.message);
+  });
+}
+
+window.sendChatMessage = async function () {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !chatActiveConvId || !adminOwnId) return;
+
+  input.value = '';
+
+  try {
+    await addDoc(collection(db, 'conversations', chatActiveConvId, 'messages'), {
+      senderId: adminOwnId,
+      senderName: 'Phil-Mobile',
+      text,
+      createdAt: new Date().toISOString()
+    });
+
+    await setDoc(doc(db, 'conversations', chatActiveConvId), {
+      participants: [adminOwnId, chatActiveConsultantId].sort(),
+      lastMessage: text.slice(0, 120),
+      lastMessageAt: new Date().toISOString(),
+      unreadBy: arrayUnion(chatActiveConsultantId)
+    }, { merge: true });
+
+  } catch (err) {
+    console.log('Envoi du message admin impossible:', err.message);
+    alert("❌ Impossible d'envoyer le message. Réessayez.");
+  }
+};
 </script>
 
 </body>
