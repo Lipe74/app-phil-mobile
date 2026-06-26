@@ -146,7 +146,10 @@
         <div class="section">
           <div class="section-title" onclick="toggleSection('consultants-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
             <span>👥 Consultants actifs / inactifs</span>
-            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+            <span style="display:flex;align-items:center;gap:8px;">
+              <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation(); openCreateModal();">➕ Créer</button>
+              <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+            </span>
           </div>
           <div id="consultants-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
