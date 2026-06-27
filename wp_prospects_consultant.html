@@ -247,6 +247,7 @@ textarea:focus{
     <option value="Perdu">❌ Perdu</option>
   </select>
   <input id="searchBox" type="text" placeholder="🔍 Rechercher un nom, tél, email..." onkeyup="filterList()">
+  <button onclick="deleteAllProspects()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">🗑 Tout supprimer</button>
 </div>
 
 <div id="prospectsList"></div>
@@ -578,6 +579,38 @@ async function deleteProspect(docId){
   }
 }
 
+async function deleteAllProspects(){
+  const list = window._allProspects || [];
+  if (list.length === 0) {
+    alert('Aucun prospect à supprimer.');
+    return;
+  }
+
+  // Confirmation renforcée (taper un mot, pas juste cliquer OK) car c'est irréversible et en masse.
+  // Ne touche que les prospects du consultant connecté (window._allProspects est déjà filtré par consultantId).
+  const confirmation = prompt(
+    `⚠️ Tu es sur le point de supprimer DÉFINITIVEMENT tes ${list.length} prospect(s).\n\nCette action est irréversible et ne touche que TES prospects.\n\nPour confirmer, tape SUPPRIMER ci-dessous :`
+  );
+  if (confirmation !== 'SUPPRIMER') {
+    if (confirmation !== null) alert('Suppression annulée (texte de confirmation incorrect).');
+    return;
+  }
+
+  let done = 0;
+  showToast('Suppression en cours…');
+  for (const p of list) {
+    try {
+      await window.deleteDoc(window.doc(window.db, 'prospectsConsultants', p.docId));
+      done++;
+    } catch(err) {
+      console.warn('Erreur suppression', p.docId, err.message);
+    }
+  }
+
+  showToast(`🗑 ${done} prospect(s) supprimé(s).`);
+  renderList();
+}
+
 // --- Import Excel/CSV ---
 window._importRows = [];
 
@@ -721,6 +754,7 @@ window.renderList = renderList;
 window.filterList = filterList;
 window.changeStatus = changeStatus;
 window.deleteProspect = deleteProspect;
+window.deleteAllProspects = deleteAllProspects;
 window.showTab = showTab;
 window.editProspect = editProspect;
 window.startNewProspect = startNewProspect;
