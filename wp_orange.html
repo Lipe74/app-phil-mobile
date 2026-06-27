@@ -261,6 +261,10 @@
   <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
 
+<div style="margin-top:-4px;margin-bottom:16px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
+  ⚠️ Tarifs indicatifs sous réserve de modification par Orange. Simulation réalisée le <span id="sim-date">…</span> — à confirmer lors de la souscription effective.
+</div>
+
 <script type="module">
 import { initializeApp }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -448,6 +452,7 @@ function shareWhatsApp(){
   const client = document.getElementById('client-name')?.value || '';
   const phone = document.getElementById('client-phone')?.value || '';
   const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+  const today = new Date().toLocaleDateString('fr-BE');
 
   const msg =
 `================================
@@ -463,6 +468,9 @@ Téléphone : ${phone}
 
 ★ Tarif à vie : ${document.getElementById('s-total').textContent}
 
+⚠️ Tarifs indicatifs sous réserve de modification par Orange.
+Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
+
 ${ci.name}
 ${ci.phone}
 ${ci.email}`;
@@ -474,6 +482,7 @@ function copyResume(){
   const client = document.getElementById('client-name')?.value || '';
   const phone = document.getElementById('client-phone')?.value || '';
   const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+  const today = new Date().toLocaleDateString('fr-BE');
 
   const txt =
 `================================
@@ -488,6 +497,9 @@ Téléphone : ${phone}
 ✓ Après 12 mois : ${document.getElementById('s-12months').textContent}
 
 ★ Tarif à vie : ${document.getElementById('s-total').textContent}
+
+⚠️ Tarifs indicatifs sous réserve de modification par Orange.
+Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
 
 ${ci.name}
 ${ci.phone}
@@ -560,6 +572,10 @@ ${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
 🔴 Après 12 mois : ${document.getElementById('s-12months').textContent}<br><br>
 <hr>
 <b>🏁 Tarif à vie : ${document.getElementById('s-total').textContent}</b>
+</div>
+
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:12px;color:#856404;font-weight:600;margin-bottom:15px;">
+⚠️ Tarifs indicatifs sous réserve de modification par Orange. Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
 </div>
 
 <div class="box">
@@ -957,6 +973,9 @@ font-style:normal !important;
 document.querySelectorAll('[id^="app-version"]').forEach(el => {
   el.textContent = window.APP_VERSION || '?';
 });
+const simDateEl = document.getElementById('sim-date');
+if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
+
 </script>
 
   </body>
