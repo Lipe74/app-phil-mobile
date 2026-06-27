@@ -700,11 +700,15 @@ function renderImportPreview(rows){
     </tr>`;
   });
   html += '</table>';
+  let btnLabel;
   if (rows.length > 50) {
-    html += `<div class="import-summary">Aperçu limité aux 50 premières lignes (les ${rows.length} lignes seront importées).</div>`;
+    html += `<div class="import-summary">Aperçu limité aux 50 premières lignes (les ${rows.length} lignes seront importées, sauf celles décochées ci-dessus).</div>`;
+    btnLabel = `📥 Importer les ${rows.length} lignes (sauf celles décochées)`;
+  } else {
+    btnLabel = '📥 Importer les prospects cochés';
   }
   html += `<div class="import-actions">
-    <button class="tabbtn" onclick="confirmImport()">📥 Importer les prospects cochés</button>
+    <button class="tabbtn" onclick="confirmImport()">${btnLabel}</button>
     <span id="importStatus" class="import-summary"></span>
   </div>`;
   document.getElementById('importPreviewZone').innerHTML = html;
