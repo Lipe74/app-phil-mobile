@@ -678,14 +678,20 @@ function renderImportPreview(rows){
 }
 
 async function confirmImport(){
+  // Les cases à cocher n'existent que pour les 50 premières lignes (limite d'affichage de l'aperçu).
+  // On importe donc TOUTES les lignes de window._importRows, sauf celles explicitement décochées
+  // parmi les 50 affichées — les lignes au-delà de 50 n'ont pas de case et restent incluses,
+  // conformément au message affiché ("les X lignes seront importées").
   const checks = document.querySelectorAll('.import-check');
-  const toImport = [];
+  const excludedIdx = new Set();
   checks.forEach(c => {
-    if (c.checked) toImport.push(window._importRows[parseInt(c.dataset.idx, 10)]);
+    if (!c.checked) excludedIdx.add(parseInt(c.dataset.idx, 10));
   });
 
+  const toImport = window._importRows.filter((row, idx) => !excludedIdx.has(idx));
+
   if (toImport.length === 0) {
-    alert('Aucune ligne cochée à importer.');
+    alert('Aucune ligne à importer.');
     return;
   }
 
