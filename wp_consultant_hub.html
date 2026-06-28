@@ -1894,36 +1894,39 @@ function buildMessageContacts() {
 }
 
 let pmUnreadContactIds = new Set();
+let pmConvUnreadUnsubs = [];
 
-async function checkMessagesUnreadBadge() {
-  const badge = document.getElementById('messages-badge');
+// Abonnement temps réel : un message arrivant met à jour le badge et la liste de contacts
+// instantanément, même si la personne reste sur le Tableau de bord sans rien cliquer.
+// Idempotent : peut être rappelée à tout moment (ouverture/fermeture de conversation, etc.)
+// sans créer de doublons d'écouteurs.
+function checkMessagesUnreadBadge() {
   if (!pmCurrentUser) return;
-  try {
-    let tries = 0;
-    while ((!window.db || !window.getDoc) && tries < 30) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    pmUnreadContactIds = new Set();
-    for (const c of pmMessageContacts) {
-      const convId = pmConversationId(pmCurrentUser.id, c.id);
-      try {
-        const snap = await window.getDoc(window.doc(window.db, 'conversations', convId));
-        if (snap.exists() && (snap.data().unreadBy || []).includes(pmCurrentUser.id)) {
-          pmUnreadContactIds.add(c.id);
-        }
-      } catch(e) {}
-    }
-    if (badge) badge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
-    // Si la liste de contacts est actuellement affichée, on rafraîchit les pastilles individuelles
-    // (utile au premier chargement, où ce calcul se termine après le premier rendu de la liste).
-    const contactsView = document.getElementById('messages-contacts-view');
-    if (contactsView && contactsView.style.display !== 'none') {
-      renderMessageContacts();
-    }
-  } catch(e) {
-    console.log('Vérification messages non lus impossible:', e.message);
-  }
+
+  pmConvUnreadUnsubs.forEach(unsub => { try { unsub(); } catch(e) {} });
+  pmConvUnreadUnsubs = [];
+
+  if (!window.onSnapshot || !window.doc || !window.db) return;
+
+  pmMessageContacts.forEach(c => {
+    const convId = pmConversationId(pmCurrentUser.id, c.id);
+    const unsub = window.onSnapshot(window.doc(window.db, 'conversations', convId), (snap) => {
+      const isUnread = snap.exists() && (snap.data().unreadBy || []).includes(pmCurrentUser.id);
+      if (isUnread) pmUnreadContactIds.add(c.id);
+      else pmUnreadContactIds.delete(c.id);
+
+      const badge = document.getElementById('messages-badge');
+      if (badge) badge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
+
+      const contactsView = document.getElementById('messages-contacts-view');
+      if (contactsView && contactsView.style.display !== 'none') {
+        renderMessageContacts();
+      }
+    }, (err) => {
+      console.log('Suivi des messages non lus impossible:', err.message);
+    });
+    pmConvUnreadUnsubs.push(unsub);
+  });
 }
 
 async function initMessages() {
