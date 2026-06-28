@@ -834,6 +834,9 @@ async function renderList(){
 <button onclick="openContactModal('${p.docId}')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;">
   📞 Logger un contact
 </button>
+${p.contractId
+  ? '<span style="display:inline-block;padding:6px 10px;font-size:12px;font-weight:700;color:#2E7D32;">🧾 Contrat créé</span>'
+  : `<button onclick="convertToClient('${p.docId}')" style="background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;">🧾 Créer le contrat</button>`}
       <button onclick="deleteProspect('${p.docId}')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">
       🗑 Supprimer
       </button>
@@ -867,10 +870,37 @@ async function changeStatus(docId, newStatus){
     });
     showToast('Statut mis à jour : ' + newStatus);
     renderList();
+
+    if (newStatus === 'Converti') {
+      const p = window._allProspects.find(x => x.docId === docId);
+      if (p && !p.contractId && confirm(`🎉 "${p.nom}" est converti !\n\nVeux-tu créer le contrat maintenant avec ses infos déjà pré-remplies ?`)) {
+        convertToClient(docId);
+      }
+    }
   } catch(err) {
     alert('Erreur: ' + err.message);
   }
 }
+
+// Ouvre wp_contrats.html dans un nouvel onglet avec les infos du prospect pré-remplies.
+// Le lien (prospectId) permet à wp_contrats.html de marquer ce prospect "Converti" et de
+// garder une référence croisée (contractId) une fois le contrat enregistré.
+window.convertToClient = function(docId){
+  const p = window._allProspects.find(x => x.docId === docId);
+  if (!p) return;
+
+  const params = new URLSearchParams({
+    prospectId: p.docId,
+    nom: p.nom || '',
+    tel: p.tel || '',
+    email: p.email || '',
+    societe: p.societe || '',
+    tva: p.tva || '',
+    adresse: p.ville || ''
+  });
+
+  window.open('wp_contrats.html?' + params.toString(), '_blank');
+};
 
 async function deleteProspect(docId){
   const p = window._allProspects.find(x => x.docId === docId);

@@ -243,6 +243,10 @@ select:focus{
 
 <h3>👤 Informations client</h3>
 
+<div id="prospect-link-banner" style="display:none;background:#fff3e8;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;margin-bottom:14px;">
+  🔗 Ce contrat sera lié au prospect <b id="prospect-link-name"></b> — il passera automatiquement en "Converti" une fois le contrat enregistré.
+</div>
+
 <div class="form-grid">
 
   <input id="nom"
@@ -428,6 +432,27 @@ onAuthStateChanged(auth, async (user) => {
 
   // Pré-remplir la date du jour
   document.getElementById('dateContrat').value = new Date().toISOString().slice(0, 10);
+
+  // Si on arrive depuis "Créer le contrat" sur un prospect (wp_prospects.html), pré-remplir le client
+  // et mémoriser le lien pour mettre à jour le prospect une fois le contrat enregistré.
+  const urlParams = new URLSearchParams(window.location.search);
+  const prospectId = urlParams.get('prospectId');
+  if (prospectId) {
+    window._currentProspectId = prospectId;
+    document.getElementById('nom').value = urlParams.get('nom') || '';
+    document.getElementById('tel').value = urlParams.get('tel') || '';
+    document.getElementById('email').value = urlParams.get('email') || '';
+    document.getElementById('societe').value = urlParams.get('societe') || '';
+    document.getElementById('tva').value = urlParams.get('tva') || '';
+    document.getElementById('adresse').value = urlParams.get('adresse') || '';
+
+    const banner = document.getElementById('prospect-link-banner');
+    const nameEl = document.getElementById('prospect-link-name');
+    if (banner && nameEl) {
+      nameEl.textContent = urlParams.get('nom') || 'ce prospect';
+      banner.style.display = 'block';
+    }
+  }
 
   window.refreshAspTotal();
   if (window.updateContractPreview) window.updateContractPreview();
@@ -666,12 +691,30 @@ async function saveContract(){
    etatContrat: document.getElementById('etatContrat').value,
    produitsDetail,
    aspTotal: Math.round(aspTotal*10)/10,
-   eurTotal: Math.round(eurTotal*100)/100
+   eurTotal: Math.round(eurTotal*100)/100,
+   prospectId: window._currentProspectId || null
  };
 
  try {
-   await window.addDoc(window.collection(window.db, 'contrats'), data);
+   const ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
    showToast(`✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+
+   // Si ce contrat vient d'un prospect, on le bascule en "Converti" et on garde une référence croisée.
+   if (window._currentProspectId) {
+     try {
+       await window.updateDoc(window.doc(window.db, 'prospectsClients', window._currentProspectId), {
+         statut: 'Converti',
+         contractId: ref.id,
+         dateMaj: new Date().toISOString()
+       });
+       showToast('✅ Contrat enregistré et prospect marqué "Converti".');
+     } catch (err) {
+       console.log('Mise à jour du prospect d\'origine impossible:', err.message);
+     }
+     window._currentProspectId = null;
+     const banner = document.getElementById('prospect-link-banner');
+     if (banner) banner.style.display = 'none';
+   }
 
    // Réinitialiser le formulaire
    ['nom','societe','tel','tva','clientOrange','contratSmart','email','adresse'].forEach(id => {
