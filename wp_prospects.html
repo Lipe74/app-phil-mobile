@@ -771,6 +771,31 @@ function updateStats(list){
   document.getElementById('stat-Perdu').textContent = counts.Perdu;
 }
 
+// --- Boutons d'action rapide (appel/SMS/WhatsApp/email) — évite le copier-coller sur mobile ---
+function cleanTel(tel){
+  return (tel || '').replace(/[\s.\-()]+/g, '');
+}
+function waTel(tel){
+  return cleanTel(tel).replace(/^\+/, '');
+}
+
+function renderQuickActions(p){
+  const tel = cleanTel(p.tel);
+  const buttons = [];
+
+  if (tel) {
+    buttons.push(`<a href="tel:${tel}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:#1a1a1a;color:#fff;text-decoration:none;font-size:12px;font-weight:700;">📞 Appeler</a>`);
+    buttons.push(`<a href="sms:${tel}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:#0d6efd;color:#fff;text-decoration:none;font-size:12px;font-weight:700;">💬 SMS</a>`);
+    buttons.push(`<a href="https://wa.me/${waTel(p.tel)}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:12px;font-weight:700;">🟢 WhatsApp</a>`);
+  }
+  if (p.email) {
+    buttons.push(`<a href="mailto:${escapeHtml(p.email)}" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;background:#ff5a14;color:#fff;text-decoration:none;font-size:12px;font-weight:700;">📧 Email</a>`);
+  }
+
+  if (buttons.length === 0) return '';
+  return `<div style="display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;">${buttons.join('')}</div>`;
+}
+
 async function renderList(){
   const data = await loadProspects();
   updateStats(data);
@@ -782,6 +807,8 @@ async function renderList(){
 
       <b>👤 ${escapeHtml(p.nom||'Sans nom')}</b>
       <span class="status-badge status-${escapeHtml(p.statut||'Nouveau')}">${escapeHtml(p.statut||'Nouveau')}</span><br>
+
+      ${renderQuickActions(p)}
 
       ${p.tel ? '📞 ' + escapeHtml(p.tel) + '<br>' : ''}
       ${p.email ? '📧 ' + escapeHtml(p.email) + '<br>' : ''}
