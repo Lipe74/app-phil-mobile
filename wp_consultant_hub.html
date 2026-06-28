@@ -635,6 +635,25 @@ Build <span id="app-version-1">…</span> Stable — Formations
             <a id="upline-contact-email" href="mailto:infos@phil-mobile.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
               📧 <span id="upline-contact-email-label">infos@phil-mobile.be</span>
             </a>
+
+            <div style="margin-top:18px;border-top:1px solid #f0f0f0;padding-top:16px;">
+              <div style="font-size:12px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">💬 Message rapide</div>
+              <div id="upline-chat-thread" style="display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:40vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;"></div>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:flex-end;">
+                <div id="upline-chat-input" contenteditable="true" class="rte-editor" data-placeholder="Écrire un message..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendUplineMessage();}" style="flex:1;min-height:42px;max-height:120px;overflow-y:auto;padding:10px 12px;border:1px solid #f97316;border-radius:10px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;"></div>
+                <button onclick="sendUplineMessage()" style="background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;flex-shrink:0;">Envoyer</button>
+              </div>
+            </div>
           </div>
 
           <!-- Panel Contacts Smart SN -->
@@ -1627,6 +1646,7 @@ function showContacts(btn) {
   document.getElementById('suivi-panel').style.display = 'none';
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById('panel-contacts-pm').style.display = 'block';
+  markUplineConversationRead();
 }
 
 function showContactsSmart(btn) {
@@ -1873,27 +1893,34 @@ function buildMessageContacts() {
     });
 }
 
+let pmUnreadContactIds = new Set();
+
 async function checkMessagesUnreadBadge() {
   const badge = document.getElementById('messages-badge');
-  if (!badge || !pmCurrentUser) return;
+  if (!pmCurrentUser) return;
   try {
     let tries = 0;
     while ((!window.db || !window.getDoc) && tries < 30) {
       await new Promise(r => setTimeout(r, 100));
       tries++;
     }
-    let hasUnread = false;
+    pmUnreadContactIds = new Set();
     for (const c of pmMessageContacts) {
       const convId = pmConversationId(pmCurrentUser.id, c.id);
       try {
         const snap = await window.getDoc(window.doc(window.db, 'conversations', convId));
         if (snap.exists() && (snap.data().unreadBy || []).includes(pmCurrentUser.id)) {
-          hasUnread = true;
-          break;
+          pmUnreadContactIds.add(c.id);
         }
       } catch(e) {}
     }
-    badge.style.display = hasUnread ? 'inline-block' : 'none';
+    if (badge) badge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
+    // Si la liste de contacts est actuellement affichée, on rafraîchit les pastilles individuelles
+    // (utile au premier chargement, où ce calcul se termine après le premier rendu de la liste).
+    const contactsView = document.getElementById('messages-contacts-view');
+    if (contactsView && contactsView.style.display !== 'none') {
+      renderMessageContacts();
+    }
   } catch(e) {
     console.log('Vérification messages non lus impossible:', e.message);
   }
@@ -1911,16 +1938,21 @@ function renderMessageContacts() {
     el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucun contact disponible pour le moment.</div>';
     return;
   }
-  el.innerHTML = pmMessageContacts.map(c => `
-    <div onclick="openConversation('${c.id}', '${c.name.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #f0f0f0;border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;">
-      <img src="images/${c.id}.png" onerror="this.src='images/smart.png'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+  el.innerHTML = pmMessageContacts.map(c => {
+    const unread = pmUnreadContactIds.has(c.id);
+    return `
+    <div onclick="openConversation('${c.id}', '${c.name.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid ${unread ? '#f97316' : '#f0f0f0'};border-radius:10px;margin-bottom:8px;cursor:pointer;background:${unread ? '#fff8f0' : '#fff'};">
+      <div style="position:relative;flex-shrink:0;">
+        <img src="images/${c.id}.png" onerror="this.src='images/smart.png'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;">
+        ${unread ? '<span style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff;"></span>' : ''}
+      </div>
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:700;color:#1a1a1a;">${escapeHtmlMessages(c.name)}</div>
+        <div style="font-size:13px;font-weight:700;color:#1a1a1a;">${escapeHtmlMessages(c.name)}${unread ? ' <span style="font-size:10px;color:#ef4444;font-weight:700;">● Nouveau</span>' : ''}</div>
         <div style="font-size:11px;color:#f97316;">${escapeHtmlMessages(c.role)}</div>
       </div>
       <span style="color:#f97316;font-size:14px;">›</span>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 window.openConversation = async function(contactId, contactName) {
@@ -2104,7 +2136,112 @@ function fillUplineContactPanel(uplineName, uplineTel, uplineEmail, uplineId) {
   if (elTelLabel) elTelLabel.textContent = telLabel;
   if (elEmail) elEmail.href = 'mailto:' + mail;
   if (elEmailLabel) elEmailLabel.textContent = mail;
+
+  initUplineChatEmbed(uplineId);
 }
+
+// ===== Chat embarqué dans le panel "Mon Upline" (même conversation que dans l'onglet Messages) =====
+let pmUplineConversationId = null;
+let pmUplineContactId = null;
+let pmUplineChatUnsub = null;
+
+// Si aucun upline réel n'est défini (ou si l'upline c'est moi-même), on bascule sur Phil-Mobile
+// (premier administrateur actif trouvé), cohérent avec le repli déjà utilisé pour les coordonnées par défaut.
+function resolveUplineChatContactId(uplineId) {
+  if (uplineId && uplineId !== pmCurrentUser?.id) return uplineId;
+  const admin = Object.values(PM_USERS).find(u => u.isAdmin && u.id !== pmCurrentUser?.id);
+  return admin ? admin.id : null;
+}
+
+async function initUplineChatEmbed(uplineId) {
+  if (!pmCurrentUser) return;
+  const contactId = resolveUplineChatContactId(uplineId);
+  if (!contactId) return;
+
+  pmUplineContactId = contactId;
+  pmUplineConversationId = pmConversationId(pmCurrentUser.id, contactId);
+
+  subscribeUplineMessages(pmUplineConversationId);
+}
+
+// Marque la conversation upline comme lue — appelé uniquement quand le panel "Mon Upline" est
+// réellement ouvert (showContacts), pas à chaque rendu du tableau de bord.
+async function markUplineConversationRead() {
+  if (!pmUplineConversationId || !pmCurrentUser) return;
+  try {
+    await window.updateDoc(window.doc(window.db, 'conversations', pmUplineConversationId), {
+      unreadBy: window.arrayRemove(pmCurrentUser.id)
+    });
+    checkMessagesUnreadBadge();
+  } catch(e) {
+    // Conversation pas encore créée : pas grave.
+  }
+}
+
+function subscribeUplineMessages(convId) {
+  if (pmUplineChatUnsub) { pmUplineChatUnsub(); pmUplineChatUnsub = null; }
+  if (!window.onSnapshot || !window.query || !window.orderBy) return;
+
+  const q = window.query(
+    window.collection(window.db, 'conversations', convId, 'messages'),
+    window.orderBy('createdAt')
+  );
+
+  pmUplineChatUnsub = window.onSnapshot(q, (snap) => {
+    const thread = document.getElementById('upline-chat-thread');
+    if (!thread) return;
+    const msgs = [];
+    snap.forEach(d => msgs.push(d.data()));
+
+    if (msgs.length === 0) {
+      thread.innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Aucun message pour le moment — écrivez le premier !</div>';
+      return;
+    }
+
+    thread.innerHTML = msgs.map(m => {
+      const mine = m.senderId === pmCurrentUser.id;
+      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:78%;">
+        <div style="background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#1a1a1a'};border:${mine ? 'none' : '1px solid #f0f0f0'};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${m.text}</div>
+        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};">${pmFormatMsgTime(m.createdAt)}</div>
+      </div>`;
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+  }, (err) => {
+    console.log('Lecture messages (upline) impossible:', err.message);
+  });
+}
+
+window.sendUplineMessage = async function() {
+  const input = document.getElementById('upline-chat-input');
+  const text = input.innerHTML.trim();
+  const plain = input.innerText.trim();
+  if (!plain || !pmUplineConversationId || !pmCurrentUser) return;
+
+  input.innerHTML = '';
+
+  try {
+    await window.addDoc(
+      window.collection(window.db, 'conversations', pmUplineConversationId, 'messages'),
+      {
+        senderId: pmCurrentUser.id,
+        senderName: pmCurrentUser.fullName || pmCurrentUser.name || '',
+        text,
+        createdAt: new Date().toISOString()
+      }
+    );
+
+    await window.setDoc(window.doc(window.db, 'conversations', pmUplineConversationId), {
+      participants: [pmCurrentUser.id, pmUplineContactId].sort(),
+      lastMessage: plain.slice(0, 120),
+      lastMessageAt: new Date().toISOString(),
+      unreadBy: window.arrayUnion(pmUplineContactId)
+    }, { merge: true });
+
+  } catch(err) {
+    console.log('Envoi du message (upline) impossible:', err.message);
+    alert("❌ Impossible d'envoyer le message. Réessayez.");
+  }
+};
 
 function renderDashboard() {
   if (!pmCurrentUser) return;
