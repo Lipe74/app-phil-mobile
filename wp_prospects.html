@@ -204,6 +204,7 @@ textarea:focus{
 <button class="tabbtn" onclick="startNewProspect()">🆕 Nouveau</button>
 <button class="tabbtn" onclick="showTab('liste')">📋 Liste</button>
 <button class="tabbtn" onclick="showTab('agenda')">📅 Agenda</button>
+<button class="tabbtn" onclick="showTab('relation')">🤝 Relation</button>
 <button class="tabbtn" onclick="showTab('import')">📥 Import Excel/CSV</button>
 </div>
 
@@ -237,10 +238,11 @@ textarea:focus{
     <option value="Orange">🟠 Orange</option>
     <option value="Eneco">⚡ Eneco</option>
     <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
+    <option value="Consultants">🎯 Consultants</option>
     <option value="Autre">✨ Autre</option>
   </select>
 
-  <select id="p-provenance">
+  <select id="p-provenance" onchange="toggleReferenceFields()">
     <option value="">🧭 Provenance du prospect...</option>
     <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
     <option value="Référence client existant">⭐ Référence client existant</option>
@@ -248,6 +250,11 @@ textarea:focus{
     <option value="Terrain">🚶 Terrain</option>
     <option value="Autre">✨ Autre</option>
   </select>
+
+<div id="reference-fields" style="display:none;">
+  <input id="p-ref-nom" placeholder="⭐ Nom du client qui a référé">
+  <input id="p-ref-tel" placeholder="📞 Téléphone du client qui a référé">
+</div>
 
 </div>
 
@@ -280,6 +287,12 @@ textarea:focus{
 <h2>📅 Agenda des contacts</h2>
 <div style="font-size:13px;color:#888;margin-bottom:14px;">Historique de tous les contacts loggés sur tes prospects, du plus récent au plus ancien.</div>
 <div id="agendaList"></div>
+</div>
+
+<div id="relation" class="section hidden">
+<h2>🤝 Relation</h2>
+<div style="font-size:13px;color:#888;margin-bottom:14px;">Tes apporteurs d'affaires : qui t'a référé combien de prospects, et combien ont été convertis.</div>
+<div id="relationList"></div>
 </div>
 
 <div id="import" class="section hidden">
@@ -466,14 +479,20 @@ function toggleSocieteFields(){
   document.getElementById('societe-fields').style.display = isSociete ? 'block' : 'none';
 }
 
+function toggleReferenceFields(){
+  const isReference = document.getElementById('p-provenance').value === 'Référence client existant';
+  document.getElementById('reference-fields').style.display = isReference ? 'block' : 'none';
+}
+
 function resetProspectForm(){
-  ['p-nom','p-tel','p-email','p-commentaire','p-societe','p-tva','p-ville'].forEach(id => {
+  ['p-nom','p-tel','p-email','p-commentaire','p-societe','p-tva','p-ville','p-ref-nom','p-ref-tel'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('p-source').value = 'Orange';
   document.getElementById('p-provenance').value = '';
   document.getElementById('p-type').value = 'Particulier';
   toggleSocieteFields();
+  toggleReferenceFields();
 }
 
 function startNewProspect(){
@@ -487,6 +506,7 @@ function showTab(id){
  document.getElementById(id).classList.remove('hidden');
  if(id==='liste') renderList();
  if(id==='agenda') renderAgenda();
+ if(id==='relation') renderRelations();
 }
 function editProspect(id){
 
@@ -504,7 +524,10 @@ function editProspect(id){
   document.getElementById('p-type').value = p.type || 'Particulier';
   document.getElementById('p-societe').value = p.societe || '';
   document.getElementById('p-tva').value = p.tva || '';
+  document.getElementById('p-ref-nom').value = p.referenceNom || '';
+  document.getElementById('p-ref-tel').value = p.referenceTel || '';
   toggleSocieteFields();
+  toggleReferenceFields();
 
   currentEditId = id;
 
@@ -547,6 +570,8 @@ async function saveProspect(){
 
   source: document.getElementById('p-source').value,
   provenance: document.getElementById('p-provenance').value,
+  referenceNom: document.getElementById('p-ref-nom').value.trim(),
+  referenceTel: document.getElementById('p-ref-tel').value.trim(),
   commentaire: document.getElementById('p-commentaire').value.trim(),
   statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
   dateCreation: existing ? (existing.dateCreation || now) : now,
@@ -699,6 +724,43 @@ function renderAgenda(){
   el.innerHTML = html;
 }
 
+function renderRelations(){
+  const list = window._allProspects || [];
+  const referred = list.filter(p => p.provenance === 'Référence client existant' && p.referenceNom);
+
+  const groups = {};
+  referred.forEach(p => {
+    const key = p.referenceNom.trim().toLowerCase();
+    if (!groups[key]) groups[key] = { nom: p.referenceNom.trim(), tel: p.referenceTel || '', prospects: [] };
+    groups[key].prospects.push(p);
+  });
+
+  const arr = Object.values(groups).sort((a,b) => b.prospects.length - a.prospects.length);
+
+  const el = document.getElementById('relationList');
+  if (arr.length === 0) {
+    el.innerHTML = '<div style="color:#9ca3af;">Aucune référence enregistrée pour le moment. Choisis "Référence client existant" comme provenance d\'un prospect pour faire apparaître un apporteur ici.</div>';
+    return;
+  }
+
+  el.innerHTML = arr.map(g => {
+    const converti = g.prospects.filter(p => p.statut === 'Converti').length;
+    return `
+      <div class="card">
+        <b>⭐ ${escapeHtml(g.nom)}</b>${g.tel ? ' · 📞 ' + escapeHtml(g.tel) : ''}<br>
+        <span style="color:#666;">${g.prospects.length} prospect(s) apporté(s) · ${converti} converti(s)</span>
+        <div style="margin-top:8px;">
+          ${g.prospects.map(p => `
+            <div style="padding:5px 0;border-top:1px solid #f3f3f3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+              <span>👤 ${escapeHtml(p.nom)}</span>
+              <span class="status-badge status-${escapeHtml(p.statut||'Nouveau')}">${escapeHtml(p.statut||'Nouveau')}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
 function updateStats(list){
   const counts = { Nouveau:0, Contacté:0, Converti:0, Perdu:0 };
   list.forEach(p => { if (counts[p.statut] !== undefined) counts[p.statut]++; });
@@ -727,6 +789,7 @@ async function renderList(){
       ${p.type === 'Société' ? '🏢 ' + escapeHtml(p.societe||'-') + (p.tva ? ' · ' + escapeHtml(p.tva) : '') + '<br>' : ''}
       🏷 ${escapeHtml(p.source||'-')}<br>
       ${p.provenance ? '🧭 ' + escapeHtml(p.provenance) + '<br>' : ''}
+      ${p.referenceNom ? '⭐ Référé par : ' + escapeHtml(p.referenceNom) + (p.referenceTel ? ' (' + escapeHtml(p.referenceTel) + ')' : '') + '<br>' : ''}
       ${p.commentaire ? '📝 ' + escapeHtml(p.commentaire) + '<br>' : ''}
       📅 ${p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : '-'}<br>
       ${renderContactSummary(p)}<br><br>
@@ -983,6 +1046,7 @@ window.showTab = showTab;
 window.editProspect = editProspect;
 window.startNewProspect = startNewProspect;
 window.toggleSocieteFields = toggleSocieteFields;
+window.toggleReferenceFields = toggleReferenceFields;
 window.parseImportFile = parseImportFile;
 window.confirmImport = confirmImport;
 </script>
