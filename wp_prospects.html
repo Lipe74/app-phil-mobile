@@ -188,6 +188,7 @@ textarea:focus{
 <div class="tabs">
 <button class="tabbtn" onclick="startNewProspect()">🆕 Nouveau</button>
 <button class="tabbtn" onclick="showTab('liste')">📋 Liste</button>
+<button class="tabbtn" onclick="showTab('agenda')">📅 Agenda</button>
 <button class="tabbtn" onclick="showTab('import')">📥 Import Excel/CSV</button>
 </div>
 
@@ -251,6 +252,12 @@ textarea:focus{
 <div id="prospectsList"></div>
 </div>
 
+<div id="agenda" class="section hidden">
+<h2>📅 Agenda des contacts</h2>
+<div style="font-size:13px;color:#888;margin-bottom:14px;">Historique de tous les contacts loggés sur tes prospects, du plus récent au plus ancien.</div>
+<div id="agendaList"></div>
+</div>
+
 <div id="import" class="section hidden">
 <h2>📥 Import Excel/CSV</h2>
 
@@ -289,7 +296,8 @@ import {
   updateDoc,
   query,
   where,
-  deleteDoc
+  deleteDoc,
+  arrayUnion
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -316,6 +324,7 @@ window.updateDoc = updateDoc;
 window.query = query;
 window.where = where;
 window.deleteDoc = deleteDoc;
+window.arrayUnion = arrayUnion;
 
 let currentConsultant = null;
 
@@ -411,6 +420,7 @@ function showTab(id){
  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
  document.getElementById(id).classList.remove('hidden');
  if(id==='liste') renderList();
+ if(id==='agenda') renderAgenda();
 }
 function editProspect(id){
 
@@ -497,6 +507,62 @@ async function loadProspects(){
   return list;
 }
 
+// --- Suivi des contacts (trace + nombre de fois contacté) ---
+function renderContactSummary(p){
+  const contacts = p.contacts || [];
+  if (contacts.length === 0) return '<span style="color:#9ca3af;">📞 Aucun contact enregistré</span>';
+  const last = contacts[contacts.length - 1];
+  const lastDate = new Date(last.date).toLocaleDateString();
+  return `📞 Contacté ${contacts.length}x · Dernier contact : ${lastDate}`;
+}
+
+async function logContact(docId){
+  const p = window._allProspects.find(x => x.docId === docId);
+  if (!p) return;
+
+  const note = prompt(`Logger un contact pour "${p.nom}".\n\nNote (facultatif, ex: "Pas de réponse", "Intéressé, rappeler dans 1 semaine") :`, '');
+  if (note === null) return; // annulé
+
+  const entry = { date: new Date().toISOString(), note: note.trim() };
+
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), {
+      contacts: window.arrayUnion(entry)
+    });
+    showToast('📞 Contact enregistré.');
+    renderList();
+  } catch(err) {
+    alert('Erreur lors de l\'enregistrement du contact: ' + err.message);
+  }
+}
+
+function renderAgenda(){
+  const list = window._allProspects || [];
+  const events = [];
+
+  list.forEach(p => {
+    (p.contacts || []).forEach(c => {
+      events.push({ date: c.date, note: c.note, prospectName: p.nom, prospectId: p.docId });
+    });
+  });
+
+  events.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  const el = document.getElementById('agendaList');
+  if (events.length === 0) {
+    el.innerHTML = '<div style="color:#9ca3af;">Aucun contact loggé pour le moment. Utilise le bouton "📞 Logger un contact" depuis la liste des prospects.</div>';
+    return;
+  }
+
+  el.innerHTML = events.map(e => `
+    <div class="card">
+      <b>📞 ${new Date(e.date).toLocaleDateString()} à ${new Date(e.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</b><br>
+      👤 ${escapeHtml(e.prospectName)}<br>
+      ${e.note ? '📝 ' + escapeHtml(e.note) : '<span style="color:#9ca3af;">Pas de note</span>'}
+    </div>
+  `).join('');
+}
+
 function updateStats(list){
   const counts = { Nouveau:0, Contacté:0, Converti:0, Perdu:0 };
   list.forEach(p => { if (counts[p.statut] !== undefined) counts[p.statut]++; });
@@ -525,7 +591,8 @@ async function renderList(){
       ${p.type === 'Société' ? '🏢 ' + escapeHtml(p.societe||'-') + (p.tva ? ' · ' + escapeHtml(p.tva) : '') + '<br>' : ''}
       🏷 ${escapeHtml(p.source||'-')}<br>
       ${p.commentaire ? '📝 ' + escapeHtml(p.commentaire) + '<br>' : ''}
-      📅 ${p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : '-'}<br><br>
+      📅 ${p.dateCreation ? new Date(p.dateCreation).toLocaleDateString() : '-'}<br>
+      ${renderContactSummary(p)}<br><br>
 
       📊
       <select onchange="changeStatus('${p.docId}', this.value)" style="width:auto;display:inline-block;margin:0 0 8px 4px;padding:4px 8px;font-size:12px;">
@@ -536,6 +603,9 @@ async function renderList(){
       </select>
 <button onclick="editProspect('${p.docId}')">
   ✏️ Modifier
+</button>
+<button onclick="logContact('${p.docId}')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;">
+  📞 Logger un contact
 </button>
       <button onclick="deleteProspect('${p.docId}')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">
       🗑 Supprimer
@@ -769,6 +839,7 @@ window.filterList = filterList;
 window.changeStatus = changeStatus;
 window.deleteProspect = deleteProspect;
 window.deleteAllProspects = deleteAllProspects;
+window.logContact = logContact;
 window.showTab = showTab;
 window.editProspect = editProspect;
 window.startNewProspect = startNewProspect;
