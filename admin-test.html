@@ -27,9 +27,51 @@
     cursor: pointer;
   }
   .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-  .admin-columns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 1300px) { .admin-columns { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 700px) { .admin-columns { grid-template-columns: 1fr; } }
+  /* Layout Admin 3.0 : menu à gauche (style hub) + panneau à droite */
+  .admin-layout { display: flex; gap: 16px; align-items: flex-start; }
+  .admin-menu { width: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }
+  .admin-content { flex: 1; min-width: 0; }
+  .admin-panel { display: none; }
+  .menu-label {
+    font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase;
+    letter-spacing: .08em; margin: 10px 0 4px; padding-left: 4px;
+  }
+  .menu-label:first-child { margin-top: 0; }
+  .menu-item {
+    display: block; width: 100%; text-align: left; padding: 9px 12px;
+    background: #fff; border: 1px solid #f97316; border-radius: 8px;
+    color: #1a1a1a; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: Arial, sans-serif; transition: all .15s;
+  }
+  .menu-item:hover { background: #fff3e8; }
+  .active-item { background: #f97316 !important; color: #fff !important; border-color: #f97316 !important; }
+  .submenu { display: none; margin-left: 10px; }
+  .submenu.open { display: block; }
+  .submenu .menu-item { margin-top: 6px; }
+  .group-toggle { width: 100%; text-align: left; }
+  #mobile-close-btn {
+    display: none; position: fixed; top: 10px; right: 10px; z-index: 600;
+    width: 38px; height: 38px; border-radius: 50%; background: #f97316; color: #fff;
+    border: none; font-size: 18px; font-weight: 700; cursor: pointer;
+    align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  @media (max-width: 700px) {
+    .admin-layout { flex-direction: column; }
+    .admin-menu { width: 100%; }
+    /* Mode plein écran mobile : évite de devoir scroller sous tout le menu pour voir le panneau ouvert */
+    body.mobile-panel-open .admin-panel {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      width: 100% !important; height: 100% !important; max-height: none !important;
+      margin: 0 !important; border-radius: 0 !important;
+      z-index: 500;
+      overflow-y: auto !important;
+      background: #f7f7f9;
+      padding: 60px 16px 24px !important;
+      box-sizing: border-box;
+    }
+    body.mobile-panel-open #mobile-close-btn { display: flex; }
+  }
   .count-badge { display: inline-block; background: #f97316; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 4px; vertical-align: middle; }
   .rte-btn { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 9px; font-size: 12px; cursor: pointer; color: #333; }
   .rte-btn:hover { background: #f3f4f6; }
@@ -118,46 +160,73 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 2.3</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.0</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
 
   <div class="container">
 
-    <div class="admin-columns">
+    <div class="admin-layout">
 
-      <div class="admin-col">
+      <!-- MENU (style hub) -->
+      <div class="admin-menu">
 
-        <div class="section">
-          <div class="section-title" onclick="toggleSection('prospects-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>📝 Demandes en attente <span id="prospects-count"></span></span>
-            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
-          </div>
-          <div id="prospects-list" style="display:none;"><div class="empty">Chargement...</div></div>
+        <div class="menu-label">📥 Activité</div>
+        <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">📝 Demandes en attente <span id="prospects-count"></span></button>
+        <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
+        <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
+
+        <div class="menu-label">👥 Consultants</div>
+        <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
+
+        <div class="menu-label">🎁 Promotions</div>
+        <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
+        <div id="promosMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item">➕ Créer une promotion</button>
+          <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item">📋 Promotions existantes</button>
         </div>
 
-        <div class="section">
-          <div class="section-title" onclick="toggleSection('feedback-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></span>
-            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
-          </div>
-          <div id="feedback-list" style="display:none;"><div class="empty">Chargement...</div></div>
+        <div class="menu-label">📰 News</div>
+        <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
+        <div id="newsMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-bandeau', this)" class="menu-item">📢 Message bandeau</button>
+          <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item">➕ Créer une news</button>
+          <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item">📋 News publiées</button>
         </div>
 
-        <div class="section">
-          <div class="section-title" onclick="toggleSection('consultants-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+        <div class="menu-label">📅 Agenda</div>
+        <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
+        <div id="agendaMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item">➕ Créer un événement</button>
+          <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item">📅 Tous les événements</button>
+        </div>
+
+      </div>
+
+      <!-- CONTENU : un panneau affiché à la fois -->
+      <div class="admin-content">
+
+        <div class="admin-panel" id="panel-prospects">
+          <div class="section-title">📝 Demandes en attente</div>
+          <div id="prospects-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-feedback">
+          <div class="section-title">🐞 Bugs &amp; Suggestions</div>
+          <div id="feedback-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-consultants">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>👥 Consultants actifs / inactifs</span>
-            <span style="display:flex;align-items:center;gap:8px;">
-              <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="event.stopPropagation(); openCreateModal();">➕ Créer</button>
-              <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
-            </span>
+            <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button>
           </div>
-          <div id="consultants-list" style="display:none;"><div class="empty">Chargement...</div></div>
+          <div id="consultants-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
-        <div class="section">
-          <div class="section-title">🎁 Promotions Orange</div>
+        <div class="admin-panel" id="panel-promo-create">
+          <div class="section-title">➕ Créer une promotion Orange</div>
           <div class="card">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
@@ -247,26 +316,22 @@
             <button class="btn btn-secondary" style="width:100%;" onclick="seedCurrentPromos()">🌱 Importer les promos actuelles (une seule fois)</button>
           </div>
 
-          <div onclick="toggleSection('promos-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
-            <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">📋 Promos créées</span>
-            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
-          </div>
-          <div id="promos-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
-        <div class="section">
-          <div class="section-title" onclick="toggleSection('messages-admin-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-            <span>💬 Messages</span>
-            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
+        <div class="admin-panel" id="panel-promo-list">
+          <div class="section-title">📋 Promotions existantes</div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px;">
+            ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
           </div>
-          <div id="messages-admin-list" style="display:none;"><div class="empty">Chargement...</div></div>
+          <div id="promos-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
-      </div>
+        <div class="admin-panel" id="panel-messages">
+          <div class="section-title">💬 Messages</div>
+          <div id="messages-admin-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
 
-      <div class="admin-col">
-
-        <div class="section">
+        <div class="admin-panel" id="panel-bandeau">
           <div class="section-title">📢 Annonce du bandeau (page principale)</div>
           <div class="card">
             <div class="checkbox-row" style="margin-bottom:12px;">
@@ -296,8 +361,8 @@
           </div>
         </div>
 
-        <div class="section">
-          <div class="section-title">📰 Historique des News</div>
+        <div class="admin-panel" id="panel-news-create">
+          <div class="section-title">➕ Créer une news</div>
           <div class="card">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Séparé du bandeau ci-dessus — sert d'archive consultable par les consultants dans le hub (panneau "News").
@@ -337,19 +402,15 @@
             <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
           </div>
 
-          <div onclick="toggleSection('newsitems-list', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
-            <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">📋 News déjà publiées</span>
-            <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
-          </div>
-          <div id="newsitems-list" style="display:none;"><div class="empty">Chargement...</div></div>
         </div>
 
-      </div>
+        <div class="admin-panel" id="panel-news-list">
+          <div class="section-title">📋 News publiées</div>
+          <div id="newsitems-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
 
-      <div class="admin-col">
-
-        <div class="section">
-          <div class="section-title">📅 Agenda des événements</div>
+        <div class="admin-panel" id="panel-agenda-create">
+          <div class="section-title">➕ Créer un événement</div>
           <div class="card">
             <div class="form-row">
               <label>Catégorie</label>
@@ -395,6 +456,10 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
             <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportAgenda()">📥 Importer la liste</button>
           </div>
 
+        </div>
+
+        <div class="admin-panel" id="panel-agenda-list">
+          <div class="section-title">📅 Tous les événements</div>
           <div id="agenda-list"><div class="empty">Chargement...</div></div>
         </div>
 
@@ -404,6 +469,9 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
 
   </div>
 </div>
+
+<!-- Bouton flottant mobile : ferme le panneau plein écran et revient au menu -->
+<button id="mobile-close-btn" onclick="closeMobilePanel()" title="Fermer">✕</button>
 
 <!-- Modal : activer un prospect / créer un consultant -->
 <div class="modal-overlay" id="activate-modal">
@@ -713,6 +781,8 @@ onAuthStateChanged(auth, async (user) => {
   loadConsultants();
   loadMessagesAdmin();
   checkExpiredConsultants();
+  // Panneau par défaut à la connexion (sans plein écran mobile)
+  showAdminPanel('panel-prospects', null);
 });
 
 async function checkExpiredConsultants() {
@@ -755,6 +825,34 @@ window.toggleSection = function (containerId, headerEl) {
   el.style.display = isHidden ? 'block' : 'none';
   const chevron = headerEl ? headerEl.querySelector('.section-chevron') : null;
   if (chevron) chevron.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+};
+
+// --- Navigation Admin 3.0 : menu à gauche, un panneau affiché à la fois (style hub) ---
+window.showAdminPanel = function (panelId, btn) {
+  document.querySelectorAll('.admin-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById(panelId);
+  if (panel) panel.style.display = 'block';
+  document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
+  if (btn) {
+    btn.classList.add('active-item');
+    // Plein écran mobile uniquement sur clic dans le menu (btn présent).
+    document.body.classList.add('mobile-panel-open');
+  } else {
+    // Appel programmatique (login, bouton ✕) : pas de plein écran.
+    document.body.classList.remove('mobile-panel-open');
+    const menuBtn = document.getElementById('menu-prospects');
+    if (menuBtn && panelId === 'panel-prospects') menuBtn.classList.add('active-item');
+  }
+};
+
+window.toggleMenu = function (id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+};
+
+// Bouton flottant mobile : ferme le plein écran et revient au menu.
+window.closeMobilePanel = function () {
+  document.body.classList.remove('mobile-panel-open');
 };
 
 // --- Annonce du bandeau (news) ---
@@ -2001,6 +2099,7 @@ async function loadMessagesAdmin() {
     }
 
     let html = '';
+    let unreadTotal = 0;
     for (const c of list) {
       const convId = pmConvId(adminOwnId, c.id);
       let unread = false;
@@ -2008,6 +2107,7 @@ async function loadMessagesAdmin() {
         const convSnap = await getDoc(doc(db, 'conversations', convId));
         if (convSnap.exists() && (convSnap.data().unreadBy || []).includes(adminOwnId)) unread = true;
       } catch (e) {}
+      if (unread) unreadTotal++;
 
       const displayName = c.fullName || c.name || c.id;
       html += `
@@ -2025,6 +2125,8 @@ async function loadMessagesAdmin() {
         </div>`;
     }
     container.innerHTML = html;
+    const msgCountEl = document.getElementById('messages-count');
+    if (msgCountEl) msgCountEl.innerHTML = unreadTotal > 0 ? `<span class="count-badge" style="background:#ef4444;">${unreadTotal}</span>` : '';
   } catch (err) {
     container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
     console.log('Chargement messages admin impossible:', err.message);
