@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.0</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.1</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -183,23 +183,23 @@
         <div class="menu-label">🎁 Promotions</div>
         <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
         <div id="promosMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item">➕ Créer une promotion</button>
-          <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item">📋 Promotions existantes</button>
+          <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
+          <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
         </div>
 
         <div class="menu-label">📰 News</div>
         <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
         <div id="newsMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-bandeau', this)" class="menu-item">📢 Message bandeau</button>
-          <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item">➕ Créer une news</button>
-          <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item">📋 News publiées</button>
+          <button onclick="showAdminPanel('panel-bandeau', this)" class="menu-item" id="menu-bandeau">📢 Message bandeau</button>
+          <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item" id="menu-news-create">➕ Créer une news</button>
+          <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item" id="menu-news-list">📋 News publiées</button>
         </div>
 
         <div class="menu-label">📅 Agenda</div>
         <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
         <div id="agendaMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item">➕ Créer un événement</button>
-          <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item">📅 Tous les événements</button>
+          <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item" id="menu-agenda-create">➕ Créer un événement</button>
+          <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item" id="menu-agenda-list">📅 Tous les événements</button>
         </div>
 
       </div>
@@ -241,9 +241,10 @@
             <div class="form-row">
               <label>Type de remise</label>
               <select id="promo-type" onchange="onPromoTypeChange()">
-                <option value="monthly">📅 Mensuelle simple (Internet / Divers)</option>
-                <option value="mobile">📱 Liée à un abonnement mobile précis</option>
-                <option value="unique">🎁 Remise unique (frais, etc.)</option>
+                <option value="mobile">📱 Remise Mobile</option>
+                <option value="internet">🌐 Remise Internet</option>
+                <option value="option">🎁 Remise Option (Netflix, Disney+, services...)</option>
+                <option value="unique">💶 Remise unique (frais, etc.)</option>
               </select>
             </div>
 
@@ -258,23 +259,25 @@
               </select>
             </div>
 
-            <div class="form-row" id="promo-product-monthly-row" style="display:none;">
-              <label>Produit concerné</label>
-              <select id="promo-product-monthly">
-                <optgroup label="🌐 Internet">
-                  <option value="inet_start" data-family="internet" data-label="Internet Start">Internet Start</option>
-                  <option value="inet_zen" data-family="internet" data-label="Internet Zen">Internet Zen</option>
-                  <option value="inet_giga" data-family="internet" data-label="Internet Giga">Internet Giga</option>
-                </optgroup>
-                <optgroup label="🎁 Divers">
-                  <option value="net_ess" data-family="divers" data-label="Netflix Essentiel">Netflix Essentiel</option>
-                  <option value="net_std" data-family="divers" data-label="Netflix Standard">Netflix Standard</option>
-                  <option value="net_prem" data-family="divers" data-label="Netflix Premium">Netflix Premium</option>
-                  <option value="opt_confort" data-family="divers" data-label="My Comfort Service">My Comfort Service</option>
-                  <option value="disney_std_ads" data-family="divers" data-label="Disney+ Standard avec Pub">Disney+ Standard avec Pub</option>
-                  <option value="disney_std" data-family="divers" data-label="Disney+ Standard">Disney+ Standard</option>
-                  <option value="disney_prem" data-family="divers" data-label="Disney+ Premium">Disney+ Premium</option>
-                </optgroup>
+            <div class="form-row" id="promo-product-internet-row" style="display:none;">
+              <label>Produit Internet concerné</label>
+              <select id="promo-product-internet">
+                <option value="inet_start" data-family="internet" data-label="Internet Start">Internet Start</option>
+                <option value="inet_zen" data-family="internet" data-label="Internet Zen">Internet Zen</option>
+                <option value="inet_giga" data-family="internet" data-label="Internet Giga">Internet Giga</option>
+              </select>
+            </div>
+
+            <div class="form-row" id="promo-product-option-row" style="display:none;">
+              <label>Option concernée</label>
+              <select id="promo-product-option">
+                <option value="net_ess" data-family="divers" data-label="Netflix Essentiel">Netflix Essentiel</option>
+                <option value="net_std" data-family="divers" data-label="Netflix Standard">Netflix Standard</option>
+                <option value="net_prem" data-family="divers" data-label="Netflix Premium">Netflix Premium</option>
+                <option value="opt_confort" data-family="divers" data-label="My Comfort Service">My Comfort Service</option>
+                <option value="disney_std_ads" data-family="divers" data-label="Disney+ Standard avec Pub">Disney+ Standard avec Pub</option>
+                <option value="disney_std" data-family="divers" data-label="Disney+ Standard">Disney+ Standard</option>
+                <option value="disney_prem" data-family="divers" data-label="Disney+ Premium">Disney+ Premium</option>
               </select>
             </div>
 
@@ -305,6 +308,13 @@
                 <label for="promo-requireschild" style="font-weight:400;">Nécessite un Mobile Child associé (sinon : LOVE uniquement)</label>
               </div>
             </div>
+            <div class="form-row" id="promo-condition-row" style="display:none;">
+              <div class="checkbox-row">
+                <input type="checkbox" id="promo-hascondition" onchange="document.getElementById('promo-condition').style.display = this.checked ? 'block' : 'none';">
+                <label for="promo-hascondition" style="font-weight:400;">Condition particulière (affichée sous la promo dans le simulateur)</label>
+              </div>
+              <input type="text" id="promo-condition" placeholder="ex: Nécessite un Internet dans le contrat" style="display:none;margin-top:6px;">
+            </div>
             <button class="btn btn-primary" id="promo-submit-btn" onclick="addOrUpdatePromo()">➕ Ajouter la/les promo(s)</button>
             <button class="btn btn-secondary" id="promo-cancel-btn" onclick="cancelPromoEdit()" style="display:none;">Annuler la modification</button>
           </div>
@@ -319,7 +329,10 @@
         </div>
 
         <div class="admin-panel" id="panel-promo-list">
-          <div class="section-title">📋 Promotions existantes</div>
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>📋 Promotions existantes</span>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="deleteAllPromos()">🗑 Tout supprimer</button>
+          </div>
           <div style="font-size:11px;color:#888;margin-bottom:10px;">
             ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
           </div>
@@ -459,7 +472,10 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
         </div>
 
         <div class="admin-panel" id="panel-agenda-list">
-          <div class="section-title">📅 Tous les événements</div>
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>📅 Tous les événements</span>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="deleteAllAgendaEvents()">🗑 Tout supprimer</button>
+          </div>
           <div id="agenda-list"><div class="empty">Chargement...</div></div>
         </div>
 
@@ -510,21 +526,22 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <input type="number" id="f-aspinit" value="0">
     </div>
     <div class="form-row">
-      <label>Montant payé (€)</label>
-      <input type="number" id="f-paidamount" value="149">
-    </div>
-    <div class="form-row">
-      <label>Date de paiement (jj/mm/aaaa)</label>
-      <input type="text" id="f-paiddate" placeholder="ex: 19/06/2026">
+      <label>Paiement</label>
+      <select id="f-paystatus">
+        <option value="none" selected>⚪ Non payé</option>
+        <option value="paid">✅ Payé</option>
+        <option value="offered">🎁 Offert</option>
+      </select>
     </div>
     <div class="checkbox-row"><input type="checkbox" id="f-isadmin"> Administrateur</div>
     <div class="checkbox-row"><input type="checkbox" id="f-istest" onchange="onTestAccountToggle()"> Compte de test (durée limitée)</div>
+    <div class="checkbox-row"><input type="checkbox" id="f-isteams" onchange="onTeamsAccountToggle()"> Compte Teams (30 jours offerts)</div>
     <div class="form-row" id="f-duration-row">
       <label id="f-duration-label">Durée de l'accès</label>
       <select id="f-duration" onchange="document.getElementById('f-customdate').style.display = this.value === 'custom' ? 'block' : 'none';">
         <option value="3">3 jours (essai)</option>
-        <option value="7">7 jours (essai)</option>
         <option value="365" selected>12 mois (abonnement)</option>
+        <option value="none">♾️ Indéfini</option>
         <option value="custom">Date personnalisée…</option>
       </select>
       <input type="text" id="f-customdate" placeholder="jj/mm/aaaa" style="display:none;margin-top:6px;">
@@ -614,7 +631,16 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <label>Date d'expiration de l'accès (jj/mm/aaaa, vide = pas d'expiration)</label>
       <input type="text" id="e-expirationdate" placeholder="ex: 19/06/2027">
     </div>
+    <div class="form-row">
+      <label>Paiement</label>
+      <select id="e-paystatus">
+        <option value="none">⚪ Non payé</option>
+        <option value="paid">✅ Payé</option>
+        <option value="offered">🎁 Offert</option>
+      </select>
+    </div>
     <div class="checkbox-row"><input type="checkbox" id="e-istest"> Compte de test (durée limitée)</div>
+    <div class="checkbox-row"><input type="checkbox" id="e-isteams"> Compte Teams (30 jours offerts)</div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmEdit()">Enregistrer les modifications</button>
@@ -1000,15 +1026,20 @@ window.editNewsItem = function (docId) {
   document.getElementById('newsitem-fulltext').innerHTML = n.fullText || '';
   document.getElementById('newsitem-submit-btn').textContent = '💾 Enregistrer les modifications';
   document.getElementById('newsitem-cancel-btn').style.display = 'inline-block';
+  // Bascule vers le panneau de création prérempli (le formulaire est dans un autre panneau depuis la 3.0)
+  goToPanel('newsMenu', 'menu-news-create', 'panel-news-create');
   document.getElementById('newsitem-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
 window.cancelNewsItemEdit = function () {
+  const wasEditing = !!currentEditNewsItemId;
   currentEditNewsItemId = null;
   document.getElementById('newsitem-title').value = '';
   document.getElementById('newsitem-fulltext').innerHTML = '';
   document.getElementById('newsitem-submit-btn').textContent = '➕ Publier dans l\'historique';
   document.getElementById('newsitem-cancel-btn').style.display = 'none';
+  // Après une édition (annulée ou enregistrée), retour à la liste des news
+  if (wasEditing) goToPanel('newsMenu', 'menu-news-list', 'panel-news-list');
 };
 
 window.addOrUpdateNewsItem = async function () {
@@ -1075,15 +1106,20 @@ window.editAgendaEvent = function (docId) {
   currentEditAgendaId = docId;
   document.getElementById('ag-submit-btn').textContent = '💾 Enregistrer les modifications';
   document.getElementById('ag-cancel-btn').style.display = 'inline-block';
+  // Bascule vers le panneau de création prérempli (le formulaire est dans un autre panneau depuis la 3.0)
+  goToPanel('agendaMenu', 'menu-agenda-create', 'panel-agenda-create');
   document.getElementById('ag-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
 window.cancelAgendaEdit = function () {
+  const wasEditing = !!currentEditAgendaId;
   currentEditAgendaId = null;
   document.getElementById('ag-title').value = '';
   document.getElementById('ag-date').value = '';
   document.getElementById('ag-submit-btn').textContent = '➕ Ajouter l\'événement';
   document.getElementById('ag-cancel-btn').style.display = 'none';
+  // Après une édition (annulée ou enregistrée), retour à la liste des événements
+  if (wasEditing) goToPanel('agendaMenu', 'menu-agenda-list', 'panel-agenda-list');
 };
 
 async function loadAgendaAdmin() {
@@ -1438,7 +1474,47 @@ const PROMO_MOBILE_LABELS = {
   mob_large:  'Mobile Large 140GB',
   mob_unlim:  'Mobile Unlimited 300GB'
 };
-const PROMO_TYPE_LABEL = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '🎁 Unique' };
+const PROMO_TYPE_LABEL = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '💶 Unique' };
+
+// Navigation : ouvre l'accordéon du menu, active le bouton et affiche le panneau
+window.goToPanel = function (menuId, btnId, panelId) {
+  const sub = document.getElementById(menuId);
+  if (sub) sub.classList.add('open');
+  showAdminPanel(panelId, document.getElementById(btnId));
+};
+
+// Suppression en masse (double confirmation — action irréversible)
+window.deleteAllPromos = async function () {
+  const n = (promosCache || []).length;
+  if (!n) { alert('Aucune promotion à supprimer.'); return; }
+  if (!confirm(`Supprimer TOUTES les promotions (${n}) ?\n\nCette action est irréversible.`)) return;
+  if (!confirm('Dernière confirmation : tout supprimer définitivement ?')) return;
+  try {
+    for (const p of promosCache) {
+      await deleteDoc(doc(db, 'promosOrange', p.docId));
+    }
+    showToast('🗑️ Toutes les promotions ont été supprimées.');
+  } catch (err) {
+    alert('Erreur pendant la suppression: ' + err.message);
+  }
+  loadPromosAdmin();
+};
+
+window.deleteAllAgendaEvents = async function () {
+  const n = (agendaEventsCache || []).length;
+  if (!n) { alert('Aucun événement à supprimer.'); return; }
+  if (!confirm(`Supprimer TOUS les événements (${n}) ?\n\nCette action est irréversible (réimport possible via l'import en masse).`)) return;
+  if (!confirm('Dernière confirmation : tout supprimer définitivement ?')) return;
+  try {
+    for (const e of agendaEventsCache) {
+      await deleteDoc(doc(db, 'agendaEvents', e.docId));
+    }
+    showToast('🗑️ Tous les événements ont été supprimés.');
+  } catch (err) {
+    alert('Erreur pendant la suppression: ' + err.message);
+  }
+  loadAgendaAdmin();
+};
 const PROMO_FAMILY_SECTIONS = [
   ['mobile', '📱 Promo Mobile'],
   ['internet', '🌐 Promo Internet'],
@@ -1463,9 +1539,11 @@ window.onPromoTypeChange = function () {
 
   document.getElementById('promo-duration-row').style.display = type === 'unique' ? 'none' : 'block';
   document.getElementById('promo-requireschild-row').style.display = type === 'mobile' ? 'block' : 'none';
+  document.getElementById('promo-condition-row').style.display = type === 'unique' ? 'none' : 'block';
 
   document.getElementById('promo-product-mobile-row').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
-  document.getElementById('promo-product-monthly-row').style.display = (!isEditing && type === 'monthly') ? 'block' : 'none';
+  document.getElementById('promo-product-internet-row').style.display = (!isEditing && type === 'internet') ? 'block' : 'none';
+  document.getElementById('promo-product-option-row').style.display = (!isEditing && type === 'option') ? 'block' : 'none';
   document.getElementById('promo-name-row').style.display = (isEditing || type === 'unique') ? 'block' : 'none';
 };
 
@@ -1509,6 +1587,7 @@ async function loadPromosAdmin() {
               ${catBadge}
               ${inactive ? '<span class="badge badge-inactive">Désactivée</span>' : ''}
               <div class="meta">${escapeHtmlAdmin(p.sub || '')}</div>
+              ${p.condition ? `<div class="meta" style="color:#cc4400;font-weight:700;">📌 Condition : ${escapeHtmlAdmin(p.condition)}</div>` : ''}
               <div class="meta">-${p.price}€ · ${durLabel}${mobileLabel}</div>
             </div>
             <div class="card-actions">
@@ -1535,39 +1614,62 @@ window.editPromo = function (docId) {
   if (!p) return;
   currentEditPromoId = docId;
   document.getElementById('promo-category').value = p.category || 'temporaire';
-  document.getElementById('promo-type').value = p.type || 'monthly';
+  // Type UI dérivé du type stocké + famille (monthly → internet ou option)
+  const storedType = p.type || 'monthly';
+  const uiType = storedType === 'monthly'
+    ? (derivePromoFamily(p) === 'internet' ? 'internet' : 'option')
+    : storedType;
+  document.getElementById('promo-type').value = uiType;
   document.getElementById('promo-name').value = p.name || '';
   document.getElementById('promo-sub').value = p.sub || '';
   document.getElementById('promo-price').value = p.price ?? 0;
   document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
   document.getElementById('promo-requireschild').checked = !!p.requiresChild;
+  document.getElementById('promo-hascondition').checked = !!p.condition;
+  document.getElementById('promo-condition').value = p.condition || '';
+  document.getElementById('promo-condition').style.display = p.condition ? 'block' : 'none';
   onPromoTypeChange();
   document.getElementById('promo-submit-btn').textContent = '💾 Enregistrer les modifications';
   document.getElementById('promo-cancel-btn').style.display = 'inline-block';
+  // Bascule vers le panneau de création prérempli (le formulaire est dans un autre panneau depuis la 3.0)
+  goToPanel('promosMenu', 'menu-promo-create', 'panel-promo-create');
   document.getElementById('promo-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
 window.cancelPromoEdit = function () {
+  const wasEditing = !!currentEditPromoId;
   currentEditPromoId = null;
   document.getElementById('promo-name').value = '';
   document.getElementById('promo-sub').value = '';
   document.getElementById('promo-price').value = '';
   document.getElementById('promo-requireschild').checked = false;
+  document.getElementById('promo-hascondition').checked = false;
+  document.getElementById('promo-condition').value = '';
+  document.getElementById('promo-condition').style.display = 'none';
   document.getElementById('promo-product-mobile').selectedIndex = 0;
-  document.getElementById('promo-product-monthly').selectedIndex = 0;
+  document.getElementById('promo-product-internet').selectedIndex = 0;
+  document.getElementById('promo-product-option').selectedIndex = 0;
   document.getElementById('promo-submit-btn').textContent = '➕ Ajouter la promo';
   document.getElementById('promo-cancel-btn').style.display = 'none';
   onPromoTypeChange();
+  // Après une édition (annulée ou enregistrée), retour à la liste des promotions
+  if (wasEditing) goToPanel('promosMenu', 'menu-promo-list', 'panel-promo-list');
 };
 
 window.addOrUpdatePromo = async function () {
   const category = document.getElementById('promo-category').value;
-  const type = document.getElementById('promo-type').value;
+  const uiType = document.getElementById('promo-type').value;
+  // Mapping UI → stockage Firestore : "internet" et "option" restent stockés en "monthly"
+  // (aucun changement de données, wp_orange.html continue de lire les promos à l'identique)
+  const type = (uiType === 'internet' || uiType === 'option') ? 'monthly' : uiType;
   const sub = document.getElementById('promo-sub').value.trim();
   const price = Number(document.getElementById('promo-price').value);
   const durationRaw = document.getElementById('promo-duration').value;
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
   const requiresChild = type === 'mobile' ? document.getElementById('promo-requireschild').checked : false;
+  const condition = (type !== 'unique' && document.getElementById('promo-hascondition').checked)
+    ? document.getElementById('promo-condition').value.trim()
+    : '';
 
   if (!price) {
     alert('Merci de renseigner le montant de la remise.');
@@ -1583,6 +1685,7 @@ window.addOrUpdatePromo = async function () {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
       requiresChild,
+      condition,
       productFamily: existing ? derivePromoFamily(existing) : (type === 'mobile' ? 'mobile' : 'divers'),
       perAbo: type === 'mobile',
       isUnique: type === 'unique'
@@ -1619,19 +1722,22 @@ window.addOrUpdatePromo = async function () {
     return;
   }
 
-  // --- Mode création : produit choisi via menu déroulant (Mobile ou Internet/Divers) ---
-  const sel = type === 'mobile'
+  // --- Mode création : produit choisi via le menu déroulant correspondant au type ---
+  const sel = uiType === 'mobile'
     ? document.getElementById('promo-product-mobile')
-    : document.getElementById('promo-product-monthly');
+    : (uiType === 'internet'
+        ? document.getElementById('promo-product-internet')
+        : document.getElementById('promo-product-option'));
   const opt = sel.selectedOptions[0];
   const productId = opt.value;
   const label = opt.dataset.label || opt.textContent;
-  const family = type === 'mobile' ? 'mobile' : (opt.dataset.family || 'divers');
+  const family = uiType === 'mobile' ? 'mobile' : (opt.dataset.family || 'divers');
 
   const data = {
     category, type, name: label, sub, price, duration,
     mobileId: type === 'mobile' ? productId : null,
     requiresChild,
+    condition,
     productFamily: family,
     perAbo: type === 'mobile',
     isUnique: false,
@@ -1727,11 +1833,13 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-phone').value = p?.phone || '';
   document.getElementById('f-password').value = 'Smart2026!';
   document.getElementById('f-aspinit').value = p?.asp || 0;
-  document.getElementById('f-paidamount').value = 149;
-  document.getElementById('f-paiddate').value = '';
+  document.getElementById('f-paystatus').value = 'none';
   document.getElementById('f-isadmin').checked = false;
   document.getElementById('f-istest').checked = false;
+  document.getElementById('f-isteams').checked = false;
   document.getElementById('f-duration').value = '365';
+  document.getElementById('f-duration').disabled = false;
+  document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
   document.getElementById('f-upline').value = p?.upline || 'Philippe Tomaszewsky';
   document.getElementById('f-uplineid').value = p?.uplineId || '';
@@ -1749,11 +1857,13 @@ window.openCreateModal = function () {
   document.getElementById('f-phone').value = '';
   document.getElementById('f-password').value = 'Smart2026!';
   document.getElementById('f-aspinit').value = 0;
-  document.getElementById('f-paidamount').value = 149;
-  document.getElementById('f-paiddate').value = '';
+  document.getElementById('f-paystatus').value = 'none';
   document.getElementById('f-isadmin').checked = false;
   document.getElementById('f-istest').checked = false;
+  document.getElementById('f-isteams').checked = false;
   document.getElementById('f-duration').value = '365';
+  document.getElementById('f-duration').disabled = false;
+  document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
   document.getElementById('f-upline').value = 'Philippe Tomaszewsky';
   document.getElementById('f-uplineid').value = '';
@@ -1771,6 +1881,20 @@ window.onTestAccountToggle = function () {
   }
 };
 
+window.onTeamsAccountToggle = function () {
+  const isTeams = document.getElementById('f-isteams').checked;
+  const durationSel = document.getElementById('f-duration');
+  const durationLabel = document.getElementById('f-duration-label');
+  if (isTeams) {
+    durationSel.disabled = true;
+    durationLabel.textContent = "Durée de l'accès : 30 jours offerts (Compte Teams)";
+    document.getElementById('f-customdate').style.display = 'none';
+  } else {
+    durationSel.disabled = false;
+    durationLabel.textContent = "Durée de l'accès";
+  }
+};
+
 window.closeActivateModal = function () {
   document.getElementById('activate-modal').classList.remove('open');
 };
@@ -1784,10 +1908,11 @@ window.confirmActivate = async function () {
   const password = document.getElementById('f-password').value;
   const startDate = document.getElementById('f-startdate').value.trim();
   const aspInit = Number(document.getElementById('f-aspinit').value) || 0;
-  const paidAmount = Number(document.getElementById('f-paidamount').value) || 0;
-  const paidDate = document.getElementById('f-paiddate').value.trim();
+  const payStatus = document.getElementById('f-paystatus').value;
+  const paidDate = payStatus === 'paid' ? new Date().toLocaleDateString('fr-FR') : '';
   const isAdmin = document.getElementById('f-isadmin').checked;
   const isTestAccount = document.getElementById('f-istest').checked;
+  const isTeamsAccount = document.getElementById('f-isteams').checked;
   const duration = document.getElementById('f-duration').value;
   const upline = document.getElementById('f-upline').value.trim();
   const uplineId = document.getElementById('f-uplineid').value.trim();
@@ -1805,7 +1930,13 @@ window.confirmActivate = async function () {
   }
 
   let expirationDate = null;
-  if (duration === 'custom') {
+  if (isTeamsAccount) {
+    // Compte Teams : 30 jours offerts, prioritaire sur le choix de durée
+    expirationDate = new Date(Date.now() + 30 * 86400000).toISOString();
+  } else if (duration === 'none') {
+    // Indéfini : pas d'expiration
+    expirationDate = null;
+  } else if (duration === 'custom') {
     const customStr = document.getElementById('f-customdate').value.trim();
     const parts = customStr.split('/');
     if (parts.length === 3) {
@@ -1833,8 +1964,8 @@ window.confirmActivate = async function () {
       upline, uplineId, uplineTel, uplineEmail,
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
       pqsValidated: false, fastSCValidated: false, fastECValidated: false,
-      paidAmount, paidDate,
-      expirationDate, isTestAccount
+      payStatus, paidDate,
+      expirationDate, isTestAccount, isTeamsAccount
     });
 
   } catch (err) {
@@ -1923,6 +2054,7 @@ async function loadConsultants() {
           <strong>${escapeHtml(c.fullName || c.name || '')}</strong>
           <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
           ${c.isAdmin ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">Admin</span>' : ''}
+          ${c.isTeamsAccount ? '<span class="badge" style="background:#e0f2fe;color:#0369a1;">👥 Teams</span>' : ''}
           <div class="meta">${escapeHtml(c.email || '')} · ${c.phone ? '📞 ' + escapeHtml(c.phone) : '<span style="color:#c0392b;">📞 Tél. manquant</span>'} · ID: ${escapeHtml(c.id || c.docId)}</div>
           <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP actuel: ${escapeHtml(String(c.aspInit ?? 0))}</div>
           <div class="meta">
@@ -1930,7 +2062,12 @@ async function loadConsultants() {
             ${c.fastSCValidated ? '✅ Fast SC' : '⬜ Fast SC'} ·
             ${c.fastECValidated ? '✅ Fast EC' : '⬜ Fast EC'}
           </div>
-          ${c.paidAmount ? `<div class="meta">💰 Payé: ${escapeHtml(String(c.paidAmount))}€ le ${escapeHtml(c.paidDate || '—')}</div>` : ''}
+          ${(() => {
+            const st = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
+            if (st === 'paid') return `<div class="meta">✅ Payé${c.paidDate ? ' le ' + escapeHtml(c.paidDate) : ''}</div>`;
+            if (st === 'offered') return '<div class="meta">🎁 Offert</div>';
+            return '<div class="meta" style="color:#c0392b;">⚪ Non payé</div>';
+          })()}
           ${renderExpirationBadge(c)}
         </div>
         <div class="card-actions">
@@ -1980,6 +2117,9 @@ window.openEditModal = function (docId) {
     ? new Date(c.expirationDate).toLocaleDateString('fr-FR').split('/').join('/')
     : '';
   document.getElementById('e-istest').checked = !!c.isTestAccount;
+  document.getElementById('e-isteams').checked = !!c.isTeamsAccount;
+  // Rétrocompatibilité : les anciens consultants avec un paidAmount > 0 sont considérés payés
+  document.getElementById('e-paystatus').value = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
   document.getElementById('edit-modal').classList.add('open');
 };
 
@@ -2001,6 +2141,8 @@ window.confirmEdit = async function () {
   const fastSCValidated = document.getElementById('e-fastsc').checked;
   const fastECValidated = document.getElementById('e-fastec').checked;
   const isTestAccount = document.getElementById('e-istest').checked;
+  const isTeamsAccount = document.getElementById('e-isteams').checked;
+  const payStatus = document.getElementById('e-paystatus').value;
   const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
   const upline = document.getElementById('e-upline').value.trim();
   const uplineId = document.getElementById('e-uplineid').value.trim();
@@ -2044,9 +2186,14 @@ window.confirmEdit = async function () {
   }
 
   try {
+    const existing = (window._consultantsCache || []).find(x => x.docId === currentEditDocId) || {};
+    // Date de paiement : conservée si déjà payé, remplie automatiquement au passage à "Payé", vidée sinon
+    const paidDate = payStatus === 'paid'
+      ? (existing.payStatus === 'paid' && existing.paidDate ? existing.paidDate : new Date().toLocaleDateString('fr-FR'))
+      : '';
     await updateDoc(doc(db, 'consultants', currentEditDocId), {
       name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
-      expirationDate, isTestAccount, upline, uplineId, uplineTel, uplineEmail
+      expirationDate, isTestAccount, isTeamsAccount, payStatus, paidDate, upline, uplineId, uplineTel, uplineEmail
     });
     closeEditModal();
     showToast('✅ Consultant mis à jour.');
@@ -2080,6 +2227,11 @@ function formatChatTime(iso) {
   } catch (e) { return ''; }
 }
 
+// Messages en temps réel : un listener par conversation admin ↔ consultant
+// (même schéma d'accès que l'ancienne version : uniquement les conversations dont l'admin est participant)
+let adminConvUnsubs = [];
+let adminUnreadMap = {};
+
 async function loadMessagesAdmin() {
   const container = document.getElementById('messages-admin-list');
   if (!container || !adminOwnId) return;
@@ -2092,45 +2244,67 @@ async function loadMessagesAdmin() {
       const c = d.data();
       if (c.id && c.id !== adminOwnId) list.push(c);
     });
+    window._msgConsultants = list;
 
     if (list.length === 0) {
       container.innerHTML = '<div class="empty">Aucun consultant.</div>';
       return;
     }
 
-    let html = '';
-    let unreadTotal = 0;
-    for (const c of list) {
-      const convId = pmConvId(adminOwnId, c.id);
-      let unread = false;
-      try {
-        const convSnap = await getDoc(doc(db, 'conversations', convId));
-        if (convSnap.exists() && (convSnap.data().unreadBy || []).includes(adminOwnId)) unread = true;
-      } catch (e) {}
-      if (unread) unreadTotal++;
+    // Nettoyer les anciens listeners avant d'en recréer (rechargements successifs)
+    adminConvUnsubs.forEach(u => { try { u(); } catch (e) {} });
+    adminConvUnsubs = [];
+    adminUnreadMap = {};
 
-      const displayName = c.fullName || c.name || c.id;
-      html += `
-        <div class="card">
-          <div class="card-row">
-            <div class="card-info">
-              <strong>${escapeHtml(displayName)}</strong>
-              ${unread ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">● Nouveau message</span>' : ''}
-              <div class="meta">ID: ${escapeHtml(c.id)}</div>
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-primary" onclick="openChatWithConsultant('${c.id}', '${displayName.replace(/'/g, "\\'")}')">💬 Discuter</button>
-            </div>
-          </div>
-        </div>`;
-    }
-    container.innerHTML = html;
-    const msgCountEl = document.getElementById('messages-count');
-    if (msgCountEl) msgCountEl.innerHTML = unreadTotal > 0 ? `<span class="count-badge" style="background:#ef4444;">${unreadTotal}</span>` : '';
+    list.forEach(c => {
+      const convId = pmConvId(adminOwnId, c.id);
+      const unsub = onSnapshot(doc(db, 'conversations', convId), (ds) => {
+        adminUnreadMap[convId] = ds.exists() && (ds.data().unreadBy || []).includes(adminOwnId);
+        renderMessagesAdmin();
+      }, (err) => {
+        adminUnreadMap[convId] = false;
+        renderMessagesAdmin();
+      });
+      adminConvUnsubs.push(unsub);
+    });
+
+    renderMessagesAdmin();
   } catch (err) {
     container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
     console.log('Chargement messages admin impossible:', err.message);
   }
+}
+
+function renderMessagesAdmin() {
+  const container = document.getElementById('messages-admin-list');
+  const list = window._msgConsultants || [];
+  if (!container || list.length === 0) return;
+
+  let html = '';
+  let unreadTotal = 0;
+  for (const c of list) {
+    const convId = pmConvId(adminOwnId, c.id);
+    const unread = !!adminUnreadMap[convId];
+    if (unread) unreadTotal++;
+
+    const displayName = c.fullName || c.name || c.id;
+    html += `
+      <div class="card">
+        <div class="card-row">
+          <div class="card-info">
+            <strong>${escapeHtml(displayName)}</strong>
+            ${unread ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">● Nouveau message</span>' : ''}
+            <div class="meta">ID: ${escapeHtml(c.id)}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" onclick="openChatWithConsultant('${c.id}', '${displayName.replace(/'/g, "\\'")}')">💬 Discuter</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
+  const msgCountEl = document.getElementById('messages-count');
+  if (msgCountEl) msgCountEl.innerHTML = unreadTotal > 0 ? `<span class="count-badge" style="background:#ef4444;">${unreadTotal}</span>` : '';
 }
 
 window.openChatWithConsultant = async function (consultantId, consultantName) {
