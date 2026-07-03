@@ -131,7 +131,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> Stable — Formations
+Build <span id="app-version-1">…</span> — Contacts
      </span>
     </div>
     </div>
@@ -200,7 +200,7 @@ Build <span id="app-version-1">…</span> Stable — Formations
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build <span id="app-version-2">…</span> Stable
+      Build <span id="app-version-2">…</span>
     </div>
   </div>
 
@@ -459,10 +459,17 @@ Build <span id="app-version-1">…</span> Stable — Formations
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Contacts</div>
+
+          <button onclick="toggleMenu('contactsMenu')" class="menu-item group-toggle">
+📞 Contacts<span id="contacts-menu-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span>
+</button>
+
+<div id="contactsMenu" class="submenu">
           <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Mon Upline</button>
           <button onclick="showScript('panel-contacts-partners')" class="menu-item" id="menu-contacts-partners">🤝 Nos Partenaires</button>
-          <button onclick="showScript('panel-contacts-philmobile')" class="menu-item" id="menu-contacts-philmobile">🛠️ Phil-Mobile</button>
+          <button onclick="showScript('panel-contacts-philmobile')" class="menu-item" id="menu-contacts-philmobile">🛠️ Support application</button>
           <button onclick="showMessages(this)" class="menu-item" id="menu-messages">💬 Messages<span id="messages-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
+</div>
 
 <!-- AGENDA, FORMATIONS & NEWS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
@@ -1968,6 +1975,10 @@ function checkMessagesUnreadBadge() {
 
       const badge = document.getElementById('messages-badge');
       if (badge) badge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
+
+      // Badge aussi sur le bouton accordéon "Contacts" (sinon invisible quand le sous-menu est replié)
+      const menuBadge = document.getElementById('contacts-menu-badge');
+      if (menuBadge) menuBadge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
 
       const contactsView = document.getElementById('messages-contacts-view');
       if (contactsView && contactsView.style.display !== 'none') {
