@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Formulaire
+Build <span id="app-version-1">…</span> — TVA
      </span>
     </div>
     </div>
@@ -390,7 +390,7 @@ Build <span id="app-version-1">…</span> — Formulaire
 <input id="req-lastname" placeholder="Nom *" required style="width:100%;margin:5px 0;padding:10px;">
 
 <input id="req-company" placeholder="Société" style="width:100%;margin:5px 0;padding:10px;">
-<input id="req-vat" placeholder="TVA *" required style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-vat" placeholder="TVA * (ex: BE0123456789)" required style="width:100%;margin:5px 0;padding:10px;">
 
 <input id="req-email" type="email" placeholder="Email * (c'est avec celui-ci que vous vous connecterez)" required style="width:100%;margin:5px 0;padding:10px;">
 <input id="req-phone" placeholder="Téléphone *" required style="width:100%;margin:5px 0;padding:10px;">
@@ -3042,6 +3042,20 @@ window.submitAccessRequest = async function(){
     return;
   }
 
+  // Validation du numéro de TVA belge :
+  // 1. Normalisation (on accepte BE0123.456.789, 0123 456 789, be0123456789...)
+  // 2. Format : 10 chiffres commençant par 0 ou 1 (numéro d'entreprise BCE)
+  // 3. Contrôle officiel modulo 97 : les 2 derniers chiffres = 97 - (8 premiers % 97)
+  const vatRaw = document.getElementById('req-vat').value.trim();
+  const vatDigits = vatRaw.toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, '');
+  const vatValid =
+    /^[01]\d{9}$/.test(vatDigits) &&
+    (97 - (Number(vatDigits.slice(0, 8)) % 97)) === Number(vatDigits.slice(8, 10));
+  if (!vatValid) {
+    alert("⚠️ Le numéro de TVA semble invalide.\n\nFormat attendu : BE0123456789 (numéro d'entreprise belge).\nVérifiez les chiffres et réessayez.");
+    return;
+  }
+
   try {
 
     await window.addDoc(window.collection(window.db, "prospects"), {
@@ -3052,7 +3066,7 @@ window.submitAccessRequest = async function(){
       lastName: document.getElementById('req-lastname').value.trim(),
 
       company: document.getElementById('req-company').value.trim(),
-      vat: document.getElementById('req-vat').value.trim(),
+      vat: 'BE' + vatDigits,
 
       email: document.getElementById('req-email').value.trim(),
       phone: document.getElementById('req-phone').value.trim(),
