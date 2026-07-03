@@ -769,7 +769,6 @@ function calcFraisUniques() {
 function calcPromos() {
   let mensuel=0, unique=0, promo6=0, promo12=0;
   const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
-  const hasChild=(qtyMap['mob_child']||0)>0;
 
   [...promos,...promosPermanent].forEach(p=>{
     if(!togMap[p.id]) return;
@@ -778,9 +777,9 @@ function calcPromos() {
 
     let montant=0;
     if(p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
-    else if(p.requiresChild){
-      if(hasChild) montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
-    } else if(p.perAbo && p.mobileId){
+    // Note 7.8.3 : l'ancienne condition "requiresChild" (Mobile Child obligatoire) est neutralisée.
+    // Les conditions particulières sont désormais purement informatives (champ "condition" géré dans l'admin).
+    else if(p.perAbo && p.mobileId){
       montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
     } else montant = p.price;
 
