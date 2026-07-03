@@ -41,6 +41,7 @@
   /* Mode plein écran mobile : évite de devoir scroller sous tout le menu pour voir le panneau ouvert */
   body.mobile-panel-open .script-panel,
   body.mobile-panel-open #suivi-panel,
+  body.mobile-panel-open #welcome-panel,
   body.mobile-panel-open #iframe-panel {
     position:fixed !important;
     top:0 !important; left:0 !important; right:0 !important; bottom:0 !important;
@@ -131,7 +132,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Menu
+Build <span id="app-version-1">…</span> — Mobile
      </span>
     </div>
     </div>
@@ -1710,7 +1711,13 @@ function showDashboard(btn) {
   document.getElementById('iframe-panel').style.display = 'none';
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById('welcome-panel').style.display = 'block';
-  document.body.classList.remove('mobile-panel-open');
+  // Plein écran mobile uniquement si clic sur le bouton du menu (btn présent).
+  // Appel sans btn (bouton ✕, login) = retour à la vue menu + tableau de bord en dessous.
+  if (btn) {
+    document.body.classList.add('mobile-panel-open');
+  } else {
+    document.body.classList.remove('mobile-panel-open');
+  }
   renderDashboard();
 }
 
