@@ -132,7 +132,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Mobile
+Build <span id="app-version-1">…</span> — Démo
      </span>
     </div>
     </div>
@@ -403,7 +403,8 @@ Build <span id="app-version-1">…</span> — Mobile
 
 <label><input type="checkbox" id="req-pqs"> PQS validé</label><br>
 <label><input type="checkbox" id="req-fastsc"> Fast SC validé</label><br>
-<label><input type="checkbox" id="req-fastec"> Fast EC validé</label>
+<label><input type="checkbox" id="req-fastec"> Fast EC validé</label><br>
+<label style="color:#f97316;font-weight:700;"><input type="checkbox" id="req-demo"> 🧪 Je souhaite un accès Démo de 3 jours</label>
 
 <h4 style="margin-top:15px;">Upline</h4>
 
@@ -3064,6 +3065,8 @@ window.submitAccessRequest = async function(){
       uplineEmail: document.getElementById('req-upline-email').value.trim(),
 
       comment: document.getElementById('req-comment').value.trim(),
+
+      demoRequest: document.getElementById('req-demo').checked,
 
       status: "pending",
       createdAt: new Date().toISOString()

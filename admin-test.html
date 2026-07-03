@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.1</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.1.1</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -301,12 +301,6 @@
                 <option value="12">12 mois</option>
                 <option value="">À vie (pas de durée)</option>
               </select>
-            </div>
-            <div class="form-row" id="promo-requireschild-row" style="display:none;">
-              <div class="checkbox-row">
-                <input type="checkbox" id="promo-requireschild">
-                <label for="promo-requireschild" style="font-weight:400;">Nécessite un Mobile Child associé (sinon : LOVE uniquement)</label>
-              </div>
             </div>
             <div class="form-row" id="promo-condition-row" style="display:none;">
               <div class="checkbox-row">
@@ -1362,6 +1356,7 @@ async function loadProspects() {
         <div class="card-info">
           <strong>${escapeHtml(p.firstName || '')} ${escapeHtml(p.lastName || '')}</strong>
           ${p.smartId ? `<span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(p.smartId)}</span>` : ''}
+          ${p.demoRequest ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🧪 Démo 3 jours</span>' : ''}
           <div class="meta">${escapeHtml(p.company || '—')} · ${escapeHtml(p.email || '')} · ${escapeHtml(p.phone || '')}</div>
           <div class="meta">ASP actuel: ${escapeHtml(String(p.asp ?? '—'))} · Entrée Smart: ${escapeHtml(p.startDate || '—')}</div>
           <div class="meta">Upline: ${escapeHtml(p.upline || '—')} (${escapeHtml(p.uplinePhone || '—')})</div>
@@ -1538,7 +1533,6 @@ window.onPromoTypeChange = function () {
   const isEditing = !!currentEditPromoId;
 
   document.getElementById('promo-duration-row').style.display = type === 'unique' ? 'none' : 'block';
-  document.getElementById('promo-requireschild-row').style.display = type === 'mobile' ? 'block' : 'none';
   document.getElementById('promo-condition-row').style.display = type === 'unique' ? 'none' : 'block';
 
   document.getElementById('promo-product-mobile-row').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
@@ -1571,7 +1565,7 @@ async function loadPromosAdmin() {
       inFam.forEach(p => {
         const durLabel = p.type === 'unique' ? 'Remise unique' : (p.duration ? p.duration + ' mois' : 'À vie');
         const mobileLabel = p.type === 'mobile'
-          ? ` · ${PROMO_MOBILE_LABELS[p.mobileId] || p.mobileId}${p.requiresChild ? ' (+ Mobile Child requis)' : ' (LOVE uniquement)'}`
+          ? ` · ${PROMO_MOBILE_LABELS[p.mobileId] || p.mobileId}`
           : '';
         const inactive = p.active === false;
         const catBadge = p.category === 'permanente'
@@ -1624,7 +1618,6 @@ window.editPromo = function (docId) {
   document.getElementById('promo-sub').value = p.sub || '';
   document.getElementById('promo-price').value = p.price ?? 0;
   document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
-  document.getElementById('promo-requireschild').checked = !!p.requiresChild;
   document.getElementById('promo-hascondition').checked = !!p.condition;
   document.getElementById('promo-condition').value = p.condition || '';
   document.getElementById('promo-condition').style.display = p.condition ? 'block' : 'none';
@@ -1642,7 +1635,6 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-name').value = '';
   document.getElementById('promo-sub').value = '';
   document.getElementById('promo-price').value = '';
-  document.getElementById('promo-requireschild').checked = false;
   document.getElementById('promo-hascondition').checked = false;
   document.getElementById('promo-condition').value = '';
   document.getElementById('promo-condition').style.display = 'none';
@@ -1666,7 +1658,6 @@ window.addOrUpdatePromo = async function () {
   const price = Number(document.getElementById('promo-price').value);
   const durationRaw = document.getElementById('promo-duration').value;
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
-  const requiresChild = type === 'mobile' ? document.getElementById('promo-requireschild').checked : false;
   const condition = (type !== 'unique' && document.getElementById('promo-hascondition').checked)
     ? document.getElementById('promo-condition').value.trim()
     : '';
@@ -1684,7 +1675,6 @@ window.addOrUpdatePromo = async function () {
     const data = {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
-      requiresChild,
       condition,
       productFamily: existing ? derivePromoFamily(existing) : (type === 'mobile' ? 'mobile' : 'divers'),
       perAbo: type === 'mobile',
@@ -1708,7 +1698,7 @@ window.addOrUpdatePromo = async function () {
     try {
       await addDoc(collection(db, 'promosOrange'), {
         category, type, name, sub, price, duration: null,
-        mobileId: null, requiresChild: false, productFamily: 'divers',
+        mobileId: null, productFamily: 'divers',
         perAbo: false, isUnique: true, active: true, createdAt: new Date().toISOString()
       });
       showToast('✅ Promo ajoutée.');
@@ -1736,7 +1726,6 @@ window.addOrUpdatePromo = async function () {
   const data = {
     category, type, name: label, sub, price, duration,
     mobileId: type === 'mobile' ? productId : null,
-    requiresChild,
     condition,
     productFamily: family,
     perAbo: type === 'mobile',
@@ -1750,7 +1739,6 @@ window.addOrUpdatePromo = async function () {
     showToast('✅ Promo ajoutée.');
     document.getElementById('promo-sub').value = '';
     document.getElementById('promo-price').value = '';
-    document.getElementById('promo-requireschild').checked = false;
     loadPromosAdmin();
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
@@ -1837,7 +1825,8 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-isadmin').checked = false;
   document.getElementById('f-istest').checked = false;
   document.getElementById('f-isteams').checked = false;
-  document.getElementById('f-duration').value = '365';
+  // Demande Démo : durée présélectionnée à 3 jours (modifiable avant validation)
+  document.getElementById('f-duration').value = p?.demoRequest ? '3' : '365';
   document.getElementById('f-duration').disabled = false;
   document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
