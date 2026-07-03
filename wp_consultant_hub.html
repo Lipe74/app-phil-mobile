@@ -131,7 +131,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Contacts
+Build <span id="app-version-1">…</span> — Menu
      </span>
     </div>
     </div>
@@ -458,18 +458,19 @@ Build <span id="app-version-1">…</span> — Contacts
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-left:4px;">🏠 Accueil</div>
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Contacts</div>
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Communication</div>
 
           <button onclick="toggleMenu('contactsMenu')" class="menu-item group-toggle">
-📞 Contacts<span id="contacts-menu-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span>
+📞 Contacts
 </button>
 
 <div id="contactsMenu" class="submenu">
           <button onclick="showContacts(this)" class="menu-item" id="menu-contacts">🏠 Mon Upline</button>
           <button onclick="showScript('panel-contacts-partners')" class="menu-item" id="menu-contacts-partners">🤝 Nos Partenaires</button>
           <button onclick="showScript('panel-contacts-philmobile')" class="menu-item" id="menu-contacts-philmobile">🛠️ Support application</button>
-          <button onclick="showMessages(this)" class="menu-item" id="menu-messages">💬 Messages<span id="messages-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 </div>
+
+          <button onclick="showMessages(this)" class="menu-item" id="menu-messages">💬 Messages<span id="messages-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 
 <!-- AGENDA, FORMATIONS & NEWS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
@@ -477,8 +478,8 @@ Build <span id="app-version-1">…</span> — Contacts
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
 <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
 
-<!-- CRM -->
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Mon Crm</div>
+<!-- MES OUTILS -->
+<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🧰 Mes Outils</div>
 
 <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">
 📊 Mon CRM
@@ -500,8 +501,6 @@ Build <span id="app-version-1">…</span> — Contacts
 
 <!-- SIMULATEURS -->
 
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📊 Simulateurs</div>
-
 <button onclick="toggleMenu('simMenu')" class="menu-item group-toggle">
 🧮 Simulateurs
 </button>
@@ -520,9 +519,9 @@ Build <span id="app-version-1">…</span> — Contacts
 
 
 </div>
-<!-- Liens importants -->
+<!-- RESSOURCES -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">
-🔗 Liens importants
+📚 Ressources
 </div>
 
 <button onclick="toggleMenu('linksMenu')" class="menu-item group-toggle">
@@ -561,8 +560,6 @@ Build <span id="app-version-1">…</span> — Contacts
 
 </div>          
 <!-- DOCUMENTS -->
-
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📁 Documents</div>
 
 <button onclick="toggleMenu('docsManuels')" class="menu-item group-toggle">
 📚 Manuels
@@ -625,18 +622,38 @@ Build <span id="app-version-1">…</span> — Contacts
 
 </div>
 
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🟠 Scripts Orange</div>
+          <!-- SCRIPTS -->
+          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📜 Scripts</div>
+
+<button onclick="toggleMenu('scriptsOrange')" class="menu-item group-toggle">
+🟠 Orange
+</button>
+
+<div id="scriptsOrange" class="submenu">
           <button onclick="showScript('sc-orange-froid')" class="menu-item">❄️ Prospect froid</button>
           <button onclick="showScript('sc-orange-ref')" class="menu-item">🤝 Référence</button>
           <button onclick="showScript('sc-orange-amis')" class="menu-item">👥 Amis / connaissances</button>
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">⚡ Scripts Eneco</div>
+</div>
+
+<button onclick="toggleMenu('scriptsEneco')" class="menu-item group-toggle">
+⚡ Eneco
+</button>
+
+<div id="scriptsEneco" class="submenu">
           <button onclick="showScript('sc-eneco-froid')" class="menu-item">❄️ Prospect froid</button>
           <button onclick="showScript('sc-eneco-ref')" class="menu-item">🤝 Référence</button>
           <button onclick="showScript('sc-eneco-amis')" class="menu-item">👥 Amis / connaissances</button>
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🚀 Scripts Recrutement</div>
+</div>
+
+<button onclick="toggleMenu('scriptsRecrutement')" class="menu-item group-toggle">
+🚀 Recrutement
+</button>
+
+<div id="scriptsRecrutement" class="submenu">
           <button onclick="showScript('sc-recr-client')" class="menu-item">⭐ Clients existants</button>
           <button onclick="showScript('sc-recr-prospect')" class="menu-item">❄️ Prospects</button>
           <button onclick="showScript('sc-recr-amis')" class="menu-item">👥 Connaissances</button>
+</div>
         </div>
 
         <!-- COLONNE DROITE : contenu -->
@@ -1975,10 +1992,6 @@ function checkMessagesUnreadBadge() {
 
       const badge = document.getElementById('messages-badge');
       if (badge) badge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
-
-      // Badge aussi sur le bouton accordéon "Contacts" (sinon invisible quand le sous-menu est replié)
-      const menuBadge = document.getElementById('contacts-menu-badge');
-      if (menuBadge) menuBadge.style.display = pmUnreadContactIds.size > 0 ? 'inline-block' : 'none';
 
       const contactsView = document.getElementById('messages-contacts-view');
       if (contactsView && contactsView.style.display !== 'none') {
