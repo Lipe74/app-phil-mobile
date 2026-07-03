@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — TVA
+Build <span id="app-version-1">…</span> — Admin
      </span>
     </div>
     </div>
@@ -660,6 +660,12 @@ Build <span id="app-version-1">…</span> — TVA
           <button onclick="showScript('sc-recr-prospect')" class="menu-item">❄️ Prospects</button>
           <button onclick="showScript('sc-recr-amis')" class="menu-item">👥 Connaissances</button>
 </div>
+
+          <!-- ADMINISTRATION : masqué par défaut, affiché au login uniquement pour les comptes isAdmin -->
+          <div id="admin-menu-section" style="display:none;">
+            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">⚙️ Administration</div>
+            <button onclick="loadFrame('admin.html', this)" class="menu-item">🧰 Admin Phil-Mobile</button>
+          </div>
         </div>
 
         <!-- COLONNE DROITE : contenu -->
@@ -2168,6 +2174,10 @@ function doUnlock(user) {
   document.getElementById('outils-unlocked').style.display = 'block';
     document.getElementById('top-header').style.display = 'flex';
     //document.getElementById('pm-logout').style.display = 'block';
+
+  // Lien Admin dans le menu : visible uniquement pour les comptes administrateurs
+  const adminSection = document.getElementById('admin-menu-section');
+  if (adminSection) adminSection.style.display = user.isAdmin ? 'block' : 'none';
 
 
   setWelcome(user);
