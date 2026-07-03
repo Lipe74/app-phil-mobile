@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.1.1</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.2</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -1329,10 +1329,13 @@ window.deleteAgendaEvent = async function (docId) {
 };
 
 // --- Prospects en attente ---
-async function loadProspects() {
+// Demandes en attente en temps réel (Admin 3.2) : mise à jour instantanée sans refresh
+let prospectsUnsub = null;
+function loadProspects() {
   const container = document.getElementById('prospects-list');
+  if (prospectsUnsub) { try { prospectsUnsub(); } catch (e) {} prospectsUnsub = null; }
   container.innerHTML = '<div class="empty">Chargement...</div>';
-  const snap = await getDocs(collection(db, 'prospects'));
+  prospectsUnsub = onSnapshot(collection(db, 'prospects'), (snap) => {
   const pending = [];
   snap.forEach(d => {
     const p = d.data();
@@ -1372,13 +1375,17 @@ async function loadProspects() {
   });
 
   window._prospectsCache = pending;
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement demandes impossible:', err.message);
+  });
 }
 
 window.dismissProspect = async function (docId) {
   if (!confirm('Marquer cette demande comme traitée sans créer de compte ?')) return;
   await updateDoc(doc(db, 'prospects', docId), { status: 'dismissed' });
   showToast('Demande ignorée.');
-  loadProspects();
+  // (liste mise à jour automatiquement par le listener temps réel)
 };
 
 // --- Bugs & Suggestions (feedback envoyé par les consultants via le contact "Phil-Mobile") ---
@@ -1387,11 +1394,13 @@ const FEEDBACK_TYPE_META = {
   suggestion: { label: 'Suggestion', icon: '💡', bg: '#eff6ff', color: '#1e3a8a', border: '#3b82f6' }
 };
 
-async function loadFeedback() {
+// Bugs & Suggestions en temps réel (Admin 3.2)
+let feedbackUnsub = null;
+function loadFeedback() {
   const container = document.getElementById('feedback-list');
+  if (feedbackUnsub) { try { feedbackUnsub(); } catch (e) {} feedbackUnsub = null; }
   container.innerHTML = '<div class="empty">Chargement...</div>';
-  try {
-    const snap = await getDocs(collection(db, 'appFeedback'));
+  feedbackUnsub = onSnapshot(collection(db, 'appFeedback'), (snap) => {
     const list = [];
     snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
     list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
@@ -1434,17 +1443,16 @@ async function loadFeedback() {
         </div>
       </div>`;
     }).join('');
-  } catch (err) {
+  }, (err) => {
     container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
     console.log('Chargement feedback impossible:', err.message);
-  }
+  });
 }
 
 window.toggleFeedbackHandled = async function (docId, newState) {
   try {
     await updateDoc(doc(db, 'appFeedback', docId), { handled: newState });
     showToast(newState ? '✅ Marqué comme traité.' : '↩️ Remis en attente.');
-    loadFeedback();
   } catch (err) {
     alert('Erreur: ' + err.message);
   }
@@ -1455,7 +1463,6 @@ window.deleteFeedback = async function (docId) {
   try {
     await deleteDoc(doc(db, 'appFeedback', docId));
     showToast('🗑 Message supprimé.');
-    loadFeedback();
   } catch (err) {
     alert('Erreur lors de la suppression: ' + err.message);
   }
@@ -1975,7 +1982,6 @@ window.confirmActivate = async function () {
   // Fermer le modal d'activation tout de suite : le consultant est créé à ce stade
   closeActivateModal();
   showToast('✅ Consultant créé avec succès !');
-  loadProspects();
   loadConsultants();
   loadMessagesAdmin();
 
