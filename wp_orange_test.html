@@ -378,7 +378,7 @@ async function loadPromosFromFirestore() {
       const item = {
         id: docSnap.id,
         name: window.wrapPromoName(p.name || ''),
-        sub: window.escapeHtmlOrange(p.sub || ''),
+        sub: window.escapeHtmlOrange(p.sub || '') + (p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 ' + window.escapeHtmlOrange(p.condition) + '</span>' : ''),
         price: Number(p.price) || 0,
         perAbo: !!p.perAbo,
         mobileId: p.mobileId || undefined,
