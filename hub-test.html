@@ -56,6 +56,9 @@
   #mobile-close-btn { display:none; }
   body.mobile-panel-open #mobile-close-btn { display:flex; }
 }
+/* Fix 7.8.3 : le display:none du bouton ✕ était uniquement dans le media query mobile,
+   donc rien ne le masquait sur desktop. Règle de base valable partout : */
+#mobile-close-btn { display:none; }
 /* Suivi contrats styles */
 .pm-sec{font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 6px;}
 .pm-mc{background:#fef9f5;border-radius:8px;padding:.65rem;border:1px solid #fde8cc;}
