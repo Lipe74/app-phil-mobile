@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Démo
+Build <span id="app-version-1">…</span> — Formulaire
      </span>
     </div>
     </div>
@@ -412,6 +412,7 @@ Build <span id="app-version-1">…</span> — Démo
 <h4 style="margin-top:15px;">Upline</h4>
 
 <input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
+<input id="req-upline-id" placeholder="ID Smart de l'Upline (ex: delta835) — facultatif" style="width:100%;margin:5px 0;padding:10px;">
 <input id="req-upline-phone" placeholder="Téléphone de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
 <input id="req-upline-email" placeholder="Email de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
 
@@ -3064,6 +3065,7 @@ window.submitAccessRequest = async function(){
       fastECValidated: document.getElementById('req-fastec').checked,
 
       upline: document.getElementById('req-upline').value.trim(),
+      uplineId: document.getElementById('req-upline-id').value.trim(),
       uplinePhone: document.getElementById('req-upline-phone').value.trim(),
       uplineEmail: document.getElementById('req-upline-email').value.trim(),
 
@@ -3074,6 +3076,20 @@ window.submitAccessRequest = async function(){
       status: "pending",
       createdAt: new Date().toISOString()
 
+    });
+
+    // Vider le formulaire après envoi réussi (évite les doubles envois et les champs qui traînent)
+    [
+      'req-smartid', 'req-firstname', 'req-lastname', 'req-company', 'req-vat',
+      'req-email', 'req-phone', 'req-asp', 'req-startdate',
+      'req-upline', 'req-upline-id', 'req-upline-phone', 'req-upline-email', 'req-comment'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    ['req-pqs', 'req-fastsc', 'req-fastec', 'req-demo'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = false;
     });
 
     alert(
