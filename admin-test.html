@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.3</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -421,11 +421,17 @@
           <div class="card">
             <div class="form-row">
               <label>Catégorie</label>
-              <select id="ag-category">
+              <select id="ag-category" onchange="onAgendaCategoryChange()">
                 <option value="Formations">🎓 Formations</option>
-                <option value="Team meetings">🤝 Team meetings</option>
+                <option value="Team meetings">📣 BOM</option>
                 <option value="Événements">🎉 Événements</option>
                 <option value="Événements spéciaux">✨ Événements spéciaux</option>
+              </select>
+            </div>
+            <div class="form-row" id="ag-preset-row" style="display:none;">
+              <label>⚡ Choix rapide (préremplit titre, lieu et horaire — il ne reste que la date)</label>
+              <select id="ag-preset" onchange="applyAgendaPreset()">
+                <option value="">— Choisir… —</option>
               </select>
             </div>
             <div class="form-row">
@@ -447,6 +453,14 @@
                 <input type="time" id="ag-time-end" value="21:00">
               </div>
             </div>
+            <div class="form-row">
+              <label>📍 Lieu</label>
+              <input type="text" id="ag-lieu" placeholder="ex: Gosselies">
+            </div>
+            <div class="form-row">
+              <label>📝 Remarque (optionnelle, visible par les consultants)</label>
+              <input type="text" id="ag-remark" placeholder="ex: Ouvert aux invités">
+            </div>
             <button class="btn btn-primary" id="ag-submit-btn" onclick="addAgendaEvent()">➕ Ajouter l'événement</button>
             <button class="btn btn-secondary" id="ag-cancel-btn" onclick="cancelAgendaEdit()" style="display:none;">Annuler la modification</button>
           </div>
@@ -455,7 +469,7 @@
             <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
-              Catégories valides : Formations, Team meetings, Événements, Événements spéciaux
+              Catégories valides : Formations, Team meetings (= BOM), Événements, Événements spéciaux
             </div>
             <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
 Team meeting Gosselies avec présentation de société | 24/06/2026 | 18:00-20:30 | Team meetings
@@ -793,6 +807,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('admin-app').style.display = 'block';
   loadNewsAdmin();
   loadAgendaAdmin();
+  onAgendaCategoryChange();
   loadProspects();
   loadFeedback();
   loadPromosAdmin();
@@ -1076,7 +1091,60 @@ window.deleteNewsItem = async function (docId) {
 
 // --- Agenda des événements ---
 const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements', 'Événements spéciaux'];
-const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '🤝', 'Événements': '🎉', 'Événements spéciaux': '✨' };
+// Note : la valeur stockée "Team meetings" est conservée (43 événements existants) — seul l'affichage devient "BOM".
+const AGENDA_CATEGORY_LABEL = { 'Team meetings': 'BOM' };
+const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '📣', 'Événements': '🎉', 'Événements spéciaux': '✨' };
+const AGENDA_CATEGORY_COLOR = { 'Formations': '#2563eb', 'Team meetings': '#f97316', 'Événements': '#16a34a', 'Événements spéciaux': '#9333ea' };
+const AGENDA_MONTHS_FR = ['JAN','FÉV','MAR','AVR','MAI','JUIN','JUIL','AOÛT','SEP','OCT','NOV','DÉC'];
+
+// Événements récurrents : lieux et horaires fixes, préremplis en un clic
+const AGENDA_PRESETS = {
+  'Team meetings': [
+    { title: 'BOM Gosselies',  lieu: 'Gosselies', timeStart: '18:00', timeEnd: '20:30' },
+    { title: 'BOM Herstal',    lieu: 'Herstal',   timeStart: '19:30', timeEnd: '21:30' },
+    { title: 'BOM Bruxelles',  lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '21:00' }
+  ],
+  'Formations': [
+    { title: 'Formation chaudière & acomptes — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '20:00' },
+    { title: 'Formation chaudière & acomptes — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '20:00' },
+    { title: 'Formation chaudière & acomptes — Bruxelles', lieu: 'Bruxelles', timeStart: '18:00', timeEnd: '19:00' },
+    { title: 'Orange MasterClass — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
+    { title: 'Orange MasterClass — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '22:00' },
+    { title: 'Orange MasterClass — Bruxelles', lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '22:00' },
+    { title: 'MLM Advanced Classroom — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
+    { title: 'Success Training FR — Samedi',   lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '09:30', timeEnd: '12:30' },
+    { title: 'Success Training FR — Mercredi', lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '18:00', timeEnd: '21:00' }
+  ]
+};
+
+// Affiche/alimente le sélecteur de choix rapide selon la catégorie
+window.onAgendaCategoryChange = function () {
+  const cat = document.getElementById('ag-category').value;
+  const row = document.getElementById('ag-preset-row');
+  const sel = document.getElementById('ag-preset');
+  const presets = AGENDA_PRESETS[cat];
+  if (presets && presets.length) {
+    sel.innerHTML = '<option value="">— Choisir… —</option>' +
+      presets.map((p, i) => `<option value="${i}">${escapeHtmlAdmin(p.title)} (${p.timeStart}–${p.timeEnd})</option>`).join('');
+    row.style.display = 'block';
+  } else {
+    row.style.display = 'none';
+    sel.innerHTML = '<option value="">— Choisir… —</option>';
+  }
+};
+
+// Applique le preset choisi : titre, lieu, horaires préremplis (tout reste modifiable)
+window.applyAgendaPreset = function () {
+  const cat = document.getElementById('ag-category').value;
+  const idx = document.getElementById('ag-preset').value;
+  const p = (AGENDA_PRESETS[cat] || [])[Number(idx)];
+  if (!p) return;
+  document.getElementById('ag-title').value = p.title;
+  document.getElementById('ag-lieu').value = p.lieu;
+  document.getElementById('ag-time-start').value = p.timeStart;
+  document.getElementById('ag-time-end').value = p.timeEnd;
+  document.getElementById('ag-date').focus();
+};
 
 function formatDateFR(iso) {
   if (!iso) return '';
@@ -1096,6 +1164,9 @@ window.editAgendaEvent = function (docId) {
   document.getElementById('ag-date').value = e.date || '';
   document.getElementById('ag-time-start').value = e.timeStart || '19:00';
   document.getElementById('ag-time-end').value = e.timeEnd || '21:00';
+  document.getElementById('ag-lieu').value = e.lieu || '';
+  document.getElementById('ag-remark').value = e.remark || '';
+  onAgendaCategoryChange();
 
   currentEditAgendaId = docId;
   document.getElementById('ag-submit-btn').textContent = '💾 Enregistrer les modifications';
@@ -1110,6 +1181,9 @@ window.cancelAgendaEdit = function () {
   currentEditAgendaId = null;
   document.getElementById('ag-title').value = '';
   document.getElementById('ag-date').value = '';
+  document.getElementById('ag-lieu').value = '';
+  document.getElementById('ag-remark').value = '';
+  document.getElementById('ag-preset').value = '';
   document.getElementById('ag-submit-btn').textContent = '➕ Ajouter l\'événement';
   document.getElementById('ag-cancel-btn').style.display = 'none';
   // Après une édition (annulée ou enregistrée), retour à la liste des événements
@@ -1143,20 +1217,32 @@ async function loadAgendaAdmin() {
       html += `
       <div style="margin:14px 0 8px;">
         <div onclick="toggleSection('${bodyId}', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">${AGENDA_CATEGORY_ICON[cat] || ''} ${cat} <span class="count-badge">${inCat.length}</span></span>
+          <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;">${AGENDA_CATEGORY_ICON[cat] || ''} ${AGENDA_CATEGORY_LABEL[cat] || cat} <span class="count-badge">${inCat.length}</span></span>
           <span class="section-chevron" style="font-size:13px;color:#f97316;transition:transform .2s;display:inline-block;">▸</span>
         </div>
         <div id="${bodyId}" style="display:none;margin-top:8px;">`;
 
       inCat.forEach(e => {
+        const color = AGENDA_CATEGORY_COLOR[cat] || '#f97316';
+        const day = (e.date || '').slice(8, 10) || '?';
+        const monthIdx = Number((e.date || '').slice(5, 7)) - 1;
+        const month = AGENDA_MONTHS_FR[monthIdx] || '';
+        const cancelled = !!e.cancelled;
         html += `
-        <div class="card">
+        <div class="card" style="border-left:4px solid ${color};${cancelled ? 'opacity:.55;background:#fafafa;' : ''}">
           <div class="card-row">
+            <div style="min-width:48px;text-align:center;background:${color}18;border-radius:8px;padding:5px 4px;align-self:center;">
+              <div style="font-size:17px;font-weight:800;color:${color};line-height:1;">${day}</div>
+              <div style="font-size:9px;font-weight:700;color:${color};letter-spacing:.05em;">${month}</div>
+            </div>
             <div class="card-info">
-              <strong>${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
-              <div class="meta">📍 ${formatDateFR(e.date)} · ⏰ ${e.timeStart || '?'} - ${e.timeEnd || '?'}</div>
+              <strong style="${cancelled ? 'text-decoration:line-through;color:#9ca3af;' : ''}">${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
+              ${cancelled ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">❌ Annulé</span>' : ''}
+              <div class="meta">⏰ ${e.timeStart || '?'}–${e.timeEnd || '?'}${e.lieu ? ` · 📍 ${escapeHtmlAdmin(e.lieu)}` : ''}</div>
+              ${e.remark ? `<div class="meta">📝 ${escapeHtmlAdmin(e.remark)}</div>` : ''}
             </div>
             <div class="card-actions">
+              <button class="btn btn-secondary" onclick="toggleAgendaCancelled('${e.docId}')">${cancelled ? '↩️ Rétablir' : '❌ Annuler'}</button>
               <button class="btn btn-secondary" onclick="editAgendaEvent('${e.docId}')">✏️ Modifier</button>
               <button class="btn btn-danger" onclick="deleteAgendaEvent('${e.docId}')">🗑 Supprimer</button>
             </div>
@@ -1180,6 +1266,19 @@ function escapeHtmlAdmin(str) {
   return div.innerHTML;
 }
 
+// Annuler / rétablir un événement (affiché barré + badge Annulé, dans l'admin et le hub)
+window.toggleAgendaCancelled = async function (docId) {
+  const e = agendaEventsCache.find(x => x.docId === docId);
+  if (!e) return;
+  try {
+    await updateDoc(doc(db, 'agendaEvents', docId), { cancelled: !e.cancelled });
+    showToast(e.cancelled ? '↩️ Événement rétabli.' : '❌ Événement marqué comme annulé.');
+    loadAgendaAdmin();
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
 window.prefillFromAgendaTitle = function () {
   const title = document.getElementById('ag-title').value.trim();
   if (!title) return;
@@ -1191,6 +1290,8 @@ window.prefillFromAgendaTitle = function () {
   document.getElementById('ag-category').value = match.category || 'Formations';
   document.getElementById('ag-time-start').value = match.timeStart || '19:00';
   document.getElementById('ag-time-end').value = match.timeEnd || '21:00';
+  if (match.lieu) document.getElementById('ag-lieu').value = match.lieu;
+  onAgendaCategoryChange();
 };
 
 window.addAgendaEvent = async function () {
@@ -1199,6 +1300,8 @@ window.addAgendaEvent = async function () {
   const date = document.getElementById('ag-date').value;
   const timeStart = document.getElementById('ag-time-start').value;
   const timeEnd = document.getElementById('ag-time-end').value;
+  const lieu = document.getElementById('ag-lieu').value.trim();
+  const remark = document.getElementById('ag-remark').value.trim();
 
   if (!title || !date) {
     alert('Merci de renseigner au moins le titre et la date.');
@@ -1208,18 +1311,21 @@ window.addAgendaEvent = async function () {
   try {
     if (currentEditAgendaId) {
       await updateDoc(doc(db, 'agendaEvents', currentEditAgendaId), {
-        category, title, date, timeStart, timeEnd
+        category, title, date, timeStart, timeEnd, lieu, remark
       });
       showToast('✅ Événement modifié.');
       cancelAgendaEdit();
     } else {
       await addDoc(collection(db, 'agendaEvents'), {
-        category, title, date, timeStart, timeEnd,
+        category, title, date, timeStart, timeEnd, lieu, remark,
+        cancelled: false,
         createdAt: new Date().toISOString()
       });
       showToast('✅ Événement ajouté.');
       document.getElementById('ag-title').value = '';
       document.getElementById('ag-date').value = '';
+      document.getElementById('ag-remark').value = '';
+      document.getElementById('ag-preset').value = '';
     }
     loadAgendaAdmin();
   } catch (err) {
