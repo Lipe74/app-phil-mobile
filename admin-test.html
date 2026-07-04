@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.3</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.3.1</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -469,7 +469,7 @@
             <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
-              Catégories valides : Formations, Team meetings (= BOM), Événements, Événements spéciaux
+              Format : Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie | Lieu (optionnel) | Remarque (optionnelle)<br>Catégories valides : Formations, Team meetings (= BOM), Événements, Événements spéciaux
             </div>
             <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
 Team meeting Gosselies avec présentation de société | 24/06/2026 | 18:00-20:30 | Team meetings
@@ -1097,35 +1097,65 @@ const AGENDA_CATEGORY_ICON = { 'Formations': '🎓', 'Team meetings': '📣', '�
 const AGENDA_CATEGORY_COLOR = { 'Formations': '#2563eb', 'Team meetings': '#f97316', 'Événements': '#16a34a', 'Événements spéciaux': '#9333ea' };
 const AGENDA_MONTHS_FR = ['JAN','FÉV','MAR','AVR','MAI','JUIN','JUIL','AOÛT','SEP','OCT','NOV','DÉC'];
 
-// Événements récurrents : lieux et horaires fixes, préremplis en un clic
+// Événements récurrents : lieux et horaires fixes, préremplis en un clic (groupes FR / NL)
 const AGENDA_PRESETS = {
-  'Team meetings': [
-    { title: 'BOM Gosselies',  lieu: 'Gosselies', timeStart: '18:00', timeEnd: '20:30' },
-    { title: 'BOM Herstal',    lieu: 'Herstal',   timeStart: '19:30', timeEnd: '21:30' },
-    { title: 'BOM Bruxelles',  lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '21:00' }
-  ],
-  'Formations': [
-    { title: 'Formation chaudière & acomptes — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '20:00' },
-    { title: 'Formation chaudière & acomptes — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '20:00' },
-    { title: 'Formation chaudière & acomptes — Bruxelles', lieu: 'Bruxelles', timeStart: '18:00', timeEnd: '19:00' },
-    { title: 'Orange MasterClass — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
-    { title: 'Orange MasterClass — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '22:00' },
-    { title: 'Orange MasterClass — Bruxelles', lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '22:00' },
-    { title: 'MLM Advanced Classroom — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
-    { title: 'Success Training FR — Samedi',   lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '09:30', timeEnd: '12:30' },
-    { title: 'Success Training FR — Mercredi', lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '18:00', timeEnd: '21:00' }
-  ]
+  'Team meetings': {
+    fr: [
+      { title: 'BOM Gosselies',  lieu: 'Gosselies', timeStart: '18:00', timeEnd: '20:30' },
+      { title: 'BOM Herstal',    lieu: 'Herstal',   timeStart: '19:30', timeEnd: '21:30' },
+      { title: 'BOM Bruxelles',  lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '21:00' }
+    ],
+    nl: [
+      { title: 'Bedrijfspresentatie Oostkamp', lieu: 'Oostkamp', timeStart: '19:00', timeEnd: '20:45' },
+      { title: 'Team Meeting & Bedrijfspresentatie Hasselt', lieu: 'Hasselt', timeStart: '18:30', timeEnd: '21:00' }
+    ]
+  },
+  'Formations': {
+    fr: [
+      { title: 'Formation chaudière & acomptes — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '20:00' },
+      { title: 'Formation chaudière & acomptes — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '20:00' },
+      { title: 'Formation chaudière & acomptes — Bruxelles', lieu: 'Bruxelles', timeStart: '18:00', timeEnd: '19:00' },
+      { title: 'Orange MasterClass — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Orange MasterClass — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Orange MasterClass — Bruxelles', lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'MLM Advanced Classroom — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Success Training FR — Samedi',   lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '09:30', timeEnd: '12:30' },
+      { title: 'Success Training FR — Mercredi', lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '18:00', timeEnd: '21:00' }
+    ],
+    nl: [
+      { title: 'Success training op een zaterdag NL',  lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '09:30', timeEnd: '12:30' },
+      { title: 'Success training op een woensdag NL',  lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '18:00', timeEnd: '21:00' },
+      { title: 'Sales Advanced Classroom Westerlo',    lieu: 'Westerlo', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Sales Advanced Classroom Oostkamp',    lieu: 'Oostkamp', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Fiscal Advanced Classroom Oostkamp',   lieu: 'Oostkamp', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'MLM Advanced Classroom Hasselt',       lieu: 'Hasselt',  timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'MLM Advanced Classroom Oostkamp',      lieu: 'Oostkamp', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'MLM Advanced Classroom Westerlo',      lieu: 'Westerlo', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Orange MasterClass Hasselt',           lieu: 'Hasselt',  timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'How to sell Eneco Westerlo',           lieu: 'Westerlo', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Training Ketelonderhoud & voorschotfactuur Westerlo', lieu: 'Westerlo', timeStart: '18:45', timeEnd: '19:45' },
+      { title: 'Training Ketelonderhoud & voorschotfactuur Hasselt',  lieu: 'Hasselt',  timeStart: '18:45', timeEnd: '19:45' },
+      { title: 'Training Ketelonderhoud & voorschotfactuur Oostkamp', lieu: 'Oostkamp', timeStart: '18:45', timeEnd: '19:45' }
+    ]
+  }
 };
 
-// Affiche/alimente le sélecteur de choix rapide selon la catégorie
+// Affiche/alimente le sélecteur de choix rapide selon la catégorie (groupes 🇫🇷 / 🇳🇱)
 window.onAgendaCategoryChange = function () {
   const cat = document.getElementById('ag-category').value;
   const row = document.getElementById('ag-preset-row');
   const sel = document.getElementById('ag-preset');
   const presets = AGENDA_PRESETS[cat];
-  if (presets && presets.length) {
-    sel.innerHTML = '<option value="">— Choisir… —</option>' +
-      presets.map((p, i) => `<option value="${i}">${escapeHtmlAdmin(p.title)} (${p.timeStart}–${p.timeEnd})</option>`).join('');
+  if (presets) {
+    let opts = '<option value="">— Choisir… —</option>';
+    [['fr', '🇫🇷 Francophone'], ['nl', '🇳🇱 Nederlandstalig']].forEach(([lang, label]) => {
+      const list = presets[lang] || [];
+      if (!list.length) return;
+      opts += `<optgroup label="${label}">` +
+        list.map((p, i) => `<option value="${lang}-${i}">${escapeHtmlAdmin(p.title)} (${p.timeStart}–${p.timeEnd})</option>`).join('') +
+        `</optgroup>`;
+    });
+    sel.innerHTML = opts;
     row.style.display = 'block';
   } else {
     row.style.display = 'none';
@@ -1136,8 +1166,10 @@ window.onAgendaCategoryChange = function () {
 // Applique le preset choisi : titre, lieu, horaires préremplis (tout reste modifiable)
 window.applyAgendaPreset = function () {
   const cat = document.getElementById('ag-category').value;
-  const idx = document.getElementById('ag-preset').value;
-  const p = (AGENDA_PRESETS[cat] || [])[Number(idx)];
+  const val = document.getElementById('ag-preset').value;
+  if (!val) return;
+  const [lang, idx] = val.split('-');
+  const p = ((AGENDA_PRESETS[cat] || {})[lang] || [])[Number(idx)];
   if (!p) return;
   document.getElementById('ag-title').value = p.title;
   document.getElementById('ag-lieu').value = p.lieu;
@@ -1363,10 +1395,10 @@ window.bulkImportAgenda = async function () {
   lines.forEach((line, idx) => {
     const parts = line.split('|').map(p => p.trim());
     if (parts.length < 4) {
-      errors.push(`Ligne ${idx + 1} : format incorrect (4 parties attendues, séparées par "|")`);
+      errors.push(`Ligne ${idx + 1} : format incorrect (au moins 4 parties attendues, séparées par "|")`);
       return;
     }
-    const [title, dateRaw, timeRaw, categoryRaw] = parts;
+    const [title, dateRaw, timeRaw, categoryRaw, lieuRaw, remarkRaw] = parts;
 
     const dateMatch = dateRaw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (!title || !dateMatch) {
@@ -1394,7 +1426,7 @@ window.bulkImportAgenda = async function () {
     }
     seenInBatch.add(key);
 
-    valid.push({ title, date, timeStart: timeMatch[1], timeEnd: timeMatch[2], category });
+    valid.push({ title, date, timeStart: timeMatch[1], timeEnd: timeMatch[2], category, lieu: lieuRaw || '', remark: remarkRaw || '', cancelled: false });
   });
 
   let msg = `${valid.length} événement(s) prêt(s) à être importé(s).`;
