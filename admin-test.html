@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.3.1</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.3.2</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -429,9 +429,17 @@
               </select>
             </div>
             <div class="form-row" id="ag-preset-row" style="display:none;">
-              <label>⚡ Choix rapide (préremplit titre, lieu et horaire — il ne reste que la date)</label>
+              <label>⚡ Choix rapide (préremplit titre, lieu, horaire et langue — il ne reste que la date)</label>
               <select id="ag-preset" onchange="applyAgendaPreset()">
                 <option value="">— Choisir… —</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Langue (filtre côté consultants)</label>
+              <select id="ag-lang">
+                <option value="fr">🇫🇷 Francophone</option>
+                <option value="nl">🇳🇱 Nederlandstalig</option>
+                <option value="">🌍 Commun (visible FR + NL)</option>
               </select>
             </div>
             <div class="form-row">
@@ -469,7 +477,7 @@
             <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Une ligne par événement, format : <code>Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie</code><br>
-              Format : Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie | Lieu (optionnel) | Remarque (optionnelle)<br>Catégories valides : Formations, Team meetings (= BOM), Événements, Événements spéciaux
+              Format : Titre | JJ/MM/AAAA | HH:MM-HH:MM | Catégorie | Lieu (opt.) | Remarque (opt.) | Langue (fr/nl, vide = FR+NL)<br>Catégories valides : Formations, Team meetings (= BOM), Événements, Événements spéciaux
             </div>
             <textarea id="ag-bulk-text" rows="6" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="Orange MasterClass Bruxelles | 23/06/2026 | 19:00-22:00 | Formations
 Team meeting Gosselies avec présentation de société | 24/06/2026 | 18:00-20:30 | Team meetings
@@ -1119,6 +1127,9 @@ const AGENDA_PRESETS = {
       { title: 'Orange MasterClass — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '22:00' },
       { title: 'Orange MasterClass — Bruxelles', lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '22:00' },
       { title: 'MLM Advanced Classroom — Gosselies', lieu: 'Gosselies', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Sales Advanced Classroom — Herstal',   lieu: 'Herstal',   timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'Sales Advanced Classroom — Bruxelles', lieu: 'Bruxelles', timeStart: '19:00', timeEnd: '22:00' },
+      { title: 'How to sell Eneco — Herstal',          lieu: 'Herstal',   timeStart: '19:00', timeEnd: '21:00' },
       { title: 'Success Training FR — Samedi',   lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '09:30', timeEnd: '12:30' },
       { title: 'Success Training FR — Mercredi', lieu: 'Bâtiment Orange Hello Room, Avenue du Bourget 3, 1140 Evere', timeStart: '18:00', timeEnd: '21:00' }
     ],
@@ -1175,6 +1186,7 @@ window.applyAgendaPreset = function () {
   document.getElementById('ag-lieu').value = p.lieu;
   document.getElementById('ag-time-start').value = p.timeStart;
   document.getElementById('ag-time-end').value = p.timeEnd;
+  document.getElementById('ag-lang').value = lang;
   document.getElementById('ag-date').focus();
 };
 
@@ -1198,6 +1210,7 @@ window.editAgendaEvent = function (docId) {
   document.getElementById('ag-time-end').value = e.timeEnd || '21:00';
   document.getElementById('ag-lieu').value = e.lieu || '';
   document.getElementById('ag-remark').value = e.remark || '';
+  document.getElementById('ag-lang').value = e.lang || (e.lang === '' ? '' : 'fr');
   onAgendaCategoryChange();
 
   currentEditAgendaId = docId;
@@ -1216,6 +1229,7 @@ window.cancelAgendaEdit = function () {
   document.getElementById('ag-lieu').value = '';
   document.getElementById('ag-remark').value = '';
   document.getElementById('ag-preset').value = '';
+  document.getElementById('ag-lang').value = 'fr';
   document.getElementById('ag-submit-btn').textContent = '➕ Ajouter l\'événement';
   document.getElementById('ag-cancel-btn').style.display = 'none';
   // Après une édition (annulée ou enregistrée), retour à la liste des événements
@@ -1269,6 +1283,7 @@ async function loadAgendaAdmin() {
             </div>
             <div class="card-info">
               <strong style="${cancelled ? 'text-decoration:line-through;color:#9ca3af;' : ''}">${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
+              ${e.lang === 'nl' ? '<span class="badge" style="background:#fff7cc;color:#92700c;">🇳🇱 NL</span>' : (e.lang === 'fr' ? '<span class="badge" style="background:#e3f2fd;color:#1565c0;">🇫🇷 FR</span>' : '<span class="badge" style="background:#f3f4f6;color:#6b7280;">🌍 FR+NL</span>')}
               ${cancelled ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">❌ Annulé</span>' : ''}
               <div class="meta">⏰ ${e.timeStart || '?'}–${e.timeEnd || '?'}${e.lieu ? ` · 📍 ${escapeHtmlAdmin(e.lieu)}` : ''}</div>
               ${e.remark ? `<div class="meta">📝 ${escapeHtmlAdmin(e.remark)}</div>` : ''}
@@ -1334,6 +1349,7 @@ window.addAgendaEvent = async function () {
   const timeEnd = document.getElementById('ag-time-end').value;
   const lieu = document.getElementById('ag-lieu').value.trim();
   const remark = document.getElementById('ag-remark').value.trim();
+  const lang = document.getElementById('ag-lang').value;
 
   if (!title || !date) {
     alert('Merci de renseigner au moins le titre et la date.');
@@ -1343,13 +1359,13 @@ window.addAgendaEvent = async function () {
   try {
     if (currentEditAgendaId) {
       await updateDoc(doc(db, 'agendaEvents', currentEditAgendaId), {
-        category, title, date, timeStart, timeEnd, lieu, remark
+        category, title, date, timeStart, timeEnd, lieu, remark, lang
       });
       showToast('✅ Événement modifié.');
       cancelAgendaEdit();
     } else {
       await addDoc(collection(db, 'agendaEvents'), {
-        category, title, date, timeStart, timeEnd, lieu, remark,
+        category, title, date, timeStart, timeEnd, lieu, remark, lang,
         cancelled: false,
         createdAt: new Date().toISOString()
       });
@@ -1398,7 +1414,7 @@ window.bulkImportAgenda = async function () {
       errors.push(`Ligne ${idx + 1} : format incorrect (au moins 4 parties attendues, séparées par "|")`);
       return;
     }
-    const [title, dateRaw, timeRaw, categoryRaw, lieuRaw, remarkRaw] = parts;
+    const [title, dateRaw, timeRaw, categoryRaw, lieuRaw, remarkRaw, langRaw] = parts;
 
     const dateMatch = dateRaw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (!title || !dateMatch) {
@@ -1426,7 +1442,8 @@ window.bulkImportAgenda = async function () {
     }
     seenInBatch.add(key);
 
-    valid.push({ title, date, timeStart: timeMatch[1], timeEnd: timeMatch[2], category, lieu: lieuRaw || '', remark: remarkRaw || '', cancelled: false });
+    const lang = (langRaw || '').toLowerCase() === 'nl' ? 'nl' : ((langRaw || '').toLowerCase() === 'fr' ? 'fr' : '');
+    valid.push({ title, date, timeStart: timeMatch[1], timeEnd: timeMatch[2], category, lieu: lieuRaw || '', remark: remarkRaw || '', lang, cancelled: false });
   });
 
   let msg = `${valid.length} événement(s) prêt(s) à être importé(s).`;

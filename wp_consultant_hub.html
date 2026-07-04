@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Agenda
+Build <span id="app-version-1">…</span> — Langues
      </span>
     </div>
     </div>
@@ -829,6 +829,11 @@ Build <span id="app-version-1">…</span> — Agenda
 
             <input id="agenda-search" type="text" placeholder="🔍 Rechercher (titre, lieu, remarque...)" oninput="renderAgendaList()"
               style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid #f97316;border-radius:8px;font-size:12px;margin-bottom:10px;">
+            <div id="agenda-lang-chips" style="display:flex;gap:6px;margin-bottom:8px;">
+              <button onclick="setAgendaLangFilter('all', this)" class="agenda-lang-chip" style="border:1px solid #6b7280;background:#6b7280;color:#fff;border-radius:99px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">🌍 Tous</button>
+              <button onclick="setAgendaLangFilter('fr', this)" class="agenda-lang-chip" style="border:1px solid #6b7280;background:#fff;color:#6b7280;border-radius:99px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">🇫🇷 Français</button>
+              <button onclick="setAgendaLangFilter('nl', this)" class="agenda-lang-chip" style="border:1px solid #6b7280;background:#fff;color:#6b7280;border-radius:99px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">🇳🇱 Nederlands</button>
+            </div>
             <div id="agenda-cat-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
               <button onclick="setAgendaCatFilter('all', this)" class="agenda-chip agenda-chip-active" style="border:1px solid #f97316;background:#f97316;color:#fff;border-radius:99px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">Tous</button>
               <button onclick="setAgendaCatFilter('Formations', this)" class="agenda-chip" style="border:1px solid #2563eb;background:#fff;color:#2563eb;border-radius:99px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">🎓 Formations</button>
@@ -1885,6 +1890,28 @@ function normalizeAgendaSearch(str) {
 
 let agendaHubEvents = [];
 let agendaHubCatFilter = 'all';
+let agendaHubLangFilter = 'all';
+
+// Langue d'un événement : champ lang, ou détection de secours pour les anciens
+// événements non étiquetés (villes flamandes / "NL" dans le titre). Vide = commun FR+NL.
+function agendaEventLang(e) {
+  if (e.lang === 'fr' || e.lang === 'nl') return e.lang;
+  if (e.lang === '') return '';
+  const probe = normalizeAgendaSearch(`${e.title || ''} ${e.lieu || ''}`);
+  if (/oostkamp|westerlo|hasselt|bedrijfspresentatie|\bnl\b/.test(probe)) return 'nl';
+  return 'fr';
+}
+
+window.setAgendaLangFilter = function (lang, btn) {
+  agendaHubLangFilter = lang;
+  document.querySelectorAll('#agenda-lang-chips .agenda-lang-chip').forEach(b => {
+    b.style.background = '#fff';
+    b.style.color = '#6b7280';
+  });
+  btn.style.background = '#6b7280';
+  btn.style.color = '#fff';
+  renderAgendaList();
+};
 
 window.setAgendaCatFilter = function (cat, btn) {
   agendaHubCatFilter = cat;
@@ -1936,6 +1963,13 @@ window.renderAgendaList = function () {
   const q = normalizeAgendaSearch(document.getElementById('agenda-search')?.value || '');
   let events = agendaHubEvents;
 
+  if (agendaHubLangFilter !== 'all') {
+    // Les événements "communs" (langue vide) restent visibles dans les deux filtres
+    events = events.filter(e => {
+      const lg = agendaEventLang(e);
+      return lg === '' || lg === agendaHubLangFilter;
+    });
+  }
   if (agendaHubCatFilter !== 'all') events = events.filter(e => e.category === agendaHubCatFilter);
   if (q) {
     events = events.filter(e =>
