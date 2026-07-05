@@ -503,6 +503,10 @@ Build <span id="app-version-1">…</span> — Langues
     🎯 Prospects Consultants
   </button>
 
+  <button onclick="openSimulator('https://app.phil-mobile.be/wp_import_consultants.html')" class="menu-item" id="menu-import-consultants" style="display:none;">
+    📥 Import Consultants (tri)
+  </button>
+
 </div>
 
 <!-- SIMULATEURS -->
@@ -2271,6 +2275,8 @@ function doUnlock(user) {
   // Lien Admin dans le menu : visible uniquement pour les comptes administrateurs
   const adminSection = document.getElementById('admin-menu-section');
   if (adminSection) adminSection.style.display = user.isAdmin ? 'block' : 'none';
+  const importBtn = document.getElementById('menu-import-consultants');
+  if (importBtn) importBtn.style.display = user.isAdmin ? 'block' : 'none';
 
 
   setWelcome(user);

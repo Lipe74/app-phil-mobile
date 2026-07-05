@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import Consultants — Phil-Mobile</title>
+<link rel="icon" href="images/logo.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f7f7f9; margin: 0; padding: 16px; color: #1a1a1a; }
+  h1 { color: #f97316; font-size: 20px; margin: 0 0 4px; }
+  .sub { font-size: 12px; color: #888; margin-bottom: 16px; }
+  .card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .btn { border: none; border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: Arial, sans-serif; }
+  .btn-primary { background: #f97316; color: #fff; }
+  .btn-secondary { background: #fff; color: #f97316; border: 1px solid #f97316; }
+  .btn-danger { background: #fde2e1; color: #c0392b; }
+  .btn-success { background: #e7f6ec; color: #16a34a; border: 1px solid #16a34a; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  input, textarea { font-family: Arial, sans-serif; font-size: 12px; padding: 7px 9px; border: 1px solid #ddd; border-radius: 7px; width: 100%; }
+  input:focus, textarea:focus { outline: none; border-color: #f97316; }
+  .chip { border: 1px solid #f97316; background: #fff; color: #f97316; border-radius: 99px; padding: 5px 12px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .chip.active { background: #f97316; color: #fff; }
+  .badge { display: inline-block; border-radius: 99px; font-size: 10px; font-weight: 700; padding: 2px 8px; margin-left: 6px; }
+  .meta { font-size: 11px; color: #6b7280; margin-top: 2px; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 10px 18px; border-radius: 99px; font-size: 12px; display: none; z-index: 999; }
+  .row-fields { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .row-fields > div { flex: 1; min-width: 140px; }
+  .row-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  label { font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .05em; }
+  .login-box { max-width: 360px; margin: 60px auto; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 24px; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- Écran de connexion -->
+<div id="login-screen" class="login-box" style="display:none;">
+  <h2 style="color:#f97316;">🔐 Import Consultants</h2>
+  <div class="sub">Réservé à l'administrateur Phil-Mobile</div>
+  <input type="email" id="login-email" placeholder="Email" style="margin-bottom:8px;">
+  <input type="password" id="login-password" placeholder="Mot de passe" style="margin-bottom:12px;">
+  <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Se connecter</button>
+  <div id="login-error" style="display:none;color:#c0392b;font-size:12px;margin-top:10px;"></div>
+</div>
+
+<!-- Application -->
+<div id="app-content" style="display:none;">
+  <h1>📥 Import Consultants — sas de tri</h1>
+  <div class="sub">Importe une liste (BCE ou autre), trie les prospects, puis transfère les bons vers ton CRM Prospects Consultants. Ta vraie base n'est jamais touchée avant le transfert.</div>
+
+  <!-- Zone d'import -->
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:6px;">📄 Importer un fichier</div>
+    <div style="font-size:11px;color:#888;">Fichier <b>.xlsx</b> ou <b>.csv</b> avec en-têtes : <b>Nom</b> (obligatoire), <b>Ville</b>, <b>Adresse</b>, <b>NumEntreprise</b>, <b>Téléphone</b>, <b>Email</b>, <b>Commentaire</b> — ordre libre. Les doublons (même nom + n° d'entreprise) déjà dans le sas sont ignorés.</div>
+    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="margin-top:10px;">
+    <div id="importStatus" style="font-size:11px;color:#f97316;font-weight:700;margin-top:6px;"></div>
+  </div>
+
+  <!-- Filtres -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px;">
+    <button class="chip active" data-f="a_trier" onclick="setFilter('a_trier', this)">📋 À trier <span id="cnt-a_trier">0</span></button>
+    <button class="chip" data-f="garde" onclick="setFilter('garde', this)">✅ Gardés <span id="cnt-garde">0</span></button>
+    <button class="chip" data-f="rejete" onclick="setFilter('rejete', this)">❌ Rejetés <span id="cnt-rejete">0</span></button>
+    <button class="chip" data-f="transfere" onclick="setFilter('transfere', this)">🚀 Transférés <span id="cnt-transfere">0</span></button>
+  </div>
+  <input type="text" id="search" placeholder="🔍 Rechercher (nom, ville, n° entreprise...)" oninput="renderList()" style="margin-bottom:12px;">
+
+  <!-- Actions globales -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+    <button class="btn btn-success" onclick="transferKept()">🚀 Transférer les gardés vers le CRM</button>
+    <button class="btn btn-danger" onclick="purgeRejected()">🗑 Supprimer les rejetés</button>
+    <button class="btn btn-danger" onclick="purgeAll()">🗑 Vider tout le sas</button>
+  </div>
+
+  <div id="list"><div class="meta">Chargement...</div></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window.db = db;
+window.collection = collection;
+window.addDoc = addDoc;
+window.getDocs = getDocs;
+window.doc = doc;
+window.updateDoc = updateDoc;
+window.deleteDoc = deleteDoc;
+
+window.doLogin = async function () {
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      document.getElementById('login-email').value.trim(),
+      document.getElementById('login-password').value
+    );
+  } catch (err) {
+    errEl.textContent = 'Connexion impossible : ' + err.message;
+    errEl.style.display = 'block';
+  }
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('app-content').style.display = 'none';
+    return;
+  }
+
+  // Retrouver le profil consultant correspondant à cet email
+  const snap = await getDocs(collection(db, 'consultants'));
+  let found = null;
+  snap.forEach(d => {
+    const c = d.data();
+    if (c.email && c.email.toLowerCase() === user.email.toLowerCase()) found = { ...c, docId: d.id };
+  });
+
+  // Page réservée aux administrateurs
+  if (!found || !found.isAdmin) {
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = 'Accès réservé à l\'administrateur.';
+    errEl.style.display = 'block';
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('app-content').style.display = 'none';
+    await signOut(auth);
+    return;
+  }
+
+  window._currentConsultantId = found.id || found.docId;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+  loadStaging();
+});
+</script>
+
+<script>
+let stagingList = [];
+let activeFilter = 'a_trier';
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.style.display = 'none', 2600);
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function norm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+async function loadStaging() {
+  const snap = await window.getDocs(window.collection(window.db, 'prospectsImport'));
+  stagingList = [];
+  snap.forEach(d => stagingList.push({ docId: d.id, ...d.data() }));
+  stagingList.sort((a, b) => norm(a.nom).localeCompare(norm(b.nom)));
+  renderList();
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+window.setFilter = setFilter;
+
+function renderList() {
+  // Compteurs
+  ['a_trier', 'garde', 'rejete', 'transfere'].forEach(f => {
+    const el = document.getElementById('cnt-' + f);
+    if (el) el.textContent = stagingList.filter(p => (p.triStatut || 'a_trier') === f).length;
+  });
+
+  const q = norm(document.getElementById('search').value);
+  let list = stagingList.filter(p => (p.triStatut || 'a_trier') === activeFilter);
+  if (q) list = list.filter(p => norm(`${p.nom} ${p.ville} ${p.adresse} ${p.numEntreprise} ${p.commentaire}`).includes(q));
+
+  const container = document.getElementById('list');
+  if (!list.length) {
+    container.innerHTML = '<div class="meta">Aucun prospect dans cette vue.</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(p => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div>
+          <strong>${esc(p.nom)}</strong>
+          ${p.triStatut === 'garde' ? '<span class="badge" style="background:#e7f6ec;color:#16a34a;">✅ Gardé</span>' : ''}
+          ${p.triStatut === 'rejete' ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">❌ Rejeté</span>' : ''}
+          ${p.triStatut === 'transfere' ? '<span class="badge" style="background:#e3f2fd;color:#1565c0;">🚀 Transféré</span>' : ''}
+          <div class="meta">${p.numEntreprise ? '🏢 ' + esc(p.numEntreprise) + ' · ' : ''}${esc(p.adresse || '')}${p.ville ? ' — ' + esc(p.ville) : ''}</div>
+        </div>
+      </div>
+      ${p.triStatut !== 'transfere' ? `
+      <div class="row-fields">
+        <div><label>📞 Téléphone</label><input value="${esc(p.tel || '')}" onchange="saveField('${p.docId}','tel',this.value)"></div>
+        <div><label>✉️ Email</label><input value="${esc(p.email || '')}" onchange="saveField('${p.docId}','email',this.value)"></div>
+      </div>
+      <div class="row-fields"><div><label>📝 Commentaire</label><input value="${esc(p.commentaire || '')}" onchange="saveField('${p.docId}','commentaire',this.value)"></div></div>
+      <div class="row-actions">
+        ${p.triStatut !== 'garde' ? `<button class="btn btn-success" onclick="setTri('${p.docId}','garde')">✅ Garder</button>` : ''}
+        ${p.triStatut !== 'rejete' ? `<button class="btn btn-danger" onclick="setTri('${p.docId}','rejete')">❌ Rejeter</button>` : ''}
+        ${(p.triStatut === 'garde' || p.triStatut === 'rejete') ? `<button class="btn btn-secondary" onclick="setTri('${p.docId}','a_trier')">↩️ À trier</button>` : ''}
+        <button class="btn btn-secondary" onclick="removeOne('${p.docId}')">🗑</button>
+      </div>` : ''}
+    </div>`).join('');
+}
+window.renderList = renderList;
+
+window.saveField = async function (docId, field, value) {
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsImport', docId), { [field]: value.trim() });
+    const p = stagingList.find(x => x.docId === docId);
+    if (p) p[field] = value.trim();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.setTri = async function (docId, statut) {
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsImport', docId), { triStatut: statut });
+    const p = stagingList.find(x => x.docId === docId);
+    if (p) p.triStatut = statut;
+    renderList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.removeOne = async function (docId) {
+  if (!confirm('Supprimer définitivement cette entrée du sas ?')) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, 'prospectsImport', docId));
+    stagingList = stagingList.filter(x => x.docId !== docId);
+    renderList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// ===== Import de fichier (SheetJS) =====
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('importFile').addEventListener('change', handleImport);
+});
+
+function pickHeader(row, candidates) {
+  for (const key of Object.keys(row)) {
+    if (candidates.includes(norm(key).replace(/[^a-z0-9]/g, ''))) return row[key];
+  }
+  return '';
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('importStatus');
+  statusEl.textContent = 'Lecture du fichier…';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+    if (!rows.length) { statusEl.textContent = 'Fichier vide.'; return; }
+
+    // Clés existantes pour l'anti-doublon (nom + n° entreprise)
+    const existing = new Set(stagingList.map(p => norm(p.nom) + '|' + norm(p.numEntreprise)));
+
+    let added = 0, dupes = 0, skipped = 0;
+    for (const row of rows) {
+      const nom = String(pickHeader(row, ['nom', 'name', 'denomination'])).trim();
+      if (!nom) { skipped++; continue; }
+      const ville = String(pickHeader(row, ['ville', 'city', 'commune'])).trim();
+      const adresse = String(pickHeader(row, ['adresse', 'address'])).trim();
+      const numEntreprise = String(pickHeader(row, ['numentreprise', 'nentreprise', 'tva', 'vat', 'bce'])).trim();
+      const tel = String(pickHeader(row, ['telephone', 'tel', 'phone', 'gsm'])).trim();
+      const email = String(pickHeader(row, ['email', 'mail', 'courriel'])).trim();
+      const commentaire = String(pickHeader(row, ['commentaire', 'comment', 'remarque', 'note'])).trim();
+
+      const key = norm(nom) + '|' + norm(numEntreprise);
+      if (existing.has(key)) { dupes++; continue; }
+      existing.add(key);
+
+      await window.addDoc(window.collection(window.db, 'prospectsImport'), {
+        nom, ville, adresse, numEntreprise, tel, email, commentaire,
+        triStatut: 'a_trier',
+        createdAt: new Date().toISOString()
+      });
+      added++;
+      statusEl.textContent = `Import en cours… ${added}`;
+    }
+
+    statusEl.textContent = `✅ Import terminé : ${added} ajoutés, ${dupes} doublons ignorés${skipped ? ', ' + skipped + ' lignes sans nom ignorées' : ''}.`;
+    e.target.value = '';
+    loadStaging();
+  } catch (err) {
+    statusEl.textContent = '❌ Erreur : ' + err.message;
+  }
+}
+
+// ===== Transfert vers le CRM Prospects Consultants =====
+window.transferKept = async function () {
+  const kept = stagingList.filter(p => p.triStatut === 'garde');
+  if (!kept.length) { alert('Aucun prospect "Gardé" à transférer.'); return; }
+  if (!confirm(`Transférer ${kept.length} prospect(s) vers ton CRM Prospects Consultants ?`)) return;
+
+  let done = 0;
+  for (const p of kept) {
+    const now = new Date().toISOString();
+    const infoBce = [
+      p.numEntreprise ? `N° entreprise ${p.numEntreprise}` : '',
+      p.adresse || '', p.ville || ''
+    ].filter(Boolean).join(' — ');
+    try {
+      await window.addDoc(window.collection(window.db, 'prospectsConsultants'), {
+        consultantId: window._currentConsultantId,
+        nom: p.nom,
+        tel: p.tel || '',
+        email: p.email || '',
+        source: 'Autre',
+        commentaire: [infoBce ? `[BCE] ${infoBce}` : '', p.commentaire || ''].filter(Boolean).join(' · '),
+        statut: 'Nouveau',
+        dateCreation: now,
+        dateMaj: now
+      });
+      await window.updateDoc(window.doc(window.db, 'prospectsImport', p.docId), { triStatut: 'transfere' });
+      p.triStatut = 'transfere';
+      done++;
+    } catch (err) {
+      console.warn('Erreur transfert', p.nom, err.message);
+    }
+  }
+  showToast(`🚀 ${done} prospect(s) transféré(s) vers le CRM.`);
+  renderList();
+};
+
+// ===== Ménage =====
+window.purgeRejected = async function () {
+  const rej = stagingList.filter(p => p.triStatut === 'rejete');
+  if (!rej.length) { alert('Aucun rejeté à supprimer.'); return; }
+  if (!confirm(`Supprimer définitivement ${rej.length} prospect(s) rejeté(s) ?`)) return;
+  for (const p of rej) {
+    try { await window.deleteDoc(window.doc(window.db, 'prospectsImport', p.docId)); } catch (e) {}
+  }
+  showToast('🗑 Rejetés supprimés.');
+  loadStaging();
+};
+
+window.purgeAll = async function () {
+  if (!stagingList.length) { alert('Le sas est déjà vide.'); return; }
+  if (!confirm(`Vider TOUT le sas (${stagingList.length} entrées) ?\n\nCette action est irréversible.`)) return;
+  if (!confirm('Dernière confirmation : tout supprimer ?')) return;
+  for (const p of stagingList) {
+    try { await window.deleteDoc(window.doc(window.db, 'prospectsImport', p.docId)); } catch (e) {}
+  }
+  showToast('🗑 Sas vidé.');
+  loadStaging();
+};
+</script>
+
+</body>
+</html>
