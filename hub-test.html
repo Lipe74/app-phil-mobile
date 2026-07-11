@@ -971,6 +971,57 @@ Build <span id="app-version-1">…</span> — CRM
           </div>
 
           <!-- Panel News -->
+<!-- Panel CRM Clients -->
+<div id="panel-crm-cl" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+    <h2 style="color:#f97316;margin:0;font-size:16px;">🧑 Gestion Clients</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <label style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import CSV<input type="file" accept=".csv" onchange="importCrmCsv(this,'clients')" style="display:none;"></label>
+      <button onclick="openCrmModal('clients')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
+    </div>
+  </div>
+  <input id="crm-cl-search" type="text" placeholder="🔍 Rechercher..." oninput="filterCrmCl()" style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
+  <div id="crm-cl-list" style="font-size:13px;color:#666;">Chargement...</div>
+</div>
+
+<!-- Panel CRM Consultants -->
+<div id="panel-crm-co" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+    <h2 style="color:#f97316;margin:0;font-size:16px;">👨‍💼 Gestion Consultants</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <label style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import CSV<input type="file" accept=".csv" onchange="importCrmCsv(this,'consultantsCrm')" style="display:none;"></label>
+      <button onclick="openCrmModal('consultantsCrm')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
+    </div>
+  </div>
+  <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
+</div>
+
+<!-- Modal CRM -->
+<div id="modal-crm" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;overflow-y:auto;">
+  <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:90%;margin:20px auto;max-height:90vh;overflow-y:auto;">
+    <h3 id="modal-crm-title" style="color:#f97316;margin:0 0 14px;font-size:15px;"></h3>
+    <input type="hidden" id="crm-edit-id">
+    <input type="hidden" id="crm-edit-col">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Prénom</label><input id="crm-f-prenom" placeholder="Prénom" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Nom</label><input id="crm-f-nom" placeholder="Nom" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Téléphone</label><input id="crm-f-tel" placeholder="0470..." style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Email</label><input id="crm-f-email" placeholder="email@..." style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div style="grid-column:span 2"><label style="font-size:11px;font-weight:700;color:#555;">Adresse</label><input id="crm-f-adresse" placeholder="Rue, N°" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Code postal</label><input id="crm-f-cp" placeholder="4000" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Ville</label><input id="crm-f-ville" placeholder="Liège" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">Société</label><input id="crm-f-societe" placeholder="Ma Société SRL" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div><label style="font-size:11px;font-weight:700;color:#555;">TVA</label><input id="crm-f-tva" placeholder="BE0123..." style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div id="crm-f-ref-wrap"><label style="font-size:11px;font-weight:700;color:#555;">Référence</label><input id="crm-f-reference" placeholder="Réf. client" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+      <div id="crm-f-date-wrap" style="display:none;"><label style="font-size:11px;font-weight:700;color:#555;">Date démarrage</label><input id="crm-f-date" type="date" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button onclick="closeCrmModal()" style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
+      <button onclick="saveCrmModal()" style="padding:8px 16px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
           <div id="panel-news" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">📰 Historique des News</div>
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
@@ -3267,56 +3318,6 @@ window.submitFeedback = async function(){
 </script>
 
 
-<!-- Panel CRM Clients -->
-<div id="panel-crm-cl" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-    <h2 style="color:#f97316;margin:0;font-size:16px;">🧑 Gestion Clients</h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <label style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import CSV<input type="file" accept=".csv" onchange="importCrmCsv(this,'clients')" style="display:none;"></label>
-      <button onclick="openCrmModal('clients')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
-    </div>
-  </div>
-  <input id="crm-cl-search" type="text" placeholder="🔍 Rechercher..." oninput="filterCrmCl()" style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
-  <div id="crm-cl-list" style="font-size:13px;color:#666;">Chargement...</div>
-</div>
-
-<!-- Panel CRM Consultants -->
-<div id="panel-crm-co" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-    <h2 style="color:#f97316;margin:0;font-size:16px;">👨‍💼 Gestion Consultants</h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <label style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import CSV<input type="file" accept=".csv" onchange="importCrmCsv(this,'consultantsCrm')" style="display:none;"></label>
-      <button onclick="openCrmModal('consultantsCrm')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
-    </div>
-  </div>
-  <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
-</div>
-
-<!-- Modal CRM -->
-<div id="modal-crm" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;overflow-y:auto;">
-  <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:90%;margin:20px auto;max-height:90vh;overflow-y:auto;">
-    <h3 id="modal-crm-title" style="color:#f97316;margin:0 0 14px;font-size:15px;"></h3>
-    <input type="hidden" id="crm-edit-id">
-    <input type="hidden" id="crm-edit-col">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Prénom</label><input id="crm-f-prenom" placeholder="Prénom" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Nom</label><input id="crm-f-nom" placeholder="Nom" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Téléphone</label><input id="crm-f-tel" placeholder="0470..." style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Email</label><input id="crm-f-email" placeholder="email@..." style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div style="grid-column:span 2"><label style="font-size:11px;font-weight:700;color:#555;">Adresse</label><input id="crm-f-adresse" placeholder="Rue, N°" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Code postal</label><input id="crm-f-cp" placeholder="4000" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Ville</label><input id="crm-f-ville" placeholder="Liège" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">Société</label><input id="crm-f-societe" placeholder="Ma Société SRL" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div><label style="font-size:11px;font-weight:700;color:#555;">TVA</label><input id="crm-f-tva" placeholder="BE0123..." style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div id="crm-f-ref-wrap"><label style="font-size:11px;font-weight:700;color:#555;">Référence</label><input id="crm-f-reference" placeholder="Réf. client" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      <div id="crm-f-date-wrap" style="display:none;"><label style="font-size:11px;font-weight:700;color:#555;">Date démarrage</label><input id="crm-f-date" type="date" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-      <button onclick="closeCrmModal()" style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
-      <button onclick="saveCrmModal()" style="padding:8px 16px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
-    </div>
-  </div>
-</div>
 <!-- Panel simulateur bas de page -->
 <div id="sim-bottom-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;height:55vh;background:#fff;border-top:2px solid #f97316;box-shadow:0 -4px 20px rgba(249,115,22,0.18);z-index:500;flex-direction:column;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#fff3e8;border-bottom:1px solid #f97316;flex-shrink:0;">
