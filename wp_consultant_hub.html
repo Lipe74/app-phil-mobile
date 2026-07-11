@@ -3005,7 +3005,7 @@ function crmCard(item, col){
   const inactive=item.active===false;
   const fullName=(item.prenom||'')+' '+(item.nom||item.name||'');
   const displayName=fullName.trim()||item.email||'—';
-  return `<div style="background:${inactive?'#f9fafb':'#fffaf7'};border:1px solid ${inactive?'#e5e7eb':'#fdba74'};border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:${inactive?.6:1};">
+  return `<div style="background:${inactive?'#f9fafb':'#fffaf7'};border:1px solid ${inactive?'#e5e7eb':'#fdba74'};border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:${inactive?0.6:1};">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">
       <div>
         <b style="font-size:13px;">${crmEsc(displayName)}</b>
@@ -3910,7 +3910,7 @@ function crmCard(item, col){
   const inactive=item.active===false;
   const fullName=(item.prenom||'')+' '+(item.nom||item.name||'');
   const displayName=fullName.trim()||item.email||'—';
-  return `<div style="background:${inactive?'#f9fafb':'#fffaf7'};border:1px solid ${inactive?'#e5e7eb':'#fdba74'};border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:${inactive?.6:1};">
+  return `<div style="background:${inactive?'#f9fafb':'#fffaf7'};border:1px solid ${inactive?'#e5e7eb':'#fdba74'};border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:${inactive?0.6:1};">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">
       <div>
         <b style="font-size:13px;">${crmEsc(displayName)}</b>
