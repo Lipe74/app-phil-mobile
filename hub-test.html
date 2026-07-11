@@ -2306,6 +2306,7 @@ async function checkCode() {
 
 function doUnlock(user) {
   pmCurrentUser = user;
+  window.pmCurrentUser = user;
   document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
