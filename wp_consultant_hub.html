@@ -3004,25 +3004,26 @@ function crmEsc(s){const d=document.createElement('div');d.textContent=s??'';ret
 
 function crmCard(item, col){
   const inactive=item.active===false;
-  const fullName=(item.prenom||'')+' '+(item.nom||item.name||'');
-  const displayName=fullName.trim()||item.email||'—';
-  return `<div style="background:${inactive?'#f9fafb':'#fffaf7'};border:1px solid ${inactive?'#e5e7eb':'#fdba74'};border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:${inactive?0.6:1};">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">
-      <div>
-        <b style="font-size:13px;">${crmEsc(displayName)}</b>
-        ${item.societe?`<div style="font-size:11px;color:#666;">${crmEsc(item.societe)}</div>`:''}
-      </div>
-      <div style="display:flex;gap:5px;flex-shrink:0;">
-        <button onclick="openCrmModal('${col}','${item.docId}')" style="padding:3px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">✏️</button>
-        <button onclick="crmToggle('${col}','${item.docId}',${inactive})" style="padding:3px 9px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">${inactive?'✅':'❌'}</button>
-      </div>
-    </div>
-    ${item.tel?`<div style="font-size:12px;color:#555;margin-top:4px;">📞 ${crmEsc(item.tel)}</div>`:''}
-    ${item.email?`<div style="font-size:12px;color:#555;">📧 ${crmEsc(item.email)}</div>`:''}
-    ${(item.cp||item.ville)?`<div style="font-size:12px;color:#555;">📍 ${crmEsc([item.adresse,item.cp,item.ville].filter(Boolean).join(' '))}</div>`:''}
-    ${item.reference?`<div style="font-size:12px;color:#555;">🔖 ${crmEsc(item.reference)}</div>`:''}
-    ${item.dateDemarrage?`<div style="font-size:12px;color:#555;">📅 Démarrage : ${crmEsc(item.dateDemarrage)}</div>`:''}
-  </div>`;
+  const fullName=((item.prenom||'')+' '+(item.nom||item.name||'')).trim();
+  const displayName=fullName||item.email||'—';
+  const bg=inactive?'#f9fafb':'#fffaf7';
+  const br=inactive?'#e5e7eb':'#fdba74';
+  const op=inactive?'0.6':'1';
+  return '<div style="background:'+bg+';border:1px solid '+br+';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:'+op+';">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">'+
+    '<div><b style="font-size:13px;">'+crmEsc(displayName)+'</b>'+
+    (item.societe?'<div style="font-size:11px;color:#666;">'+crmEsc(item.societe)+'</div>':'')+
+    '</div>'+
+    '<div style="display:flex;gap:5px;flex-shrink:0;">'+
+    '<button onclick="openCrmModal(''+col+'',''+item.docId+'')" style="padding:3px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">✏️</button>'+
+    '<button onclick="crmToggle(''+col+'',''+item.docId+'','+inactive+')" style="padding:3px 9px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:11px;cursor:pointer;font-family:Arial,sans-serif;">'+(inactive?'✅':'❌')+'</button>'+
+    '</div></div>'+
+    (item.tel?'<div style="font-size:12px;color:#555;margin-top:4px;">📞 '+crmEsc(item.tel)+'</div>':'')+
+    (item.email?'<div style="font-size:12px;color:#555;">📧 '+crmEsc(item.email)+'</div>':'')+
+    ((item.cp||item.ville)?'<div style="font-size:12px;color:#555;">📍 '+crmEsc([item.adresse,item.cp,item.ville].filter(Boolean).join(' '))+'</div>':'')+
+    (item.reference?'<div style="font-size:12px;color:#555;">🔖 '+crmEsc(item.reference)+'</div>':'')+
+    (item.dateDemarrage?'<div style="font-size:12px;color:#555;">📅 Démarrage : '+crmEsc(item.dateDemarrage)+'</div>':'')+
+    '</div>';
 }
 
 async function loadCrmCl(){
@@ -3034,7 +3035,7 @@ async function loadCrmCl(){
     const snap=await window.getDocs(window.query(window.collection(window.db,'clients'),window.where('consultantId','==',window._currentConsultantId)));
     _crmClData=[];
     snap.forEach(d=>_crmClData.push({docId:d.id,...d.data()}));
-    _crmClData.sort((a,b)=>((a.nom||a.prenom||'')).localeCompare((b.nom||b.prenom||'')));
+    _crmClData.sort((a,b)=>((a.nom||'')).localeCompare((b.nom||'')));
     renderCrmCl(_crmClData);
   }catch(err){el.innerHTML='<div style="color:#e24b4a;">'+err.message+'</div>';}
 }
@@ -3045,7 +3046,7 @@ function renderCrmCl(list){
   const inactifs=list.filter(c=>c.active===false);
   if(!list.length){el.innerHTML='<div style="color:#999;">Aucun client. Créez-en un ou importez un CSV.</div>';return;}
   let h=actifs.map(c=>crmCard(c,'clients')).join('');
-  if(inactifs.length) h+=`<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Inactifs (${inactifs.length})</summary><div style="margin-top:6px;">${inactifs.map(c=>crmCard(c,'clients')).join('')}</div></details>`;
+  if(inactifs.length) h+='<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Inactifs ('+inactifs.length+')</summary><div style="margin-top:6px;">'+inactifs.map(c=>crmCard(c,'clients')).join('')+'</div></details>';
   el.innerHTML=h;
 }
 
@@ -3074,7 +3075,7 @@ function renderCrmCo(list){
   const inactifs=list.filter(c=>c.active===false);
   if(!list.length){el.innerHTML='<div style="color:#999;">Aucun consultant. Créez-en un ou importez un CSV.</div>';return;}
   let h=actifs.map(c=>crmCard(c,'consultantsCrm')).join('');
-  if(inactifs.length) h+=`<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Inactifs (${inactifs.length})</summary><div style="margin-top:6px;">${inactifs.map(c=>crmCard(c,'consultantsCrm')).join('')}</div></details>`;
+  if(inactifs.length) h+='<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Inactifs ('+inactifs.length+')</summary><div style="margin-top:6px;">'+inactifs.map(c=>crmCard(c,'consultantsCrm')).join('')+'</div></details>';
   el.innerHTML=h;
 }
 
@@ -3093,7 +3094,6 @@ window.openCrmModal=function(col,docId){
   document.getElementById('crm-edit-col').value=col;
   document.getElementById('crm-f-ref-wrap').style.display=isConsultant?'none':'';
   document.getElementById('crm-f-date-wrap').style.display=isConsultant?'':'none';
-  // Vider
   ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','date'].forEach(f=>{
     const el=document.getElementById('crm-f-'+f); if(el) el.value='';
   });
@@ -3107,8 +3107,7 @@ window.openCrmModal=function(col,docId){
       if(isConsultant){ const d=document.getElementById('crm-f-date'); if(d) d.value=data.dateDemarrage||''; }
     }
   }
-  const modal=document.getElementById('modal-crm');
-  modal.style.display='flex';
+  document.getElementById('modal-crm').style.display='flex';
 };
 
 window.closeCrmModal=function(){document.getElementById('modal-crm').style.display='none';};
@@ -3117,21 +3116,10 @@ window.saveCrmModal=async function(){
   const col=document.getElementById('crm-edit-col').value;
   const docId=document.getElementById('crm-edit-id').value;
   const isConsultant=col==='consultantsCrm';
-  const data={
-    consultantId:window._currentConsultantId,
-    prenom:(document.getElementById('crm-f-prenom').value||'').trim(),
-    nom:(document.getElementById('crm-f-nom').value||'').trim(),
-    tel:(document.getElementById('crm-f-tel').value||'').trim(),
-    email:(document.getElementById('crm-f-email').value||'').trim(),
-    adresse:(document.getElementById('crm-f-adresse').value||'').trim(),
-    cp:(document.getElementById('crm-f-cp').value||'').trim(),
-    ville:(document.getElementById('crm-f-ville').value||'').trim(),
-    societe:(document.getElementById('crm-f-societe').value||'').trim(),
-    tva:(document.getElementById('crm-f-tva').value||'').trim(),
-    updatedAt:new Date().toISOString()
-  };
-  if(!isConsultant) data.reference=(document.getElementById('crm-f-reference').value||'').trim();
-  if(isConsultant) data.dateDemarrage=(document.getElementById('crm-f-date').value||'').trim();
+  const g=id=>document.getElementById(id).value.trim();
+  const data={consultantId:window._currentConsultantId,prenom:g('crm-f-prenom'),nom:g('crm-f-nom'),tel:g('crm-f-tel'),email:g('crm-f-email'),adresse:g('crm-f-adresse'),cp:g('crm-f-cp'),ville:g('crm-f-ville'),societe:g('crm-f-societe'),tva:g('crm-f-tva'),updatedAt:new Date().toISOString()};
+  if(!isConsultant) data.reference=g('crm-f-reference');
+  if(isConsultant) data.dateDemarrage=g('crm-f-date');
   if(!data.nom&&!data.prenom){alert('Merci de renseigner au moins un nom.');return;}
   try{
     if(docId) await window.updateDoc(window.doc(window.db,col,docId),data);
@@ -3163,8 +3151,8 @@ window.importCrmCsv=function(input,col){
   };
   reader.readAsText(file,'UTF-8');
 };
-
 </script>
+
 </body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 };
