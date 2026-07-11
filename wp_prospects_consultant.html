@@ -560,6 +560,32 @@ async function changeStatus(docId, newStatus){
     });
     showToast('Statut mis à jour : ' + newStatus);
     renderList();
+    // Migration automatique vers consultantsCrm quand Converti
+    if (newStatus === 'Converti') {
+      const p = window._allProspects.find(x => x.docId === docId);
+      if (p) {
+        try {
+          const nameParts = (p.nom || '').trim().split(' ');
+          await window.addDoc(window.collection(window.db, 'consultantsCrm'), {
+            consultantId: p.consultantId || window._currentConsultantId,
+            prenom: nameParts.length > 1 ? nameParts.slice(0,-1).join(' ') : '',
+            nom: nameParts.length > 1 ? nameParts[nameParts.length-1] : nameParts[0] || '',
+            tel: p.tel || '',
+            email: p.email || '',
+            ville: p.ville || '',
+            adresse: p.adresse || '',
+            cp: p.cp || '',
+            societe: p.societe || '',
+            tva: p.tva || '',
+            dateDemarrage: '',
+            active: true,
+            sourceProspectId: docId,
+            createdAt: new Date().toISOString()
+          });
+          showToast('✅ Consultant migré dans Gestion Consultants !');
+        } catch(migErr) { console.log('Migration consultantsCrm:', migErr.message); }
+      }
+    }
   } catch(err) {
     alert('Erreur: ' + err.message);
   }
