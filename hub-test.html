@@ -3724,7 +3724,7 @@ window.showCrmPanel = function(id){
   if(id==='panel-crm-co') loadCrmCo();
 };
 
-async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs||!window._currentConsultantId)&&t<50){await new Promise(r=>setTimeout(r,100));t++;} }
+async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs||!window.pmCurrentUser)&&t<50){await new Promise(r=>setTimeout(r,100));t++;} }
 
 function crmEsc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
 
@@ -3755,9 +3755,9 @@ async function loadCrmCl(){
   const el=document.getElementById('crm-cl-list');if(!el)return;
   el.innerHTML='<div style="color:#999;">Chargement...</div>';
   await waitFB();
-  if(!window._currentConsultantId){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
+  if(!window.pmCurrentUser){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
   try{
-    const snap=await window.getDocs(window.query(window.collection(window.db,'clients'),window.where('consultantId','==',window._currentConsultantId)));
+    const snap=await window.getDocs(window.query(window.collection(window.db,'clients'),window.where('consultantId','==',window.pmCurrentUser?.id)));
     _crmClData=[];
     snap.forEach(d=>_crmClData.push({docId:d.id,...d.data()}));
     _crmClData.sort((a,b)=>((a.nom||a.prenom||'')).localeCompare((b.nom||b.prenom||'')));
@@ -3784,9 +3784,9 @@ async function loadCrmCo(){
   const el=document.getElementById('crm-co-list');if(!el)return;
   el.innerHTML='<div style="color:#999;">Chargement...</div>';
   await waitFB();
-  if(!window._currentConsultantId){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
+  if(!window.pmCurrentUser){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
   try{
-    const snap=await window.getDocs(window.query(window.collection(window.db,'consultantsCrm'),window.where('consultantId','==',window._currentConsultantId)));
+    const snap=await window.getDocs(window.query(window.collection(window.db,'consultantsCrm'),window.where('consultantId','==',window.pmCurrentUser?.id)));
     _crmCoData=[];
     snap.forEach(d=>_crmCoData.push({docId:d.id,...d.data()}));
     _crmCoData.sort((a,b)=>((a.nom||'')).localeCompare((b.nom||'')));
@@ -3844,7 +3844,7 @@ window.saveCrmModal=async function(){
   const docId=document.getElementById('crm-edit-id').value;
   const isConsultant=col==='consultantsCrm';
   const data={
-    consultantId:window._currentConsultantId,
+    consultantId:window.pmCurrentUser?.id,
     prenom:(document.getElementById('crm-f-prenom').value||'').trim(),
     nom:(document.getElementById('crm-f-nom').value||'').trim(),
     tel:(document.getElementById('crm-f-tel').value||'').trim(),
@@ -3878,7 +3878,7 @@ window.importCrmCsv=function(input,col){
     let n=0;
     for(let i=1;i<lines.length;i++){
       const vals=lines[i].split(/[;,]/);
-      const data={consultantId:window._currentConsultantId,active:true,createdAt:new Date().toISOString()};
+      const data={consultantId:window.pmCurrentUser?.id,active:true,createdAt:new Date().toISOString()};
       headers.forEach((h,idx)=>{ const key=map[h]; if(key&&vals[idx]) data[key]=(vals[idx]||'').trim().replace(/^"|"$/g,''); });
       if(!data.nom&&!data.prenom) continue;
       try{ await window.addDoc(window.collection(window.db,col),data); n++; }catch(e){}
@@ -3906,7 +3906,7 @@ window.showCrmPanel = function(id){
   if(id==='panel-crm-co') loadCrmCo();
 };
 
-async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs||!window._currentConsultantId)&&t<50){await new Promise(r=>setTimeout(r,100));t++;} }
+async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs||!window.pmCurrentUser)&&t<50){await new Promise(r=>setTimeout(r,100));t++;} }
 
 function crmEsc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
 
@@ -3934,9 +3934,9 @@ async function loadCrmCl(){
   const el=document.getElementById('crm-cl-list');if(!el)return;
   el.innerHTML='<div style="color:#999;">Chargement...</div>';
   await waitFB();
-  if(!window._currentConsultantId){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
+  if(!window.pmCurrentUser){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
   try{
-    const snap=await window.getDocs(window.query(window.collection(window.db,'clients'),window.where('consultantId','==',window._currentConsultantId)));
+    const snap=await window.getDocs(window.query(window.collection(window.db,'clients'),window.where('consultantId','==',window.pmCurrentUser?.id)));
     _crmClData=[];
     snap.forEach(d=>_crmClData.push({docId:d.id,...d.data()}));
     _crmClData.sort((a,b)=>((a.nom||'')).localeCompare((b.nom||'')));
@@ -3963,9 +3963,9 @@ async function loadCrmCo(){
   const el=document.getElementById('crm-co-list');if(!el)return;
   el.innerHTML='<div style="color:#999;">Chargement...</div>';
   await waitFB();
-  if(!window._currentConsultantId){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
+  if(!window.pmCurrentUser){el.innerHTML='<div style="color:#e24b4a;">Session non disponible.</div>';return;}
   try{
-    const snap=await window.getDocs(window.query(window.collection(window.db,'consultantsCrm'),window.where('consultantId','==',window._currentConsultantId)));
+    const snap=await window.getDocs(window.query(window.collection(window.db,'consultantsCrm'),window.where('consultantId','==',window.pmCurrentUser?.id)));
     _crmCoData=[];
     snap.forEach(d=>_crmCoData.push({docId:d.id,...d.data()}));
     _crmCoData.sort((a,b)=>((a.nom||'')).localeCompare((b.nom||'')));
@@ -4021,7 +4021,7 @@ window.saveCrmModal=async function(){
   const docId=document.getElementById('crm-edit-id').value;
   const isC=col==='consultantsCrm';
   const g=function(id){return document.getElementById(id).value.trim();};
-  const data={consultantId:window._currentConsultantId,prenom:g('crm-f-prenom'),nom:g('crm-f-nom'),tel:g('crm-f-tel'),email:g('crm-f-email'),adresse:g('crm-f-adresse'),cp:g('crm-f-cp'),ville:g('crm-f-ville'),societe:g('crm-f-societe'),tva:g('crm-f-tva'),updatedAt:new Date().toISOString()};
+  const data={consultantId:window.pmCurrentUser?.id,prenom:g('crm-f-prenom'),nom:g('crm-f-nom'),tel:g('crm-f-tel'),email:g('crm-f-email'),adresse:g('crm-f-adresse'),cp:g('crm-f-cp'),ville:g('crm-f-ville'),societe:g('crm-f-societe'),tva:g('crm-f-tva'),updatedAt:new Date().toISOString()};
   if(!isC) data.reference=g('crm-f-reference');
   if(isC) data.dateDemarrage=g('crm-f-date');
   if(!data.nom&&!data.prenom){alert('Merci de renseigner au moins un nom.');return;}
@@ -4045,7 +4045,7 @@ window.importCrmCsv=function(input,col){
     let n=0;
     for(let i=1;i<lines.length;i++){
       const vals=lines[i].split(sep);
-      const data={consultantId:window._currentConsultantId,active:true,createdAt:new Date().toISOString()};
+      const data={consultantId:window.pmCurrentUser?.id,active:true,createdAt:new Date().toISOString()};
       headers.forEach(function(h,idx){ const key=map[h]; if(key&&vals[idx]) data[key]=(vals[idx]||'').trim().replace(/^"|"$/g,''); });
       if(!data.nom&&!data.prenom) continue;
       try{ await window.addDoc(window.collection(window.db,col),data); n++; }catch(e2){}
