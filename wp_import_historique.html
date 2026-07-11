@@ -371,8 +371,28 @@ async function extractTextFromPDF(file) {
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          const pageText = content.items.map(item => item.str).join(' ');
-          fullText += '\n' + pageText;
+
+          // Grouper les items par position Y pour reconstruire les vraies lignes
+          // Chaque item PDF est un fragment de texte avec une position
+          let lastY = null;
+          const lines = [];
+          let currentLine = [];
+
+          for (const item of content.items) {
+            if (!item.str || !item.str.trim()) continue;
+            const y = Math.round(item.transform[5]);
+            if (lastY !== null && Math.abs(y - lastY) > 3) {
+              if (currentLine.length > 0) {
+                lines.push(currentLine.join(' ').trim());
+                currentLine = [];
+              }
+            }
+            currentLine.push(item.str.trim());
+            lastY = y;
+          }
+          if (currentLine.length > 0) lines.push(currentLine.join(' ').trim());
+
+          fullText += '\n' + lines.join('\n');
         }
         resolve(fullText);
       } catch (err) {
@@ -502,156 +522,166 @@ function parseMySmart(text, fileName) {
   };
 }
 
-// --- Parser contrat Orange (PDF signé) ---
+// --- Parser contrat Orange (PDF signé — formulaire) ---
 function parseOrange(text, fileName) {
+  const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
   const t = text.replace(/\s+/g, ' ');
 
-  // Nom/Prénom dans le bloc "Identification du client"
-  const nom = extractVal(t, [
-    /\bNom\s*[:\s]+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+(?:\s+[A-ZÀ-Ÿ][a-zà-ÿ\-']+)?)\s+Prénom/i,
-    /\bNom\s*:\s*([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+)/i,
-  ]);
-  const prenom = extractVal(t, [
-    /\bPrénom\s*[:\s]+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+(?:\s+[A-ZÀ-Ÿa-zà-ÿ\-']+)?)\s+(?:Rue|Ville|N°|Date|Pays|Code|Bte)/i,
-    /\bPrénom\s*:\s*([A-ZÀ-Ÿ][a-zà-ÿ\-']+)/i,
-  ]);
+  const isConsultantLine = l => /^(DELTA|LOTUS|SPONS|test)\d+/i.test(l);
+  const isOrangeClientNum = l => /^\d+\.\d{5,}$/.test(l);
+  const isDateLine = l => /^\d{1,2}\/\d{2}\/\d{4}$/.test(l);
+  const isPhone04 = l => /^0[4-9][\d]{7,8}$/.test(l.replace(/\s/g,''));
+  const isEmailLine = l => /^[\w.+\-]+@[\w.\-]+\.\w+$/.test(l) && isClientEmail(l);
+  const isCapName = l => /^[A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']{1,}$/.test(l);
 
-  // Téléphone : uniquement 04xx (mobile belge)
-  const telRaw = extractVal(t, [
-    /N°\s*tél[.\s]+(?:privé fixe\s*)?(0[4-9]\d[\d\s]{6,10})/i,
-    /(?:téléphone|Gsm)\s*[:\s]*(0[4-9]\d[\d\s]{6,10})/i,
-  ]);
-  const tel = isClientPhone(telRaw) ? telRaw : '';
+  const email = rawLines.find(isEmailLine) || '';
+  const clientOrange = rawLines.find(isOrangeClientNum) || '';
 
-  // Email : exclure les domaines corporatifs
-  const emailRaw = extractVal(t, [
-    /(?:Adresse mail|e-mail|Email)\s*[:\s]*([\w.+\-]+@[\w.\-]+\.\w+)/i,
-  ]);
-  const email = isClientEmail(emailRaw) ? emailRaw : '';
+  const consIdx = rawLines.findIndex(isConsultantLine);
+  const consPhoneRaw = consIdx >= 0 ? (rawLines[consIdx + 1] || '') : '';
+  const consPhone = consPhoneRaw.replace(/\s/g,'');
 
-  const ville = extractVal(t, [
-    /\bVille\s*[:\s]+([A-ZÀ-Ÿ][a-zà-ÿ\- ]+?)\s+(?:Code postal|N°|Pays|Bte)/i,
-    /\bVille\s*[:\s]+([A-ZÀ-Ÿ][a-zà-ÿ\- ]+)/i,
-  ]);
-  const tva = extractVal(t, [
-    /N°\s*d'entreprise\s*[:\s]*(BE\s*\d[\d.]+)/i,
-  ]);
-  const societe = extractVal(t, [
-    /Nom de la société\s*[:\s]+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s+N°|\s+Personne|\s{2,})/i,
-  ]);
+  const tel = rawLines.find(l => isPhone04(l) && l.replace(/\s/g,'') !== consPhone) || '';
 
-  // Date du contrat : "Date : 02/05/2026" près de la signature
-  // "Date de naissance" a "de naissance" entre "Date" et ":", donc on cherche "Date :" directement
-  const dateContrat = extractVal(t, [
-    /Fait en[^0-9]+(\d{1,2}\/\d{2}\/\d{4})/i,
-    /\bDate\s*:\s*(\d{1,2}\/\d{2}\/\d{4})/i,
-    /Signé[^0-9]+(\d{1,2}\/\d{2}\/\d{4})/i,
-  ]);
+  const allDates = rawLines.filter(isDateLine);
+  const emailIdx = rawLines.indexOf(email);
+  const datesAfterEmail = emailIdx >= 0 ? rawLines.slice(emailIdx).filter(isDateLine) : [];
+  const dateContrat = datesAfterEmail.length > 0
+    ? datesAfterEmail[0]
+    : (allDates.length > 1 ? allDates[allDates.length - 1] : (allDates[0] || ''));
 
-  // N° MySmart depuis filename
-  const contratSmart = extractContratFromFilename(fileName);
+  let startIdx = 0;
+  if (clientOrange) {
+    startIdx = rawLines.indexOf(clientOrange) + 1;
+  } else if (consIdx >= 0) {
+    startIdx = consIdx + 2;
+  }
 
-  // Produits
+  let nom = '', prenom = '';
+  for (let i = startIdx; i < Math.min(startIdx + 8, rawLines.length); i++) {
+    const l = rawLines[i];
+    if (isCapName(l) && !isDateLine(l) && !isPhone04(l)) {
+      if (!nom) { nom = l; }
+      else if (!prenom && l !== nom) { prenom = l; break; }
+    }
+  }
+
+  // Ville : ligne juste avant la date de naissance
+  const birthDateIdx = rawLines.findIndex(isDateLine);
+  const ville = birthDateIdx > 0 ? rawLines[birthDateIdx - 1] : '';
+
+  // Rue : ligne juste après le prénom
+  const prenomLineIdx = prenom ? rawLines.indexOf(prenom, startIdx) : -1;
+  const rueCandidate = prenomLineIdx >= 0 ? rawLines[prenomLineIdx + 1] : '';
+  const rue = (rueCandidate && rueCandidate !== ville && !/^\d+$/.test(rueCandidate)) ? rueCandidate : '';
+
+  // Numéro de rue et code postal : après l'email
+  const emailLineIdx = rawLines.indexOf(email);
+  const afterEmail = emailLineIdx >= 0 ? rawLines.slice(emailLineIdx + 1, emailLineIdx + 6) : [];
+  const numRue = afterEmail.find(l => /^\d{1,4}[a-zA-Z]?$/.test(l)) || '';
+  const codePostal = afterEmail.find(l => /^\d{4}$/.test(l)) || '';
+
+  // Adresse complète
+  const adresse = [rue, numRue, codePostal, ville].filter(Boolean).join(' ');
+
+  const tva = extractVal(t, [/(BE\s*0\d{9})/i]);
+  const societe = extractVal(t, [/Nom de la société\s*[:\s]+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s{2,})/i]);
+
   const produits = [];
-  const planMatches = [...t.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
   const seen = new Set();
+  const planMatches = [...t.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
   for (const m of planMatches) {
     const key = m[1].toLowerCase();
     const idx = t.indexOf(m[0]);
     const ctx = t.slice(Math.max(0, idx - 50), idx + 300);
     const porte = /N° porté|Numéro porté|porté/i.test(ctx);
-    const conv = /convergent|Love/i.test(ctx);
     if (!seen.has(key + porte)) {
       seen.add(key + porte);
-      produits.push({ nom: `Orange Mobile ${m[1]}`, portabilite: porte, convergence: conv });
+      produits.push({ nom: `Orange Mobile ${m[1]}`, portabilite: porte, convergence: false });
     }
   }
   if (/Home Love|All in Internet|Zen Internet|Start Internet|Giga Internet|Flybox/i.test(t)) {
     if (!produits.find(p => /Internet|Love|Flybox/i.test(p.nom))) {
-      const typeInt = /Flybox/i.test(t) ? 'Home Flybox' : 'Internet / Love';
-      produits.push({ nom: typeInt, portabilite: false, convergence: false });
+      produits.push({ nom: /Flybox/i.test(t) ? 'Home Flybox' : 'Internet / Love', portabilite: false, convergence: false });
     }
   }
-
-  // N° Client Orange (client existant)
-  const clientOrange = extractVal(t, [
-    /N°\s*de client\s*[:\s]+([\d.]+)/i,
-    /Numéro de client\s*[:\s]+([\d.]+)/i,
-    /client existant[^0-9]+([\d.]{5,})/i,
-  ]);
-
-  // Statut : les PDFs Orange ne montrent pas le statut directement → Encodé par défaut
-  const etatContrat = 'Encodé';
 
   return {
     fileName, type: 'orange',
     nom: (prenom + ' ' + nom).trim().replace(/\s+/g,' '),
-    tel: cleanPhone(tel), email, ville,
+    tel: cleanPhone(tel), email, ville, adresse,
     tva: tva.replace(/\s/g,''), societe,
     dateContrat: parseDate(dateContrat),
-    contratSmart, clientOrange, produits, partenaire: 'Orange',
-    etatContrat,
+    contratSmart: extractContratFromFilename(fileName),
+    clientOrange, produits, partenaire: 'Orange',
+    etatContrat: 'Encodé',
   };
 }
 
-// --- Parser contrat Eneco ---
+// --- Parser contrat Eneco (PDF signé — formulaire) ---
 function parseEneco(text, fileName) {
-  // Extraire uniquement la section client (avant les conditions générales)
-  // La section client se trouve au début, avant "Conditions générales"
-  const cutIdx = text.search(/Conditions générales|Article 1\./i);
-  const clientSection = cutIdx > 0 ? text.slice(0, cutIdx) : text;
-  const t = clientSection.replace(/\s+/g, ' ');
+  const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+  const cutLineIdx = rawLines.findIndex(l => /^Conditions générales$|^Article 1\./i.test(l));
+  const clientLines = cutLineIdx > 0 ? rawLines.slice(0, cutLineIdx) : rawLines;
+  const t = clientLines.join(' ');
 
-  // Nom/Prénom — chercher dans "Données du Client" section
-  const nom = extractVal(t, [
-    /\bNom\s+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+(?:\s+[A-ZÀ-Ÿ][a-zà-ÿ\-']+)?)\s+(?:Prénom|Date de naissance)/i,
-    /\bNom\s+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+)\s/i,
-  ]);
-  const prenom = extractVal(t, [
-    /\bPrénom\s+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+(?:\s+[A-ZÀ-Ÿa-zà-ÿ\-']+)?)\s+(?:Rue|N°|Date|Nom|Numér)/i,
-    /\bPrénom\s+([A-ZÀ-Ÿ][a-zà-ÿ\-']+)/i,
-  ]);
+  const isPhone04 = l => /^0[4-9][\d]{7,8}$/.test(l.replace(/\s/g,'')) && isClientPhone(l);
+  const isEmailLine = l => /^[\w.+\-]+@[\w.\-]+\.\w+$/.test(l) && isClientEmail(l);
+  const isDateLine = l => /^\d{1,2}\/\d{2}\/\d{4}$/.test(l);
+  const isCapName = l => /^[A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']{1,}$/.test(l);
 
-  // Téléphone : GSM client (04xx) — exclure 010, 015 (Eneco/Orange)
-  const telRaw = extractVal(t, [
-    /Gsm\/Tél[.\s]+(0[4-9]\d[\d\s]{6,10})/i,
-    /(?:téléphone|Gsm)\s*[:\s]*(0[4-9]\d[\d\s]{6,10})/i,
-  ]);
-  const tel = isClientPhone(telRaw) ? telRaw : '';
+  const email = clientLines.find(isEmailLine) || '';
 
-  // Email : exclure emails Eneco/Orange
-  const emailRaw = extractVal(t, [
-    /E-mail\s+([\w.+\-]+@[\w.\-]+\.\w+)/i,
-    /email\s*[:\s]*([\w.+\-]+@[\w.\-]+\.\w+)/i,
-  ]);
-  const email = isClientEmail(emailRaw) ? emailRaw : '';
+  // Exclure le téléphone du consultant (apparaît dans la section "Conseiller Eneco")
+  const consLineIdx = clientLines.findIndex(l => /^(DELTA|LOTUS|SPONS|test)\d+/i.test(l));
+  const consPhoneEneco = consLineIdx >= 0 ? (clientLines[consLineIdx + 1] || '').replace(/\s/g,'') : '';
+  const tel = clientLines.find(l => isPhone04(l) && l.replace(/\s/g,'') !== consPhoneEneco) || '';
 
-  const ville = extractVal(t, [
-    /\bLocalité\s+([A-ZÀ-Ÿ][a-zà-ÿ\- ]+?)\s+(?:Code postal|\d{4}|\s{2,})/i,
-    /\bVille\s+([A-ZÀ-Ÿ][a-zà-ÿ\- ]+)/i,
-  ]);
-  const tva = extractVal(t, [
-    /(?:Numéro d'entreprise TVA|N°\s*TVA|TVA)\s+(BE\s*\d[\d.]+)/i,
-    /(BE\s*0\d{9})/i,
-  ]);
-  const societe = extractVal(t, [
-    /Nom de la société\s+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s+N°|\s{2,})/i,
-  ]);
+  const sigDateLine = clientLines.find(l => /Date\s*:\s*\d{1,2}\/\d{2}\/\d{4}/.test(l)) || '';
+  const sigDateMatch = sigDateLine.match(/(\d{1,2}\/\d{2}\/\d{4})/);
+  const emailIdx = clientLines.indexOf(email);
+  const datesAfterEmail = emailIdx >= 0 ? clientLines.slice(emailIdx).filter(isDateLine) : [];
+  const allDatesClient = clientLines.filter(isDateLine);
+  const dateContrat = sigDateMatch ? sigDateMatch[1]
+    : (datesAfterEmail.length > 0 ? datesAfterEmail[0]
+    : (allDatesClient.length > 0 ? allDatesClient[allDatesClient.length - 1] : ''));
 
-  // Date : chercher "Date : XX/XX/XXXX" dans section signature
-  const dateContrat = extractVal(t, [
-    /Date\s*:\s*(\d{1,2}\/\d{2}\/\d{4})/i,
-    /(\d{1,2}\/\d{2}\/\d{4})(?=\s+\d{1,2}:\d{2})/,  // date suivie d'une heure
-  ]);
+  const datClientIdx = clientLines.findIndex(l => /Données du Client|données.*client/i.test(l));
+  const startIdx = datClientIdx >= 0 ? datClientIdx + 1 : 0;
 
-  // N° MySmart depuis filename
-  const contratSmart = extractContratFromFilename(fileName);
+  let nom = '', prenom = '';
+  for (let i = startIdx; i < Math.min(startIdx + 10, clientLines.length); i++) {
+    const l = clientLines[i];
+    if (isCapName(l) && !isDateLine(l) && !isPhone04(l) && !/^(Eneco|Smart|Orange|SMART|Mme|M\.|Mlle|NL|FR|UK|DE|Oui|Non|Date)$/i.test(l)) {
+      if (!nom) { nom = l; }
+      else if (!prenom && l !== nom) { prenom = l; break; }
+    }
+  }
 
-  // Produits Eneco
+  // Ville : ligne juste avant le téléphone client
+  const telIdx = clientLines.indexOf(tel);
+  const ville = telIdx > 1 ? clientLines[telIdx - 1] : '';
+
+  // Rue : ligne juste après le prénom
+  const prenomLineIdx2 = prenom ? clientLines.indexOf(prenom) : -1;
+  const rueCandidate2 = prenomLineIdx2 >= 0 ? clientLines[prenomLineIdx2 + 1] : '';
+  const rue = (rueCandidate2 && rueCandidate2 !== ville && !/^\d+$/.test(rueCandidate2)) ? rueCandidate2 : '';
+
+  // Numéro de rue et code postal : après l'email
+  const emailLineIdx2 = clientLines.indexOf(email);
+  const afterEmail2 = emailLineIdx2 >= 0 ? clientLines.slice(emailLineIdx2 + 1, emailLineIdx2 + 6) : [];
+  const numRue = afterEmail2.find(l => /^\d{1,4}[a-zA-Z]?$/.test(l)) || '';
+  const codePostal = afterEmail2.find(l => /^\d{4}$/.test(l)) || '';
+
+  // Adresse complète
+  const adresse = [rue, numRue, codePostal, ville].filter(Boolean).join(' ');
+
+  const tva = extractVal(t, [/(BE\s*0\d{9})/i, /BE\s*\d{4}\.\d{3}\.\d{3}/]);
+  const societe = extractVal(t, [/Nom de la société\s+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s{2,})/i]);
+
   const produits = [];
   if (/Électricité|Soleil|Vent|POWER|elec/i.test(t)) {
     const nomProd = extractVal(t, [
-      /J['']opte pour Eneco[^(]*?\(nom du produit\)\s+(Eneco [^\n\r]+?)(?:\s+Carte tarifaire|\s+Code EAN|\s+J['']opte)/i,
       /(Eneco [A-ZÀ-Ÿa-zà-ÿ& ]+(?:Fixe|Variable))/i,
     ]) || 'Eneco Électricité';
     produits.push({ nom: nomProd.trim(), portabilite: false, convergence: false });
@@ -664,19 +694,19 @@ function parseEneco(text, fileName) {
     produits.push({ nom: 'Entretien chaudière', portabilite: false, convergence: false });
   }
 
-  // Statut : PDFs Eneco ne montrent pas le statut → Encodé par défaut
-  const etatContrat = 'Encodé';
-
   return {
     fileName, type: 'eneco',
     nom: (prenom + ' ' + nom).trim().replace(/\s+/g,' '),
-    tel: cleanPhone(tel), email, ville,
+    tel: cleanPhone(tel), email, ville, adresse,
     tva: tva.replace(/\s/g,''), societe,
     dateContrat: parseDate(dateContrat),
-    contratSmart, produits, partenaire: 'Eneco',
-    etatContrat,
+    contratSmart: extractContratFromFilename(fileName),
+    clientOrange: '',
+    produits, partenaire: 'Eneco',
+    etatContrat: 'Encodé',
   };
 }
+
 
 // =====================
 // UTILS
@@ -876,7 +906,7 @@ async function saveAll() {
         tel: c.tel || '',
         tva: c.tva || '',
         email: c.email || '',
-        adresse: c.ville || '',
+        adresse: c.adresse || c.ville || '',
         clientOrange: c.clientOrange || '',
         contratSmart: c.contratSmart || '',
         etatContrat: c.etatContrat || 'Activé',
