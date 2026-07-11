@@ -3724,7 +3724,7 @@ window.showCrmPanel = function(id){
   if(id==='panel-crm-co') loadCrmCo();
 };
 
-async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs)&&t<30){await new Promise(r=>setTimeout(r,100));t++;} }
+async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs||!window._currentConsultantId)&&t<50){await new Promise(r=>setTimeout(r,100));t++;} }
 
 function crmEsc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
 
@@ -3906,7 +3906,7 @@ window.showCrmPanel = function(id){
   if(id==='panel-crm-co') loadCrmCo();
 };
 
-async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs)&&t<30){await new Promise(r=>setTimeout(r,100));t++;} }
+async function waitFB(){ let t=0; while((!window.db||!window.where||!window.getDocs||!window._currentConsultantId)&&t<50){await new Promise(r=>setTimeout(r,100));t++;} }
 
 function crmEsc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
 
