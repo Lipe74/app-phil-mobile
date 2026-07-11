@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Outils Phil-Mobile</title>
+<title>Outils Phil-Mobile TEST</title>
 <link rel="icon" type="image/png" href="images/logo.png">
 <link rel="apple-touch-icon" href="images/logo.png">
   <link rel="manifest" href="/manifest.json">
@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Langues
+Build <span id="app-version-1">…</span> — CRM étendu
      </span>
     </div>
     </div>
@@ -492,19 +492,23 @@ Build <span id="app-version-1">…</span> — Langues
 </button>
 <div id="crmMenu" class="submenu">
   <button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">
-    📋 Contrats & ASP
+    📋 Gestion des contrats
   </button>
 
   <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects.html')" class="menu-item">
-    👥 Prospects Clients
+    👥 Gestion Prospects Clients
+  </button>
+
+  <button onclick="showScript('panel-crm-clients')" class="menu-item" id="menu-crm-clients">
+    🧑 Gestion Clients
   </button>
 
   <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects_consultant.html')" class="menu-item">
-    🎯 Prospects Consultants
+    🤝 Gestion Prospects Consultants
   </button>
 
-  <button onclick="openSimulator('https://app.phil-mobile.be/wp_import_consultants.html')" class="menu-item" id="menu-import-consultants" style="display:none;">
-    📥 Import Consultants (tri)
+  <button onclick="showScript('panel-crm-consultants')" class="menu-item" id="menu-crm-consultants">
+    👨‍💼 Gestion Consultants
   </button>
 
 </div>
@@ -1732,6 +1736,9 @@ function showScript(id) {
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById(id).style.display = 'block';
   document.body.classList.add('mobile-panel-open');
+  // Charger les données des panels CRM à l'ouverture
+  if (id === 'panel-crm-clients') loadCrmClients();
+  if (id === 'panel-crm-consultants') loadCrmConsultants();
 }
 
 function showDashboard(btn) {
@@ -2275,8 +2282,6 @@ function doUnlock(user) {
   // Lien Admin dans le menu : visible uniquement pour les comptes administrateurs
   const adminSection = document.getElementById('admin-menu-section');
   if (adminSection) adminSection.style.display = user.isAdmin ? 'block' : 'none';
-  const importBtn = document.getElementById('menu-import-consultants');
-  if (importBtn) importBtn.style.display = user.isAdmin ? 'block' : 'none';
 
 
   setWelcome(user);
@@ -3276,6 +3281,19 @@ window.submitFeedback = async function(){
   }
 </script>
 
+<!-- Panel Gestion Clients -->
+<div id="panel-crm-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+  <h2 style="color:#f97316;margin:0 0 14px;font-size:16px;">🧑 Gestion Clients</h2>
+  <input id="crm-clients-search" type="text" placeholder="🔍 Rechercher un client..." oninput="filterCrmClients()" style="width:100%;padding:9px 12px;border:1px solid #f97316;border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;">
+  <div id="crm-clients-list" style="font-size:13px;color:#666;">Chargement...</div>
+</div>
+
+<!-- Panel Gestion Consultants -->
+<div id="panel-crm-consultants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+  <h2 style="color:#f97316;margin:0 0 14px;font-size:16px;">👨‍💼 Gestion Consultants</h2>
+  <div id="crm-consultants-list" style="font-size:13px;color:#666;">Chargement...</div>
+</div>
+
 <!-- Panel simulateur bas de page -->
 <div id="sim-bottom-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;height:55vh;background:#fff;border-top:2px solid #f97316;box-shadow:0 -4px 20px rgba(249,115,22,0.18);z-index:500;flex-direction:column;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px;background:#fff3e8;border-bottom:1px solid #f97316;flex-shrink:0;">
@@ -3462,6 +3480,139 @@ window.firebaseResetPassword = async function(){
     alert(err.message);
 
   }
+}
+
+// ===== GESTION CLIENTS =====
+let _crmClients = [];
+
+async function loadCrmClients() {
+  const el = document.getElementById('crm-clients-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#999;">Chargement...</div>';
+  try {
+    const snap = await window.getDocs(window.query(
+      window.collection(window.db, 'contrats'),
+      window.where('consultantId', '==', window._currentConsultantId)
+    ));
+    // Grouper les contrats par téléphone → fiche client
+    const byPhone = {};
+    snap.forEach(d => {
+      const c = { docId: d.id, ...d.data() };
+      const key = (c.tel || '').replace(/\s/g,'') || c.nom || 'inconnu';
+      if (!byPhone[key]) {
+        byPhone[key] = {
+          nom: c.nom || '', tel: c.tel || '', email: c.email || '',
+          adresse: c.adresse || '', clientOrange: c.clientOrange || '',
+          tva: c.tva || '', societe: c.societe || '',
+          contrats: []
+        };
+      }
+      byPhone[key].contrats.push(c);
+    });
+    _crmClients = Object.values(byPhone).sort((a,b) => a.nom.localeCompare(b.nom));
+    renderCrmClients(_crmClients);
+  } catch(err) {
+    el.innerHTML = '<div style="color:#e24b4a;">Erreur : ' + err.message + '</div>';
+  }
+}
+
+function renderCrmClients(list) {
+  const el = document.getElementById('crm-clients-list');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div style="color:#999;">Aucun client trouvé.</div>'; return; }
+  el.innerHTML = list.map(c => {
+    const actifs = c.contrats.filter(x => x.etatContrat !== 'Annulé' && x.etatContrat !== 'Refusé');
+    const produits = [...new Set(c.contrats.flatMap(x => Object.keys(x.produitsDetail || {})))];
+    const prodLabels = { mobile_small:'Mobile Small', mobile_medium:'Mobile Medium', mobile_large:'Mobile Large', mobile_unlimited:'Mobile Unlim.', mobile_child:'Mobile Child', home_flybox:'Flybox', internet:'Internet', tv_orange:'TV Orange', eneco_elec:'Eneco Élec.', eneco_gaz:'Eneco Gaz', chaudiere:'Chaudière' };
+    // Garantie 7 mois : date du contrat le plus récent activé
+    const activeDates = c.contrats.filter(x => x.etatContrat === 'Activé' && x.dateContrat).map(x => new Date(x.dateContrat));
+    let garantieBadge = '';
+    if (activeDates.length) {
+      const latest = new Date(Math.max(...activeDates));
+      const limit = new Date(latest); limit.setMonth(limit.getMonth() + 7);
+      const now = new Date();
+      if (now < limit) {
+        const diffMois = Math.ceil((limit - now) / (1000*60*60*24*30));
+        garantieBadge = `<span style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px;">⏱ ${diffMois} mois</span>`;
+      } else {
+        garantieBadge = `<span style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px;">✅ Garanti</span>`;
+      }
+    }
+    return `<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-weight:700;color:#1a1a1a;font-size:14px;">${esc(c.nom)}${c.societe ? ' <span style="font-size:11px;color:#666;">— '+esc(c.societe)+'</span>' : ''}${garantieBadge}</div>
+      ${c.tel ? `<div style="font-size:12px;color:#555;margin-top:4px;">📞 ${esc(c.tel)}</div>` : ''}
+      ${c.email ? `<div style="font-size:12px;color:#555;">📧 ${esc(c.email)}</div>` : ''}
+      ${c.adresse ? `<div style="font-size:12px;color:#555;">📍 ${esc(c.adresse)}</div>` : ''}
+      ${c.clientOrange ? `<div style="font-size:12px;color:#555;">🟠 N° client Orange : ${esc(c.clientOrange)}</div>` : ''}
+      ${c.tva ? `<div style="font-size:12px;color:#555;">🧾 TVA : ${esc(c.tva)}</div>` : ''}
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        ${produits.map(p => `<span style="background:#fff3e8;color:#c2410c;border:1px solid #fed7aa;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700;">${prodLabels[p]||p}</span>`).join('')}
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:#9ca3af;">${actifs.length} contrat(s) actif(s) · ${c.contrats.length} total</div>
+    </div>`;
+  }).join('');
+}
+
+window.filterCrmClients = function() {
+  const term = (document.getElementById('crm-clients-search').value || '').toLowerCase();
+  const filtered = term ? _crmClients.filter(c =>
+    (c.nom+c.tel+c.email+c.societe+c.adresse+c.clientOrange).toLowerCase().includes(term)
+  ) : _crmClients;
+  renderCrmClients(filtered);
+};
+
+// ===== GESTION CONSULTANTS =====
+async function loadCrmConsultants() {
+  const el = document.getElementById('crm-consultants-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:#999;">Chargement...</div>';
+  try {
+    const snap = await window.getDocs(window.collection(window.db, 'consultants'));
+    const myId = window._currentConsultantId;
+    const list = [];
+    snap.forEach(d => {
+      const c = { docId: d.id, ...d.data() };
+      // Afficher les consultants qui ont le consultant courant comme upline
+      if (c.uplineId === myId && c.active !== false) list.push(c);
+    });
+    list.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+    if (!list.length) {
+      el.innerHTML = '<div style="color:#999;">Aucun consultant dans votre réseau direct.</div>';
+      return;
+    }
+    el.innerHTML = list.map(c => {
+      const aspTotal = (c.aspInit || 0) + (c.aspFromContracts || 0);
+      const statut = aspTotal >= 70 ? 'SC+' : 'BC';
+      const statutColor = statut === 'SC+' ? '#166534' : '#92400e';
+      const statutBg = statut === 'SC+' ? '#dcfce7' : '#fef9c3';
+      const pqs = c.pqsValidated ? '✅ PQS' : '';
+      const fastSC = c.fastSCValidated ? '⚡ Fast SC' : '';
+      const fastEC = c.fastECValidated ? '🔵 Fast EC' : '';
+      const badges = [pqs, fastSC, fastEC].filter(Boolean).join(' · ');
+      return `<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+          <div style="font-weight:700;color:#1a1a1a;font-size:14px;">${esc(c.fullName || c.name || c.id)}</div>
+          <span style="background:${statutBg};color:${statutColor};border-radius:99px;padding:2px 10px;font-size:11px;font-weight:700;">${statut}</span>
+        </div>
+        <div style="font-size:12px;color:#666;margin-top:2px;">ID : ${esc(c.id)}</div>
+        ${c.phone ? `<div style="font-size:12px;color:#555;margin-top:4px;">📞 ${esc(c.phone)}</div>` : ''}
+        ${c.email ? `<div style="font-size:12px;color:#555;">📧 ${esc(c.email)}</div>` : ''}
+        <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:#f97316;">ASP : ${aspTotal}</span>
+          ${badges ? `<span style="font-size:11px;color:#555;">${badges}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div style="color:#e24b4a;">Erreur : ' + err.message + '</div>';
+  }
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
 }
 
 window.openSimulator = function(url){
