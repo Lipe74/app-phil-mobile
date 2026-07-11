@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import Fiches Clients — Phil-Mobile Admin</title>
+<link rel="icon" type="image/png" href="images/admin.png">
+<style>
+*{box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#f8f8f8;margin:0;color:#1a1a1a;}
+.header{background:#fff;border-bottom:2px solid #f97316;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;}
+.header h1{color:#f97316;margin:0;font-size:18px;}
+.header span{font-size:12px;color:#999;}
+.container{max-width:1200px;margin:0 auto;padding:20px;}
+.card{background:#fff;border:1px solid #f0f0f0;border-radius:14px;padding:20px;margin-bottom:16px;}
+.card h2{color:#f97316;margin:0 0 14px;font-size:16px;}
+
+/* Login */
+#login-screen{max-width:360px;margin:80px auto;background:#fff;border:2px solid #f97316;border-radius:18px;padding:30px 24px;text-align:center;}
+#login-screen h2{color:#f97316;margin-bottom:20px;}
+#login-screen input{width:100%;padding:10px;margin-bottom:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
+#login-screen button{width:100%;background:#f97316;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
+#login-error{color:#e24b4a;font-size:12px;margin-bottom:10px;display:none;}
+#app-content{display:none;}
+
+/* Drop zone */
+.drop-zone{border:2px dashed #f97316;border-radius:14px;padding:40px;text-align:center;cursor:pointer;background:#fffaf7;transition:background .2s;}
+.drop-zone.drag-over{background:#fff3e8;}
+.drop-zone input{display:none;}
+.drop-zone .icon{font-size:48px;margin-bottom:10px;}
+.drop-zone p{color:#666;margin:6px 0;}
+.drop-zone .hint{font-size:12px;color:#999;}
+
+/* Boutons */
+.btn{padding:9px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-orange{background:#f97316;color:#fff;}
+.btn-orange:hover{background:#ea6010;}
+.btn-gray{background:#e5e7eb;color:#374151;}
+.btn-gray:hover{background:#d1d5db;}
+.btn-green{background:#22c55e;color:#fff;}
+.btn-green:hover{background:#16a34a;}
+.btn-red{background:#ef4444;color:#fff;font-size:11px;padding:5px 10px;}
+
+/* Table */
+.results-table{width:100%;border-collapse:collapse;font-size:12px;}
+.results-table th{background:#f97316;color:#fff;padding:8px 10px;text-align:left;font-size:11px;}
+.results-table td{padding:7px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle;}
+.results-table tr:hover td{background:#fffaf7;}
+.results-table input,.results-table select{width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:11px;}
+.results-table input:focus,.results-table select:focus{border-color:#f97316;outline:none;}
+
+/* Statut badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;}
+.badge-orange{background:#fff3e8;color:#f97316;border:1px solid #fdba74;}
+.badge-green{background:#dcfce7;color:#166534;border:1px solid #86efac;}
+.badge-red{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
+.badge-blue{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;}
+
+/* Progress */
+.progress-bar{background:#e5e7eb;border-radius:99px;height:8px;margin:8px 0;}
+.progress-fill{background:#f97316;height:8px;border-radius:99px;transition:width .3s;}
+
+/* Summary */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.summary-item{background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:12px;text-align:center;}
+.summary-item .val{font-size:24px;font-weight:700;color:#f97316;}
+.summary-item .lbl{font-size:11px;color:#666;margin-top:2px;}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;display:none;z-index:2000;}
+
+/* Tags produits */
+.prod-tag{display:inline-block;background:#fff3e8;color:#c2410c;border:1px solid #fed7aa;border-radius:6px;padding:1px 6px;font-size:10px;font-weight:700;margin:1px;}
+
+@media(max-width:768px){
+  .summary-grid{grid-template-columns:1fr 1fr;}
+  .results-table{display:block;overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <h2>🔐 Import Historique</h2>
+  <p style="font-size:12px;color:#666;margin-bottom:16px;">Accès réservé à l'admin Phil-Mobile</p>
+  <div id="login-error"></div>
+  <input type="email" id="login-email" placeholder="Email" autocomplete="email">
+  <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin();">
+  <button onclick="doLogin()">Connexion</button>
+</div>
+
+<!-- APP -->
+<div id="app-content">
+
+<div class="header">
+  <h1>📥 Import Fiches Clients</h1>
+  <span>Admin Phil-Mobile · <button onclick="doLogout()" style="background:none;border:none;color:#f97316;cursor:pointer;font-weight:700;font-size:12px;">Déconnexion</button></span>
+</div>
+
+<div class="container">
+
+  <!-- INFO -->
+  <div class="card" style="background:#fffbeb;border-color:#fbbf24;">
+    <h2>ℹ️ Comment ça fonctionne ?</h2>
+    <ol style="margin:0;padding-left:18px;font-size:13px;color:#555;line-height:1.8;">
+      <li>Téléchargez vos PDFs de contrats depuis MySmart (bouton télécharger sur chaque contrat)</li>
+      <li>Uploadez-les ici — Orange ET Eneco acceptés, plusieurs à la fois</li>
+      <li>L'outil extrait automatiquement les infos client et les produits</li>
+      <li>Vérifiez et corrigez si besoin dans le tableau</li>
+      <li>Cliquez <b>Importer clients</b> — les fiches client sont créées dans Gestion Clients</li>
+    </ol>
+    <p style="font-size:12px;color:#92400e;margin:12px 0 0;"><b>💡 Après import :</b> allez dans Mon CRM → Gestion Clients pour éditer les fiches et ajouter les contrats.</p>
+  </div>
+
+  <!-- CONSULTANT -->
+  <div class="card">
+    <h2>👤 Consultant concerné</h2>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:13px;font-weight:600;">Importer pour :</label>
+      <select id="consultantSelect" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;min-width:200px;">
+        <option value="">Chargement...</option>
+      </select>
+      <span style="font-size:12px;color:#666;">Par défaut : votre propre compte</span>
+    </div>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="card">
+    <h2>📂 Sélectionner les PDFs</h2>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <input type="file" id="fileInput" accept=".pdf" multiple onchange="handleFiles(this.files)">
+      <div class="icon">📄</div>
+      <p><b>Cliquez ou glissez vos fichiers PDF ici</b></p>
+      <p class="hint">PDFs Orange et Eneco acceptés — plusieurs fichiers à la fois</p>
+    </div>
+    <div id="fileList" style="margin-top:10px;font-size:12px;color:#666;"></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="progressCard" class="card" style="display:none;">
+    <h2>⚙️ Analyse en cours...</h2>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div id="progressText" style="font-size:12px;color:#666;text-align:center;margin-top:6px;"></div>
+  </div>
+
+  <!-- RESULTATS -->
+  <div id="resultsCard" class="card" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+      <h2 style="margin:0;">📋 Résultats de l'analyse</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-gray" onclick="clearAll()">🗑 Tout effacer</button>
+        <button class="btn btn-green" onclick="saveAll()" id="saveBtn">💾 Importer clients</button>
+      </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- Table -->
+    <div style="overflow-x:auto;">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Fichier</th>
+            <th>Type</th>
+            <th>Nom client</th>
+            <th>Téléphone</th>
+            <th>Email</th>
+            <th>Adresse</th>
+            <th>Date naissance</th>
+            <th>N° MySmart</th>
+            <th>N° Orange</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;">
+      <button class="btn btn-gray" onclick="clearAll()">🗑 Tout effacer</button>
+      <button class="btn btn-green" onclick="saveAll()" id="saveBtn2">💾 Importer clients</button>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="logCard" class="card" style="display:none;">
+    <h2>📝 Journal d'enregistrement</h2>
+    <div id="logContent" style="font-size:12px;line-height:1.8;max-height:300px;overflow-y:auto;"></div>
+  </div>
+
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, query, where, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+window._db = db;
+window._collection = collection;
+window._addDoc = addDoc;
+window._getDocs = getDocs;
+window._doc = doc;
+window._query = query;
+window._where = where;
+window._getDoc = getDoc;
+
+let currentAdminId = null;
+let allConsultants = [];
+
+window.doLogin = async function () {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    errEl.style.display = 'none';
+  } catch (err) {
+    errEl.textContent = 'Email ou mot de passe incorrect.';
+    errEl.style.display = 'block';
+  }
+};
+
+window.doLogout = async function () {
+  await signOut(auth);
+  location.reload();
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('app-content').style.display = 'none';
+    return;
+  }
+
+  // Vérifier isAdmin
+  const snap = await getDocs(collection(db, 'consultants'));
+  let found = null;
+  snap.forEach(d => {
+    const c = d.data();
+    if (c.email && c.email.toLowerCase() === user.email.toLowerCase()) {
+      found = c;
+      allConsultants.push({ id: d.id, ...c });
+    } else {
+      allConsultants.push({ id: d.id, ...c });
+    }
+  });
+
+  if (!found || !found.isAdmin) {
+    document.getElementById('login-error').textContent = 'Accès réservé à l\'administrateur.';
+    document.getElementById('login-error').style.display = 'block';
+    await signOut(auth);
+    return;
+  }
+
+  currentAdminId = found.id;
+
+  // Peupler le sélecteur consultant
+  const sel = document.getElementById('consultantSelect');
+  sel.innerHTML = '';
+  allConsultants.filter(c => c.active !== false).sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = `${c.name || c.id} (${c.id})`;
+    if (c.id === found.id) opt.selected = true;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+});
+</script>
+
+<script>
+// PDF.js worker
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// =====================
+// ÉTAT GLOBAL
+// =====================
+let parsedContracts = [];
+
+// =====================
+// DRAG & DROP
+// =====================
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('dropZone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.pdf'));
+  if (files.length) handleFiles(files);
+}
+
+function handleFiles(files) {
+  if (!files || files.length === 0) return;
+  const arr = Array.from(files);
+  const listEl = document.getElementById('fileList');
+  listEl.innerHTML = `<b>${arr.length} fichier(s) sélectionné(s) :</b> ` + arr.map(f => f.name).join(', ');
+  processFiles(arr);
+}
+
+// =====================
+// TRAITEMENT PDF
+// =====================
+async function processFiles(files) {
+  const progressCard = document.getElementById('progressCard');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  progressCard.style.display = 'block';
+  document.getElementById('resultsCard').style.display = 'none';
+
+  parsedContracts = [];
+  let done = 0;
+
+  for (const file of files) {
+    progressText.textContent = `Analyse de ${file.name}... (${done + 1}/${files.length})`;
+    try {
+      const text = await extractTextFromPDF(file);
+      const contracts = parseContractText(text, file.name);
+      parsedContracts.push(...contracts);
+    } catch (err) {
+      parsedContracts.push({
+        fileName: file.name,
+        error: 'Erreur de lecture : ' + err.message,
+        type: 'error'
+      });
+    }
+    done++;
+    progressFill.style.width = Math.round((done / files.length) * 100) + '%';
+  }
+
+  progressCard.style.display = 'none';
+  renderResults();
+}
+
+async function extractTextFromPDF(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+      try {
+        const typedArr = new Uint8Array(e.target.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedArr }).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+
+          // Grouper les items par position Y pour reconstruire les vraies lignes
+          // Chaque item PDF est un fragment de texte avec une position
+          let lastY = null;
+          const lines = [];
+          let currentLine = [];
+
+          for (const item of content.items) {
+            if (!item.str || !item.str.trim()) continue;
+            const y = Math.round(item.transform[5]);
+            if (lastY !== null && Math.abs(y - lastY) > 3) {
+              if (currentLine.length > 0) {
+                lines.push(currentLine.join(' ').trim());
+                currentLine = [];
+              }
+            }
+            currentLine.push(item.str.trim());
+            lastY = y;
+          }
+          if (currentLine.length > 0) lines.push(currentLine.join(' ').trim());
+
+          fullText += '\n' + lines.join('\n');
+        }
+        resolve(fullText);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = () => reject(new Error('Lecture fichier impossible'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// =====================
+// PARSERS
+// =====================
+function parseContractText(text, fileName) {
+  const isEneco = /Eneco Belgium|fourniture d'électricité|Eneco Gas|Eneco Soleil/i.test(text);
+  const isMySmart = /MySmart|Digital order|Network member DELTA/i.test(text);
+  const isOrange = /Demande de contrat|Orange Belgium|Orange Mobile|Plan tarifaire/i.test(text);
+
+  // MySmart prend priorité (contient aussi "Orange")
+  if (isMySmart) return [parseMySmart(text, fileName)];
+  if (isEneco) return [parseEneco(text, fileName)];
+  if (isOrange) return [parseOrange(text, fileName)];
+  return [{ fileName, type: 'inconnu', error: 'Format non reconnu (ni Orange ni Eneco)' }];
+}
+
+function extractVal(text, patterns) {
+  for (const pattern of patterns) {
+    const m = text.match(pattern);
+    if (m && m[1] && m[1].trim()) return m[1].trim();
+  }
+  return '';
+}
+
+// Extrait le N° MySmart depuis le nom de fichier (ex: Orange_0000303233.pdf → 0000303233)
+function extractContratFromFilename(fileName) {
+  const m = fileName.match(/(\d{10})/);
+  return m ? m[1] : '';
+}
+
+// Filtre les emails corporatifs
+function isClientEmail(email) {
+  if (!email) return false;
+  return !/eneco\.be|eneco\.com|orange\.be|smart\.be|phil-mobile/i.test(email);
+}
+
+// Filtre les téléphones corporatifs (garde uniquement 04xx, 047x, 049x, 0[6-9]xx belges)
+function isClientPhone(phone) {
+  if (!phone) return false;
+  const p = phone.replace(/\s/g, '');
+  // Numéros belges mobiles (04xx) ou fixes régionaux (0[1-9] sauf 010, 015, 02, 03 d'Eneco/Orange)
+  return /^04\d{8}$/.test(p) || /^0[1-9]\d{7,8}$/.test(p) && !/^0(10|15|2|3|4|5|6|7|8|9)\d/.test(p);
+}
+
+// --- Parser PDF MySmart ---
+function parseMySmart(text, fileName) {
+  const t = text.replace(/\s+/g, ' ');
+
+  // Prénom vient AVANT Nom dans le flux MySmart
+  const prenom = extractVal(t, [
+    /\bPrénom\s+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+(?:\s+[A-ZÀ-Ÿ][a-zà-ÿ\-']+)?)\s+(?:Nom\b|Date de naissance)/i,
+    /\bPrénom\s+([A-ZÀ-Ÿ][a-zà-ÿ\-']+)/i,
+  ]);
+  const nom = extractVal(t, [
+    /\bNom\s+([A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']+(?:\s+[A-ZÀ-Ÿ][a-zà-ÿ\-']+)?)\s+(?:Date de naissance|Langue|Prénom)/i,
+    // Chercher après "Prénom X Nom Y"
+    new RegExp('Prénom\\s+' + prenom.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\s+Nom\\s+([A-ZÀ-Ÿa-zà-ÿ\\-\' ]+?)\\s', 'i'),
+  ]);
+
+  const tel = extractVal(t, [
+    /Numéro de Gsm\s+(0[4-9]\d[\d\s]{6,10})/i,
+    /N°\s*tél[.\s]+(?:privé fixe\s*)?(0[4-9]\d[\d\s]{6,10})/i,
+  ]);
+  const emailRaw = extractVal(t, [
+    /\bEmail\s+([\w.+\-]+@[\w.\-]+\.\w+)/i,
+    /Adresse mail\s*:?\s*([\w.+\-]+@[\w.\-]+\.\w+)/i,
+  ]);
+  const email = isClientEmail(emailRaw) ? emailRaw : '';
+
+  const ville = extractVal(t, [
+    /\bVille\s+([A-ZÀ-Ÿ][a-zà-ÿ\- ]+?)\s+(?:Rue|Code postal|Pays)/i,
+  ]);
+  const tva = extractVal(t, [/(?:N° d'entreprise|Numéro de TVA)\s*(BE\s*\d[\d.]+)/i]);
+  const societe = extractVal(t, [/Nom de la société\s+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s+N°|\s{2,})/i]);
+
+  // Date depuis "Créé par" ou "Status last modified date"
+  const dateContrat = extractVal(t, [
+    /Créé par\s+[^,]+,\s*(\d{1,2}\/\d{2}\/\d{4})/i,
+    /Status last modified date\s+(\d{1,2}\/\d{2}\/\d{4})/i,
+  ]);
+
+  // N° MySmart depuis filename (très fiable) ou depuis le texte
+  const contratSmart = extractContratFromFilename(fileName)
+    || extractVal(t, [/Digital order\s+(\d{10})/i]);
+
+  // N° Client Orange
+  const clientOrange = extractVal(t, [
+    /Numéro de client Orange\s+([\d.]+)/i,
+    /N°\s*de client\s*[:\s]+([\d.]+)/i,
+  ]);
+
+  // Statut du contrat depuis MySmart
+  let etatContrat = 'Activé';
+  if (/Statut du contrat\s+Active Products/i.test(t)) etatContrat = 'Activé';
+  else if (/Statut du contrat\s+Awaiting Activation/i.test(t)) etatContrat = 'En attente';
+  else if (/Statut du contrat\s+Cancelled/i.test(t)) etatContrat = 'Annulé';
+  else if (/Statut du contrat\s+Refused/i.test(t)) etatContrat = 'Refusé';
+
+  // Produits
+  const produits = [];
+  const planMatches = [...t.matchAll(/Plan tarifaire\s+(Orange Mobile \w+|Cable|Internet)/gi)];
+  for (const m of planMatches) {
+    const idx = t.indexOf(m[0]);
+    const ctx = t.slice(idx, idx + 250);
+    const porte = /Numéro porté|N° porté|porté/i.test(ctx);
+    produits.push({ nom: m[1].trim(), portabilite: porte, convergence: false });
+  }
+
+  return {
+    fileName, type: 'mysmart',
+    nom: (prenom + ' ' + nom).trim().replace(/\s+/g,' '),
+    tel: cleanPhone(tel), email, ville,
+    tva: tva.replace(/\s/g, ''), societe,
+    dateContrat: parseDate(dateContrat),
+    contratSmart, clientOrange, produits, partenaire: 'Orange',
+    etatContrat,
+  };
+}
+
+// --- Parser contrat Orange (PDF signé — formulaire) ---
+function parseOrange(text, fileName) {
+  const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+  const t = text.replace(/\s+/g, ' ');
+
+  const isConsultantLine = l => /^(DELTA|LOTUS|SPONS|test)\d+/i.test(l);
+  const isOrangeClientNum = l => /^\d+\.\d{5,}$/.test(l);
+  const isDateLine = l => /^\d{1,2}\/\d{2}\/\d{4}$/.test(l);
+  const isPhone04 = l => /^0[4-9][\d]{7,8}$/.test(l.replace(/\s/g,''));
+  const isEmailLine = l => /^[\w.+\-]+@[\w.\-]+\.\w+$/.test(l) && isClientEmail(l);
+  const isCapName = l => /^[A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']{1,}$/.test(l);
+
+  const email = rawLines.find(isEmailLine) || '';
+  const clientOrange = rawLines.find(isOrangeClientNum) || '';
+
+  const consIdx = rawLines.findIndex(isConsultantLine);
+  const consPhoneRaw = consIdx >= 0 ? (rawLines[consIdx + 1] || '') : '';
+  const consPhone = consPhoneRaw.replace(/\s/g,'');
+
+  const tel = rawLines.find(l => isPhone04(l) && l.replace(/\s/g,'') !== consPhone) || '';
+
+  const allDates = rawLines.filter(isDateLine);
+  const emailIdx = rawLines.indexOf(email);
+  const datesAfterEmail = emailIdx >= 0 ? rawLines.slice(emailIdx).filter(isDateLine) : [];
+  const dateContrat = datesAfterEmail.length > 0
+    ? datesAfterEmail[0]
+    : (allDates.length > 1 ? allDates[allDates.length - 1] : (allDates[0] || ''));
+
+  let startIdx = 0;
+  if (clientOrange) {
+    startIdx = rawLines.indexOf(clientOrange) + 1;
+  } else if (consIdx >= 0) {
+    startIdx = consIdx + 2;
+  }
+
+  let nom = '', prenom = '';
+  for (let i = startIdx; i < Math.min(startIdx + 8, rawLines.length); i++) {
+    const l = rawLines[i];
+    if (isCapName(l) && !isDateLine(l) && !isPhone04(l)) {
+      if (!nom) { nom = l; }
+      else if (!prenom && l !== nom) { prenom = l; break; }
+    }
+  }
+
+  // Date de naissance : première date dans le doc (apparaît tôt, avant l'email)
+  const birthDateIdx = rawLines.findIndex(isDateLine);
+  const dateNaissance = birthDateIdx >= 0 ? rawLines[birthDateIdx] : '';
+  const ville = birthDateIdx > 0 ? rawLines[birthDateIdx - 1] : '';
+
+  // Rue : ligne juste après le prénom
+  const prenomLineIdx = prenom ? rawLines.indexOf(prenom, startIdx) : -1;
+  const rueCandidate = prenomLineIdx >= 0 ? rawLines[prenomLineIdx + 1] : '';
+  const rue = (rueCandidate && rueCandidate !== ville && !/^\d+$/.test(rueCandidate)) ? rueCandidate : '';
+
+  // Numéro de rue et code postal : après l'email
+  const emailLineIdx = rawLines.indexOf(email);
+  const afterEmail = emailLineIdx >= 0 ? rawLines.slice(emailLineIdx + 1, emailLineIdx + 6) : [];
+  const numRue = afterEmail.find(l => /^\d{1,4}[a-zA-Z]?$/.test(l)) || '';
+  const codePostal = afterEmail.find(l => /^\d{4}$/.test(l)) || '';
+
+  // Adresse complète
+  const adresse = [rue, numRue, codePostal, ville].filter(Boolean).join(' ');
+
+  const tva = extractVal(t, [/(BE\s*0\d{9})/i]);
+  const societe = extractVal(t, [/Nom de la société\s*[:\s]+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s{2,})/i]);
+
+  const produits = [];
+  const seen = new Set();
+
+  // Priorité : ligne "Services: Orange Mobile XXX" = produit réellement choisi
+  const servicesMatches = [...t.matchAll(/Services:\s*(Orange Mobile (?:Child|Small|Medium|Large|Unlimited))/gi)];
+  if (servicesMatches.length > 0) {
+    servicesMatches.forEach(m => {
+      const nomProd = m[1].trim();
+      const key = nomProd.toLowerCase();
+      // Détecter portabilité dans le contexte autour de "Services:"
+      const idx = t.indexOf(m[0]);
+      const ctx = t.slice(Math.max(0, idx - 500), idx + 200);
+      const porte = /N° porté|Numéro porté|porté/i.test(ctx);
+      if (!seen.has(key + porte)) {
+        seen.add(key + porte);
+        produits.push({ nom: nomProd, portabilite: porte, convergence: false });
+      }
+    });
+  } else {
+    // Fallback : chercher produits AVANT "Récapitulatif contractuel" (la table des prix est après)
+    const recapIdx = t.indexOf('Récapitulatif contractuel');
+    const tAvantRecap = recapIdx > 0 ? t.slice(0, recapIdx) : t;
+    // Dans la zone avant le récap, les produits apparaissent dans "Choix d'activation"
+    // accompagnés de "Nouveau numéro", "N° porté", "SIM", "Numéro réservé"
+    const planMatches = [...tAvantRecap.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
+    for (const m of planMatches) {
+      const idx = tAvantRecap.indexOf(m[0]);
+      const after = tAvantRecap.slice(idx + m[0].length, idx + m[0].length + 15);
+      // Exclure si directement suivi d'un prix (tableau)
+      if (/^\s*\d+\s*[€*]/.test(after)) continue;
+      const key = m[1].toLowerCase();
+      const ctx = tAvantRecap.slice(Math.max(0, idx - 100), idx + 400);
+      const porte = /N° porté|Numéro porté|porté/i.test(ctx);
+      if (!seen.has(key + porte)) {
+        seen.add(key + porte);
+        produits.push({ nom: `Orange Mobile ${m[1]}`, portabilite: porte, convergence: false });
+      }
+    }
+  }
+  if (/Home Love|All in Internet|Zen Internet|Start Internet|Giga Internet|Flybox/i.test(t)) {
+    if (!produits.find(p => /Internet|Love|Flybox/i.test(p.nom))) {
+      produits.push({ nom: /Flybox/i.test(t) ? 'Home Flybox' : 'Internet / Love', portabilite: false, convergence: false });
+    }
+  }
+
+  return {
+    fileName, type: 'orange',
+    nom: (prenom + ' ' + nom).trim().replace(/\s+/g,' '),
+    tel: cleanPhone(tel), email, ville, adresse,
+    tva: tva.replace(/\s/g,''), societe,
+    dateContrat: parseDate(dateContrat),
+    contratSmart: extractContratFromFilename(fileName),
+    clientOrange, dateNaissance, produits, partenaire: 'Orange',
+    etatContrat: 'Encodé',
+  };
+}
+
+// --- Parser contrat Eneco (PDF signé — formulaire) ---
+function parseEneco(text, fileName) {
+  const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+  const cutLineIdx = rawLines.findIndex(l => /^Conditions générales$|^Article 1\./i.test(l));
+  const clientLines = cutLineIdx > 0 ? rawLines.slice(0, cutLineIdx) : rawLines;
+  const t = clientLines.join(' ');
+
+  const isPhone04 = l => /^0[4-9][\d]{7,8}$/.test(l.replace(/\s/g,'')) && isClientPhone(l);
+  const isEmailLine = l => /^[\w.+\-]+@[\w.\-]+\.\w+$/.test(l) && isClientEmail(l);
+  const isDateLine = l => /^\d{1,2}\/\d{2}\/\d{4}$/.test(l);
+  const isCapName = l => /^[A-ZÀ-Ÿ][a-zà-ÿA-ZÀ-Ÿ\-']{1,}$/.test(l);
+
+  const email = clientLines.find(isEmailLine) || '';
+
+  // Exclure le téléphone du consultant (apparaît dans la section "Conseiller Eneco")
+  const consLineIdx = clientLines.findIndex(l => /^(DELTA|LOTUS|SPONS|test)\d+/i.test(l));
+  const consPhoneEneco = consLineIdx >= 0 ? (clientLines[consLineIdx + 1] || '').replace(/\s/g,'') : '';
+  const tel = clientLines.find(l => isPhone04(l) && l.replace(/\s/g,'') !== consPhoneEneco) || '';
+
+  // Date de naissance : première date ancienne (< 2020) dans les lignes client
+  const isOldDateLine = l => { const m = l.match(/^(\d{1,2})\/(\d{2})\/(\d{4})$/); return m && parseInt(m[3]) < 2020; };
+  const dateNaissance = clientLines.find(isOldDateLine) || '';
+
+  // Date du contrat : chercher une date récente (202x) dans le TEXTE COMPLET
+  // (la date signature peut être dans les pages suivantes, après la coupure Conditions Générales)
+  const fullTextEneco = text; // texte complet non coupé
+  const allLinesEneco = fullTextEneco.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+  // Chercher "Date : JJ/MM/202x" n'importe où dans le doc
+  const sigDateLineEneco = allLinesEneco.find(l => /Date\s*:\s*\d{1,2}\/\d{2}\/202/.test(l))
+    || allLinesEneco.find(l => /Signé[^\n]*\d{1,2}\/\d{2}\/202/.test(l))
+    || '';
+  const sigDateMatchEneco = sigDateLineEneco.match(/(\d{1,2}\/\d{2}\/202\d)/);
+  // Fallback : toutes les dates récentes dans le texte complet
+  const recentDatesEneco = (fullTextEneco.match(/\d{1,2}\/\d{2}\/202\d/g) || []);
+  const dateContrat = sigDateMatchEneco ? sigDateMatchEneco[1]
+    : (recentDatesEneco.length > 0 ? recentDatesEneco[recentDatesEneco.length - 1] : '');
+
+  const datClientIdx = clientLines.findIndex(l => /Données du Client|données.*client/i.test(l));
+  const startIdx = datClientIdx >= 0 ? datClientIdx + 1 : 0;
+
+  let nom = '', prenom = '';
+  for (let i = startIdx; i < Math.min(startIdx + 10, clientLines.length); i++) {
+    const l = clientLines[i];
+    if (isCapName(l) && !isDateLine(l) && !isPhone04(l) && !/^(Eneco|Smart|Orange|SMART|Mme|M\.|Mlle|NL|FR|UK|DE|Oui|Non|Date)$/i.test(l)) {
+      if (!nom) { nom = l; }
+      else if (!prenom && l !== nom) { prenom = l; break; }
+    }
+  }
+
+  // Ville : ligne juste avant le téléphone client
+  const telIdx = clientLines.indexOf(tel);
+  const ville = telIdx > 1 ? clientLines[telIdx - 1] : '';
+
+  // Rue : ligne juste après le prénom
+  const prenomLineIdx2 = prenom ? clientLines.indexOf(prenom) : -1;
+  const rueCandidate2 = prenomLineIdx2 >= 0 ? clientLines[prenomLineIdx2 + 1] : '';
+  const rue = (rueCandidate2 && rueCandidate2 !== ville && !/^\d+$/.test(rueCandidate2)) ? rueCandidate2 : '';
+
+  // Numéro de rue et code postal : après l'email
+  const emailLineIdx2 = clientLines.indexOf(email);
+  const afterEmail2 = emailLineIdx2 >= 0 ? clientLines.slice(emailLineIdx2 + 1, emailLineIdx2 + 6) : [];
+  const numRue = afterEmail2.find(l => /^\d{1,4}[a-zA-Z]?$/.test(l)) || '';
+  const codePostal = afterEmail2.find(l => /^\d{4}$/.test(l)) || '';
+
+  // Adresse complète
+  const adresse = [rue, numRue, codePostal, ville].filter(Boolean).join(' ');
+
+  const tva = extractVal(t, [/(BE\s*0\d{9})/i, /BE\s*\d{4}\.\d{3}\.\d{3}/]);
+  const societe = extractVal(t, [/Nom de la société\s+([A-ZÀ-Ÿa-zà-ÿ\-' ]+?)(?:\s+Forme|\s{2,})/i]);
+
+  const produits = [];
+  if (/Électricité|Soleil|Vent|POWER|elec/i.test(t)) {
+    const nomProd = extractVal(t, [
+      /(Eneco [A-ZÀ-Ÿa-zà-ÿ& ]+(?:Fixe|Variable))/i,
+    ]) || 'Eneco Électricité';
+    produits.push({ nom: nomProd.trim(), portabilite: false, convergence: false });
+  }
+  if (/Gaz naturel|Gas Fixe|Gas Variable|Eneco Gas/i.test(t)) {
+    const nomProd = extractVal(t, [/(Eneco Gas\s*\w*)/i]) || 'Eneco Gaz';
+    produits.push({ nom: nomProd.trim(), portabilite: false, convergence: false });
+  }
+  if (/entretien.*chaudière/i.test(t)) {
+    produits.push({ nom: 'Entretien chaudière', portabilite: false, convergence: false });
+  }
+
+  return {
+    fileName, type: 'eneco',
+    nom: (prenom + ' ' + nom).trim().replace(/\s+/g,' '),
+    tel: cleanPhone(tel), email, ville, adresse,
+    tva: tva.replace(/\s/g,''), societe,
+    dateContrat: parseDate(dateContrat),
+    contratSmart: extractContratFromFilename(fileName),
+    clientOrange: '', dateNaissance,
+    produits, partenaire: 'Eneco',
+    etatContrat: 'Encodé',
+  };
+}
+
+
+// =====================
+// UTILS
+// =====================
+function cleanPhone(tel) {
+  if (!tel) return '';
+  return tel.replace(/\s+/g, '').replace(/^00/,'0').trim();
+}
+
+function parseDate(str) {
+  if (!str) return '';
+  // dd/mm/yyyy → yyyy-mm-dd
+  const m = str.match(/(\d{1,2})\/(\d{2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return '';
+}
+
+function mapProductToId(nom) {
+  const n = nom.toLowerCase();
+  if (/child/i.test(n)) return 'mobile_child';
+  if (/small/i.test(n)) return 'mobile_small';
+  if (/medium/i.test(n)) return 'mobile_medium';
+  if (/large/i.test(n)) return 'mobile_large';
+  if (/unlimited/i.test(n)) return 'mobile_unlimited';
+  if (/flybox/i.test(n)) return 'home_flybox';
+  if (/internet|love|cable/i.test(n)) return 'internet';
+  if (/tv orange/i.test(n)) return 'tv_orange';
+  if (/élec|elec|soleil|vent|power/i.test(n)) return 'eneco_elec';
+  if (/gaz|gas/i.test(n)) return 'eneco_gaz';
+  if (/chaudière/i.test(n)) return 'chaudiere';
+  return 'autre';
+}
+
+// =====================
+// RENDU DES RÉSULTATS
+// =====================
+function renderResults() {
+  const card = document.getElementById('resultsCard');
+  const tbody = document.getElementById('resultsBody');
+
+  if (parsedContracts.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+
+  // Résumé
+  const total = parsedContracts.length;
+  const orange = parsedContracts.filter(c => c.partenaire === 'Orange').length;
+  const eneco = parsedContracts.filter(c => c.partenaire === 'Eneco').length;
+  const errors = parsedContracts.filter(c => c.error).length;
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="summary-item"><div class="val">${total}</div><div class="lbl">Total clients</div></div>
+    <div class="summary-item"><div class="val" style="color:#f97316;">${orange}</div><div class="lbl">Clients Orange</div></div>
+    <div class="summary-item"><div class="val" style="color:#22c55e;">${eneco}</div><div class="lbl">Clients Eneco</div></div>
+    <div class="summary-item"><div class="val" style="color:#ef4444;">${errors}</div><div class="lbl">Erreurs</div></div>
+  `;
+
+  // Lignes
+  tbody.innerHTML = '';
+  parsedContracts.forEach((c, idx) => {
+    if (c.error) {
+      tbody.innerHTML += `
+        <tr>
+          <td>${escHtml(c.fileName)}</td>
+          <td><span class="badge badge-red">Erreur</span></td>
+          <td colspan="7" style="color:#ef4444;">${escHtml(c.error)}</td>
+          <td><button class="btn btn-red" onclick="removeRow(${idx})">✕</button></td>
+        </tr>`;
+      return;
+    }
+
+    const typeLabel = c.type === 'eneco'
+      ? '<span class="badge badge-green">Eneco</span>'
+      : '<span class="badge badge-orange">Orange</span>';
+
+    tbody.innerHTML += `
+      <tr id="row-${idx}">
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escHtml(c.fileName)}">${escHtml(c.fileName)}</td>
+        <td>${typeLabel}</td>
+        <td><input value="${escHtml(c.nom)}" onchange="parsedContracts[${idx}].nom=this.value" style="min-width:130px;"></td>
+        <td><input value="${escHtml(c.tel)}" onchange="parsedContracts[${idx}].tel=this.value" style="min-width:110px;"></td>
+        <td><input value="${escHtml(c.email)}" onchange="parsedContracts[${idx}].email=this.value" style="min-width:140px;"></td>
+        <td><input value="${escHtml(c.adresse||c.ville)}" onchange="parsedContracts[${idx}].adresse=this.value" style="min-width:140px;" placeholder="Adresse"></td>
+        <td><input value="${escHtml(c.dateNaissance)}" onchange="parsedContracts[${idx}].dateNaissance=this.value" style="min-width:100px;" placeholder="JJ/MM/AAAA"></td>
+        <td><input value="${escHtml(c.contratSmart)}" onchange="parsedContracts[${idx}].contratSmart=this.value" placeholder="0000XXXXXX" style="min-width:110px;"></td>
+        <td><input value="${escHtml(c.clientOrange)}" onchange="parsedContracts[${idx}].clientOrange=this.value" placeholder="1.xxxxxxx" style="min-width:90px;"></td>
+        <td><button class="btn btn-red" onclick="removeRow(${idx})">✕</button></td>
+      </tr>`;
+  });
+}
+
+function removeRow(idx) {
+  parsedContracts[idx] = null;
+  parsedContracts = parsedContracts.filter(Boolean);
+  renderResults();
+}
+
+function clearAll() {
+  parsedContracts = [];
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('logCard').style.display = 'none';
+  document.getElementById('fileList').innerHTML = '';
+  document.getElementById('fileInput').value = '';
+}
+
+// =====================
+// ENREGISTREMENT
+// =====================
+async function saveAll() {
+  const consultantId = document.getElementById('consultantSelect').value;
+  if (!consultantId) { alert('Sélectionnez un consultant.'); return; }
+
+  const toSave = parsedContracts.filter(c => !c.error && c.nom);
+  if (toSave.length === 0) { alert('Aucun client valide à importer.'); return; }
+
+  if (!confirm(`Importer ${toSave.length} fiche(s) client pour ${consultantId} ?`)) return;
+
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('saveBtn2').disabled = true;
+
+  const db = window._db;
+  const collection = window._collection;
+  const addDoc = window._addDoc;
+  const query = window._query;
+  const getDocs = window._getDocs;
+  const where = window._where;
+
+  const logCard = document.getElementById('logCard');
+  const logContent = document.getElementById('logContent');
+  logCard.style.display = 'block';
+  logContent.innerHTML = '';
+
+  let saved = 0, skipped = 0, errors = 0;
+
+  for (const c of toSave) {
+    try {
+      // Anti-doublon par téléphone
+      if (c.tel) {
+        const existing = await getDocs(query(
+          collection(db, 'clients'),
+          where('tel', '==', c.tel),
+          where('consultantId', '==', consultantId)
+        ));
+        if (!existing.empty) {
+          logContent.innerHTML += `<div style="color:#f59e0b;">⚠️ <b>${escHtml(c.nom)}</b> — tél ${c.tel} déjà présent, ignoré.</div>`;
+          skipped++;
+          continue;
+        }
+      }
+
+      const data = {
+        consultantId,
+        nom: c.nom || '',
+        societe: c.societe || '',
+        tel: c.tel || '',
+        tva: c.tva || '',
+        email: c.email || '',
+        adresse: c.adresse || c.ville || '',
+        ville: c.ville || '',
+        dateNaissance: c.dateNaissance || '',
+        clientOrange: c.clientOrange || '',
+        contratSmart: c.contratSmart || '',
+        partenaire: c.partenaire || 'Orange',
+        active: true,
+        createdAt: new Date().toISOString(),
+        importedAt: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, 'clients'), data);
+      logContent.innerHTML += `<div style="color:#166534;">✅ <b>${escHtml(c.nom)}</b> — ${escHtml(c.tel)} — ${escHtml(c.adresse || c.ville || '')}</div>`;
+      saved++;
+
+    } catch (err) {
+      logContent.innerHTML += `<div style="color:#991b1b;">❌ <b>${escHtml(c.nom)}</b> — Erreur : ${err.message}</div>`;
+      errors++;
+    }
+  }
+
+  logContent.innerHTML += `<hr style="margin:10px 0;"><div><b>${saved} importé(s)</b> · ${skipped} ignoré(s) · ${errors} erreur(s)</div>`;
+
+  if (saved > 0) {
+    logContent.innerHTML += `<div style="margin-top:12px;padding:12px;background:#fff3e8;border:1px solid #fdba74;border-radius:8px;font-size:13px;">
+      💡 <b>Étape suivante :</b> Allez dans <b>Mon CRM → Gestion Clients</b> pour éditer les fiches et ajouter les contrats de vos clients.
+    </div>`;
+  }
+
+  logCard.scrollIntoView({ behavior: 'smooth' });
+  showToast(`✅ ${saved} client(s) importé(s) !`);
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveBtn2').disabled = false;
+
+  if (errors === 0) {
+    setTimeout(() => {
+      parsedContracts = [];
+      document.getElementById('resultsCard').style.display = 'none';
+    }, 1500);
+  }
+}
+
+function escHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 4000);
+}
+
+// Exposer les fonctions globalement
+window.handleDragOver = handleDragOver;
+window.handleDragLeave = handleDragLeave;
+window.handleDrop = handleDrop;
+window.handleFiles = handleFiles;
+window.removeRow = removeRow;
+window.clearAll = clearAll;
+window.saveAll = saveAll;
+window.mapProductToId = mapProductToId;
+window.parsedContracts = parsedContracts;
+
+// Initialiser PDF.js worker après chargement
+window.addEventListener('load', () => {
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+});
+</script>
+
+</body>
+</html>
