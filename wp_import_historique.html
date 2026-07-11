@@ -589,15 +589,38 @@ function parseOrange(text, fileName) {
 
   const produits = [];
   const seen = new Set();
-  const planMatches = [...t.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
-  for (const m of planMatches) {
-    const key = m[1].toLowerCase();
-    const idx = t.indexOf(m[0]);
-    const ctx = t.slice(Math.max(0, idx - 50), idx + 300);
-    const porte = /N° porté|Numéro porté|porté/i.test(ctx);
-    if (!seen.has(key + porte)) {
-      seen.add(key + porte);
-      produits.push({ nom: `Orange Mobile ${m[1]}`, portabilite: porte, convergence: false });
+
+  // Priorité : ligne "Services: Orange Mobile XXX" = produit réellement choisi
+  const servicesMatches = [...t.matchAll(/Services:\s*(Orange Mobile (?:Child|Small|Medium|Large|Unlimited))/gi)];
+  if (servicesMatches.length > 0) {
+    servicesMatches.forEach(m => {
+      const nomProd = m[1].trim();
+      const key = nomProd.toLowerCase();
+      // Détecter portabilité dans le contexte autour de "Services:"
+      const idx = t.indexOf(m[0]);
+      const ctx = t.slice(Math.max(0, idx - 500), idx + 200);
+      const porte = /N° porté|Numéro porté|porté/i.test(ctx);
+      if (!seen.has(key + porte)) {
+        seen.add(key + porte);
+        produits.push({ nom: nomProd, portabilite: porte, convergence: false });
+      }
+    });
+  } else {
+    // Fallback : chercher "Plan tarifaire" (PDFs MySmart) en excluant les produits du tableau des prix
+    // Le tableau des prix contient "Orange Mobile Small 15€" etc. → on exclut si suivi d'un prix €
+    const planMatches = [...t.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
+    for (const m of planMatches) {
+      const idx = t.indexOf(m[0]);
+      const after = t.slice(idx + m[0].length, idx + m[0].length + 15);
+      // Si suivi d'un prix (ex: " 15€", " 23 €"), c'est le tableau → ignorer
+      if (/^\s*\d+\s*€/.test(after)) continue;
+      const key = m[1].toLowerCase();
+      const ctx = t.slice(Math.max(0, idx - 50), idx + 300);
+      const porte = /N° porté|Numéro porté|porté/i.test(ctx);
+      if (!seen.has(key + porte)) {
+        seen.add(key + porte);
+        produits.push({ nom: `Orange Mobile ${m[1]}`, portabilite: porte, convergence: false });
+      }
     }
   }
   if (/Home Love|All in Internet|Zen Internet|Start Internet|Giga Internet|Flybox/i.test(t)) {
@@ -637,14 +660,19 @@ function parseEneco(text, fileName) {
   const consPhoneEneco = consLineIdx >= 0 ? (clientLines[consLineIdx + 1] || '').replace(/\s/g,'') : '';
   const tel = clientLines.find(l => isPhone04(l) && l.replace(/\s/g,'') !== consPhoneEneco) || '';
 
-  const sigDateLine = clientLines.find(l => /Date\s*:\s*\d{1,2}\/\d{2}\/\d{4}/.test(l)) || '';
-  const sigDateMatch = sigDateLine.match(/(\d{1,2}\/\d{2}\/\d{4})/);
-  const emailIdx = clientLines.indexOf(email);
-  const datesAfterEmail = emailIdx >= 0 ? clientLines.slice(emailIdx).filter(isDateLine) : [];
-  const allDatesClient = clientLines.filter(isDateLine);
+  // Date du contrat : chercher une date récente (>=2020) dans la section signature
+  // La date de naissance est ancienne (ex: 17/06/1988) → exclue par le filtre année
+  const isRecentDateStr = s => { const m = s.match(/(\d{1,2})\/(\d{2})\/(\d{4})/); return m && parseInt(m[3]) >= 2020; };
+  // Chercher dans les lignes qui contiennent "Date :" ou une date récente
+  const sigDateLine = clientLines.find(l => /Date\s*:\s*\d{1,2}\/\d{2}\/202/.test(l))
+    || clientLines.find(l => /Signé.*\d{1,2}\/\d{2}\/202/.test(l))
+    || clientLines.find(l => isRecentDateStr(l) && /^\d{1,2}\/\d{2}\/\d{4}$/.test(l.trim()))
+    || '';
+  const sigDateMatch = sigDateLine.match(/(\d{1,2}\/\d{2}\/202\d)/);
+  // Fallback : toutes les dates récentes dans le texte
+  const recentDatesInText = (t.match(/\d{1,2}\/\d{2}\/202\d/g) || []);
   const dateContrat = sigDateMatch ? sigDateMatch[1]
-    : (datesAfterEmail.length > 0 ? datesAfterEmail[0]
-    : (allDatesClient.length > 0 ? allDatesClient[allDatesClient.length - 1] : ''));
+    : (recentDatesInText.length > 0 ? recentDatesInText[recentDatesInText.length - 1] : '');
 
   const datClientIdx = clientLines.findIndex(l => /Données du Client|données.*client/i.test(l));
   const startIdx = datClientIdx >= 0 ? datClientIdx + 1 : 0;
