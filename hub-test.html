@@ -3339,6 +3339,7 @@ import {
   updateDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   arrayUnion,
   arrayRemove
@@ -3369,6 +3370,7 @@ window.query = query;
 window.orderBy = orderBy;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
+window.where = where;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
@@ -3490,6 +3492,13 @@ async function loadCrmClients() {
   if (!el) return;
   el.innerHTML = '<div style="color:#999;">Chargement...</div>';
   try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs || !window.where) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100)); tries++;
+    }
+    if (!window.db || !window._currentConsultantId) {
+      el.innerHTML = '<div style="color:#e24b4a;">Session non disponible.</div>'; return;
+    }
     const snap = await window.getDocs(window.query(
       window.collection(window.db, 'contrats'),
       window.where('consultantId', '==', window._currentConsultantId)
@@ -3571,6 +3580,11 @@ async function loadCrmConsultants() {
   if (!el) return;
   el.innerHTML = '<div style="color:#999;">Chargement...</div>';
   try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100)); tries++;
+    }
+    if (!window.db) { el.innerHTML = '<div style="color:#e24b4a;">Session non disponible.</div>'; return; }
     const snap = await window.getDocs(window.collection(window.db, 'consultants'));
     const myId = window._currentConsultantId;
     const list = [];
