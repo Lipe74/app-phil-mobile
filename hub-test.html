@@ -2982,6 +2982,7 @@ window.pmExportPDF=function(){
   html+=`<h2>Progression niveaux</h2><table>`;
   Object.entries(PM_AGENT_PROFILES).forEach(([name,p])=>{const asp=pmGetTotalASP(name);const cur=pmGetNiveau(asp);const next=pmGetNextNiveau(asp);html+=`<tr><td>${name}</td><td>${cur.label} · ${Math.round(asp*10)/10} ASP${next?` → ${next.label} dans ${Math.round((next.pts-asp)*10)/10} ASP`:' · MAX'}</td></tr>`;});
   html+=`</table><div class="footer">Phil-Mobile · infos@phil-mobile.be · +32 475 24 02 05</div>
+<script>
 // ===== CRM CLIENTS & CONSULTANTS =====
 let _crmClData=[], _crmCoData=[];
 
@@ -3163,6 +3164,7 @@ window.importCrmCsv=function(input,col){
   reader.readAsText(file,'UTF-8');
 };
 
+</script>
 </body></html>`;
   const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),500);}
 };
