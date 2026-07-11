@@ -1737,8 +1737,8 @@ function showScript(id) {
   document.getElementById(id).style.display = 'block';
   document.body.classList.add('mobile-panel-open');
   // Charger les données des panels CRM à l'ouverture
-  if (id === 'panel-crm-clients') loadCrmClients();
-  if (id === 'panel-crm-consultants') loadCrmConsultants();
+  if (id === 'panel-crm-clients' && window.loadCrmClients) window.loadCrmClients();
+  if (id === 'panel-crm-consultants' && window.loadCrmConsultants) window.loadCrmConsultants();
 }
 
 function showDashboard(btn) {
@@ -3504,6 +3504,7 @@ async function loadCrmClients() {
           nom: c.nom || '', tel: c.tel || '', email: c.email || '',
           adresse: c.adresse || '', clientOrange: c.clientOrange || '',
           tva: c.tva || '', societe: c.societe || '',
+          dateNaissance: c.dateNaissance || '',
           contrats: []
         };
       }
@@ -3543,6 +3544,7 @@ function renderCrmClients(list) {
       ${c.tel ? `<div style="font-size:12px;color:#555;margin-top:4px;">📞 ${esc(c.tel)}</div>` : ''}
       ${c.email ? `<div style="font-size:12px;color:#555;">📧 ${esc(c.email)}</div>` : ''}
       ${c.adresse ? `<div style="font-size:12px;color:#555;">📍 ${esc(c.adresse)}</div>` : ''}
+      ${c.dateNaissance ? `<div style="font-size:12px;color:#555;">🎂 ${esc(c.dateNaissance)}</div>` : ''}
       ${c.clientOrange ? `<div style="font-size:12px;color:#555;">🟠 N° client Orange : ${esc(c.clientOrange)}</div>` : ''}
       ${c.tva ? `<div style="font-size:12px;color:#555;">🧾 TVA : ${esc(c.tva)}</div>` : ''}
       <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
@@ -3553,6 +3555,8 @@ function renderCrmClients(list) {
   }).join('');
 }
 
+window.loadCrmClients = loadCrmClients;
+window.loadCrmConsultants = loadCrmConsultants;
 window.filterCrmClients = function() {
   const term = (document.getElementById('crm-clients-search').value || '').toLowerCase();
   const filtered = term ? _crmClients.filter(c =>
