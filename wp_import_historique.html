@@ -566,8 +566,9 @@ function parseOrange(text, fileName) {
     }
   }
 
-  // Ville : ligne juste avant la date de naissance
+  // Date de naissance : première date dans le doc (apparaît tôt, avant l'email)
   const birthDateIdx = rawLines.findIndex(isDateLine);
+  const dateNaissance = birthDateIdx >= 0 ? rawLines[birthDateIdx] : '';
   const ville = birthDateIdx > 0 ? rawLines[birthDateIdx - 1] : '';
 
   // Rue : ligne juste après le prénom
@@ -606,16 +607,19 @@ function parseOrange(text, fileName) {
       }
     });
   } else {
-    // Fallback : chercher "Plan tarifaire" (PDFs MySmart) en excluant les produits du tableau des prix
-    // Le tableau des prix contient "Orange Mobile Small 15€" etc. → on exclut si suivi d'un prix €
-    const planMatches = [...t.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
+    // Fallback : chercher produits AVANT "Récapitulatif contractuel" (la table des prix est après)
+    const recapIdx = t.indexOf('Récapitulatif contractuel');
+    const tAvantRecap = recapIdx > 0 ? t.slice(0, recapIdx) : t;
+    // Dans la zone avant le récap, les produits apparaissent dans "Choix d'activation"
+    // accompagnés de "Nouveau numéro", "N° porté", "SIM", "Numéro réservé"
+    const planMatches = [...tAvantRecap.matchAll(/Orange Mobile (Child|Small|Medium|Large|Unlimited)/gi)];
     for (const m of planMatches) {
-      const idx = t.indexOf(m[0]);
-      const after = t.slice(idx + m[0].length, idx + m[0].length + 15);
-      // Si suivi d'un prix (ex: " 15€", " 23 €"), c'est le tableau → ignorer
-      if (/^\s*\d+\s*€/.test(after)) continue;
+      const idx = tAvantRecap.indexOf(m[0]);
+      const after = tAvantRecap.slice(idx + m[0].length, idx + m[0].length + 15);
+      // Exclure si directement suivi d'un prix (tableau)
+      if (/^\s*\d+\s*[€*]/.test(after)) continue;
       const key = m[1].toLowerCase();
-      const ctx = t.slice(Math.max(0, idx - 50), idx + 300);
+      const ctx = tAvantRecap.slice(Math.max(0, idx - 100), idx + 400);
       const porte = /N° porté|Numéro porté|porté/i.test(ctx);
       if (!seen.has(key + porte)) {
         seen.add(key + porte);
@@ -636,7 +640,7 @@ function parseOrange(text, fileName) {
     tva: tva.replace(/\s/g,''), societe,
     dateContrat: parseDate(dateContrat),
     contratSmart: extractContratFromFilename(fileName),
-    clientOrange, produits, partenaire: 'Orange',
+    clientOrange, dateNaissance, produits, partenaire: 'Orange',
     etatContrat: 'Encodé',
   };
 }
@@ -660,19 +664,23 @@ function parseEneco(text, fileName) {
   const consPhoneEneco = consLineIdx >= 0 ? (clientLines[consLineIdx + 1] || '').replace(/\s/g,'') : '';
   const tel = clientLines.find(l => isPhone04(l) && l.replace(/\s/g,'') !== consPhoneEneco) || '';
 
-  // Date du contrat : chercher une date récente (>=2020) dans la section signature
-  // La date de naissance est ancienne (ex: 17/06/1988) → exclue par le filtre année
-  const isRecentDateStr = s => { const m = s.match(/(\d{1,2})\/(\d{2})\/(\d{4})/); return m && parseInt(m[3]) >= 2020; };
-  // Chercher dans les lignes qui contiennent "Date :" ou une date récente
-  const sigDateLine = clientLines.find(l => /Date\s*:\s*\d{1,2}\/\d{2}\/202/.test(l))
-    || clientLines.find(l => /Signé.*\d{1,2}\/\d{2}\/202/.test(l))
-    || clientLines.find(l => isRecentDateStr(l) && /^\d{1,2}\/\d{2}\/\d{4}$/.test(l.trim()))
+  // Date de naissance : première date ancienne (< 2020) dans les lignes client
+  const isOldDateLine = l => { const m = l.match(/^(\d{1,2})\/(\d{2})\/(\d{4})$/); return m && parseInt(m[3]) < 2020; };
+  const dateNaissance = clientLines.find(isOldDateLine) || '';
+
+  // Date du contrat : chercher une date récente (202x) dans le TEXTE COMPLET
+  // (la date signature peut être dans les pages suivantes, après la coupure Conditions Générales)
+  const fullTextEneco = text; // texte complet non coupé
+  const allLinesEneco = fullTextEneco.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+  // Chercher "Date : JJ/MM/202x" n'importe où dans le doc
+  const sigDateLineEneco = allLinesEneco.find(l => /Date\s*:\s*\d{1,2}\/\d{2}\/202/.test(l))
+    || allLinesEneco.find(l => /Signé[^\n]*\d{1,2}\/\d{2}\/202/.test(l))
     || '';
-  const sigDateMatch = sigDateLine.match(/(\d{1,2}\/\d{2}\/202\d)/);
-  // Fallback : toutes les dates récentes dans le texte
-  const recentDatesInText = (t.match(/\d{1,2}\/\d{2}\/202\d/g) || []);
-  const dateContrat = sigDateMatch ? sigDateMatch[1]
-    : (recentDatesInText.length > 0 ? recentDatesInText[recentDatesInText.length - 1] : '');
+  const sigDateMatchEneco = sigDateLineEneco.match(/(\d{1,2}\/\d{2}\/202\d)/);
+  // Fallback : toutes les dates récentes dans le texte complet
+  const recentDatesEneco = (fullTextEneco.match(/\d{1,2}\/\d{2}\/202\d/g) || []);
+  const dateContrat = sigDateMatchEneco ? sigDateMatchEneco[1]
+    : (recentDatesEneco.length > 0 ? recentDatesEneco[recentDatesEneco.length - 1] : '');
 
   const datClientIdx = clientLines.findIndex(l => /Données du Client|données.*client/i.test(l));
   const startIdx = datClientIdx >= 0 ? datClientIdx + 1 : 0;
@@ -729,7 +737,7 @@ function parseEneco(text, fileName) {
     tva: tva.replace(/\s/g,''), societe,
     dateContrat: parseDate(dateContrat),
     contratSmart: extractContratFromFilename(fileName),
-    clientOrange: '',
+    clientOrange: '', dateNaissance,
     produits, partenaire: 'Eneco',
     etatContrat: 'Encodé',
   };
@@ -935,6 +943,7 @@ async function saveAll() {
         tva: c.tva || '',
         email: c.email || '',
         adresse: c.adresse || c.ville || '',
+        dateNaissance: c.dateNaissance || '',
         clientOrange: c.clientOrange || '',
         contratSmart: c.contratSmart || '',
         etatContrat: c.etatContrat || 'Activé',
