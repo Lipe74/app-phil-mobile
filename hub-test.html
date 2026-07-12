@@ -3335,10 +3335,10 @@ function crmRenderCard(item, col) {
   var br = inactive ? '#e5e7eb' : '#fdba74';
   var op = inactive ? '0.6' : '1';
   var isAuth = col === 'consultants';
-  var editBtn = isAuth ? '' : '<button onclick="openCrmModal('' + col + '','' + item._id + '')" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>';
+  var editBtn = isAuth ? '' : '<button onclick="openCrmModal(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>';
   var toggleBtn = isAuth ? '' : (inactive
-    ? '<button onclick="crmToggle('' + col + '','' + item._id + '',false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;">✅</button>'
-    : '<button onclick="crmToggle('' + col + '','' + item._id + '',true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;">❌</button>');
+    ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;">✅</button>'
+    : '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;">❌</button>');
   var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>';
@@ -3440,8 +3440,15 @@ window.saveCrmModal = function() {
   var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:g('tel'), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
   if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
-  var p = docId ? window.updateDoc(window.doc(window.db,col,docId),data) : (function(){ data.etat='actif'; data.createdAt=new Date().toISOString(); return window.addDoc(window.collection(window.db,col),data); }());
-  p.then(function(){ window.closeCrmModal(); if(col==='clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err){ alert('Erreur: '+err.message); });
+  var p;
+  if (docId) {
+    p = window.updateDoc(window.doc(window.db, col, docId), data);
+  } else {
+    data.etat = 'actif';
+    data.createdAt = new Date().toISOString();
+    p = window.addDoc(window.collection(window.db, col), data);
+  }
+  p.then(function() { window.closeCrmModal(); if (col === 'clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err) { alert('Erreur: ' + err.message); });
 };
 
 window.importCrmCsv = function(input, col) {
