@@ -3554,7 +3554,8 @@ import {
   where,
   orderBy,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 const firebaseConfig = {
@@ -3583,6 +3584,7 @@ window.orderBy = orderBy;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
 window.where = where;
+window.deleteDoc = deleteDoc;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
