@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — CRM
+Build <span id="app-version-1">…</span> — CRM+ASP
      </span>
     </div>
     </div>
@@ -3340,9 +3340,19 @@ function crmRenderCard(item, col) {
   var toggleBtn = isAuth ? '' : (inactive
     ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;">✅</button>'
     : '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;">❌</button>');
+  // Badge ASP
+  var aspVal = 0;
+  if (item._source === 'consultants') { aspVal = (item._aspInit||0) + (item._aspFromContracts||0); }
+  else { aspVal = parseFloat(item.asp||0); }
+  var badge = '';
+  if (item._source === 'consultants' || item._source === 'consultantsCrm' || col === 'consultantsCrm') {
+    badge = aspVal >= 70
+      ? '<span style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px;">SC+ ' + aspVal + '</span>'
+      : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px;">BC ' + aspVal + '</span>';
+  }
   var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
-  h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>';
+  h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
   if (editBtn || toggleBtn) h += '<div style="display:flex;gap:5px;">' + editBtn + toggleBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
@@ -3396,7 +3406,7 @@ function crmLoadConsultants() {
         var parts=fn.split(' ');
         var nom=parts.length>1?parts[parts.length-1]:'';
         var prenom=parts.length>1?parts.slice(0,-1).join(' '):fn;
-        _crmCoData.push({ _id:d.id, _source:'consultants', prenom:prenom, nom:nom, tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', dateDemarrage:data.startDate||'', etat:data.active===false?'desactive':'actif' });
+        _crmCoData.push({ _id:d.id, _source:'consultants', prenom:prenom, nom:nom, tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', dateDemarrage:data.startDate||'', etat:data.active===false?'desactive':'actif', _aspInit:data.aspInit||0, _aspFromContracts:data.aspFromContracts||0 });
       });
       r[1].forEach(function(d){ _crmCoData.push(Object.assign({ _id:d.id, _source:'consultantsCrm' }, d.data())); });
       _crmCoData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
@@ -3428,12 +3438,13 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-doc-id').value = docId || '';
   document.getElementById('crm-col').value = col;
   document.getElementById('crm-ref-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-asp-row').style.display = isC ? '' : 'none';
   document.getElementById('crm-orange-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-eneco-row').style.display = isC ? 'none' : '';
-  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
   }
   document.getElementById('modal-crm').style.display = 'flex';
 };
@@ -3447,6 +3458,7 @@ window.saveCrmModal = function() {
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:g('tel'), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
   if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); }
+  if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   var p;
   if (docId) {
@@ -3945,6 +3957,10 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
       <div>
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
         <input id="crm-tva" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-asp-row">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP (Smart Points)</div>
+        <input id="crm-asp" placeholder="0" type="number" min="0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
       <div id="crm-ref-row" style="grid-column:span 2;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Référence (N° GSM)</div>
