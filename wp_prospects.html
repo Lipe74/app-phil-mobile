@@ -278,6 +278,7 @@ textarea:focus{
   </select>
   <input id="searchBox" type="text" placeholder="🔍 Rechercher un nom, tél, email..." onkeyup="filterList()">
   <button onclick="deleteAllProspects()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">🗑 Tout supprimer</button>
+    <button onclick="migrateAllConverted()" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600;">✅ Migrer les convertis</button>
 </div>
 
 <div id="prospectsList"></div>
@@ -862,6 +863,45 @@ function filterList(){
   });
 }
 
+async function migrateAllConverted() {
+  const convertis = (window._allProspects || []).filter(p => p.statut === 'Converti');
+  if (!convertis.length) { showToast('Aucun prospect converti à migrer.'); return; }
+  if (!confirm('Migrer ' + convertis.length + ' prospect(s) converti(s) vers Gestion Clients ?\nLes doublons (même tél) seront ignorés.')) return;
+  let added = 0, skipped = 0;
+  for (const p of convertis) {
+    try {
+      const nameParts = (p.nom || '').trim().split(' ');
+      const clientData = {
+        consultantId: p.consultantId || window._currentConsultantId,
+        prenom: nameParts.length > 1 ? nameParts.slice(0,-1).join(' ') : '',
+        nom: nameParts.length > 1 ? nameParts[nameParts.length-1] : nameParts[0] || '',
+        tel: p.tel || '',
+        email: p.email || '',
+        ville: p.ville || '',
+        adresse: p.adresse || p.ville || '',
+        cp: p.cp || '',
+        societe: p.societe || '',
+        tva: p.tva || '',
+        reference: '',
+        etat: 'actif',
+        sourceProspectId: p.docId,
+        createdAt: new Date().toISOString()
+      };
+      if (p.tel) {
+        const existing = await window.getDocs(window.query(
+          window.collection(window.db, 'clients'),
+          window.where('tel', '==', p.tel),
+          window.where('consultantId', '==', window._currentConsultantId)
+        ));
+        if (!existing.empty) { skipped++; continue; }
+      }
+      await window.addDoc(window.collection(window.db, 'clients'), clientData);
+      added++;
+    } catch(err) { console.log('Migration:', err.message); }
+  }
+  showToast(added + ' client(s) migré(s), ' + skipped + ' doublon(s) ignoré(s).');
+}
+
 async function changeStatus(docId, newStatus){
   try {
     await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), {
@@ -889,11 +929,27 @@ async function changeStatus(docId, newStatus){
             societe: p.societe || '',
             tva: p.tva || '',
             reference: '',
-            active: true,
+            etat: 'actif',
             sourceProspectId: docId,
             createdAt: new Date().toISOString()
           };
-          await window.addDoc(window.collection(window.db, 'clients'), clientData);
+          // Vérification doublon par téléphone
+          if (p.tel) {
+            const existing = await window.getDocs(window.query(
+              window.collection(window.db, 'clients'),
+              window.where('tel', '==', p.tel),
+              window.where('consultantId', '==', window._currentConsultantId)
+            ));
+            if (!existing.empty) {
+              showToast('Client déjà existant dans Gestion Clients (même tél)');
+            } else {
+              await window.addDoc(window.collection(window.db, 'clients'), clientData);
+              showToast('✅ Client ajouté dans Gestion Clients !');
+            }
+          } else {
+            await window.addDoc(window.collection(window.db, 'clients'), clientData);
+            showToast('✅ Client ajouté dans Gestion Clients !');
+          }
         } catch(migErr) { console.log('Migration clients:', migErr.message); }
         if (!p.contractId && confirm('🎉 "'+p.nom+'" est converti !\n\nVeux-tu créer le contrat maintenant ?')) {
           convertToClient(docId);
