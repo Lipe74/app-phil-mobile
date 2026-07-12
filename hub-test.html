@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Outils Phil-Mobile</title>
+<title>Outils Phil-Mobile TEST</title>
 <link rel="icon" type="image/png" href="images/logo.png">
 <link rel="apple-touch-icon" href="images/logo.png">
   <link rel="manifest" href="/manifest.json">
@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Langues
+Build <span id="app-version-1">…</span> — CRM
      </span>
     </div>
     </div>
@@ -492,17 +492,25 @@ Build <span id="app-version-1">…</span> — Langues
 </button>
 <div id="crmMenu" class="submenu">
   <button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">
-    📋 Contrats & ASP
+    📋 Gestion des contrats
   </button>
-
-  <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects.html')" class="menu-item">
-    👥 Prospects Clients
+  <button onclick="toggleMenu('crmProspectsMenu')" class="menu-item group-toggle">
+    👥 Gestion Prospects
   </button>
-
-  <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects_consultant.html')" class="menu-item">
-    🎯 Prospects Consultants
+  <div id="crmProspectsMenu" class="submenu">
+    <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects.html')" class="menu-item">
+      &nbsp;&nbsp;&nbsp;Clients
+    </button>
+    <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects_consultant.html')" class="menu-item">
+      &nbsp;&nbsp;&nbsp;Consultants
+    </button>
+  </div>
+  <button onclick="showCrmPanel('panel-crm-clients')" class="menu-item" id="btn-crm-clients">
+    🧑 Gestion Clients
   </button>
-
+  <button onclick="showCrmPanel('panel-crm-consultants')" class="menu-item" id="btn-crm-consultants">
+    👨‍💼 Gestion Consultants
+  </button>
 </div>
 
 <!-- SIMULATEURS -->
@@ -978,6 +986,37 @@ Build <span id="app-version-1">…</span> — Langues
           </div>
 
           <!-- Panel News -->
+          <!-- Panel Gestion Clients -->
+          <div id="panel-crm-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <h2 style="color:#f97316;margin:0;font-size:16px;">🧑 Gestion Clients</h2>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <label style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">
+                  📥 Import CSV
+                  <input type="file" accept=".csv" id="csv-clients-input" onchange="importCrmCsv(this,'clients')" style="display:none;">
+                </label>
+                <button onclick="openCrmModal('clients',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
+              </div>
+            </div>
+            <input id="crm-cl-search" type="text" placeholder="🔍 Rechercher..." oninput="filterCrmList('clients')" style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
+            <div id="crm-cl-list" style="font-size:13px;color:#666;">Chargement...</div>
+          </div>
+
+          <!-- Panel Gestion Consultants -->
+          <div id="panel-crm-consultants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <h2 style="color:#f97316;margin:0;font-size:16px;">👨‍💼 Gestion Consultants</h2>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <label style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">
+                  📥 Import CSV
+                  <input type="file" accept=".csv" id="csv-consultants-input" onchange="importCrmCsv(this,'consultantsCrm')" style="display:none;">
+                </label>
+                <button onclick="openCrmModal('consultantsCrm',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
+              </div>
+            </div>
+            <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
+          </div>
+
           <div id="panel-news" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">📰 Historique des News</div>
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
@@ -2262,6 +2301,7 @@ async function checkCode() {
 
 function doUnlock(user) {
   pmCurrentUser = user;
+  window.pmCurrentUser = user;
   document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
@@ -3260,6 +3300,173 @@ window.submitFeedback = async function(){
     if (errorEl) errorEl.style.display = 'block';
   }
 }
+// ===== CRM : Gestion Clients & Consultants =====
+var _crmClData = [];
+var _crmCoData = [];
+
+window.showCrmPanel = function(panelId) {
+  document.querySelectorAll('.menu-item').forEach(function(b){ b.classList.remove('active-item'); });
+  var btn = document.getElementById('btn-' + panelId.replace('panel-crm-','crm-'));
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(function(p){ p.style.display = 'none'; });
+  document.getElementById(panelId).style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  if (panelId === 'panel-crm-clients') crmLoadClients();
+  if (panelId === 'panel-crm-consultants') crmLoadConsultants();
+};
+
+function crmReady(cb) {
+  var t = 0;
+  function check() {
+    if (window.db && window.getDocs && window.where && window.pmCurrentUser) { cb(); }
+    else if (t < 50) { t++; setTimeout(check, 100); }
+  }
+  check();
+}
+
+function crmEsc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function crmRenderCard(item, col) {
+  var inactive = item.etat === 'desactive';
+  var nm = ((item.prenom || '') + ' ' + (item.nom || '')).trim() || item.email || '--';
+  var bg = inactive ? '#f9fafb' : '#fffaf7';
+  var br = inactive ? '#e5e7eb' : '#fdba74';
+  var op = inactive ? '0.6' : '1';
+  var isAuth = col === 'consultants';
+  var editBtn = isAuth ? '' : '<button onclick="openCrmModal('' + col + '','' + item._id + '')" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>';
+  var toggleBtn = isAuth ? '' : (inactive
+    ? '<button onclick="crmToggle('' + col + '','' + item._id + '',false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;">✅</button>'
+    : '<button onclick="crmToggle('' + col + '','' + item._id + '',true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;">❌</button>');
+  var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
+  h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>';
+  if (editBtn || toggleBtn) h += '<div style="display:flex;gap:5px;">' + editBtn + toggleBtn + '</div>';
+  h += '</div>';
+  if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
+  if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(item.tel) + '</div>';
+  if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
+  if (item.cp || item.ville) h += '<div style="font-size:12px;color:#555;">' + crmEsc([item.adresse, item.cp, item.ville].filter(Boolean).join(' ')) + '</div>';
+  if (item.reference) h += '<div style="font-size:12px;color:#555;">Ref: ' + crmEsc(item.reference) + '</div>';
+  if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Orange: ' + crmEsc(item.orange) + '</div>';
+  if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Eneco: ' + crmEsc(item.eneco) + '</div>';
+  h += '</div>';
+  return h;
+}
+
+function crmRenderList(data, listId, col) {
+  var el = document.getElementById(listId);
+  if (!el) return;
+  if (!data.length) { el.innerHTML = '<div style="color:#999;">Aucun enregistrement.</div>'; return; }
+  var actifs = data.filter(function(x){ return x.etat !== 'desactive'; });
+  var inactifs = data.filter(function(x){ return x.etat === 'desactive'; });
+  var h = actifs.map(function(x){ return crmRenderCard(x, col); }).join('');
+  if (inactifs.length) h += '<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Inactifs (' + inactifs.length + ')</summary><div style="margin-top:6px;">' + inactifs.map(function(x){ return crmRenderCard(x, col); }).join('') + '</div></details>';
+  el.innerHTML = h;
+}
+
+function crmLoadClients() {
+  var el = document.getElementById('crm-cl-list');
+  if (el) el.innerHTML = '<div style="color:#999;">Chargement...</div>';
+  crmReady(function() {
+    window.getDocs(window.query(window.collection(window.db,'clients'), window.where('consultantId','==',window.pmCurrentUser.id))).then(function(snap) {
+      _crmClData = [];
+      snap.forEach(function(d){ _crmClData.push(Object.assign({ _id: d.id }, d.data())); });
+      _crmClData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
+      crmRenderList(_crmClData, 'crm-cl-list', 'clients');
+    }).catch(function(err){ if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>'; });
+  });
+}
+
+function crmLoadConsultants() {
+  var el = document.getElementById('crm-co-list');
+  if (el) el.innerHTML = '<div style="color:#999;">Chargement...</div>';
+  crmReady(function() {
+    var myId = window.pmCurrentUser.id;
+    Promise.all([
+      window.getDocs(window.query(window.collection(window.db,'consultants'), window.where('uplineId','==',myId))),
+      window.getDocs(window.query(window.collection(window.db,'consultantsCrm'), window.where('consultantId','==',myId)))
+    ]).then(function(r) {
+      _crmCoData = [];
+      r[0].forEach(function(d){ var data=d.data(); _crmCoData.push({ _id:d.id, _source:'consultants', prenom:'', nom:data.fullName||data.name||'', tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', etat:data.active===false?'desactive':'actif' }); });
+      r[1].forEach(function(d){ _crmCoData.push(Object.assign({ _id:d.id, _source:'consultantsCrm' }, d.data())); });
+      _crmCoData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
+      crmRenderList(_crmCoData, 'crm-co-list', 'consultantsCrm');
+    }).catch(function(err){ if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>'; });
+  });
+}
+
+window.filterCrmList = function(type) {
+  var data = type === 'clients' ? _crmClData : _crmCoData;
+  var col = type === 'clients' ? 'clients' : 'consultantsCrm';
+  var listId = type === 'clients' ? 'crm-cl-list' : 'crm-co-list';
+  var searchEl = document.getElementById('crm-cl-search');
+  var t = (searchEl ? searchEl.value : '').toLowerCase();
+  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+(x.email||'')+(x.ville||'')).toLowerCase().indexOf(t) >= 0; }) : data;
+  crmRenderList(filtered, listId, col);
+};
+
+window.crmToggle = function(col, docId, desactiver) {
+  if (!confirm(desactiver ? 'Desactiver ce contact ?' : 'Reactiver ce contact ?')) return;
+  window.updateDoc(window.doc(window.db, col, docId), { etat: desactiver ? 'desactive' : 'actif', updatedAt: new Date().toISOString() }).then(function() {
+    if (col === 'clients') crmLoadClients(); else crmLoadConsultants();
+  }).catch(function(err){ alert('Erreur: ' + err.message); });
+};
+
+window.openCrmModal = function(col, docId) {
+  var isC = col === 'consultantsCrm';
+  document.getElementById('modal-crm-title').textContent = (docId ? 'Modifier' : 'Nouveau') + (isC ? ' consultant' : ' client');
+  document.getElementById('crm-doc-id').value = docId || '';
+  document.getElementById('crm-col').value = col;
+  document.getElementById('crm-ref-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-orange-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-eneco-row').style.display = isC ? 'none' : '';
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  if (docId) {
+    var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
+  }
+  document.getElementById('modal-crm').style.display = 'flex';
+};
+
+window.closeCrmModal = function() { document.getElementById('modal-crm').style.display = 'none'; };
+
+window.saveCrmModal = function() {
+  var col = document.getElementById('crm-col').value;
+  var docId = document.getElementById('crm-doc-id').value;
+  var isC = col === 'consultantsCrm';
+  function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
+  var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:g('tel'), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
+  if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); }
+  if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
+  var p = docId ? window.updateDoc(window.doc(window.db,col,docId),data) : (function(){ data.etat='actif'; data.createdAt=new Date().toISOString(); return window.addDoc(window.collection(window.db,col),data); }());
+  p.then(function(){ window.closeCrmModal(); if(col==='clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err){ alert('Erreur: '+err.message); });
+};
+
+window.importCrmCsv = function(input, col) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var lines = e.target.result.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+    if (!lines.length) return;
+    var sep = lines[0].indexOf(';') >= 0 ? ';' : ',';
+    var headers = lines[0].split(sep).map(function(h){ return h.trim().toLowerCase().replace(/[^a-z]/g,''); });
+    var map = { prenom:'prenom', nom:'nom', telephone:'tel', tel:'tel', email:'email', adresse:'adresse', cp:'cp', codepostal:'cp', ville:'ville', societe:'societe', tva:'tva', reference:'reference', orange:'orange', eneco:'eneco' };
+    var promises = [];
+    for (var i=1; i<lines.length; i++) {
+      var vals = lines[i].split(sep);
+      var data = { consultantId:window.pmCurrentUser.id, etat:'actif', createdAt:new Date().toISOString() };
+      headers.forEach(function(h,idx){ var key=map[h]; if(key&&vals[idx]) data[key]=vals[idx].trim().replace(/^"|"$/g,''); });
+      if (!data.nom && !data.prenom) continue;
+      promises.push(window.addDoc(window.collection(window.db,col),data));
+    }
+    Promise.all(promises).then(function(){ alert(promises.length+' importe(s) !'); input.value=''; if(col==='clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err){ alert('Erreur: '+err.message); });
+  };
+  reader.readAsText(file,'UTF-8');
+};
+// ===== FIN CRM =====
+
 </script>
 
 <script>
@@ -3315,6 +3522,7 @@ import {
   updateDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   arrayUnion,
   arrayRemove
@@ -3345,6 +3553,7 @@ window.query = query;
 window.orderBy = orderBy;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
+window.where = where;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
@@ -3655,6 +3864,69 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
   el.textContent = window.APP_VERSION || '?';
 });
 </script>
+
+<!-- Modal CRM Clients/Consultants -->
+<div id="modal-crm" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+  <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;margin:20px auto;max-height:90vh;overflow-y:auto;">
+    <h3 id="modal-crm-title" style="color:#f97316;margin:0 0 16px;font-size:15px;"></h3>
+    <input type="hidden" id="crm-doc-id">
+    <input type="hidden" id="crm-col">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
+        <input id="crm-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
+        <input id="crm-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
+        <input id="crm-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
+        <input id="crm-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div style="grid-column:span 2">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Adresse</div>
+        <input id="crm-adresse" placeholder="Rue, numéro" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Code postal</div>
+        <input id="crm-cp" placeholder="4000" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville</div>
+        <input id="crm-ville" placeholder="Liège" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Société</div>
+        <input id="crm-societe" placeholder="Société SRL" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
+        <input id="crm-tva" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-ref-row" style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Référence (N° GSM)</div>
+        <input id="crm-reference" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-orange-row" style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Orange (produits)</div>
+        <input id="crm-orange" placeholder="Mobile Medium, Internet..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-eneco-row" style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Eneco (produits)</div>
+        <input id="crm-eneco" placeholder="Électricité, Gaz..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button onclick="closeCrmModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
+      <button onclick="saveCrmModal()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
