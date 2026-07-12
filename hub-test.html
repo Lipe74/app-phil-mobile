@@ -996,6 +996,7 @@ Build <span id="app-version-1">…</span> — CRM
                   <input type="file" accept=".csv" id="csv-clients-input" onchange="importCrmCsv(this,'clients')" style="display:none;">
                 </label>
                 <button onclick="openCrmModal('clients',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
+                <button onclick="crmDeleteAll('clients')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Supprimer tout</button>
               </div>
             </div>
             <input id="crm-cl-search" type="text" placeholder="🔍 Rechercher..." oninput="filterCrmList('clients')" style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
@@ -3458,7 +3459,16 @@ window.importCrmCsv = function(input, col) {
     var lines = e.target.result.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
     if (!lines.length) return;
     var sep = lines[0].indexOf(';') >= 0 ? ';' : ',';
-    var headers = lines[0].split(sep).map(function(h){ return h.trim().toLowerCase().replace(/[^a-z]/g,''); });
+    var headers = lines[0].split(sep).map(function(h){
+      var s = h.trim().toLowerCase();
+      // Supprimer le BOM éventuel
+      s = s.replace(/^\uFEFF/, '');
+      // Remplacer les accents courants
+      s = s.replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a').replace(/[ùûü]/g,'u').replace(/[îï]/g,'i').replace(/[ôö]/g,'o').replace(/[ç]/g,'c');
+      // Supprimer les caractères non-alpha
+      s = s.replace(/[^a-z]/g,'');
+      return s;
+    });
     var map = { prenom:'prenom', nom:'nom', telephone:'tel', tel:'tel', email:'email', adresse:'adresse', cp:'cp', codepostal:'cp', ville:'ville', societe:'societe', tva:'tva', reference:'reference', orange:'orange', eneco:'eneco' };
     var promises = [];
     for (var i=1; i<lines.length; i++) {
@@ -3471,6 +3481,18 @@ window.importCrmCsv = function(input, col) {
     Promise.all(promises).then(function(){ alert(promises.length+' importe(s) !'); input.value=''; if(col==='clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err){ alert('Erreur: '+err.message); });
   };
   reader.readAsText(file,'UTF-8');
+};
+window.crmDeleteAll = function(col) {
+  if (!confirm('Supprimer TOUS les clients ? Cette action est irreversible.')) return;
+  if (!confirm('Confirmation finale : supprimer tous les enregistrements ?')) return;
+  window.getDocs(window.query(window.collection(window.db, col), window.where('consultantId', '==', window.pmCurrentUser.id))).then(function(snap) {
+    var promises = [];
+    snap.forEach(function(d) { promises.push(window.deleteDoc(window.doc(window.db, col, d.id))); });
+    Promise.all(promises).then(function() {
+      alert(promises.length + ' enregistrement(s) supprime(s).');
+      if (col === 'clients') crmLoadClients(); else crmLoadConsultants();
+    });
+  }).catch(function(err) { alert('Erreur: ' + err.message); });
 };
 // ===== FIN CRM =====
 
