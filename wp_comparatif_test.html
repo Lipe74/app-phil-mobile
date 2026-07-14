@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparatif vers Orange (by Phil-Mobile)</title>
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
+<script src="version.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f5f5f5; }
+.app { padding: 24px; font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; }
+.header { background: #ff5a14; border-radius: 24px; padding: 22px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.header-text { flex: 1; }
+.header-title { color: #fff; font-size: 30px; font-weight: bold; }
+.header-sub { color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 4px; }
+.header-version { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; margin-top: 8px; }
+.header-selector { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.header-label { color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; }
+.operator-select { padding: 8px 12px; border-radius: 8px; border: 2px solid white; background: white; color: #ff5a14; font-weight: bold; cursor: pointer; font-size: 14px; }
+
+.comparator { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+@media (max-width: 768px) { .comparator { grid-template-columns: 1fr; } }
+
+.column { display: flex; flex-direction: column; gap: 16px; }
+.column-header { font-size: 22px; font-weight: bold; padding: 16px; border-radius: 14px; text-align: center; color: white; }
+.old-header { background: #666; }
+.orange-header { background: #ff5a14; }
+
+.section { background: white; border: 1.5px solid #ddd; border-radius: 16px; padding: 20px; }
+.section.orange { border-color: #ffb680; }
+.section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 12px; }
+
+.counter-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #666; }
+.counter-row:last-child { border-bottom: none; }
+.qty-ctrl { display: flex; align-items: center; gap: 5px; }
+.qty-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #ddd; background: white; color: #222; font-size: 14px; cursor: pointer; }
+.qty-btn:active { transform: scale(0.93); }
+.qty-val { font-size: 13px; font-weight: bold; min-width: 18px; text-align: center; }
+
+.amount-section { background: #fff8f4; border: 1.5px solid #ffb680; border-radius: 12px; padding: 16px; margin-top: 12px; }
+.amount-label { font-size: 14px; color: #222; font-weight: 600; margin-bottom: 10px; }
+.amount-input-wrapper { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.amount-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; text-align: right; font-weight: bold; }
+.amount-input:focus { outline: none; border-color: #ff5a14; }
+.amount-currency { font-size: 15px; color: #222; font-weight: bold; }
+
+.tva-display { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; color: #666; }
+
+.summary-box { background: white; border: 2px solid #ffb680; border-radius: 12px; padding: 16px; margin-top: 12px; }
+.summary-line { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; }
+.summary-label { font-weight: 600; color: #222; }
+.summary-value { font-weight: bold; color: #333; }
+.summary-total { border-top: 2px solid #ffb680; padding-top: 10px; margin-top: 8px; font-size: 18px; font-weight: bold; color: #ff5a14; }
+
+.info-box { background: #e8f5e9; border: 1px solid #66bb6a; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #2e7d32; }
+
+.button-group { display: flex; gap: 10px; margin-top: 12px; }
+.btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #222; font-size: 14px; cursor: pointer; font-weight: bold; }
+.btn-primary { background: #ff5a14; color: white; border-color: #ff5a14; }
+.btn-primary:hover { background: #e64a04; }
+.btn:hover { background: #f5f5f5; }
+
+.tva-toggle { display: flex; gap: 8px; margin-top: 12px; }
+.tva-btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 13px; font-weight: bold; }
+.tva-btn.active { background: #ff5a14; color: white; border-color: #ff5a14; }
+</style>
+
+<!-- LOGIN CONTAINER (Affiché si pas connecté) -->
+<div id="login-container" style="display:none;"></div>
+
+<!-- APP CONTENT (Hidden until logged in) -->
+<div class="app" id="comparatif-app" style="display:none;">
+  <div class="header">
+    <div class="header-text">
+      <div class="header-title">Comparatif vers Orange</div>
+      <div class="header-sub">Découvrez vos économies en changeant d'opérateur</div>
+      <div class="header-version">Build <span id="app-version">…</span> - Juillet 2026</div>
+    </div>
+    <div class="header-selector">
+      <label class="header-label">Votre opérateur actuel :</label>
+      <div style="display: flex; gap: 8px; align-items: flex-end;">
+        <select id="operator-select" onchange="updateOperatorName()" class="operator-select">
+          <option value="proximus">Proximus</option>
+          <option value="base">BASE</option>
+          <option value="telenet">Telenet/Vodafone</option>
+          <option value="voo">VOO</option>
+          <option value="scarlet">Scarlet</option>
+          <option value="other">Autre opérateur</option>
+        </select>
+        <button onclick="resetOld()" style="padding: 8px 12px; background: white; color: #ff5a14; border: 2px solid white; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">🔄 Réinit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TVA Toggle + Montants -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px; flex-wrap: wrap;">
+    <!-- Montant Proximus à gauche -->
+    <div style="background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); border: 2px solid #999; border-radius: 12px; padding: 12px 20px; text-align: center;">
+      <div style="font-size: 11px; color: #666; font-weight: 600; margin-bottom: 4px;">📱 VOTRE MONTANT</div>
+      <div style="font-size: 24px; font-weight: bold; color: #333;" id="proximus-amount">0,00 €</div>
+      <div style="font-size: 12px; color: #666;">chez Proximus</div>
+    </div>
+    
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <div class="tva-toggle" style="max-width: 250px;">
+        <button class="tva-btn active" id="btn-tvac" onclick="setTVAC(true)">TVAC</button>
+        <button class="tva-btn" id="btn-htva" onclick="setTVAC(false)">HTVA</button>
+      </div>
+    </div>
+    
+    <!-- Économies à droite -->
+    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #66bb6a; border-radius: 12px; padding: 12px 20px; text-align: center;">
+      <div style="font-size: 11px; color: #2e7d32; font-weight: 600; margin-bottom: 4px;">💰 VOUS ÉCONOMISEZ</div>
+      <div style="font-size: 24px; font-weight: bold; color: #2e7d32;" id="savings-top">0,00 €</div>
+      <div style="font-size: 12px; color: #2e7d32;" id="savings-top-percent">(0%)</div>
+    </div>
+  </div>
+
+  <!-- Two Columns -->
+  <div class="comparator">
+    
+    <!-- ANCIEN OPERATEUR -->
+    <div class="column">
+      <div class="column-header old-header" id="operator-header">📱 Proximus (Actuellement)</div>
+      
+      <!-- Context: What they have -->
+      <div class="section">
+        <div class="section-title">📋 Votre configuration actuelle</div>
+        <div class="info-box">
+          ℹ️ Entrez simplement votre montant mensuel total. Les détails ci-dessous sont informatifs.
+        </div>
+        <div class="counter-row">
+          <span>Poste fixe</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('phone', -1)">−</button>
+            <span class="qty-val" id="qty-phone">0</span>
+            <button class="qty-btn" onclick="changeQty('phone', 1)">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span>Connexion Internet</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('inet', -1)">−</button>
+            <span class="qty-val" id="qty-inet">0</span>
+            <button class="qty-btn" onclick="changeQty('inet', 1)">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span>Abonnements Mobile</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('mob', -1)">−</button>
+            <span class="qty-val" id="qty-mob">0</span>
+            <button class="qty-btn" onclick="changeQty('mob', 1)">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span>Abonnements TV</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('tv', -1)">−</button>
+            <span class="qty-val" id="qty-tv">0</span>
+            <button class="qty-btn" onclick="changeQty('tv', 1)">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span>Décodeur supplémentaire</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('dec', -1)">−</button>
+            <span class="qty-val" id="qty-dec">0</span>
+            <button class="qty-btn" onclick="changeQty('dec', 1)">+</button>
+          </div>
+        </div>
+        <div class="counter-row">
+          <span>Options (divers)</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('opt', -1)">−</button>
+            <span class="qty-val" id="qty-opt">0</span>
+            <button class="qty-btn" onclick="changeQty('opt', 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amount Input -->
+      <div class="section">
+        <div class="amount-section">
+          <div class="amount-label">💰 Votre montant mensuel TVAC</div>
+          <div class="amount-input-wrapper">
+            <input type="number" id="amount-input" class="amount-input" placeholder="0" step="0.01" oninput="calcComparator()" />
+            <span class="amount-currency">€/mois</span>
+          </div>
+          <div class="tva-display">
+            <span>Montant HTVA :</span>
+            <span id="amount-htva" style="font-weight:bold;color:#666;">0,00 €</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Summary -->
+      <div class="summary-box">
+        <div class="summary-line summary-total">
+          <span>Total/mois</span>
+          <span id="total-old">0,00 €</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ORANGE COLUMN -->
+    <div class="column">
+      <div class="column-header orange-header">🟠 Orange</div>
+
+      <div class="section orange">
+        <div class="section-title">Votre simulation Orange</div>
+        <div class="info-box">
+          ✅ Configurez votre offre dans le simulateur Orange. Une fois le simulateur fermé, cliquez sur "Récupérer les prix Orange" ci-dessous pour importer automatiquement le montant.
+        </div>
+        <a href="wp_orange.html" target="_blank" class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-top:12px;">
+          ➜ Ouvrir le Simulateur Orange
+        </a>
+      </div>
+
+      <!-- Orange Total with 3 prices -->
+      <div class="summary-box">
+        <div class="summary-line">
+          <span style="color:#666;font-size:13px;">🟢 Aujourd'hui</span>
+          <span id="total-orange-today" style="font-weight:bold;color:#ff5a14;font-size:14px;">0,00 €</span>
+        </div>
+        <div class="summary-line">
+          <span style="color:#666;font-size:13px;">🟡 Après 6 mois</span>
+          <span id="total-orange-6m" style="font-weight:bold;color:#ff5a14;font-size:14px;">0,00 €</span>
+        </div>
+        <div class="summary-line summary-total">
+          <span>🔴 Après 12 mois (Référence)</span>
+          <span id="total-orange" style="color:#ff5a14;">0,00 €</span>
+        </div>
+      </div>
+
+      <!-- Sync from simulator + Action buttons -->
+      <div class="section orange">
+        <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="syncFromSimulator()">📊 Récupérer les prix Orange</button>
+        <div class="button-group">
+          <button class="btn" onclick="exportPDF()" title="Télécharger la comparaison en PDF">📄 PDF</button>
+          <button class="btn" onclick="shareWhatsApp()" title="Envoyer par WhatsApp">💬 WhatsApp</button>
+          <button class="btn" onclick="createOffer()" title="Créer une offre avec logo">🎁 Offre</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const TVA = 1.21;
+let isTVAC = true;
+
+const priceFmt = (v) => {
+  const x = Math.abs(v);
+  return (x >= 1000 ? (x / 1000).toFixed(1) + 'k' : x.toFixed(2)).replace('.', ',');
+};
+
+const fmt = (v) => priceFmt(v) + ' €';
+
+const operators = {
+  'proximus': 'Proximus',
+  'base': 'BASE',
+  'telenet': 'Telenet/Vodafone',
+  'voo': 'VOO',
+  'scarlet': 'Scarlet',
+  'other': 'Autre opérateur'
+};
+
+let oldAmount = 0;
+let orangeToday = 0;
+let orange6m = 0;
+let orange12m = 0;
+
+let counters = {
+  phone: 0,
+  inet: 0,
+  mob: 0,
+  tv: 0,
+  dec: 0,
+  opt: 0
+};
+
+function setTVAC(val) {
+  isTVAC = val;
+  document.getElementById('btn-tvac').classList.toggle('active', val);
+  document.getElementById('btn-htva').classList.toggle('active', !val);
+  calcComparator();
+}
+
+function updateOperatorName() {
+  const op = document.getElementById('operator-select').value;
+  document.getElementById('operator-header').textContent = '📱 ' + operators[op] + ' (Actuellement)';
+}
+
+function changeQty(key, delta) {
+  counters[key] = Math.max(0, counters[key] + delta);
+  document.getElementById('qty-' + key).textContent = counters[key];
+}
+
+function resetOld() {
+  counters = { inet: 0, mob: 0, tv: 0, dec: 0, opt: 0 };
+  document.getElementById('amount-input').value = '';
+  Object.keys(counters).forEach(k => document.getElementById('qty-' + k).textContent = '0');
+  calcComparator();
+}
+
+function resetOrange() {
+  orangeToday = 0;
+  orange6m = 0;
+  orange12m = 0;
+  document.getElementById('total-orange-today').textContent = '0,00 €';
+  document.getElementById('total-orange-6m').textContent = '0,00 €';
+  document.getElementById('total-orange').textContent = '0,00 €';
+  calcComparator();
+}
+
+function syncFromSimulator() {
+  const t = localStorage.getItem('orangeSimToday');
+  const m6 = localStorage.getItem('orangeSimAfter6');
+  const m12 = localStorage.getItem('orangeSimAfter12');
+  
+  if (!t || !m6 || !m12) {
+    alert('⚠️ Aucune donnée trouvée. Vérifiez que vous avez utilisé le simulateur Orange.');
+    return;
+  }
+  
+  orangeToday = parseFloat(t);
+  orange6m = parseFloat(m6);
+  orange12m = parseFloat(m12);
+  
+  calcComparator();
+  alert('✅ Prix Orange récupérés :\n• Aujourd\'hui : ' + fmt(orangeToday) + '\n• Après 6 mois : ' + fmt(orange6m) + '\n• Après 12 mois : ' + fmt(orange12m));
+}
+
+function exportPDF() {
+  if (orange12m === 0) {
+    alert('⚠️ Récupérez d\'abord les prix Orange.');
+    return;
+  }
+  
+  const op = document.getElementById('operator-select').value;
+  const opName = operators[op];
+  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
+  const orangeDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay);
+  const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
+  
+  const content = `
+COMPARATIF: ${opName} vs ORANGE
+═══════════════════════════════════
+
+OPÉRATEUR ACTUEL: ${opName}
+${Object.keys(counters).map(k => `  ${k.toUpperCase()}: ${counters[k]}`).join('\n')}
+Montant mensuel: ${fmt(oldDisplay)}
+
+ORANGE
+  • Aujourd'hui: ${fmt(isTVAC ? orangeToday : (orangeToday / TVA))}
+  • Après 6 mois: ${fmt(isTVAC ? orange6m : (orange6m / TVA))}
+  • Après 12 mois: ${fmt(isTVAC ? orange12m : (orange12m / TVA))}
+
+ÉCONOMIES ANNUELLES
+  Montant: ${fmt(savings)}/mois
+  % de réduction: ${savingsPercent}%
+  Total sur 12 mois: ${fmt(savings * 12)}
+
+─────────────────────────────────────
+Phil-Mobile - Simulateur Orange
+  `;
+  
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'comparatif-orange.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function shareWhatsApp() {
+  if (orange12m === 0) {
+    alert('⚠️ Récupérez d\'abord les prix Orange.');
+    return;
+  }
+  
+  const op = document.getElementById('operator-select').value;
+  const opName = operators[op];
+  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
+  const orangeDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay);
+  const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
+  
+  const msg = `🟠 Découvrez vos économies avec Orange!\n\n💰 Vous économisez ${fmt(savings)}/mois\n(${savingsPercent}% de réduction)\n\nComparaison ${opName} vs Orange\n📊 Phil-Mobile Simulateur\napp.phil-mobile.be`;
+  
+  const encoded = encodeURIComponent(msg);
+  window.open(`https://wa.me/?text=${encoded}`, '_blank');
+}
+
+function createOffer() {
+  if (orange12m === 0) {
+    alert('⚠️ Récupérez d\'abord les prix Orange.');
+    return;
+  }
+  
+  const op = document.getElementById('operator-select').value;
+  const opName = operators[op];
+  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
+  const orangeDisplay12 = isTVAC ? orange12m : (orange12m / TVA);
+  const orangeDisplay6 = isTVAC ? orange6m : (orange6m / TVA);
+  const orangeDisplayToday = isTVAC ? orangeToday : (orangeToday / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay12);
+  
+  // Récupérer les infos du consultant depuis localStorage/Firebase
+  const consultantName = localStorage.getItem('consultantName') || 'Phil-Mobile';
+  const consultantPhone = localStorage.getItem('consultantPhone') || '0475 24 02 05';
+  const consultantEmail = localStorage.getItem('consultantEmail') || 'infos@phil-mobile.be';
+  const consultantId = (typeof window !== 'undefined' && window.pmCurrentUser?.id) || localStorage.getItem('consultantId') || 'default';
+  
+  // Logo personnalisé avec fallback
+  const logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+  
+  // Construire HTML détails de l'offre Orange
+  let offerDetailsHTML = '';
+  try {
+    const details = JSON.parse(localStorage.getItem('orangeOfferDetails') || '{}');
+    if (details.produits) {
+      offerDetailsHTML = `
+        <div class="section">
+          <div class="section-title">📦 Prix affichés (Orange)</div>
+          <div class="price-row">
+            <span class="price-label">Total produits</span>
+            <span class="price-value">${details.produits}</span>
+          </div>
+          <div class="price-row" style="padding-left:20px;">
+            <span class="price-label">📱 Total Mobiles</span>
+            <span class="price-value">${details.mobiles}</span>
+          </div>
+          <div class="price-row" style="padding-left:20px;">
+            <span class="price-label">🌐 Internet, TV & Acc.</span>
+            <span class="price-value">${details.internet}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Options mensuelles</span>
+            <span class="price-value">${details.options}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Frais uniques</span>
+            <span class="price-value">${details.fraisUniques}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Remises Love (à vie)</span>
+            <span class="price-value" style="color:#2e7d32;">- ${details.remisesLove}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🟡 Promos 6 mois</span>
+            <span class="price-value" style="color:#f97316;">- ${details.promos6mois}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🔴 Promos 12 mois</span>
+            <span class="price-value" style="color:#e24b4a;">- ${details.promos12mois}</span>
+          </div>
+        </div>
+        <div class="section" style="background:#fff8f4;border:2px solid #ff5a14;">
+          <div class="section-title">🏁 Tarifs après les promotions</div>
+          <div style="font-size:18px;font-weight:bold;color:#ff5a14;text-align:center;padding:12px 0;">${details.sousTotal}</div>
+          <div class="price-row">
+            <span class="price-label">🟢 Aujourd'hui</span>
+            <span class="price-value" style="color:#2e7d32;font-weight:bold;">${details.prixAujourdhui}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🟡 Après 6 mois</span>
+            <span class="price-value" style="color:#f97316;font-weight:bold;">${details.prixApres6mois}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🔴 Après 12 mois</span>
+            <span class="price-value" style="color:#e24b4a;font-weight:bold;">${details.prixApres12mois}</span>
+          </div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    console.error('Erreur détails offre:', e);
+  }
+  
+  // Ouvrir un popup ou page avec l'offre générée
+  const offre = `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <title>Offre Orange - Comparatif</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 14px; padding: 30px; max-width: 550px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { background: #ff5a14; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .logo { height: 80px; margin-bottom: 15px; }
+        .header-title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .header-sub { font-size: 14px; opacity: 0.95; }
+        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 16px; }
+        .savings-value { font-size: 36px; font-weight: bold; color: #2e7d32; }
+        .savings-sub { font-size: 14px; color: #2e7d32; margin-top: 8px; }
+        .price-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .price-row:last-child { border-bottom: none; }
+        .price-label { font-size: 14px; color: #333; }
+        .price-value { font-size: 14px; font-weight: bold; color: #ff5a14; }
+        .btn { background: #ff5a14; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 10px; width: 100%; }
+        .btn:hover { background: #e64a04; }
+        .footer { border-top: 1px solid #ddd; margin-top: 20px; padding-top: 15px; font-size: 12px; color: #666; text-align: center; }
+        .contact-info { font-size: 11px; line-height: 1.6; margin-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <img src="${logoUrl}" class="logo" alt="Logo Phil-Mobile" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
+          <div class="header-title">Offre Orange</div>
+          <div class="header-sub">Passez de ${opName} à Orange</div>
+        </div>
+        
+        <div class="savings">
+          <div class="savings-value">${fmt(savings)}/mois</div>
+          <div class="savings-sub">Économies garanties</div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Votre situation actuelle</div>
+          <div style="font-size: 15px; color: #333;"><strong>${opName}</strong></div>
+          <div style="font-size: 18px; font-weight: bold; color: #ff5a14; margin-top: 8px;">${fmt(oldDisplay)}/mois</div>
+        </div>
+        
+        ${offerDetailsHTML}
+        
+        <div class="section">
+          <div class="section-title">💰 Tarification Orange</div>
+          <div class="price-row">
+            <span class="price-label">🟢 Aujourd'hui</span>
+            <span class="price-value">${fmt(orangeDisplayToday)}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🟡 Après 6 mois</span>
+            <span class="price-value">${fmt(orangeDisplay6)}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🔴 Après 12 mois</span>
+            <span class="price-value" style="color: #2e7d32;">${fmt(orangeDisplay12)}</span>
+          </div>
+        </div>
+        
+        <button class="btn" onclick="window.print()">🖨️ Imprimer cette offre</button>
+        
+        <div class="footer">
+          <strong>${consultantName}</strong>
+          <div class="contact-info">
+            📞 ${consultantPhone}<br>
+            📧 ${consultantEmail}
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob([offre], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+function calcComparator() {
+  oldAmount = parseFloat(document.getElementById('amount-input').value || 0);
+
+  // Display HTVA
+  const oldHTVA = oldAmount / TVA;
+  document.getElementById('amount-htva').textContent = fmt(oldHTVA);
+
+  // Display old amount
+  const oldDisplay = isTVAC ? oldAmount : oldHTVA;
+  document.getElementById('total-old').textContent = fmt(oldDisplay);
+  
+  // Afficher montant Proximus EN HAUT (à gauche)
+  document.getElementById('proximus-amount').textContent = fmt(oldDisplay);
+
+  // Display orange amounts (3 prices)
+  const orangeTodayDisplay = isTVAC ? orangeToday : (orangeToday / TVA);
+  const orange6mDisplay = isTVAC ? orange6m : (orange6m / TVA);
+  const orange12mDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  
+  document.getElementById('total-orange-today').textContent = fmt(orangeTodayDisplay);
+  document.getElementById('total-orange-6m').textContent = fmt(orange6mDisplay);
+  document.getElementById('total-orange').textContent = fmt(orange12mDisplay);
+
+  // Calculate savings (based on 12-month price)
+  const savings = Math.max(0, oldDisplay - orange12mDisplay);
+  const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
+
+  // Afficher économies EN HAUT (section Orange)
+  document.getElementById('savings-top').textContent = fmt(savings);
+  document.getElementById('savings-top-percent').textContent = '(' + savingsPercent + '%)';
+}
+
+// Store orange total when user syncs
+window.storeOrangeTotal = function(total) {
+  localStorage.setItem('orangeSimTotal', total);
+};
+
+// Version
+document.getElementById('app-version').textContent = window.APP_VERSION || '?';
+
+// Initial
+calcComparator();
+</script>
+
+<!-- FIREBASE AUTH - LOGIN SCREEN -->
+<script>
+(async () => {
+  try {
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+      authDomain: "phil-mobile.firebaseapp.com",
+      projectId: "phil-mobile",
+      storageBucket: "phil-mobile.firebasestorage.app",
+      messagingSenderId: "193213939481",
+      appId: "1:193213939481:web:f8a750e89f0e645b62cf88"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    
+    // Créer les éléments de login
+    const loginHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
+        <div style="background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
+          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Build 8.0</div>
+          <div style="font-size:24px;font-weight:bold;color:#222;margin-bottom:8px;">Comparatif Orange</div>
+          <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Connectez-vous avec votre adresse e-mail.</div>
+          
+          <input type="email" id="comp-email" placeholder="Votre adresse e-mail" autocomplete="email"
+            style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+          
+          <input type="password" id="comp-password" placeholder="Votre mot de passe" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') window.compLogin();"
+            style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+          
+          <div id="comp-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Adresse e-mail ou mot de passe incorrect.</div>
+          
+          <button onclick="window.compLogin()" style="background:#f97316;color:white;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Connexion</button>
+          
+          <div onclick="window.compForgotPassword()" style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">Mot de passe oublié ?</div>
+        </div>
+      </div>
+    `;
+    
+    // Fonctions de login
+    window.compAuth = auth;
+    window.compLogin = async function() {
+      const email = document.getElementById('comp-email')?.value;
+      const password = document.getElementById('comp-password')?.value;
+      const errorDiv = document.getElementById('comp-error');
+      
+      if (!email || !password) {
+        if (errorDiv) errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        if (errorDiv) errorDiv.style.display = 'none';
+      } catch (error) {
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'Adresse e-mail ou mot de passe incorrect.';
+        }
+      }
+    };
+    
+    window.compForgotPassword = async function() {
+      const email = document.getElementById('comp-email')?.value;
+      if (!email) {
+        alert('Veuillez entrer votre adresse e-mail');
+        return;
+      }
+      
+      try {
+        const { sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
+        await sendPasswordResetEmail(auth, email);
+        alert('Email de réinitialisation envoyé. Vérifiez votre boîte de réception.');
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    };
+    
+    // Vérifier authentification
+    onAuthStateChanged(auth, (user) => {
+      const loginContainer = document.getElementById('login-container');
+      const appDiv = document.getElementById('comparatif-app');
+      
+      if (!user) {
+        // Pas connecté: afficher login, masquer app
+        if (loginContainer) {
+          loginContainer.innerHTML = loginHTML;
+          loginContainer.style.display = 'block';
+        }
+        if (appDiv) appDiv.style.display = 'none';
+      } else {
+        // Connecté: afficher app, masquer login
+        if (loginContainer) loginContainer.style.display = 'none';
+        if (appDiv) appDiv.style.display = 'block';
+      }
+    });
+  } catch(err) {
+    console.error('Firebase init failed:', err);
+  }
+})();
+</script>
+
+</body>
+</html>
