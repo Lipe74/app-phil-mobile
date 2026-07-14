@@ -21,8 +21,8 @@
     .login-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
     .login-btn { width: 100%; padding: 12px; background: #ff5a14; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
     .login-btn:active { opacity: 0.9; }
-    .login-error { background: #fee; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
-    .login-loading { text-align: center; color: #666; }
+    .login-error { background: #fee; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; display: none; }
+    .login-loading { text-align: center; color: #666; display: none; }
     
     /* HEADER */
     .header { background: linear-gradient(135deg, #ff5a14 0%, #ff7a3d 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white; }
@@ -53,14 +53,10 @@
     .summary-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #666; }
     .summary-row.total { font-weight: 700; font-size: 18px; color: #333; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px; }
     
-    /* COMPARISON RESULT */
+    /* RESULT */
     .result-box { background: #fff8f4; border: 2px solid #ff5a14; border-radius: 12px; padding: 20px; margin-top: 24px; text-align: center; }
     .result-saving { font-size: 32px; font-weight: bold; color: #22c55e; }
     .result-label { font-size: 14px; color: #666; margin-top: 8px; }
-    
-    /* BUTTON */
-    .btn-compare { width: 100%; padding: 12px; background: #ff5a14; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 16px; }
-    .btn-compare:active { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -70,11 +66,11 @@
   <div class="login-box">
     <div class="login-title">🔐 Connexion</div>
     <div class="login-sub">Outil réservé aux consultants Smart SN</div>
-    <div id="login-error" class="login-error" style="display:none;"></div>
+    <div id="login-error" class="login-error"></div>
     <input id="login-email" type="email" class="login-input" placeholder="Email" />
     <input id="login-pwd" type="password" class="login-input" placeholder="Mot de passe" />
     <button id="login-btn" class="login-btn" onclick="handleLogin()">Se connecter</button>
-    <div id="login-status" class="login-loading" style="margin-top:16px;display:none;">Connexion en cours...</div>
+    <div id="login-status" class="login-loading">Connexion en cours...</div>
   </div>
 </div>
 
@@ -153,7 +149,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
 
 <script>
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDVzuqAa6qNyRj6EHdKVJMACtMn6SjFKww",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -163,48 +158,26 @@ const firebaseConfig = {
   appId: "1:449233889938:web:b0fc9a9e1a4b2c3d4e5f6g"
 };
 
-window.firebase = {};
-firebase.initializeApp = function() {};
-window.auth = {};
-window.db = {};
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-const { initializeApp } = window.firebase;
-const app = initializeApp ? initializeApp(firebaseConfig) : null;
-const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = window.firebase;
+const { signInWithEmailAndPassword, onAuthStateChanged } = firebase.auth;
+const { collection, getDocs, query } = firebase.firestore;
 
-// Load Firebase modularly
-async function loadFirebase() {
-  const auth = (await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js')).getAuth();
-  const db = (await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js')).getFirestore();
-  window.auth = auth;
-  window.db = db;
-  checkAuth();
-}
+let orangeRates = {};
 
 // Check auth on load
-function checkAuth() {
-  if (window.firebase && window.firebase.auth() && window.firebase.auth().currentUser !== undefined) {
-    const user = window.firebase.auth().currentUser;
-    if (user) {
-      document.getElementById('login-screen').classList.add('hidden');
-      document.getElementById('main-app').style.display = 'block';
-      loadOrangeRates();
-    }
-  } else if (window.firebase && window.firebase.auth) {
-    window.firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-app').style.display = 'block';
-        loadOrangeRates();
-      } else {
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('main-app').style.display = 'none';
-      }
-    });
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').style.display = 'block';
+    loadOrangeRates();
   } else {
-    setTimeout(checkAuth, 500);
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('main-app').style.display = 'none';
   }
-}
+});
 
 // Login
 async function handleLogin() {
@@ -219,7 +192,7 @@ async function handleLogin() {
   error.style.display = 'none';
   
   try {
-    await window.firebase.auth().signInWithEmailAndPassword(email, pwd);
+    await signInWithEmailAndPassword(auth, email, pwd);
   } catch (e) {
     error.textContent = 'Erreur : ' + e.message;
     error.style.display = 'block';
@@ -229,10 +202,9 @@ async function handleLogin() {
 }
 
 // Load Orange rates from Firestore
-let orangeRates = {};
 async function loadOrangeRates() {
   try {
-    const snap = await window.getDocs(window.collection(window.db, 'promosOrange'));
+    const snap = await getDocs(collection(db, 'promosOrange'));
     snap.forEach(doc => {
       const data = doc.data();
       if (data.nom) orangeRates[data.nom] = data.prix || 0;
@@ -262,19 +234,19 @@ function updateComparison() {
   // Calculate Orange simulation
   let orangeTotal = 0;
   
-  // Mobile pricing (example: 39€/mois per mobile)
+  // Mobile pricing
   if (nbMobiles > 0) {
     const mobileRate = parseFloat(orangeRates['Mobile'] || 39);
     orangeTotal += nbMobiles * mobileRate;
   }
   
-  // Internet pricing (example: 35€/mois)
+  // Internet pricing
   if (hasInternet) {
     const internetRate = parseFloat(orangeRates['Internet'] || 35);
     orangeTotal += internetRate;
   }
   
-  // TV pricing (example: 15€/mois)
+  // TV pricing
   if (hasTV) {
     const tvRate = parseFloat(orangeRates['TV'] || 15);
     orangeTotal += tvRate;
@@ -311,9 +283,6 @@ function updateComparison() {
 if (window.APP_VERSION) {
   document.getElementById('app-version').textContent = window.APP_VERSION;
 }
-
-// Check auth on page load
-window.addEventListener('load', checkAuth);
 </script>
 
 </body>
