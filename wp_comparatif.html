@@ -144,11 +144,19 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-<script>
 const firebaseConfig = {
   apiKey: "AIzaSyDVzuqAa6qNyRj6EHdKVJMACtMn6SjFKww",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -158,12 +166,14 @@ const firebaseConfig = {
   appId: "1:449233889938:web:b0fc9a9e1a4b2c3d4e5f6g"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 let orangeRates = {};
 
-// Check auth on load
-firebase.auth().onAuthStateChanged((user) => {
+// Check auth
+onAuthStateChanged(auth, (user) => {
   if (user) {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-app').style.display = 'block';
@@ -175,7 +185,7 @@ firebase.auth().onAuthStateChanged((user) => {
 });
 
 // Login
-async function handleLogin() {
+window.handleLogin = async function() {
   const email = document.getElementById('login-email').value;
   const pwd = document.getElementById('login-pwd').value;
   const btn = document.getElementById('login-btn');
@@ -187,37 +197,36 @@ async function handleLogin() {
   error.style.display = 'none';
   
   try {
-    await firebase.auth().signInWithEmailAndPassword(email, pwd);
+    await signInWithEmailAndPassword(auth, email, pwd);
   } catch (e) {
     error.textContent = 'Erreur : ' + e.message;
     error.style.display = 'block';
     btn.disabled = false;
     status.style.display = 'none';
   }
-}
+};
 
-// Load Orange rates from Firestore
+// Load rates
 async function loadOrangeRates() {
   try {
-    const snap = await firebase.firestore().collection('promosOrange').get();
+    const snap = await getDocs(collection(db, 'promosOrange'));
     snap.forEach(doc => {
       const data = doc.data();
       if (data.nom) orangeRates[data.nom] = data.prix || 0;
     });
-    updateComparison();
+    window.updateComparison();
   } catch (e) {
     console.error('Error loading rates:', e);
   }
 }
 
 // Update comparison
-function updateComparison() {
+window.updateComparison = function() {
   const nbMobiles = parseInt(document.getElementById('px-mobiles').value) || 0;
   const hasInternet = document.getElementById('px-internet').checked;
   const hasTV = document.getElementById('px-tv').checked;
   const pxTotal = parseFloat(document.getElementById('px-total').value) || 0;
   
-  // Display Proximus summary
   let services = [];
   if (nbMobiles > 0) services.push(nbMobiles + ' mobile' + (nbMobiles > 1 ? 's' : ''));
   if (hasInternet) services.push('Internet');
@@ -226,28 +235,11 @@ function updateComparison() {
   document.getElementById('px-services').textContent = services.length > 0 ? services.join(', ') : '-';
   document.getElementById('px-cost').textContent = pxTotal + '€';
   
-  // Calculate Orange simulation
   let orangeTotal = 0;
+  if (nbMobiles > 0) orangeTotal += nbMobiles * (orangeRates['Mobile'] || 39);
+  if (hasInternet) orangeTotal += (orangeRates['Internet'] || 35);
+  if (hasTV) orangeTotal += (orangeRates['TV'] || 15);
   
-  // Mobile pricing
-  if (nbMobiles > 0) {
-    const mobileRate = parseFloat(orangeRates['Mobile'] || 39);
-    orangeTotal += nbMobiles * mobileRate;
-  }
-  
-  // Internet pricing
-  if (hasInternet) {
-    const internetRate = parseFloat(orangeRates['Internet'] || 35);
-    orangeTotal += internetRate;
-  }
-  
-  // TV pricing
-  if (hasTV) {
-    const tvRate = parseFloat(orangeRates['TV'] || 15);
-    orangeTotal += tvRate;
-  }
-  
-  // Display Orange simulation
   let orangeHTML = '<div class="summary">';
   if (nbMobiles > 0) {
     orangeHTML += '<div class="summary-row"><span>' + nbMobiles + ' mobile' + (nbMobiles > 1 ? 's' : '') + '</span><span>' + (nbMobiles * (orangeRates['Mobile'] || 39)).toFixed(2) + '€</span></div>';
@@ -263,7 +255,6 @@ function updateComparison() {
   
   document.getElementById('orange-simulation').innerHTML = orangeHTML;
   
-  // Display savings
   const saving = pxTotal - orangeTotal;
   if (pxTotal > 0) {
     document.getElementById('result-section').style.display = 'block';
@@ -272,9 +263,9 @@ function updateComparison() {
   } else {
     document.getElementById('result-section').style.display = 'none';
   }
-}
+};
 
-// Load version
+// Version
 if (window.APP_VERSION) {
   document.getElementById('app-version').textContent = window.APP_VERSION;
 }
