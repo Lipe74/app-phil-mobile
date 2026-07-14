@@ -56,7 +56,11 @@
 .active-line { background: #fff8f4; border-radius: 6px; }
 </style>
 
-<div class="app">
+<!-- LOGIN CONTAINER (Affiché si pas connecté) -->
+<div id="login-container" style="display:none;"></div>
+
+<!-- APP CONTENT (Hidden until logged in) -->
+<div class="app" id="orange-app" style="display:none;">
   <div class="header">
 
 <!--
@@ -77,6 +81,11 @@
     </div>
 
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+
+      <button id="close-btn-mobile" onclick="if(window.opener)window.close();else history.back();"
+        style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;display:none;">
+        ✕ Fermer
+      </button>
 
       <button onclick="resetCache()"
         style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
@@ -864,17 +873,16 @@ function render() {
       if (btn) btn.className = 'toggle-btn ' + (togMap[row.dataset.id] ? 'on' : 'off');
     }
   });
+  
+  // Sauvegarder les infos consultant et prix Orange pour wp_comparatif.html
+  if (window.consultantInfo) {
+    localStorage.setItem('consultantName', window.consultantInfo.name || '');
+    localStorage.setItem('consultantPhone', window.consultantInfo.phone || '');
+    localStorage.setItem('consultantEmail', window.consultantInfo.email || '');
+  }
   localStorage.setItem('orangeSimToday', (today*r).toFixed(2));
   localStorage.setItem('orangeSimAfter6', (after6*r).toFixed(2));
   localStorage.setItem('orangeSimAfter12', (after12*r).toFixed(2));
-  
-  // Sauvegarder aussi les infos du consultant
-  const clientName = document.getElementById('client-name')?.value || '';
-  const clientPhone = document.getElementById('client-phone')?.value || '';
-  const clientEmail = document.getElementById('client-email')?.value || '';
-  localStorage.setItem('consultantName', clientName);
-  localStorage.setItem('consultantPhone', clientPhone);
-  localStorage.setItem('consultantEmail', clientEmail);
 }
 
 function change(id, delta, max) {
@@ -986,11 +994,121 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
 const simDateEl = document.getElementById('sim-date');
 if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
 
-// Ajouter message de sauvegarde auto
-const msgEl = document.createElement('div');
-msgEl.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#e8f5e9;border:1.5px solid #66bb6a;border-radius:10px;padding:12px 16px;font-size:13px;color:#2e7d32;font-weight:600;max-width:250px;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.1);';
-msgEl.innerHTML = '✅ Votre simulation est sauvegardée<br><span style="font-size:12px;font-weight:normal;">Fermez cette fenêtre et revenez au comparatif.';
-document.body.appendChild(msgEl);
+// Afficher bouton fermer sur mobile/popup
+const closeBtn = document.getElementById('close-btn-mobile');
+if (closeBtn) {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isPopup = window.opener !== null;
+  if (isMobile || isPopup) {
+    closeBtn.style.display = 'block';
+  }
+}
+
+</script>
+
+<!-- FIREBASE AUTH - LOGIN SCREEN -->
+<script>
+(async () => {
+  try {
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js');
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+      authDomain: "phil-mobile.firebaseapp.com",
+      projectId: "phil-mobile",
+      storageBucket: "phil-mobile.firebasestorage.app",
+      messagingSenderId: "193213939481",
+      appId: "1:193213939481:web:f8a750e89f0e645b62cf88"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    
+    // Créer l'écran de login
+    const loginHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
+        <div style="background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
+          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Build 8.0</div>
+          <div style="font-size:24px;font-weight:bold;color:#222;margin-bottom:8px;">Simulateur Orange</div>
+          <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Connectez-vous avec votre adresse e-mail.</div>
+          
+          <input type="email" id="orange-email" placeholder="Votre adresse e-mail" autocomplete="email"
+            style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+          
+          <input type="password" id="orange-password" placeholder="Votre mot de passe" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') window.orangeLogin();"
+            style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+          
+          <div id="orange-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Adresse e-mail ou mot de passe incorrect.</div>
+          
+          <button onclick="window.orangeLogin()" style="background:#f97316;color:white;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Connexion</button>
+          
+          <div onclick="window.orangeForgotPassword()" style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">Mot de passe oublié ?</div>
+        </div>
+      </div>
+    `;
+    
+    // Fonctions de login
+    window.orangeAuth = auth;
+    window.orangeLogin = async function() {
+      const email = document.getElementById('orange-email')?.value;
+      const password = document.getElementById('orange-password')?.value;
+      const errorDiv = document.getElementById('orange-error');
+      
+      if (!email || !password) {
+        if (errorDiv) errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        if (errorDiv) errorDiv.style.display = 'none';
+      } catch (error) {
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'Adresse e-mail ou mot de passe incorrect.';
+        }
+      }
+    };
+    
+    window.orangeForgotPassword = async function() {
+      const email = document.getElementById('orange-email')?.value;
+      if (!email) {
+        alert('Veuillez entrer votre adresse e-mail');
+        return;
+      }
+      
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert('Email de réinitialisation envoyé. Vérifiez votre boîte de réception.');
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    };
+    
+    // Vérifier authentification
+    onAuthStateChanged(auth, (user) => {
+      const loginContainer = document.getElementById('login-container');
+      const appDiv = document.getElementById('orange-app');
+      
+      if (!user) {
+        // Pas connecté: afficher login
+        if (loginContainer) {
+          loginContainer.innerHTML = loginHTML;
+          loginContainer.style.display = 'block';
+        }
+        if (appDiv) appDiv.style.display = 'none';
+      } else {
+        // Connecté: afficher app
+        if (loginContainer) loginContainer.style.display = 'none';
+        if (appDiv) appDiv.style.display = 'block';
+      }
+    });
+  } catch(err) {
+    console.error('Firebase init failed:', err);
+  }
+})();
 </script>
 
   </body>
