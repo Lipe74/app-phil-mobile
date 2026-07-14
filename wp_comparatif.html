@@ -408,8 +408,10 @@ function createOffer() {
   const op = document.getElementById('operator-select').value;
   const opName = operators[op];
   const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
-  const orangeDisplay = isTVAC ? orange12m : (orange12m / TVA);
-  const savings = Math.max(0, oldDisplay - orangeDisplay);
+  const orangeDisplay12 = isTVAC ? orange12m : (orange12m / TVA);
+  const orangeDisplay6 = isTVAC ? orange6m : (orange6m / TVA);
+  const orangeDisplayToday = isTVAC ? orangeToday : (orangeToday / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay12);
   
   // Récupérer les infos du consultant depuis localStorage
   const consultantName = localStorage.getItem('consultantName') || 'Phil-Mobile';
@@ -425,27 +427,32 @@ function createOffer() {
       <title>Offre Orange - Comparatif</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .card { background: white; border-radius: 14px; padding: 30px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .header { background: #ff5a14; color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
-        .header-logo { height: 60px; margin-bottom: 10px; }
-        .header-title { font-size: 28px; font-weight: bold; }
-        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
-        .section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 10px; }
-        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 15px; }
-        .savings-value { font-size: 32px; font-weight: bold; color: #2e7d32; }
-        .savings-sub { font-size: 14px; color: #2e7d32; }
+        .card { background: white; border-radius: 14px; padding: 30px; max-width: 550px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { background: #ff5a14; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .logo { height: 80px; margin-bottom: 15px; }
+        .header-title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .header-sub { font-size: 14px; opacity: 0.95; }
+        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 16px; }
+        .savings-value { font-size: 36px; font-weight: bold; color: #2e7d32; }
+        .savings-sub { font-size: 14px; color: #2e7d32; margin-top: 8px; }
+        .price-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .price-row:last-child { border-bottom: none; }
+        .price-label { font-size: 14px; color: #333; }
+        .price-value { font-size: 14px; font-weight: bold; color: #ff5a14; }
         .btn { background: #ff5a14; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 10px; width: 100%; }
         .btn:hover { background: #e64a04; }
         .footer { border-top: 1px solid #ddd; margin-top: 20px; padding-top: 15px; font-size: 12px; color: #666; text-align: center; }
-        .contact-info { font-size: 11px; line-height: 1.6; }
+        .contact-info { font-size: 11px; line-height: 1.6; margin-top: 10px; }
       </style>
     </head>
     <body>
       <div class="card">
         <div class="header">
-          <img src="images/logo.png" class="header-logo" alt="Logo">
+          <img src="images/logo.png" class="logo" alt="Logo Phil-Mobile">
           <div class="header-title">Offre Orange</div>
-          <div style="font-size: 14px; opacity: 0.9;">Passez de ${opName} à Orange</div>
+          <div class="header-sub">Passez de ${opName} à Orange</div>
         </div>
         
         <div class="savings">
@@ -455,12 +462,24 @@ function createOffer() {
         
         <div class="section">
           <div class="section-title">Votre situation actuelle</div>
-          <div>${opName}: <strong>${fmt(oldDisplay)}/mois</strong></div>
+          <div style="font-size: 15px; color: #333;"><strong>${opName}</strong></div>
+          <div style="font-size: 18px; font-weight: bold; color: #ff5a14; margin-top: 8px;">${fmt(oldDisplay)}/mois</div>
         </div>
         
         <div class="section">
-          <div class="section-title">Avec Orange</div>
-          <div>Après 12 mois: <strong>${fmt(orangeDisplay)}/mois</strong></div>
+          <div class="section-title">💰 Tarification Orange</div>
+          <div class="price-row">
+            <span class="price-label">🟢 Aujourd'hui</span>
+            <span class="price-value">${fmt(orangeDisplayToday)}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🟡 Après 6 mois</span>
+            <span class="price-value">${fmt(orangeDisplay6)}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🔴 Après 12 mois</span>
+            <span class="price-value" style="color: #2e7d32;">${fmt(orangeDisplay12)}</span>
+          </div>
         </div>
         
         <button class="btn" onclick="window.print()">🖨️ Imprimer cette offre</button>
