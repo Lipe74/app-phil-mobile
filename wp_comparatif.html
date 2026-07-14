@@ -62,11 +62,6 @@ body { background: #f5f5f5; }
 .btn-primary:hover { background: #e64a04; }
 .btn:hover { background: #f5f5f5; }
 
-.savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 14px; padding: 20px; margin-top: 20px; }
-.savings-title { font-size: 18px; font-weight: bold; color: #2e7d32; margin-bottom: 12px; }
-.savings-value { font-size: 36px; font-weight: bold; color: #2e7d32; text-align: center; }
-.savings-sub { font-size: 14px; color: #2e7d32; text-align: center; margin-top: 8px; }
-
 .tva-toggle { display: flex; gap: 8px; margin-top: 12px; }
 .tva-btn { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 13px; font-weight: bold; }
 .tva-btn.active { background: #ff5a14; color: white; border-color: #ff5a14; }
@@ -92,11 +87,17 @@ body { background: #f5f5f5; }
     </div>
   </div>
 
-  <!-- TVA Toggle -->
-  <div style="text-align: right; margin-bottom: 16px;">
-    <div class="tva-toggle" style="max-width: 250px; margin-left: auto;">
+  <!-- TVA Toggle + Économies -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px; flex-wrap: wrap;">
+    <div class="tva-toggle" style="max-width: 250px;">
       <button class="tva-btn active" id="btn-tvac" onclick="setTVAC(true)">TVAC</button>
       <button class="tva-btn" id="btn-htva" onclick="setTVAC(false)">HTVA</button>
+    </div>
+    <!-- Économies à côté -->
+    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #66bb6a; border-radius: 12px; padding: 12px 20px; text-align: center;">
+      <div style="font-size: 11px; color: #2e7d32; font-weight: 600; margin-bottom: 4px;">💰 VOUS ÉCONOMISEZ</div>
+      <div style="font-size: 24px; font-weight: bold; color: #2e7d32;" id="savings-top">0,00 €</div>
+      <div style="font-size: 12px; color: #2e7d32;" id="savings-top-percent">(0%)</div>
     </div>
   </div>
 
@@ -112,6 +113,14 @@ body { background: #f5f5f5; }
         <div class="section-title">📋 Votre configuration actuelle</div>
         <div class="info-box">
           ℹ️ Entrez simplement votre montant mensuel total. Les détails ci-dessous sont informatifs.
+        </div>
+        <div class="counter-row">
+          <span>Poste fixe</span>
+          <div class="qty-ctrl">
+            <button class="qty-btn" onclick="changeQty('phone', -1)">−</button>
+            <span class="qty-val" id="qty-phone">0</span>
+            <button class="qty-btn" onclick="changeQty('phone', 1)">+</button>
+          </div>
         </div>
         <div class="counter-row">
           <span>Connexion Internet</span>
@@ -225,13 +234,6 @@ body { background: #f5f5f5; }
 
   </div>
 
-  <!-- SAVINGS SECTION -->
-  <div class="savings">
-    <div class="savings-title">💰 Vous économisez avec Orange</div>
-    <div class="savings-value" id="savings-amount">0,00 €</div>
-    <div class="savings-sub" id="savings-percent">par mois (0 % de réduction)</div>
-  </div>
-
 </div>
 
 <script>
@@ -258,6 +260,15 @@ let oldAmount = 0;
 let orangeToday = 0;
 let orange6m = 0;
 let orange12m = 0;
+
+let counters = {
+  phone: 0,
+  inet: 0,
+  mob: 0,
+  tv: 0,
+  dec: 0,
+  opt: 0
+};
 
 function setTVAC(val) {
   isTVAC = val;
@@ -467,8 +478,9 @@ function calcComparator() {
   const savings = Math.max(0, oldDisplay - orange12mDisplay);
   const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
 
-  document.getElementById('savings-amount').textContent = fmt(savings);
-  document.getElementById('savings-percent').textContent = 'par mois (' + savingsPercent + ' % de réduction)';
+  // Afficher économies EN HAUT (section Orange)
+  document.getElementById('savings-top').textContent = fmt(savings);
+  document.getElementById('savings-top-percent').textContent = '(' + savingsPercent + '%)';
 }
 
 // Store orange total when user syncs
