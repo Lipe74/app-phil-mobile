@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparatif Proximus → Orange</title>
+  <link rel="icon" type="image/png" href="images/logo.png">
+  <link rel="apple-touch-icon" href="images/logo.png">
+  <script src="version.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f5f5f5; }
+    .app { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    
+    /* LOGIN SCREEN */
+    .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f5f5f5; display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .login-screen.hidden { display: none; }
+    .login-box { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+    .login-title { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 8px; }
+    .login-sub { font-size: 14px; color: #666; margin-bottom: 24px; }
+    .login-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 12px; }
+    .login-btn { width: 100%; padding: 12px; background: #ff5a14; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .login-btn:active { opacity: 0.9; }
+    .login-error { background: #fee; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+    .login-loading { text-align: center; color: #666; }
+    
+    /* HEADER */
+    .header { background: linear-gradient(135deg, #ff5a14 0%, #ff7a3d 100%); border-radius: 16px; padding: 24px; margin-bottom: 24px; color: white; }
+    .header-title { font-size: 32px; font-weight: bold; margin-bottom: 8px; }
+    .header-sub { font-size: 15px; opacity: 0.95; }
+    .header-version { font-size: 12px; opacity: 0.8; margin-top: 12px; }
+    
+    /* MAIN CONTENT */
+    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .card-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-proximus { border-left: 4px solid #1d4ed8; }
+    .card-orange { border-left: 4px solid #ff5a14; }
+    
+    /* FORM FIELDS */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 14px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
+    .form-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    .form-input:focus { outline: none; border-color: #ff5a14; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; padding: 10px 0; }
+    .checkbox-input { width: 18px; height: 18px; cursor: pointer; }
+    .checkbox-label { cursor: pointer; font-size: 14px; color: #333; }
+    
+    /* SUMMARY */
+    .summary { background: #f9f9f9; border-radius: 10px; padding: 16px; margin-top: 16px; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #666; }
+    .summary-row.total { font-weight: 700; font-size: 18px; color: #333; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px; }
+    
+    /* COMPARISON RESULT */
+    .result-box { background: #fff8f4; border: 2px solid #ff5a14; border-radius: 12px; padding: 20px; margin-top: 24px; text-align: center; }
+    .result-saving { font-size: 32px; font-weight: bold; color: #22c55e; }
+    .result-label { font-size: 14px; color: #666; margin-top: 8px; }
+    
+    /* BUTTON */
+    .btn-compare { width: 100%; padding: 12px; background: #ff5a14; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 16px; }
+    .btn-compare:active { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-box">
+    <div class="login-title">🔐 Connexion</div>
+    <div class="login-sub">Outil réservé aux consultants Smart SN</div>
+    <div id="login-error" class="login-error" style="display:none;"></div>
+    <input id="login-email" type="email" class="login-input" placeholder="Email" />
+    <input id="login-pwd" type="password" class="login-input" placeholder="Mot de passe" />
+    <button id="login-btn" class="login-btn" onclick="handleLogin()">Se connecter</button>
+    <div id="login-status" class="login-loading" style="margin-top:16px;display:none;">Connexion en cours...</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none;">
+  <div class="app">
+    <div class="header">
+      <div class="header-title">📊 Comparatif Proximus → Orange</div>
+      <div class="header-sub">Simulez les économies de votre client en passant à Orange</div>
+      <div class="header-version">Build <span id="app-version">…</span></div>
+    </div>
+
+    <div class="container">
+      <!-- PROXIMUS (GAUCHE) -->
+      <div class="card card-proximus">
+        <div class="card-title">📱 Situation actuelle (Proximus)</div>
+        
+        <div class="form-group">
+          <label class="form-label">Nombre de mobiles</label>
+          <input id="px-mobiles" type="number" class="form-input" min="0" max="10" value="0" oninput="updateComparison()" />
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input id="px-internet" type="checkbox" class="checkbox-input" onchange="updateComparison()" />
+            <label for="px-internet" class="checkbox-label">Internet fixe (ADSL/Fibre)</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input id="px-tv" type="checkbox" class="checkbox-input" onchange="updateComparison()" />
+            <label for="px-tv" class="checkbox-label">TV (câble/satellite)</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Montant actuel (€/mois)</label>
+          <input id="px-total" type="number" class="form-input" min="0" step="0.5" value="0" oninput="updateComparison()" />
+        </div>
+
+        <div class="summary">
+          <div class="summary-row">
+            <span>Services détectés :</span>
+            <span id="px-services">-</span>
+          </div>
+          <div class="summary-row total">
+            <span>Coût actuel :</span>
+            <span id="px-cost">0€</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORANGE (DROITE) -->
+      <div class="card card-orange">
+        <div class="card-title">🟠 Simulation Orange</div>
+        
+        <div id="orange-simulation">
+          <div style="color:#999;text-align:center;padding:24px;">Entrez les infos Proximus pour voir la simulation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="result-section" style="display:none;">
+      <div class="result-box">
+        <div class="result-saving" id="result-saving">-</div>
+        <div class="result-label" id="result-label">-</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDVzuqAa6qNyRj6EHdKVJMACtMn6SjFKww",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.appspot.com",
+  messagingSenderId: "449233889938",
+  appId: "1:449233889938:web:b0fc9a9e1a4b2c3d4e5f6g"
+};
+
+window.firebase = {};
+firebase.initializeApp = function() {};
+window.auth = {};
+window.db = {};
+
+const { initializeApp } = window.firebase;
+const app = initializeApp ? initializeApp(firebaseConfig) : null;
+const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = window.firebase;
+
+// Load Firebase modularly
+async function loadFirebase() {
+  const auth = (await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js')).getAuth();
+  const db = (await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js')).getFirestore();
+  window.auth = auth;
+  window.db = db;
+  checkAuth();
+}
+
+// Check auth on load
+function checkAuth() {
+  if (window.firebase && window.firebase.auth() && window.firebase.auth().currentUser !== undefined) {
+    const user = window.firebase.auth().currentUser;
+    if (user) {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('main-app').style.display = 'block';
+      loadOrangeRates();
+    }
+  } else if (window.firebase && window.firebase.auth) {
+    window.firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-app').style.display = 'block';
+        loadOrangeRates();
+      } else {
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('main-app').style.display = 'none';
+      }
+    });
+  } else {
+    setTimeout(checkAuth, 500);
+  }
+}
+
+// Login
+async function handleLogin() {
+  const email = document.getElementById('login-email').value;
+  const pwd = document.getElementById('login-pwd').value;
+  const btn = document.getElementById('login-btn');
+  const status = document.getElementById('login-status');
+  const error = document.getElementById('login-error');
+  
+  btn.disabled = true;
+  status.style.display = 'block';
+  error.style.display = 'none';
+  
+  try {
+    await window.firebase.auth().signInWithEmailAndPassword(email, pwd);
+  } catch (e) {
+    error.textContent = 'Erreur : ' + e.message;
+    error.style.display = 'block';
+    btn.disabled = false;
+    status.style.display = 'none';
+  }
+}
+
+// Load Orange rates from Firestore
+let orangeRates = {};
+async function loadOrangeRates() {
+  try {
+    const snap = await window.getDocs(window.collection(window.db, 'promosOrange'));
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (data.nom) orangeRates[data.nom] = data.prix || 0;
+    });
+    updateComparison();
+  } catch (e) {
+    console.error('Error loading rates:', e);
+  }
+}
+
+// Update comparison
+function updateComparison() {
+  const nbMobiles = parseInt(document.getElementById('px-mobiles').value) || 0;
+  const hasInternet = document.getElementById('px-internet').checked;
+  const hasTV = document.getElementById('px-tv').checked;
+  const pxTotal = parseFloat(document.getElementById('px-total').value) || 0;
+  
+  // Display Proximus summary
+  let services = [];
+  if (nbMobiles > 0) services.push(nbMobiles + ' mobile' + (nbMobiles > 1 ? 's' : ''));
+  if (hasInternet) services.push('Internet');
+  if (hasTV) services.push('TV');
+  
+  document.getElementById('px-services').textContent = services.length > 0 ? services.join(', ') : '-';
+  document.getElementById('px-cost').textContent = pxTotal + '€';
+  
+  // Calculate Orange simulation
+  let orangeTotal = 0;
+  
+  // Mobile pricing (example: 39€/mois per mobile)
+  if (nbMobiles > 0) {
+    const mobileRate = parseFloat(orangeRates['Mobile'] || 39);
+    orangeTotal += nbMobiles * mobileRate;
+  }
+  
+  // Internet pricing (example: 35€/mois)
+  if (hasInternet) {
+    const internetRate = parseFloat(orangeRates['Internet'] || 35);
+    orangeTotal += internetRate;
+  }
+  
+  // TV pricing (example: 15€/mois)
+  if (hasTV) {
+    const tvRate = parseFloat(orangeRates['TV'] || 15);
+    orangeTotal += tvRate;
+  }
+  
+  // Display Orange simulation
+  let orangeHTML = '<div class="summary">';
+  if (nbMobiles > 0) {
+    orangeHTML += '<div class="summary-row"><span>' + nbMobiles + ' mobile' + (nbMobiles > 1 ? 's' : '') + '</span><span>' + (nbMobiles * (orangeRates['Mobile'] || 39)).toFixed(2) + '€</span></div>';
+  }
+  if (hasInternet) {
+    orangeHTML += '<div class="summary-row"><span>Internet fixe</span><span>' + (orangeRates['Internet'] || 35).toFixed(2) + '€</span></div>';
+  }
+  if (hasTV) {
+    orangeHTML += '<div class="summary-row"><span>TV</span><span>' + (orangeRates['TV'] || 15).toFixed(2) + '€</span></div>';
+  }
+  orangeHTML += '<div class="summary-row total"><span>Total Orange :</span><span>' + orangeTotal.toFixed(2) + '€</span></div>';
+  orangeHTML += '</div>';
+  
+  document.getElementById('orange-simulation').innerHTML = orangeHTML;
+  
+  // Display savings
+  const saving = pxTotal - orangeTotal;
+  if (pxTotal > 0) {
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('result-saving').textContent = saving > 0 ? '+' + saving.toFixed(2) + '€/mois' : saving.toFixed(2) + '€/mois';
+    document.getElementById('result-label').textContent = saving > 0 ? '💰 Économies mensuelles' : '⚠️ Coût plus élevé';
+  } else {
+    document.getElementById('result-section').style.display = 'none';
+  }
+}
+
+// Load version
+if (window.APP_VERSION) {
+  document.getElementById('app-version').textContent = window.APP_VERSION;
+}
+
+// Check auth on page load
+window.addEventListener('load', checkAuth);
+</script>
+
+</body>
+</html>
