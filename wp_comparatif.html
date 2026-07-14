@@ -195,19 +195,29 @@ body { background: #f5f5f5; }
         </a>
       </div>
 
-      <!-- Orange Total -->
+      <!-- Orange Total with 3 prices -->
       <div class="summary-box">
         <div class="summary-line">
-          <span style="color:#666;">Total Orange/mois</span>
-          <span id="total-orange" style="font-weight:bold;color:#ff5a14;font-size:16px;">0,00 €</span>
+          <span style="color:#666;font-size:13px;">🟢 Aujourd'hui</span>
+          <span id="total-orange-today" style="font-weight:bold;color:#ff5a14;font-size:14px;">0,00 €</span>
+        </div>
+        <div class="summary-line">
+          <span style="color:#666;font-size:13px;">🟡 Après 6 mois</span>
+          <span id="total-orange-6m" style="font-weight:bold;color:#ff5a14;font-size:14px;">0,00 €</span>
+        </div>
+        <div class="summary-line summary-total">
+          <span>🔴 Après 12 mois (Référence)</span>
+          <span id="total-orange" style="color:#ff5a14;">0,00 €</span>
         </div>
       </div>
 
-      <!-- Sync from simulator -->
+      <!-- Sync from simulator + Action buttons -->
       <div class="section orange">
+        <button class="btn btn-primary" style="width:100%;margin-bottom:10px;" onclick="syncFromSimulator()">📊 Récupérer les prix Orange</button>
         <div class="button-group">
-          <button class="btn btn-primary" onclick="syncFromSimulator()">📊 Récupérer les prix Orange</button>
-          <button class="btn" onclick="resetOrange()">🔄</button>
+          <button class="btn" onclick="exportPDF()" title="Télécharger la comparaison en PDF">📄 PDF</button>
+          <button class="btn" onclick="shareWhatsApp()" title="Envoyer par WhatsApp">💬 WhatsApp</button>
+          <button class="btn" onclick="createOffer()" title="Créer une offre avec logo">🎁 Offre</button>
         </div>
       </div>
 
@@ -244,16 +254,10 @@ const operators = {
   'other': 'Autre opérateur'
 };
 
-let counters = {
-  inet: 0,
-  mob: 0,
-  tv: 0,
-  dec: 0,
-  opt: 0
-};
-
 let oldAmount = 0;
-let orangeAmount = 0;
+let orangeToday = 0;
+let orange6m = 0;
+let orange12m = 0;
 
 function setTVAC(val) {
   isTVAC = val;
@@ -280,21 +284,163 @@ function resetOld() {
 }
 
 function resetOrange() {
-  orangeAmount = 0;
+  orangeToday = 0;
+  orange6m = 0;
+  orange12m = 0;
+  document.getElementById('total-orange-today').textContent = '0,00 €';
+  document.getElementById('total-orange-6m').textContent = '0,00 €';
   document.getElementById('total-orange').textContent = '0,00 €';
   calcComparator();
 }
 
 function syncFromSimulator() {
-  const stored = localStorage.getItem('orangeSimTotal');
-  if (stored) {
-    orangeAmount = parseFloat(stored);
-    document.getElementById('total-orange').textContent = fmt(isTVAC ? orangeAmount : orangeAmount / TVA);
-    calcComparator();
-    alert('✅ Prix Orange récupéré : ' + fmt(orangeAmount));
-  } else {
+  const t = localStorage.getItem('orangeSimToday');
+  const m6 = localStorage.getItem('orangeSimAfter6');
+  const m12 = localStorage.getItem('orangeSimAfter12');
+  
+  if (!t || !m6 || !m12) {
     alert('⚠️ Aucune donnée trouvée. Vérifiez que vous avez utilisé le simulateur Orange.');
+    return;
   }
+  
+  orangeToday = parseFloat(t);
+  orange6m = parseFloat(m6);
+  orange12m = parseFloat(m12);
+  
+  calcComparator();
+  alert('✅ Prix Orange récupérés :\n• Aujourd\'hui : ' + fmt(orangeToday) + '\n• Après 6 mois : ' + fmt(orange6m) + '\n• Après 12 mois : ' + fmt(orange12m));
+}
+
+function exportPDF() {
+  if (orange12m === 0) {
+    alert('⚠️ Récupérez d\'abord les prix Orange.');
+    return;
+  }
+  
+  const op = document.getElementById('operator-select').value;
+  const opName = operators[op];
+  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
+  const orangeDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay);
+  const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
+  
+  const content = `
+COMPARATIF: ${opName} vs ORANGE
+═══════════════════════════════════
+
+OPÉRATEUR ACTUEL: ${opName}
+${Object.keys(counters).map(k => `  ${k.toUpperCase()}: ${counters[k]}`).join('\n')}
+Montant mensuel: ${fmt(oldDisplay)}
+
+ORANGE
+  • Aujourd'hui: ${fmt(isTVAC ? orangeToday : (orangeToday / TVA))}
+  • Après 6 mois: ${fmt(isTVAC ? orange6m : (orange6m / TVA))}
+  • Après 12 mois: ${fmt(isTVAC ? orange12m : (orange12m / TVA))}
+
+ÉCONOMIES ANNUELLES
+  Montant: ${fmt(savings)}/mois
+  % de réduction: ${savingsPercent}%
+  Total sur 12 mois: ${fmt(savings * 12)}
+
+─────────────────────────────────────
+Phil-Mobile - Simulateur Orange
+  `;
+  
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'comparatif-orange.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function shareWhatsApp() {
+  if (orange12m === 0) {
+    alert('⚠️ Récupérez d\'abord les prix Orange.');
+    return;
+  }
+  
+  const op = document.getElementById('operator-select').value;
+  const opName = operators[op];
+  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
+  const orangeDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay);
+  const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
+  
+  const msg = `🟠 Découvrez vos économies avec Orange!\n\n💰 Vous économisez ${fmt(savings)}/mois\n(${savingsPercent}% de réduction)\n\nComparaison ${opName} vs Orange\n📊 Phil-Mobile Simulateur\napp.phil-mobile.be`;
+  
+  const encoded = encodeURIComponent(msg);
+  window.open(`https://wa.me/?text=${encoded}`, '_blank');
+}
+
+function createOffer() {
+  if (orange12m === 0) {
+    alert('⚠️ Récupérez d\'abord les prix Orange.');
+    return;
+  }
+  
+  const op = document.getElementById('operator-select').value;
+  const opName = operators[op];
+  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
+  const orangeDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  const savings = Math.max(0, oldDisplay - orangeDisplay);
+  
+  // Ouvrir un popup ou page avec l'offre générée
+  const offre = `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <title>Offre Orange - Comparatif</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 14px; padding: 30px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { background: #ff5a14; color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .header-title { font-size: 28px; font-weight: bold; }
+        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        .section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 10px; }
+        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 15px; }
+        .savings-value { font-size: 32px; font-weight: bold; color: #2e7d32; }
+        .savings-sub { font-size: 14px; color: #2e7d32; }
+        .btn { background: #ff5a14; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 10px; width: 100%; }
+        .btn:hover { background: #e64a04; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <img src="images/logo.png" style="height: 60px; margin-bottom: 10px;" alt="Logo">
+          <div class="header-title">Offre Orange</div>
+          <div style="font-size: 14px; opacity: 0.9;">Passez de ${opName} à Orange</div>
+        </div>
+        
+        <div class="savings">
+          <div class="savings-value">${fmt(savings)}/mois</div>
+          <div class="savings-sub">Économies garanties</div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Votre situation actuelle</div>
+          <div>${opName}: <strong>${fmt(oldDisplay)}/mois</strong></div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Avec Orange</div>
+          <div>Après 12 mois: <strong>${fmt(orangeDisplay)}/mois</strong></div>
+        </div>
+        
+        <button class="btn" onclick="window.print()">🖨️ Imprimer cette offre</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob([offre], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
 function calcComparator() {
@@ -308,12 +454,17 @@ function calcComparator() {
   const oldDisplay = isTVAC ? oldAmount : oldHTVA;
   document.getElementById('total-old').textContent = fmt(oldDisplay);
 
-  // Display orange amount
-  const orangaDisplay = isTVAC ? orangeAmount : orangeAmount / TVA;
-  document.getElementById('total-orange').textContent = fmt(orangaDisplay);
+  // Display orange amounts (3 prices)
+  const orangeTodayDisplay = isTVAC ? orangeToday : (orangeToday / TVA);
+  const orange6mDisplay = isTVAC ? orange6m : (orange6m / TVA);
+  const orange12mDisplay = isTVAC ? orange12m : (orange12m / TVA);
+  
+  document.getElementById('total-orange-today').textContent = fmt(orangeTodayDisplay);
+  document.getElementById('total-orange-6m').textContent = fmt(orange6mDisplay);
+  document.getElementById('total-orange').textContent = fmt(orange12mDisplay);
 
-  // Calculate savings
-  const savings = Math.max(0, oldDisplay - orangaDisplay);
+  // Calculate savings (based on 12-month price)
+  const savings = Math.max(0, oldDisplay - orange12mDisplay);
   const savingsPercent = oldDisplay > 0 ? ((savings / oldDisplay) * 100).toFixed(1) : 0;
 
   document.getElementById('savings-amount').textContent = fmt(savings);

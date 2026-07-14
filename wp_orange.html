@@ -864,7 +864,9 @@ function render() {
       if (btn) btn.className = 'toggle-btn ' + (togMap[row.dataset.id] ? 'on' : 'off');
     }
   });
-  localStorage.setItem('orangeSimTotal', (after*r).toFixed(2));
+  localStorage.setItem('orangeSimToday', (today*r).toFixed(2));
+  localStorage.setItem('orangeSimAfter6', (after6*r).toFixed(2));
+  localStorage.setItem('orangeSimAfter12', (after12*r).toFixed(2));
 }
 
 function change(id, delta, max) {
