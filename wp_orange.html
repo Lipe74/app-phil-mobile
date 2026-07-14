@@ -867,6 +867,14 @@ function render() {
   localStorage.setItem('orangeSimToday', (today*r).toFixed(2));
   localStorage.setItem('orangeSimAfter6', (after6*r).toFixed(2));
   localStorage.setItem('orangeSimAfter12', (after12*r).toFixed(2));
+  
+  // Sauvegarder aussi les infos du consultant
+  const clientName = document.getElementById('client-name')?.value || '';
+  const clientPhone = document.getElementById('client-phone')?.value || '';
+  const clientEmail = document.getElementById('client-email')?.value || '';
+  localStorage.setItem('consultantName', clientName);
+  localStorage.setItem('consultantPhone', clientPhone);
+  localStorage.setItem('consultantEmail', clientEmail);
 }
 
 function change(id, delta, max) {
