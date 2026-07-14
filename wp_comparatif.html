@@ -76,24 +76,37 @@ body { background: #f5f5f5; }
     </div>
     <div class="header-selector">
       <label class="header-label">Votre opérateur actuel :</label>
-      <select id="operator-select" onchange="updateOperatorName()" class="operator-select">
-        <option value="proximus">Proximus</option>
-        <option value="base">BASE</option>
-        <option value="telenet">Telenet/Vodafone</option>
-        <option value="voo">VOO</option>
-        <option value="scarlet">Scarlet</option>
-        <option value="other">Autre opérateur</option>
-      </select>
+      <div style="display: flex; gap: 8px; align-items: flex-end;">
+        <select id="operator-select" onchange="updateOperatorName()" class="operator-select">
+          <option value="proximus">Proximus</option>
+          <option value="base">BASE</option>
+          <option value="telenet">Telenet/Vodafone</option>
+          <option value="voo">VOO</option>
+          <option value="scarlet">Scarlet</option>
+          <option value="other">Autre opérateur</option>
+        </select>
+        <button onclick="resetOld()" style="padding: 8px 12px; background: white; color: #ff5a14; border: 2px solid white; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; white-space: nowrap;">🔄 Réinit</button>
+      </div>
     </div>
   </div>
 
-  <!-- TVA Toggle + Économies -->
+  <!-- TVA Toggle + Montants -->
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 16px; flex-wrap: wrap;">
-    <div class="tva-toggle" style="max-width: 250px;">
-      <button class="tva-btn active" id="btn-tvac" onclick="setTVAC(true)">TVAC</button>
-      <button class="tva-btn" id="btn-htva" onclick="setTVAC(false)">HTVA</button>
+    <!-- Montant Proximus à gauche -->
+    <div style="background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); border: 2px solid #999; border-radius: 12px; padding: 12px 20px; text-align: center;">
+      <div style="font-size: 11px; color: #666; font-weight: 600; margin-bottom: 4px;">📱 VOTRE MONTANT</div>
+      <div style="font-size: 24px; font-weight: bold; color: #333;" id="proximus-amount">0,00 €</div>
+      <div style="font-size: 12px; color: #666;">chez Proximus</div>
     </div>
-    <!-- Économies à côté -->
+    
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <div class="tva-toggle" style="max-width: 250px;">
+        <button class="tva-btn active" id="btn-tvac" onclick="setTVAC(true)">TVAC</button>
+        <button class="tva-btn" id="btn-htva" onclick="setTVAC(false)">HTVA</button>
+      </div>
+    </div>
+    
+    <!-- Économies à droite -->
     <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #66bb6a; border-radius: 12px; padding: 12px 20px; text-align: center;">
       <div style="font-size: 11px; color: #2e7d32; font-weight: 600; margin-bottom: 4px;">💰 VOUS ÉCONOMISEZ</div>
       <div style="font-size: 24px; font-weight: bold; color: #2e7d32;" id="savings-top">0,00 €</div>
@@ -187,7 +200,6 @@ body { background: #f5f5f5; }
         </div>
       </div>
 
-      <button class="btn" onclick="resetOld()">🔄 Réinitialiser</button>
     </div>
 
     <!-- ORANGE COLUMN -->
@@ -480,6 +492,9 @@ function calcComparator() {
   // Display old amount
   const oldDisplay = isTVAC ? oldAmount : oldHTVA;
   document.getElementById('total-old').textContent = fmt(oldDisplay);
+  
+  // Afficher montant Proximus EN HAUT (à gauche)
+  document.getElementById('proximus-amount').textContent = fmt(oldDisplay);
 
   // Display orange amounts (3 prices)
   const orangeTodayDisplay = isTVAC ? orangeToday : (orangeToday / TVA);
