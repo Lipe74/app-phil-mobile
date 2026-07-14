@@ -426,6 +426,69 @@ function createOffer() {
   // Logo personnalisé avec fallback
   const logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
   
+  // Construire HTML détails de l'offre Orange
+  let offerDetailsHTML = '';
+  try {
+    const details = JSON.parse(localStorage.getItem('orangeOfferDetails') || '{}');
+    if (details.produits) {
+      offerDetailsHTML = `
+        <div class="section">
+          <div class="section-title">📦 Prix affichés (Orange)</div>
+          <div class="price-row">
+            <span class="price-label">Total produits</span>
+            <span class="price-value">${details.produits}</span>
+          </div>
+          <div class="price-row" style="padding-left:20px;">
+            <span class="price-label">📱 Total Mobiles</span>
+            <span class="price-value">${details.mobiles}</span>
+          </div>
+          <div class="price-row" style="padding-left:20px;">
+            <span class="price-label">🌐 Internet, TV & Acc.</span>
+            <span class="price-value">${details.internet}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Options mensuelles</span>
+            <span class="price-value">${details.options}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Frais uniques</span>
+            <span class="price-value">${details.fraisUniques}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">Remises Love (à vie)</span>
+            <span class="price-value" style="color:#2e7d32;">- ${details.remisesLove}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🟡 Promos 6 mois</span>
+            <span class="price-value" style="color:#f97316;">- ${details.promos6mois}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🔴 Promos 12 mois</span>
+            <span class="price-value" style="color:#e24b4a;">- ${details.promos12mois}</span>
+          </div>
+        </div>
+        <div class="section" style="background:#fff8f4;border:2px solid #ff5a14;">
+          <div class="section-title">🏁 Tarifs après les promotions</div>
+          <div style="font-size:18px;font-weight:bold;color:#ff5a14;text-align:center;padding:12px 0;">${details.sousTotal}</div>
+          <div class="price-row">
+            <span class="price-label">🟢 Aujourd'hui</span>
+            <span class="price-value" style="color:#2e7d32;font-weight:bold;">${details.prixAujourdhui}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🟡 Après 6 mois</span>
+            <span class="price-value" style="color:#f97316;font-weight:bold;">${details.prixApres6mois}</span>
+          </div>
+          <div class="price-row">
+            <span class="price-label">🔴 Après 12 mois</span>
+            <span class="price-value" style="color:#e24b4a;font-weight:bold;">${details.prixApres12mois}</span>
+          </div>
+        </div>
+      `;
+    }
+  } catch(e) {
+    console.error('Erreur détails offre:', e);
+  }
+  
   // Ouvrir un popup ou page avec l'offre générée
   const offre = `
     <!DOCTYPE html>
@@ -473,6 +536,8 @@ function createOffer() {
           <div style="font-size: 15px; color: #333;"><strong>${opName}</strong></div>
           <div style="font-size: 18px; font-weight: bold; color: #ff5a14; margin-top: 8px;">${fmt(oldDisplay)}/mois</div>
         </div>
+        
+        ${offerDetailsHTML}
         
         <div class="section">
           <div class="section-title">💰 Tarification Orange</div>
