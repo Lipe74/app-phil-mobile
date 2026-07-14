@@ -864,6 +864,7 @@ function render() {
       if (btn) btn.className = 'toggle-btn ' + (togMap[row.dataset.id] ? 'on' : 'off');
     }
   });
+  localStorage.setItem('orangeSimTotal', (after*r).toFixed(2));
 }
 
 function change(id, delta, max) {
@@ -975,6 +976,11 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
 const simDateEl = document.getElementById('sim-date');
 if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
 
+// Ajouter message de sauvegarde auto
+const msgEl = document.createElement('div');
+msgEl.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#e8f5e9;border:1.5px solid #66bb6a;border-radius:10px;padding:12px 16px;font-size:13px;color:#2e7d32;font-weight:600;max-width:250px;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.1);';
+msgEl.innerHTML = '✅ Votre simulation est sauvegardée<br><span style="font-size:12px;font-weight:normal;">Fermez cette fenêtre et revenez au comparatif.';
+document.body.appendChild(msgEl);
 </script>
 
   </body>
