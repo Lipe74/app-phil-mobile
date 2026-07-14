@@ -159,16 +159,11 @@ const firebaseConfig = {
 };
 
 const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-const { signInWithEmailAndPassword, onAuthStateChanged } = firebase.auth;
-const { collection, getDocs, query } = firebase.firestore;
 
 let orangeRates = {};
 
 // Check auth on load
-onAuthStateChanged(auth, (user) => {
+firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-app').style.display = 'block';
@@ -192,7 +187,7 @@ async function handleLogin() {
   error.style.display = 'none';
   
   try {
-    await signInWithEmailAndPassword(auth, email, pwd);
+    await firebase.auth().signInWithEmailAndPassword(email, pwd);
   } catch (e) {
     error.textContent = 'Erreur : ' + e.message;
     error.style.display = 'block';
@@ -204,7 +199,7 @@ async function handleLogin() {
 // Load Orange rates from Firestore
 async function loadOrangeRates() {
   try {
-    const snap = await getDocs(collection(db, 'promosOrange'));
+    const snap = await firebase.firestore().collection('promosOrange').get();
     snap.forEach(doc => {
       const data = doc.data();
       if (data.nom) orangeRates[data.nom] = data.prix || 0;
