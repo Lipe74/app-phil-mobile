@@ -413,10 +413,14 @@ function createOffer() {
   const orangeDisplayToday = isTVAC ? orangeToday : (orangeToday / TVA);
   const savings = Math.max(0, oldDisplay - orangeDisplay12);
   
-  // Récupérer les infos du consultant depuis localStorage
+  // Récupérer les infos du consultant depuis localStorage/Firebase
   const consultantName = localStorage.getItem('consultantName') || 'Phil-Mobile';
   const consultantPhone = localStorage.getItem('consultantPhone') || '0475 24 02 05';
   const consultantEmail = localStorage.getItem('consultantEmail') || 'infos@phil-mobile.be';
+  const consultantId = (typeof window !== 'undefined' && window.pmCurrentUser?.id) || localStorage.getItem('consultantId') || 'default';
+  
+  // Logo personnalisé avec fallback
+  const logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
   
   // Ouvrir un popup ou page avec l'offre générée
   const offre = `
@@ -450,7 +454,7 @@ function createOffer() {
     <body>
       <div class="card">
         <div class="header">
-          <img src="https://app.phil-mobile.be/images/logo.png" class="logo" alt="Logo Phil-Mobile">
+          <img src="${logoUrl}" class="logo" alt="Logo Phil-Mobile" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
           <div class="header-title">Offre Orange</div>
           <div class="header-sub">Passez de ${opName} à Orange</div>
         </div>
