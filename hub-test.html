@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — CRM+ASP
+Build <span id="app-version-1">…</span> — Promotions
      </span>
     </div>
     </div>
@@ -511,9 +511,6 @@ Build <span id="app-version-1">…</span> — CRM+ASP
   <button onclick="showCrmPanel('panel-crm-consultants')" class="menu-item" id="btn-crm-consultants">
     👨‍💼 Gestion Consultants
   </button>
-  <button onclick="showCrmPanel('panel-search-independants')" class="menu-item" id="btn-search-independants">
-    🔍 Recherche Indépendants
-  </button>
 </div>
 
 <!-- SIMULATEURS -->
@@ -539,6 +536,11 @@ Build <span id="app-version-1">…</span> — CRM+ASP
 
 
 </div>
+
+<button onclick="showPromotions(this)" class="menu-item" id="menu-promotions">
+🎁 Promotions
+</button>
+
 <!-- RESSOURCES -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">
 📚 Ressources
@@ -1024,30 +1026,14 @@ Build <span id="app-version-1">…</span> — CRM+ASP
             <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
           </div>
 
-          <!-- Panel Recherche Indépendants -->
-          <div id="panel-search-independants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+          <!-- Panel Promotions -->
+          <div id="panel-promotions" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-              <h2 style="color:#f97316;margin:0;font-size:16px;">🔍 Recherche Indépendants</h2>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button onclick="searchIndependantsLoadExisting()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Recharger</button>
-                <button onclick="searchIndependantsAddSelected()" style="background:#22c55e;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;" id="btn-add-selected" disabled>✅ Ajouter la sélection</button>
-              </div>
+              <h2 style="color:#f97316;margin:0;font-size:16px;">🎁 Promotions en cours</h2>
+              <button onclick="loadPromotionsPanel()" style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Actualiser</button>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-              <div>
-                <label style="font-size:12px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Métier</label>
-                <input type="text" id="search-metier" placeholder="Ex: électricien, plombier..." style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:12px;box-sizing:border-box;">
-              </div>
-              <div>
-                <label style="font-size:12px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Localité / Code postal</label>
-                <input type="text" id="search-localite" placeholder="Ex: Liège, 4000..." style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:12px;box-sizing:border-box;">
-              </div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <button onclick="searchIndependants()" style="width:100%;background:#f97316;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">🔎 Rechercher</button>
-            </div>
-            <div id="search-status" style="font-size:12px;color:#999;margin-bottom:10px;"></div>
-            <div id="search-results" style="font-size:13px;color:#666;">Prêt à rechercher. Entrez un métier et/ou une localité.</div>
+            <div style="font-size:12px;color:#999;margin-bottom:14px;">Mises à jour automatiquement par l'admin — toujours à jour ici.</div>
+            <div id="promotions-list" style="font-size:13px;color:#666;">Chargement...</div>
           </div>
 
           <div id="panel-news" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
@@ -3349,7 +3335,97 @@ window.showCrmPanel = function(panelId) {
   document.body.classList.add('mobile-panel-open');
   if (panelId === 'panel-crm-clients') crmLoadClients();
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
-  if (panelId === 'panel-search-independants') searchIndependantsLoadExisting();
+};
+
+// ===== Promotions (lecture seule, synchronisée avec admin.html) =====
+window.showPromotions = function(btn) {
+  document.querySelectorAll('.menu-item').forEach(function(b){ b.classList.remove('active-item'); });
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(function(p){ p.style.display = 'none'; });
+  document.getElementById('panel-promotions').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  loadPromotionsPanel();
+};
+
+var PROMO_FAMILY_SECTIONS_HUB = [
+  ['mobile', '📱 Promo Mobile'],
+  ['internet', '🌐 Promo Internet'],
+  ['divers', '🎁 Promo Divers']
+];
+var PROMO_TYPE_LABEL_HUB = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '💶 Unique' };
+
+function derivePromoFamilyHub(p) {
+  if (p.productFamily) return p.productFamily;
+  if (p.type === 'mobile') return 'mobile';
+  if ((p.name || '').toLowerCase().indexOf('internet') !== -1) return 'internet';
+  return 'divers';
+}
+
+function escapeHtmlPromos(str) {
+  var div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+window.loadPromotionsPanel = async function() {
+  var container = document.getElementById('promotions-list');
+  container.innerHTML = 'Chargement...';
+  try {
+    var tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.getDocs) throw new Error('Firestore non disponible');
+
+    var snap = await window.getDocs(window.collection(window.db, 'promosOrange'));
+    var list = [];
+    snap.forEach(function(d){
+      var data = d.data();
+      if (data.active !== false) list.push(Object.assign({ docId: d.id }, data));
+    });
+
+    if (list.length === 0) {
+      container.innerHTML = '<div style="color:#999;">Aucune promotion active actuellement.</div>';
+      return;
+    }
+
+    var html = '';
+    PROMO_FAMILY_SECTIONS_HUB.forEach(function([fam, label]) {
+      var inFam = list.filter(function(p){ return derivePromoFamilyHub(p) === fam; });
+      if (inFam.length === 0) return;
+
+      html += '<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">' + label + '</div>';
+
+      inFam.forEach(function(p) {
+        var durLabel = p.type === 'unique' ? 'Remise unique' : (p.duration ? p.duration + ' mois' : 'À vie');
+        var catBadge = p.category === 'permanente'
+          ? '<span style="background:#eef2ff;color:#3730a3;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">✅ Permanente</span>'
+          : '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">🟠 Temporaire</span>';
+
+        html += ''
+          + '<div style="border:1px solid #eee;border-radius:10px;padding:12px 14px;margin-bottom:8px;">'
+          +   '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">'
+          +     '<div>'
+          +       '<strong style="font-size:13px;">' + escapeHtmlPromos(p.name || '') + '</strong> '
+          +       '<span style="background:#fff3e8;color:#f97316;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">' + (PROMO_TYPE_LABEL_HUB[p.type] || p.type) + '</span> '
+          +       catBadge
+          +       '<div style="color:#888;font-size:12px;margin-top:4px;">' + escapeHtmlPromos(p.sub || '') + '</div>'
+          +       (p.condition ? '<div style="color:#cc4400;font-weight:700;font-size:12px;margin-top:2px;">📌 Condition : ' + escapeHtmlPromos(p.condition) + '</div>' : '')
+          +     '</div>'
+          +     '<div style="font-weight:700;color:#f97316;font-size:14px;white-space:nowrap;">-' + p.price + '€ <span style="font-size:11px;color:#888;font-weight:400;">· ' + durLabel + '</span></div>'
+          +   '</div>'
+          + '</div>';
+      });
+    });
+
+    container.innerHTML = html || '<div style="color:#999;">Aucune promotion active actuellement.</div>';
+  } catch (err) {
+    container.innerHTML = '<div style="color:#999;">Erreur de chargement des promotions.</div>';
+    console.log('Chargement promotions impossible:', err.message);
+  }
 };
 
 function crmReady(cb) {
@@ -3574,184 +3650,6 @@ window.crmDeleteAll = function(col) {
   }).catch(function(err) { alert('Erreur: ' + err.message); });
 };
 
-// ===== RECHERCHE INDÉPENDANTS =====
-var _existingProspectsEmails = [];
-var _existingProspectsTVAs = [];
-var _searchResultsCache = [];
-
-window.searchIndependantsLoadExisting = function() {
-  crmReady(function() {
-    var el = document.getElementById('search-status');
-    if (el) el.innerHTML = '⏳ Chargement des prospects existants...';
-    _existingProspectsEmails = [];
-    _existingProspectsTVAs = [];
-    window.getDocs(window.query(window.collection(window.db, 'prospectsClients'), window.where('consultantId', '==', window.pmCurrentUser.id))).then(function(snap) {
-      snap.forEach(function(d) {
-        var data = d.data();
-        if (data.email) _existingProspectsEmails.push(data.email.toLowerCase());
-        if (data.tva) _existingProspectsTVAs.push(data.tva.toUpperCase());
-      });
-      if (el) el.innerHTML = 'Prospects chargés : ' + snap.size + ' existant(s).';
-      setTimeout(function() { if (el) el.innerHTML = ''; }, 3000);
-    }).catch(function(err) {
-      if (el) el.innerHTML = '❌ Erreur: ' + err.message;
-    });
-  });
-};
-
-window.searchIndependants = function() {
-  var metier = (document.getElementById('search-metier').value || '').trim().toLowerCase();
-  var localite = (document.getElementById('search-localite').value || '').trim().toLowerCase();
-  var el = document.getElementById('search-results');
-  var statusEl = document.getElementById('search-status');
-  
-  if (!metier && !localite) {
-    if (el) el.innerHTML = '<div style="color:#e24b4a;">⚠️ Entrez au moins un métier ou une localité.</div>';
-    return;
-  }
-  
-  if (statusEl) statusEl.innerHTML = '⏳ Recherche en cours...';
-  if (el) el.innerHTML = '<div style="color:#999;">Recherche...</div>';
-  
-  var params = [];
-  if (metier) params.push('q=' + encodeURIComponent(metier));
-  if (localite) params.push('location=' + encodeURIComponent(localite));
-  var url = 'https://cbeapi.be/api/search?' + params.join('&') + '&limit=100';
-  
-  fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      _searchResultsCache = [];
-      var items = data.results || [];
-      
-      items.forEach(function(item) {
-        var email = (item.email || '').toLowerCase();
-        var tva = (item.vat_number || item.vat || '').toUpperCase();
-        var alreadyExists = (_existingProspectsEmails.indexOf(email) >= 0 || _existingProspectsTVAs.indexOf(tva) >= 0);
-        
-        _searchResultsCache.push({
-          name: item.name || item.company_name || '--',
-          prenom: item.first_name || '',
-          nom: item.last_name || item.name || '--',
-          tva: tva,
-          email: email,
-          tel: item.phone || item.telephone || '',
-          adresse: item.address || '',
-          cp: item.postal_code || '',
-          ville: item.city || localite || '',
-          societe: item.company_name || item.name || '--',
-          metier: item.activity || metier || '--',
-          activite_nace: item.nace_code || '',
-          alreadyExists: alreadyExists,
-          selected: false
-        });
-      });
-      
-      searchIndependantsRenderResults();
-      if (statusEl) statusEl.innerHTML = 'Résultats: ' + items.length + ' trouvé(s)';
-    })
-    .catch(function(err) {
-      if (statusEl) statusEl.innerHTML = '❌ Erreur API: ' + err.message;
-      if (el) el.innerHTML = '<div style="color:#e24b4a;">❌ Erreur lors de la recherche: ' + err.message + '</div>';
-    });
-};
-
-window.searchIndependantsRenderResults = function() {
-  var el = document.getElementById('search-results');
-  if (!el) return;
-  
-  if (_searchResultsCache.length === 0) {
-    el.innerHTML = '<div style="color:#999;">Aucun résultat trouvé.</div>';
-    return;
-  }
-  
-  var html = '<div style="display:grid;gap:8px;">';
-  _searchResultsCache.forEach(function(item, idx) {
-    var disabled = item.alreadyExists ? ' disabled' : '';
-    var opacity = item.alreadyExists ? '; opacity:0.6' : '';
-    var badge = item.alreadyExists ? ' <span style="background:#fef9c3;color:#854d0e;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px;">Already in prospects</span>' : '';
-    var checked = item.selected ? ' checked' : '';
-    
-    html += '<div style="border:1px solid #ddd;border-radius:8px;padding:12px;background:#fafafa' + opacity + '">';
-    html += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
-    html += '<input type="checkbox"' + checked + disabled + ' onchange="searchIndependantsToggleSelect(' + idx + ')" style="cursor:pointer;" id="search-cb-' + idx + '">';
-    html += '<label for="search-cb-' + idx + '" style="flex:1;cursor:pointer;font-weight:700;font-size:13px;color:#333;">' + crmEsc(item.nom) + (item.prenom ? ' (' + crmEsc(item.prenom) + ')' : '') + '</label>';
-    html += badge;
-    html += '</div>';
-    html += '<div style="font-size:11px;color:#666;margin-bottom:6px;">';
-    if (item.societe && item.societe !== '--') html += '<div>📍 ' + crmEsc(item.societe) + '</div>';
-    if (item.metier) html += '<div>💼 ' + crmEsc(item.metier) + '</div>';
-    if (item.ville) html += '<div>🏙️ ' + crmEsc(item.ville) + (item.cp ? ' (' + crmEsc(item.cp) + ')' : '') + '</div>';
-    html += '</div>';
-    html += '<div style="font-size:11px;color:#555;border-top:1px solid #e5e5e5;padding-top:6px;margin-top:6px;">';
-    if (item.tva) html += '<div>TVA: ' + crmEsc(item.tva) + '</div>';
-    if (item.tel) html += '<div>Tel: ' + crmEsc(item.tel) + '</div>';
-    if (item.email) html += '<div>Email: ' + crmEsc(item.email) + '</div>';
-    if (item.adresse) html += '<div>Adresse: ' + crmEsc(item.adresse) + '</div>';
-    html += '</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-  
-  el.innerHTML = html;
-  searchIndependantsUpdateButtonState();
-};
-
-window.searchIndependantsToggleSelect = function(idx) {
-  if (idx >= 0 && idx < _searchResultsCache.length) {
-    _searchResultsCache[idx].selected = !_searchResultsCache[idx].selected;
-    searchIndependantsRenderResults();
-  }
-};
-
-window.searchIndependantsUpdateButtonState = function() {
-  var anySelected = _searchResultsCache.some(function(x) { return x.selected; });
-  var btn = document.getElementById('btn-add-selected');
-  if (btn) btn.disabled = !anySelected;
-};
-
-window.searchIndependantsAddSelected = function() {
-  var selected = _searchResultsCache.filter(function(x) { return x.selected; });
-  if (selected.length === 0) {
-    alert('Aucun prospect sélectionné.');
-    return;
-  }
-  
-  if (!confirm('Ajouter ' + selected.length + ' prospect(s) aux Prospects Clients ?')) return;
-  
-  crmReady(function() {
-    var promises = [];
-    selected.forEach(function(item) {
-      var data = {
-        consultantId: window.pmCurrentUser.id,
-        prenom: item.prenom || item.nom,
-        nom: item.nom,
-        tva: item.tva,
-        email: item.email,
-        tel: item.tel,
-        adresse: item.adresse,
-        cp: item.cp,
-        ville: item.ville,
-        societe: item.societe,
-        metier: item.metier,
-        activite_nace: item.activite_nace,
-        statut: 'prospect',
-        createdAt: new Date().toISOString(),
-        source: 'searchIndependants'
-      };
-      promises.push(window.addDoc(window.collection(window.db, 'prospectsClients'), data));
-    });
-    
-    Promise.all(promises).then(function() {
-      alert('✅ ' + selected.length + ' prospect(s) ajouté(s)!');
-      _searchResultsCache = _searchResultsCache.filter(function(x) { return !x.selected; });
-      searchIndependantsRenderResults();
-      searchIndependantsLoadExisting();
-    }).catch(function(err) {
-      alert('❌ Erreur lors de l&#39;ajout: ' + err.message);
-    });
-  });
-};
 // ===== FIN CRM =====
 
 </script>
