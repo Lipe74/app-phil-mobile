@@ -5,7 +5,7 @@
   <link rel="icon"
       type="image/png"
       href="images/logo.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.7</title>
 <script src="version.js"></script>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
@@ -760,6 +760,7 @@ ${catalog}
 - "convergence" = true si le contrat mentionne une offre convergente (fixe + mobile groupés).
 - "sohoIndep" = true si le client est identifié comme indépendant / SoHo / professionnel.
 - "tva" au format belge si possible (ex: BE0123456789).
+- "nom" (dans "client") doit TOUJOURS être formaté "Prénom Nom" (prénom en premier). De nombreux documents belges affichent le nom de famille en premier ou en MAJUSCULES (ex: "PIERRET Lindsay") — dans ce cas, inverse l'ordre pour renvoyer "Lindsay Pierret". Ne mets jamais le nom de famille en majuscules dans la réponse.
 - "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
 - "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
 - "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS sur un contrat Orange/Eneco/autre fournisseur. Laisse ce champ TOUJOURS vide ("") — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF.
@@ -935,7 +936,7 @@ async function handleBulkImport(fileList){
         email: built.email,
         adresse: built.adresse,
         dateContrat: new Date().toISOString().slice(0,10),
-        etatContrat: 'Encodé',
+        etatContrat: 'Activé',
         produitsDetail: built.produitsDetail,
         aspTotal: built.aspTotal,
         eurTotal: built.eurTotal,
@@ -1041,22 +1042,32 @@ async function saveContract(){
    ancien
  };
 
+ const editingId = window._editingContractId;
+
  try {
-   const ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
-   showToast(ancien
-     ? `✅ Ancien contrat enregistré (non compté dans l'ASP)`
-     : `✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   let refId;
+   if (editingId) {
+     await window.updateDoc(window.doc(window.db, 'contrats', editingId), data);
+     refId = editingId;
+     showToast(`✅ Contrat mis à jour (${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   } else {
+     const ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
+     refId = ref.id;
+     showToast(ancien
+       ? `✅ Ancien contrat enregistré (non compté dans l'ASP)`
+       : `✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   }
 
    // Fait apparaître (ou met à jour) ce client dans Gestion Clients, que le contrat
    // vienne d'un prospect ou ait été encodé directement ici.
-   await syncContractToClients(data, ref.id);
+   await syncContractToClients(data, refId);
 
    // Si ce contrat vient d'un prospect, on le bascule en "Converti" et on garde une référence croisée.
    if (window._currentProspectId) {
      try {
        await window.updateDoc(window.doc(window.db, 'prospectsClients', window._currentProspectId), {
          statut: 'Converti',
-         contractId: ref.id,
+         contractId: refId,
          dateMaj: new Date().toISOString()
        });
        showToast('✅ Contrat enregistré et prospect marqué "Converti".');
@@ -1077,12 +1088,54 @@ async function saveContract(){
    buildProductsUI();
    updateContractPreview();
 
+   if (editingId) {
+     window._editingContractId = null;
+     const saveButtons = document.querySelectorAll('button[onclick="saveContract()"]');
+     saveButtons.forEach(b => b.textContent = '💾 Enregistrer le contrat');
+     showTab('history');
+   }
+
    if (window.refreshAspTotal) await window.refreshAspTotal();
 
  } catch(err) {
    alert('Erreur lors de l\'enregistrement: ' + err.message);
  }
 }
+
+// Charge un contrat existant dans le formulaire "Nouveau" pour le modifier (au lieu d'en créer un nouveau).
+function editContract(docId){
+  const c = window._allContracts.find(x => x.docId === docId);
+  if (!c) return;
+
+  window._editingContractId = docId;
+
+  document.getElementById('nom').value = c.nom || '';
+  document.getElementById('societe').value = c.societe || '';
+  document.getElementById('tel').value = c.tel || '';
+  document.getElementById('tva').value = c.tva || '';
+  document.getElementById('clientOrange').value = c.clientOrange || '';
+  document.getElementById('contratEneco').value = c.contratEneco || '';
+  document.getElementById('contratSmart').value = c.contratSmart || '';
+  document.getElementById('email').value = c.email || '';
+  document.getElementById('adresse').value = c.adresse || '';
+  document.getElementById('dateContrat').value = c.dateContrat || '';
+  document.getElementById('etatContrat').value = c.etatContrat || 'Encodé';
+  document.getElementById('ancienContrat').checked = !!c.ancien;
+
+  PRODUCTS.forEach(p => units[p.id] = []);
+  Object.keys(c.produitsDetail || {}).forEach(pid => {
+    if (units[pid]) units[pid] = (c.produitsDetail[pid] || []).map(u => ({...u}));
+  });
+  buildProductsUI();
+  updateContractPreview();
+
+  const saveButtons = document.querySelectorAll('button[onclick="saveContract()"]');
+  saveButtons.forEach(b => b.textContent = '💾 Mettre à jour le contrat');
+
+  showTab('new');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.editContract = editContract;
 
 // Fait apparaître ce client dans "Gestion Clients" (collection "clients"), avec exactement
 // la même structure que la migration automatique déjà utilisée dans wp_prospects.html
@@ -1147,12 +1200,22 @@ async function renderHistory(){
   const data = await loadContracts();
   let html='';
 
+  if (data.length > 0) {
+    html += `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <button type="button" onclick="historyToggleAll(true)" style="background:#fff;border:1px solid #ffb680;color:#ff5a14;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">☑️ Tout sélectionner</button>
+      <button type="button" onclick="historyToggleAll(false)" style="background:#fff;border:1px solid #ddd;color:#555;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">⬜ Tout désélectionner</button>
+      <button type="button" onclick="bulkActivateSelected()" style="background:#2E7D32;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">✅ Activer la sélection</button>
+    </div>`;
+  }
+
   data.forEach((c)=>{
 
     html+=`
     <div class="card">
 
-      <b>👤 ${escapeHtml(c.nom||'Sans nom')}</b>
+      <label style="cursor:pointer;"><input type="checkbox" class="hist-select" value="${c.docId}" style="width:auto;margin-right:6px;">
+      <b>👤 ${escapeHtml(c.nom||'Sans nom')}</b></label>
       <span class="asp-badge">+${Math.round((c.aspTotal||0)*10)/10} ASP</span>
       <span class="asp-badge" style="background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;">${(c.eurTotal||0).toFixed(2)} €</span>
       ${c.ancien ? '<span class="asp-badge" style="background:#eee;color:#666;border-color:#ddd;">🕰️ Ancien (hors ASP)</span>' : ''}<br>
@@ -1175,6 +1238,10 @@ async function renderHistory(){
       👁 Voir
       </button>
 
+      <button onclick="editContract('${c.docId}')" style="background:#fff3e8;color:#ff5a14;border:1px solid #ffb680;">
+      ✏️ Modifier
+      </button>
+
       <button onclick="deleteContract('${c.docId}')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">
       🗑 Supprimer
       </button>
@@ -1188,6 +1255,34 @@ async function renderHistory(){
     html || 'Aucun contrat';
 
 }
+
+function historyToggleAll(checked){
+  document.querySelectorAll('.hist-select').forEach(cb => cb.checked = checked);
+}
+
+async function bulkActivateSelected(){
+  const ids = Array.from(document.querySelectorAll('.hist-select:checked')).map(cb => cb.value);
+  if (ids.length === 0) {
+    alert('Sélectionne au moins un contrat.');
+    return;
+  }
+  if (!confirm(`Passer ${ids.length} contrat(s) sélectionné(s) en statut "Activé" ?`)) return;
+
+  let done = 0;
+  for (const id of ids) {
+    try {
+      await window.updateDoc(window.doc(window.db, 'contrats', id), { etatContrat: 'Activé' });
+      done++;
+    } catch (err) {
+      console.log('Activation en masse - échec sur', id, err.message);
+    }
+  }
+  showToast(`✅ ${done}/${ids.length} contrat(s) activé(s).`);
+  renderHistory();
+  if (window.refreshAspTotal) await window.refreshAspTotal();
+}
+window.historyToggleAll = historyToggleAll;
+window.bulkActivateSelected = bulkActivateSelected;
 
 function escapeHtml(str){
   const div = document.createElement('div');

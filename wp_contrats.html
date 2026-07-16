@@ -5,7 +5,7 @@
   <link rel="icon"
       type="image/png"
       href="images/logo.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.7</title>
 <script src="version.js"></script>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
@@ -192,6 +192,26 @@ select:focus{
   position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;
   padding:12px 18px;border-radius:8px;font-size:13px;display:none;z-index:2000;
 }
+
+/* Import PDF */
+.import-pdf-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:12px;
+  padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;
+}
+.import-pdf-btn:hover{background:#333;}
+.import-pdf-btn:disabled{opacity:.6;cursor:default;}
+.import-spinner{
+  width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;animation:import-spin .7s linear infinite;display:none;
+}
+.import-pdf-btn.loading .import-spinner{display:inline-block;}
+@keyframes import-spin{to{transform:rotate(360deg);}}
+#import-status{
+  font-size:12px;border-radius:10px;padding:9px 12px;margin:-8px 0 16px;display:none;
+}
+#import-status.ok{background:#E8F5E9;color:#2E7D32;display:block;}
+#import-status.err{background:#fde2e1;color:#c0392b;display:block;}
 </style>
 </head>
 <body>
@@ -239,6 +259,8 @@ select:focus{
 
 <div id="new" class="section">
 
+<button class="tabbtn" onclick="saveContract()" style="width:100%;margin-bottom:15px;">💾 Enregistrer le contrat</button>
+
 <div class="card-client">
 
 <h3>👤 Informations client</h3>
@@ -246,6 +268,20 @@ select:focus{
 <div id="prospect-link-banner" style="display:none;background:#fff3e8;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;margin-bottom:14px;">
   🔗 Ce contrat sera lié au prospect <b id="prospect-link-name"></b> — il passera automatiquement en "Converti" une fois le contrat enregistré.
 </div>
+
+<input type="file" id="import-pdf-input" accept="application/pdf" style="display:none;" onchange="handleImportPdf(this.files[0])">
+<button type="button" class="import-pdf-btn" id="import-pdf-btn" onclick="document.getElementById('import-pdf-input').click()">
+  <span class="import-spinner"></span>
+  <span id="import-pdf-btn-label">📥 Importer un contrat (PDF)</span>
+</button>
+<div id="import-status"></div>
+
+<input type="file" id="import-pdf-bulk-input" accept="application/pdf" multiple style="display:none;" onchange="handleBulkImport(this.files)">
+<button type="button" class="import-pdf-btn" id="import-pdf-bulk-btn" style="background:#555;" onclick="document.getElementById('import-pdf-bulk-input').click()">
+  <span class="import-spinner" id="bulk-spinner"></span>
+  <span id="import-pdf-bulk-btn-label">📚 Import en masse (plusieurs PDF — anciens contrats uniquement)</span>
+</button>
+<div id="bulk-import-status" style="font-size:12px;color:#555;border-radius:10px;padding:9px 12px;margin:-8px 0 16px;display:none;background:#f5f5f5;"></div>
 
 <div class="form-grid">
 
@@ -263,6 +299,9 @@ select:focus{
 
   <input id="clientOrange"
          placeholder="🟧 N° Client Orange (ex : 1.9763217)">
+
+  <input id="contratEneco"
+         placeholder="🟦 N° Contrat Eneco">
 
   <input id="contratSmart"
          placeholder="📋 N° Contrat My Smart (ex : 0000282697)">
@@ -299,6 +338,11 @@ select:focus{
 </div>
 
 </div>
+
+<label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#555;font-size:13px;margin:8px 0 4px;cursor:pointer;">
+  <input type="checkbox" id="ancienContrat" style="width:auto;margin:0;">
+  🕰️ Ancien contrat (déjà comptabilisé — ne pas ajouter à mon ASP)
+</label>
 
 <div class="asp-badge" id="contract-summary" style="display:block;width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px 14px;font-size:13px;">
   Statut actuel : <b id="consultant-statut-label">—</b> · Total contrat : <b><span id="contract-asp-preview">0</span> ASP</b> · <b><span id="contract-eur-preview">0,00 €</span></b>
@@ -347,6 +391,17 @@ import {
   deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js";
+import {
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-ai.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
@@ -361,6 +416,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// App Check protège l'accès à Gemini (obligatoire depuis juillet 2026 pour Firebase AI Logic).
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("6LfMXVYtAAAAAJgXbh8X_e9Bgfx5ZBTkdA9gT0Rx"),
+  isTokenAutoRefreshEnabled: true
+});
+
+// Gemini Developer API via Firebase AI Logic — gratuit, aucune clé API personnelle nécessaire.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+window.geminiImportModel = getGenerativeModel(ai, {
+  model: "gemini-3.5-flash",
+  generationConfig: { responseMimeType: "application/json", temperature: 0 }
+});
 
 window.db = db;
 window.doc = doc;
@@ -433,19 +501,26 @@ onAuthStateChanged(auth, async (user) => {
   // Pré-remplir la date du jour
   document.getElementById('dateContrat').value = new Date().toISOString().slice(0, 10);
 
-  // Si on arrive depuis "Créer le contrat" sur un prospect (wp_prospects.html), pré-remplir le client
-  // et mémoriser le lien pour mettre à jour le prospect une fois le contrat enregistré.
+  // Pré-remplissage du client depuis l'URL : soit depuis "Créer le contrat" sur un prospect
+  // (wp_prospects.html, avec prospectId à mémoriser pour mettre à jour le prospect après coup),
+  // soit depuis "📥 Importer" sur une fiche client existante (Gestion Clients), sans prospectId.
   const urlParams = new URLSearchParams(window.location.search);
   const prospectId = urlParams.get('prospectId');
-  if (prospectId) {
-    window._currentProspectId = prospectId;
+  if (prospectId) window._currentProspectId = prospectId;
+
+  if (prospectId || urlParams.get('nom')) {
     document.getElementById('nom').value = urlParams.get('nom') || '';
     document.getElementById('tel').value = urlParams.get('tel') || '';
     document.getElementById('email').value = urlParams.get('email') || '';
     document.getElementById('societe').value = urlParams.get('societe') || '';
     document.getElementById('tva').value = urlParams.get('tva') || '';
     document.getElementById('adresse').value = urlParams.get('adresse') || '';
+    document.getElementById('clientOrange').value = urlParams.get('clientOrange') || '';
+    document.getElementById('contratEneco').value = urlParams.get('contratEneco') || '';
+    document.getElementById('contratSmart').value = urlParams.get('contratSmart') || '';
+  }
 
+  if (prospectId) {
     const banner = document.getElementById('prospect-link-banner');
     const nameEl = document.getElementById('prospect-link-name');
     if (banner && nameEl) {
@@ -471,6 +546,7 @@ window.refreshAspTotal = async function () {
   snap.forEach(d => {
     const c = d.data();
     if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé') return;
+    if (c.ancien) return; // ancien contrat déjà comptabilisé dans l'ASP de départ
     aspFromContracts += c.aspTotal || 0;
   });
 
@@ -634,6 +710,273 @@ window.updateContractPreview = updateContractPreview;
 buildProductsUI();
 updateContractPreview();
 
+// --- Import automatique de contrat (PDF envoyé directement à Gemini -> pré-remplissage) ---
+
+function setImportStatus(type, msg){
+  const el = document.getElementById('import-status');
+  if (!el) return;
+  el.className = type ? type : '';
+  el.textContent = msg || '';
+  if (!type) el.style.display = 'none';
+}
+
+function setImportLoading(loading, label){
+  const btn = document.getElementById('import-pdf-btn');
+  const lbl = document.getElementById('import-pdf-btn-label');
+  if (!btn || !lbl) return;
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+  lbl.textContent = label || (loading ? 'Analyse du contrat en cours…' : '📥 Importer un contrat (PDF)');
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error("Impossible de lire ce fichier."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function buildImportPrompt(){
+  const catalog = PRODUCTS.map(p => `- ${p.id} : ${p.label.replace(/[^\w\séèêàçûôî]/gi, '').trim()}`).join('\n');
+  return `Tu es un assistant d'extraction de données pour des contrats de télécom et d'énergie belges (Orange, Eneco, VOO, Proximus, Base, ou autres).
+
+Le PDF joint est un contrat. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
+
+{
+  "fournisseur": "Orange" | "Eneco" | "VOO" | "Proximus" | "Base" | "Autre",
+  "client": { "nom": "", "societe": "", "tel": "", "tva": "", "email": "", "adresse": "", "clientOrange": "", "contratEneco": "", "contratSmart": "" },
+  "produits": [ { "id": "", "quantite": 1, "convergence": false, "portabilite": false, "sohoIndep": false } ]
+}
+
+Règles :
+- Chaîne vide "" si une info n'est pas trouvée dans le PDF (jamais null, jamais d'invention).
+- "id" dans "produits" doit être une des valeurs EXACTES de cette liste, choisie selon ce que décrit le contrat :
+${catalog}
+- Ignore tout produit du contrat qui ne correspond à aucun id de cette liste plutôt que d'inventer un id.
+- "quantite" = nombre de lignes/unités identiques de ce produit (1 si non précisé).
+- "portabilite" = true si le contrat mentionne un transfert de numéro depuis un autre opérateur.
+- "convergence" = true si le contrat mentionne une offre convergente (fixe + mobile groupés).
+- "sohoIndep" = true si le client est identifié comme indépendant / SoHo / professionnel.
+- "tva" au format belge si possible (ex: BE0123456789).
+- "nom" (dans "client") doit TOUJOURS être formaté "Prénom Nom" (prénom en premier). De nombreux documents belges affichent le nom de famille en premier ou en MAJUSCULES (ex: "PIERRET Lindsay") — dans ce cas, inverse l'ordre pour renvoyer "Lindsay Pierret". Ne mets jamais le nom de famille en majuscules dans la réponse.
+- "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
+- "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
+- "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS sur un contrat Orange/Eneco/autre fournisseur. Laisse ce champ TOUJOURS vide ("") — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF.
+- N'ajoute AUCUN champ en dehors de ce schéma.`;
+}
+
+async function extractContractFromFile(file){
+  if (!window.geminiImportModel) {
+    throw new Error("Le service d'import n'est pas encore configuré.");
+  }
+
+  const base64 = await fileToBase64(file);
+
+  const result = await window.geminiImportModel.generateContent([
+    { inlineData: { mimeType: 'application/pdf', data: base64 } },
+    { text: buildImportPrompt() }
+  ]);
+
+  const raw = result.response.text();
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+  } catch (err) {
+    throw new Error("Réponse IA illisible pour ce fichier.");
+  }
+}
+
+async function handleImportPdf(file){
+  if (!file) return;
+  const input = document.getElementById('import-pdf-input');
+
+  try {
+    setImportStatus(null);
+    setImportLoading(true, '🤖 Analyse IA en cours…');
+
+    const data = await extractContractFromFile(file);
+
+    applyImportedContract(data);
+
+    const fournisseur = data.fournisseur || 'Fournisseur inconnu';
+    const nbProduits = (data.produits || []).reduce((s, p) => s + (p.quantite || 1), 0);
+    setImportStatus('ok', `✅ Contrat ${fournisseur} importé — ${nbProduits} produit(s) ajouté(s). Vérifie les champs avant d'enregistrer.`);
+
+  } catch (err) {
+    console.error(err);
+    setImportStatus('err', '❌ ' + (err.message || "Échec de l'import automatique. Tu peux encoder le contrat manuellement."));
+  } finally {
+    setImportLoading(false);
+    if (input) input.value = '';
+  }
+}
+
+function applyImportedContract(data){
+  if (!data) return;
+
+  const client = data.client || {};
+  const fieldMap = {
+    nom: client.nom, societe: client.societe, tel: client.tel,
+    tva: client.tva, clientOrange: client.clientOrange, contratEneco: client.contratEneco,
+    contratSmart: client.contratSmart, email: client.email, adresse: client.adresse
+  };
+  Object.keys(fieldMap).forEach(id => {
+    const val = fieldMap[id];
+    const el = document.getElementById(id);
+    if (el && val && !el.value.trim()) el.value = val;
+  });
+
+  const validIds = PRODUCTS.map(p => p.id);
+  (data.produits || []).forEach(p => {
+    if (!validIds.includes(p.id)) return;
+    const qty = Math.max(1, parseInt(p.quantite, 10) || 1);
+    for (let i = 0; i < qty; i++) {
+      units[p.id].push({
+        convergence: !!p.convergence,
+        portabilite: !!p.portabilite,
+        sohoIndep: !!p.sohoIndep
+      });
+    }
+  });
+
+  buildProductsUI();
+  updateContractPreview();
+}
+
+window.handleImportPdf = handleImportPdf;
+
+// --- Import en masse (plusieurs PDF -> anciens contrats uniquement, hors ASP) ---
+
+function buildContractDataFromParsed(parsed){
+  const client = parsed.client || {};
+  const validIds = PRODUCTS.map(p => p.id);
+  const produitsDetail = {};
+  let aspTotal = 0;
+  let eurTotal = 0;
+
+  (parsed.produits || []).forEach(p => {
+    if (!validIds.includes(p.id)) return;
+    const product = PRODUCTS.find(x => x.id === p.id);
+    const qty = Math.max(1, parseInt(p.quantite, 10) || 1);
+    if (!produitsDetail[p.id]) produitsDetail[p.id] = [];
+    for (let i = 0; i < qty; i++) {
+      const unit = { convergence: !!p.convergence, portabilite: !!p.portabilite, sohoIndep: !!p.sohoIndep };
+      produitsDetail[p.id].push(unit);
+      eurTotal += calcUnitEUR(product, unit);
+      aspTotal += product.asp + (unit.sohoIndep ? product.aspSoho : 0);
+    }
+  });
+
+  return {
+    nom: (client.nom || '').trim(),
+    societe: (client.societe || '').trim(),
+    tel: (client.tel || '').trim(),
+    tva: (client.tva || '').trim(),
+    clientOrange: (client.clientOrange || '').trim(),
+    contratEneco: (client.contratEneco || '').trim(),
+    contratSmart: (client.contratSmart || '').trim(),
+    email: (client.email || '').trim(),
+    adresse: (client.adresse || '').trim(),
+    produitsDetail,
+    aspTotal: Math.round(aspTotal*10)/10,
+    eurTotal: Math.round(eurTotal*100)/100
+  };
+}
+
+function setBulkStatus(html){
+  const el = document.getElementById('bulk-import-status');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = html;
+}
+
+function setBulkLoading(loading){
+  const btn = document.getElementById('import-pdf-bulk-btn');
+  const lbl = document.getElementById('import-pdf-bulk-btn-label');
+  const singleBtn = document.getElementById('import-pdf-btn');
+  if (btn) { btn.disabled = loading; btn.classList.toggle('loading', loading); }
+  if (singleBtn) singleBtn.disabled = loading;
+  if (lbl) lbl.textContent = loading ? 'Import en masse en cours…' : '📚 Import en masse (plusieurs PDF — anciens contrats uniquement)';
+}
+
+async function handleBulkImport(fileList){
+  const files = Array.from(fileList || []);
+  if (files.length === 0) return;
+  const input = document.getElementById('import-pdf-bulk-input');
+
+  if (!confirm(`Importer ${files.length} PDF comme anciens contrats (hors ASP) ? Chaque fichier créera une fiche client (si pas déjà existante) et une entrée dans l'Historique. Ça peut prendre plusieurs minutes.`)) {
+    if (input) input.value = '';
+    return;
+  }
+
+  setBulkLoading(true);
+  const results = { ok: [], fail: [] };
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    setBulkStatus(`⏳ Traitement ${i+1}/${files.length} : ${escapeHtml(file.name)}…`);
+    try {
+      const parsed = await extractContractFromFile(file);
+      const built = buildContractDataFromParsed(parsed);
+      if (!built.nom) throw new Error('Nom du client introuvable dans le PDF.');
+
+      const contractData = {
+        consultantId: window._currentConsultantId,
+        consultantStatutAuMoment: window._currentConsultantStatut || 'BC',
+        date: new Date().toISOString(),
+        nom: built.nom,
+        societe: built.societe,
+        tel: built.tel,
+        tva: built.tva,
+        clientOrange: built.clientOrange,
+        contratEneco: built.contratEneco,
+        contratSmart: built.contratSmart,
+        email: built.email,
+        adresse: built.adresse,
+        dateContrat: new Date().toISOString().slice(0,10),
+        etatContrat: 'Activé',
+        produitsDetail: built.produitsDetail,
+        aspTotal: built.aspTotal,
+        eurTotal: built.eurTotal,
+        prospectId: null,
+        ancien: true,
+        importBulk: true
+      };
+
+      const ref = await window.addDoc(window.collection(window.db, 'contrats'), contractData);
+      await syncContractToClients(contractData, ref.id);
+      results.ok.push(file.name);
+    } catch (err) {
+      console.error('Import en masse - échec sur', file.name, err);
+      results.fail.push({ name: file.name, reason: err.message || 'Erreur inconnue' });
+    }
+
+    // Pause entre deux appels pour respecter les quotas Gemini
+    if (i < files.length - 1) {
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+
+  setBulkLoading(false);
+  if (input) input.value = '';
+
+  let html = `✅ ${results.ok.length} contrat(s) importé(s) (marqués "Ancien", hors ASP).`;
+  if (results.fail.length > 0) {
+    html += `<br>❌ ${results.fail.length} échec(s) :<br>` +
+      results.fail.map(f => `• ${escapeHtml(f.name)} — ${escapeHtml(f.reason)}`).join('<br>');
+  }
+  setBulkStatus(html);
+
+  if (!document.getElementById('history').classList.contains('hidden')) {
+    renderHistory();
+  }
+  if (window.refreshAspTotal) await window.refreshAspTotal();
+}
+
+window.handleBulkImport = handleBulkImport;
+
 function showTab(id){
  document.querySelectorAll('.section').forEach(x=>x.classList.add('hidden'));
  document.getElementById(id).classList.remove('hidden');
@@ -675,6 +1018,8 @@ async function saveContract(){
    return;
  }
 
+ const ancien = document.getElementById('ancienContrat').checked;
+
  const data = {
    consultantId: window._currentConsultantId,
    consultantStatutAuMoment: window._currentConsultantStatut || 'BC',
@@ -684,6 +1029,7 @@ async function saveContract(){
    tel: document.getElementById('tel').value.trim(),
    tva: document.getElementById('tva').value.trim(),
    clientOrange: document.getElementById('clientOrange').value.trim(),
+   contratEneco: document.getElementById('contratEneco').value.trim(),
    contratSmart: document.getElementById('contratSmart').value.trim(),
    email: document.getElementById('email').value.trim(),
    adresse: document.getElementById('adresse').value.trim(),
@@ -692,19 +1038,36 @@ async function saveContract(){
    produitsDetail,
    aspTotal: Math.round(aspTotal*10)/10,
    eurTotal: Math.round(eurTotal*100)/100,
-   prospectId: window._currentProspectId || null
+   prospectId: window._currentProspectId || null,
+   ancien
  };
 
+ const editingId = window._editingContractId;
+
  try {
-   const ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
-   showToast(`✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   let refId;
+   if (editingId) {
+     await window.updateDoc(window.doc(window.db, 'contrats', editingId), data);
+     refId = editingId;
+     showToast(`✅ Contrat mis à jour (${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   } else {
+     const ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
+     refId = ref.id;
+     showToast(ancien
+       ? `✅ Ancien contrat enregistré (non compté dans l'ASP)`
+       : `✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   }
+
+   // Fait apparaître (ou met à jour) ce client dans Gestion Clients, que le contrat
+   // vienne d'un prospect ou ait été encodé directement ici.
+   await syncContractToClients(data, refId);
 
    // Si ce contrat vient d'un prospect, on le bascule en "Converti" et on garde une référence croisée.
    if (window._currentProspectId) {
      try {
        await window.updateDoc(window.doc(window.db, 'prospectsClients', window._currentProspectId), {
          statut: 'Converti',
-         contractId: ref.id,
+         contractId: refId,
          dateMaj: new Date().toISOString()
        });
        showToast('✅ Contrat enregistré et prospect marqué "Converti".');
@@ -717,18 +1080,107 @@ async function saveContract(){
    }
 
    // Réinitialiser le formulaire
-   ['nom','societe','tel','tva','clientOrange','contratSmart','email','adresse'].forEach(id => {
+   ['nom','societe','tel','tva','clientOrange','contratEneco','contratSmart','email','adresse'].forEach(id => {
      document.getElementById(id).value = '';
    });
+   document.getElementById('ancienContrat').checked = false;
    PRODUCTS.forEach(p => units[p.id] = []);
    buildProductsUI();
    updateContractPreview();
+
+   if (editingId) {
+     window._editingContractId = null;
+     const saveButtons = document.querySelectorAll('button[onclick="saveContract()"]');
+     saveButtons.forEach(b => b.textContent = '💾 Enregistrer le contrat');
+     showTab('history');
+   }
 
    if (window.refreshAspTotal) await window.refreshAspTotal();
 
  } catch(err) {
    alert('Erreur lors de l\'enregistrement: ' + err.message);
  }
+}
+
+// Charge un contrat existant dans le formulaire "Nouveau" pour le modifier (au lieu d'en créer un nouveau).
+function editContract(docId){
+  const c = window._allContracts.find(x => x.docId === docId);
+  if (!c) return;
+
+  window._editingContractId = docId;
+
+  document.getElementById('nom').value = c.nom || '';
+  document.getElementById('societe').value = c.societe || '';
+  document.getElementById('tel').value = c.tel || '';
+  document.getElementById('tva').value = c.tva || '';
+  document.getElementById('clientOrange').value = c.clientOrange || '';
+  document.getElementById('contratEneco').value = c.contratEneco || '';
+  document.getElementById('contratSmart').value = c.contratSmart || '';
+  document.getElementById('email').value = c.email || '';
+  document.getElementById('adresse').value = c.adresse || '';
+  document.getElementById('dateContrat').value = c.dateContrat || '';
+  document.getElementById('etatContrat').value = c.etatContrat || 'Encodé';
+  document.getElementById('ancienContrat').checked = !!c.ancien;
+
+  PRODUCTS.forEach(p => units[p.id] = []);
+  Object.keys(c.produitsDetail || {}).forEach(pid => {
+    if (units[pid]) units[pid] = (c.produitsDetail[pid] || []).map(u => ({...u}));
+  });
+  buildProductsUI();
+  updateContractPreview();
+
+  const saveButtons = document.querySelectorAll('button[onclick="saveContract()"]');
+  saveButtons.forEach(b => b.textContent = '💾 Mettre à jour le contrat');
+
+  showTab('new');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.editContract = editContract;
+
+// Fait apparaître ce client dans "Gestion Clients" (collection "clients"), avec exactement
+// la même structure que la migration automatique déjà utilisée dans wp_prospects.html
+// (statut "Converti" -> clients). Évite les doublons par téléphone, comme là-bas.
+async function syncContractToClients(contractData, contractId){
+  try {
+    const nom = (contractData.nom || '').trim();
+    if (!nom) return;
+
+    const nameParts = nom.split(' ');
+    const clientData = {
+      consultantId: contractData.consultantId,
+      prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
+      nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0] || '',
+      tel: contractData.tel || '',
+      email: contractData.email || '',
+      ville: contractData.adresse || '',
+      adresse: contractData.adresse || '',
+      cp: '',
+      societe: contractData.societe || '',
+      tva: contractData.tva || '',
+      orange: contractData.clientOrange || '',
+      eneco: contractData.contratEneco || '',
+      contratSmart: contractData.contratSmart || '',
+      reference: '',
+      etat: 'actif',
+      sourceProspectId: contractData.prospectId || null,
+      sourceContractId: contractId,
+      createdAt: new Date().toISOString()
+    };
+
+    if (clientData.tel) {
+      const existing = await window.getDocs(window.query(
+        window.collection(window.db, 'clients'),
+        window.where('tel', '==', clientData.tel),
+        window.where('consultantId', '==', contractData.consultantId)
+      ));
+      if (!existing.empty) return; // déjà présent dans Gestion Clients, on ne duplique pas
+    }
+
+    await window.addDoc(window.collection(window.db, 'clients'), clientData);
+  } catch (err) {
+    // Ne bloque jamais l'enregistrement du contrat si cette synchro échoue.
+    console.log('Synchro Gestion Clients impossible:', err.message);
+  }
 }
 
 async function loadContracts(){
@@ -748,14 +1200,25 @@ async function renderHistory(){
   const data = await loadContracts();
   let html='';
 
+  if (data.length > 0) {
+    html += `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <button type="button" onclick="historyToggleAll(true)" style="background:#fff;border:1px solid #ffb680;color:#ff5a14;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">☑️ Tout sélectionner</button>
+      <button type="button" onclick="historyToggleAll(false)" style="background:#fff;border:1px solid #ddd;color:#555;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">⬜ Tout désélectionner</button>
+      <button type="button" onclick="bulkActivateSelected()" style="background:#2E7D32;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">✅ Activer la sélection</button>
+    </div>`;
+  }
+
   data.forEach((c)=>{
 
     html+=`
     <div class="card">
 
-      <b>👤 ${escapeHtml(c.nom||'Sans nom')}</b>
+      <label style="cursor:pointer;"><input type="checkbox" class="hist-select" value="${c.docId}" style="width:auto;margin-right:6px;">
+      <b>👤 ${escapeHtml(c.nom||'Sans nom')}</b></label>
       <span class="asp-badge">+${Math.round((c.aspTotal||0)*10)/10} ASP</span>
-      <span class="asp-badge" style="background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;">${(c.eurTotal||0).toFixed(2)} €</span><br>
+      <span class="asp-badge" style="background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;">${(c.eurTotal||0).toFixed(2)} €</span>
+      ${c.ancien ? '<span class="asp-badge" style="background:#eee;color:#666;border-color:#ddd;">🕰️ Ancien (hors ASP)</span>' : ''}<br>
 
       🏢 ${escapeHtml(c.societe||'-')}<br>
 
@@ -775,6 +1238,10 @@ async function renderHistory(){
       👁 Voir
       </button>
 
+      <button onclick="editContract('${c.docId}')" style="background:#fff3e8;color:#ff5a14;border:1px solid #ffb680;">
+      ✏️ Modifier
+      </button>
+
       <button onclick="deleteContract('${c.docId}')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;">
       🗑 Supprimer
       </button>
@@ -788,6 +1255,34 @@ async function renderHistory(){
     html || 'Aucun contrat';
 
 }
+
+function historyToggleAll(checked){
+  document.querySelectorAll('.hist-select').forEach(cb => cb.checked = checked);
+}
+
+async function bulkActivateSelected(){
+  const ids = Array.from(document.querySelectorAll('.hist-select:checked')).map(cb => cb.value);
+  if (ids.length === 0) {
+    alert('Sélectionne au moins un contrat.');
+    return;
+  }
+  if (!confirm(`Passer ${ids.length} contrat(s) sélectionné(s) en statut "Activé" ?`)) return;
+
+  let done = 0;
+  for (const id of ids) {
+    try {
+      await window.updateDoc(window.doc(window.db, 'contrats', id), { etatContrat: 'Activé' });
+      done++;
+    } catch (err) {
+      console.log('Activation en masse - échec sur', id, err.message);
+    }
+  }
+  showToast(`✅ ${done}/${ids.length} contrat(s) activé(s).`);
+  renderHistory();
+  if (window.refreshAspTotal) await window.refreshAspTotal();
+}
+window.historyToggleAll = historyToggleAll;
+window.bulkActivateSelected = bulkActivateSelected;
 
 function escapeHtml(str){
   const div = document.createElement('div');
@@ -808,8 +1303,9 @@ function viewContract(docId){
     .join('\n');
   alert(
     `Client: ${c.nom}\nSociété: ${c.societe||'-'}\nTél: ${c.tel||'-'}\nEmail: ${c.email||'-'}\n` +
-    `TVA: ${c.tva||'-'}\nÉtat: ${c.etatContrat}\nStatut au moment: ${c.consultantStatutAuMoment||'BC'}\n` +
-    `ASP: ${c.aspTotal} · Montant: ${(c.eurTotal||0).toFixed(2)}€\n\nProduits:\n${produitsTxt || 'Aucun'}`
+    `TVA: ${c.tva||'-'}\nN° Client Orange: ${c.clientOrange||'-'}\nN° Contrat Eneco: ${c.contratEneco||'-'}\nN° Contrat My Smart: ${c.contratSmart||'-'}\n` +
+    `État: ${c.etatContrat}\nStatut au moment: ${c.consultantStatutAuMoment||'BC'}\n` +
+    `ASP: ${c.aspTotal} · Montant: ${(c.eurTotal||0).toFixed(2)}€${c.ancien ? ' (ancien, hors total)' : ''}\n\nProduits:\n${produitsTxt || 'Aucun'}`
   );
 }
 
@@ -850,6 +1346,7 @@ async function renderStats(){
    Object.keys(c.produitsDetail||{}).forEach(pid => {
      totals[pid] = (totals[pid]||0) + c.produitsDetail[pid].length;
    });
+   if (c.ancien) return; // ancien contrat déjà comptabilisé dans l'ASP de départ
    totalASP += c.aspTotal || 0;
    totalEUR += c.eurTotal || 0;
  });

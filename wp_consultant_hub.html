@@ -3339,10 +3339,13 @@ function crmRenderCard(item, col) {
   var br = inactive ? '#e5e7eb' : '#fdba74';
   var op = inactive ? '0.6' : '1';
   var isAuth = col === 'consultants';
-  var editBtn = isAuth ? '' : '<button onclick="openCrmModal(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>';
+  var editBtn = isAuth ? '' : '<button onclick="openCrmModal(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ Modifier</button>';
   var toggleBtn = isAuth ? '' : (inactive
-    ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;">✅</button>'
-    : '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;">❌</button>');
+    ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Réactiver</button>'
+    : '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;white-space:nowrap;">❌ Désactiver</button>');
+  var importBtn = (col === 'clients' && !inactive)
+    ? '<button onclick="crmImportContract(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #1a1a1a;border-radius:6px;background:#1a1a1a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📥 Importer</button>'
+    : '';
   // Badge ASP
   var aspVal = 0;
   if (item._source === 'consultants') { aspVal = (item._aspInit||0) + (item._aspFromContracts||0); }
@@ -3356,15 +3359,18 @@ function crmRenderCard(item, col) {
   var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
-  if (editBtn || toggleBtn) h += '<div style="display:flex;gap:5px;">' + editBtn + toggleBtn + '</div>';
+  if (editBtn || toggleBtn || importBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + editBtn + toggleBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(item.tel) + '</div>';
   if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
   if (item.cp || item.ville) h += '<div style="font-size:12px;color:#555;">' + crmEsc([item.adresse, item.cp, item.ville].filter(Boolean).join(' ')) + '</div>';
   if (item.reference) h += '<div style="font-size:12px;color:#555;">Ref: ' + crmEsc(item.reference) + '</div>';
-  if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Orange: ' + crmEsc(item.orange) + '</div>';
-  if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Eneco: ' + crmEsc(item.eneco) + '</div>';
+  if (item.numOrange) h += '<div style="font-size:12px;color:#f97316;font-weight:700;">N° Orange: ' + crmEsc(item.numOrange) + '</div>';
+  if (item.numEneco) h += '<div style="font-size:12px;color:#22c55e;font-weight:700;">N° Eneco: ' + crmEsc(item.numEneco) + '</div>';
+  if (item.numSmart) h += '<div style="font-size:12px;color:#555;font-weight:700;">N° Smart: ' + crmEsc(item.numSmart) + '</div>';
+  if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Produits Orange: ' + crmEsc(item.orange) + '</div>';
+  if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Produits Eneco: ' + crmEsc(item.eneco) + '</div>';
   h += '</div>';
   return h;
 }
@@ -3424,8 +3430,27 @@ window.filterCrmList = function(type) {
   var listId = type === 'clients' ? 'crm-cl-list' : 'crm-co-list';
   var searchEl = document.getElementById('crm-cl-search');
   var t = (searchEl ? searchEl.value : '').toLowerCase();
-  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+(x.email||'')+(x.ville||'')).toLowerCase().indexOf(t) >= 0; }) : data;
+  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+(x.email||'')+(x.ville||'')+(x.numOrange||'')+(x.numEneco||'')+(x.numSmart||'')).toLowerCase().indexOf(t) >= 0; }) : data;
   crmRenderList(filtered, listId, col);
+};
+
+window.crmImportContract = function(docId) {
+  var item = (_crmClData || []).find(function(x){ return x._id === docId; });
+  if (!item) return;
+  var nom = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
+  var adresse = [item.adresse, item.cp, item.ville].filter(Boolean).join(' ');
+  var params = new URLSearchParams({
+    nom: nom,
+    tel: item.tel || '',
+    email: item.email || '',
+    societe: item.societe || '',
+    tva: item.tva || '',
+    adresse: adresse,
+    clientOrange: item.numOrange || '',
+    contratEneco: item.numEneco || '',
+    contratSmart: item.numSmart || ''
+  });
+  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
 };
 
 window.crmToggle = function(col, docId, desactiver) {
@@ -3444,10 +3469,13 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-asp-row').style.display = isC ? '' : 'none';
   document.getElementById('crm-orange-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-eneco-row').style.display = isC ? 'none' : '';
-  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  document.getElementById('crm-numorange-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-numeneco-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-numsmart-row').style.display = isC ? 'none' : '';
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
   }
   document.getElementById('modal-crm').style.display = 'flex';
 };
@@ -3460,7 +3488,7 @@ window.saveCrmModal = function() {
   var isC = col === 'consultantsCrm';
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:g('tel'), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
-  if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); }
+  if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.numSmart=g('numSmart'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   var p;
@@ -3491,7 +3519,7 @@ window.importCrmCsv = function(input, col) {
       s = s.replace(/[^a-z]/g,'');
       return s;
     });
-    var map = { prenom:'prenom', nom:'nom', telephone:'tel', tel:'tel', email:'email', adresse:'adresse', cp:'cp', codepostal:'cp', ville:'ville', societe:'societe', tva:'tva', reference:'reference', orange:'orange', eneco:'eneco' };
+    var map = { prenom:'prenom', nom:'nom', telephone:'tel', tel:'tel', email:'email', adresse:'adresse', cp:'cp', codepostal:'cp', ville:'ville', societe:'societe', tva:'tva', reference:'reference', orange:'orange', eneco:'eneco', numorange:'numOrange', clientorange:'numOrange', numeneco:'numEneco', contrateneco:'numEneco', numsmart:'numSmart', contratsmart:'numSmart' };
     var promises = [];
     for (var i=1; i<lines.length; i++) {
       var vals = lines[i].split(sep);
@@ -3976,6 +4004,18 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
       <div id="crm-eneco-row" style="grid-column:span 2;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Eneco (produits)</div>
         <input id="crm-eneco" placeholder="Électricité, Gaz..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-numorange-row">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Orange</div>
+        <input id="crm-numOrange" placeholder="1.9763217" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-numeneco-row">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Eneco</div>
+        <input id="crm-numEneco" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-numsmart-row" style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat Smart SN</div>
+        <input id="crm-numSmart" placeholder="0000282697" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
