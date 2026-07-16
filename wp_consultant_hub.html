@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — CRM+ASP
+Build <span id="app-version-1">…</span> — Promotions
      </span>
     </div>
     </div>
@@ -536,6 +536,11 @@ Build <span id="app-version-1">…</span> — CRM+ASP
 
 
 </div>
+
+<button onclick="showPromotions(this)" class="menu-item" id="menu-promotions">
+🎁 Promotions
+</button>
+
 <!-- RESSOURCES -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">
 📚 Ressources
@@ -1019,6 +1024,16 @@ Build <span id="app-version-1">…</span> — CRM+ASP
               </div>
             </div>
             <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
+          </div>
+
+          <!-- Panel Promotions -->
+          <div id="panel-promotions" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+              <h2 style="color:#f97316;margin:0;font-size:16px;">🎁 Promotions en cours</h2>
+              <button onclick="loadPromotionsPanel()" style="background:#fff3e8;border:1px solid #f97316;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔄 Actualiser</button>
+            </div>
+            <div style="font-size:12px;color:#999;margin-bottom:14px;">Mises à jour automatiquement par l'admin — toujours à jour ici.</div>
+            <div id="promotions-list" style="font-size:13px;color:#666;">Chargement...</div>
           </div>
 
           <div id="panel-news" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
@@ -3319,6 +3334,97 @@ window.showCrmPanel = function(panelId) {
   document.body.classList.add('mobile-panel-open');
   if (panelId === 'panel-crm-clients') crmLoadClients();
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
+};
+
+// ===== Promotions (lecture seule, synchronisée avec admin.html) =====
+window.showPromotions = function(btn) {
+  document.querySelectorAll('.menu-item').forEach(function(b){ b.classList.remove('active-item'); });
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(function(p){ p.style.display = 'none'; });
+  document.getElementById('panel-promotions').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  loadPromotionsPanel();
+};
+
+var PROMO_FAMILY_SECTIONS_HUB = [
+  ['mobile', '📱 Promo Mobile'],
+  ['internet', '🌐 Promo Internet'],
+  ['divers', '🎁 Promo Divers']
+];
+var PROMO_TYPE_LABEL_HUB = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '💶 Unique' };
+
+function derivePromoFamilyHub(p) {
+  if (p.productFamily) return p.productFamily;
+  if (p.type === 'mobile') return 'mobile';
+  if ((p.name || '').toLowerCase().indexOf('internet') !== -1) return 'internet';
+  return 'divers';
+}
+
+function escapeHtmlPromos(str) {
+  var div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+window.loadPromotionsPanel = async function() {
+  var container = document.getElementById('promotions-list');
+  container.innerHTML = 'Chargement...';
+  try {
+    var tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.getDocs) throw new Error('Firestore non disponible');
+
+    var snap = await window.getDocs(window.collection(window.db, 'promosOrange'));
+    var list = [];
+    snap.forEach(function(d){
+      var data = d.data();
+      if (data.active !== false) list.push(Object.assign({ docId: d.id }, data));
+    });
+
+    if (list.length === 0) {
+      container.innerHTML = '<div style="color:#999;">Aucune promotion active actuellement.</div>';
+      return;
+    }
+
+    var html = '';
+    PROMO_FAMILY_SECTIONS_HUB.forEach(function([fam, label]) {
+      var inFam = list.filter(function(p){ return derivePromoFamilyHub(p) === fam; });
+      if (inFam.length === 0) return;
+
+      html += '<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">' + label + '</div>';
+
+      inFam.forEach(function(p) {
+        var durLabel = p.type === 'unique' ? 'Remise unique' : (p.duration ? p.duration + ' mois' : 'À vie');
+        var catBadge = p.category === 'permanente'
+          ? '<span style="background:#eef2ff;color:#3730a3;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">✅ Permanente</span>'
+          : '<span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">🟠 Temporaire</span>';
+
+        html += ''
+          + '<div style="border:1px solid #eee;border-radius:10px;padding:12px 14px;margin-bottom:8px;">'
+          +   '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">'
+          +     '<div>'
+          +       '<strong style="font-size:13px;">' + escapeHtmlPromos(p.name || '') + '</strong> '
+          +       '<span style="background:#fff3e8;color:#f97316;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">' + (PROMO_TYPE_LABEL_HUB[p.type] || p.type) + '</span> '
+          +       catBadge
+          +       '<div style="color:#888;font-size:12px;margin-top:4px;">' + escapeHtmlPromos(p.sub || '') + '</div>'
+          +       (p.condition ? '<div style="color:#cc4400;font-weight:700;font-size:12px;margin-top:2px;">📌 Condition : ' + escapeHtmlPromos(p.condition) + '</div>' : '')
+          +     '</div>'
+          +     '<div style="font-weight:700;color:#f97316;font-size:14px;white-space:nowrap;">-' + p.price + '€ <span style="font-size:11px;color:#888;font-weight:400;">· ' + durLabel + '</span></div>'
+          +   '</div>'
+          + '</div>';
+      });
+    });
+
+    container.innerHTML = html || '<div style="color:#999;">Aucune promotion active actuellement.</div>';
+  } catch (err) {
+    container.innerHTML = '<div style="color:#999;">Erreur de chargement des promotions.</div>';
+    console.log('Chargement promotions impossible:', err.message);
+  }
 };
 
 function crmReady(cb) {
