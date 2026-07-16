@@ -3453,6 +3453,25 @@ window.crmImportContract = function(docId) {
   window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
 };
 
+window.crmImportContract = function(docId) {
+  var item = (_crmClData || []).find(function(x){ return x._id === docId; });
+  if (!item) return;
+  var nom = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
+  var adresse = [item.adresse, item.cp, item.ville].filter(Boolean).join(' ');
+  var params = new URLSearchParams({
+    nom: nom,
+    tel: item.tel || '',
+    email: item.email || '',
+    societe: item.societe || '',
+    tva: item.tva || '',
+    adresse: adresse,
+    clientOrange: item.numOrange || '',
+    contratEneco: item.numEneco || '',
+    contratSmart: item.numSmart || ''
+  });
+  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
+};
+
 window.crmToggle = function(col, docId, desactiver) {
   if (!confirm(desactiver ? 'Desactiver ce contact ?' : 'Reactiver ce contact ?')) return;
   window.updateDoc(window.doc(window.db, col, docId), { etat: desactiver ? 'desactive' : 'actif', updatedAt: new Date().toISOString() }).then(function() {
@@ -3467,8 +3486,6 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-col').value = col;
   document.getElementById('crm-ref-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-asp-row').style.display = isC ? '' : 'none';
-  document.getElementById('crm-orange-row').style.display = isC ? 'none' : '';
-  document.getElementById('crm-eneco-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numorange-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numeneco-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numsmart-row').style.display = isC ? 'none' : '';
@@ -3997,11 +4014,11 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Référence (N° GSM)</div>
         <input id="crm-reference" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
-      <div id="crm-orange-row" style="grid-column:span 2;">
+      <div id="crm-orange-row" style="grid-column:span 2;display:none;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Orange (produits)</div>
         <input id="crm-orange" placeholder="Mobile Medium, Internet..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
-      <div id="crm-eneco-row" style="grid-column:span 2;">
+      <div id="crm-eneco-row" style="grid-column:span 2;display:none;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Eneco (produits)</div>
         <input id="crm-eneco" placeholder="Électricité, Gaz..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
