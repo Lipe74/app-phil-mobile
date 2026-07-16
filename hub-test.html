@@ -3370,10 +3370,13 @@ function crmRenderCard(item, col) {
   var br = inactive ? '#e5e7eb' : '#fdba74';
   var op = inactive ? '0.6' : '1';
   var isAuth = col === 'consultants';
-  var editBtn = isAuth ? '' : '<button onclick="openCrmModal(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>';
+  var editBtn = isAuth ? '' : '<button onclick="openCrmModal(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ Modifier</button>';
   var toggleBtn = isAuth ? '' : (inactive
-    ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;">✅</button>'
-    : '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;">❌</button>');
+    ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Réactiver</button>'
+    : '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,true)" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;white-space:nowrap;">❌ Désactiver</button>');
+  var importBtn = (col === 'clients' && !inactive)
+    ? '<button onclick="crmImportContract(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #1a1a1a;border-radius:6px;background:#1a1a1a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📥 Importer</button>'
+    : '';
   // Badge ASP
   var aspVal = 0;
   if (item._source === 'consultants') { aspVal = (item._aspInit||0) + (item._aspFromContracts||0); }
@@ -3387,7 +3390,7 @@ function crmRenderCard(item, col) {
   var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
-  if (editBtn || toggleBtn) h += '<div style="display:flex;gap:5px;">' + editBtn + toggleBtn + '</div>';
+  if (editBtn || toggleBtn || importBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + editBtn + toggleBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(item.tel) + '</div>';
@@ -3457,6 +3460,24 @@ window.filterCrmList = function(type) {
   var t = (searchEl ? searchEl.value : '').toLowerCase();
   var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+(x.email||'')+(x.ville||'')).toLowerCase().indexOf(t) >= 0; }) : data;
   crmRenderList(filtered, listId, col);
+};
+
+window.crmImportContract = function(docId) {
+  var item = (_crmClData || []).find(function(x){ return x._id === docId; });
+  if (!item) return;
+  var nom = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
+  var adresse = [item.adresse, item.cp, item.ville].filter(Boolean).join(' ');
+  var params = new URLSearchParams({
+    nom: nom,
+    tel: item.tel || '',
+    email: item.email || '',
+    societe: item.societe || '',
+    tva: item.tva || '',
+    adresse: adresse,
+    clientOrange: item.orange || '',
+    contratEneco: item.eneco || ''
+  });
+  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
 };
 
 window.crmToggle = function(col, docId, desactiver) {
