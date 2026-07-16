@@ -376,7 +376,7 @@ import {
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import {
   initializeAppCheck,
-  ReCaptchaV3Provider
+  ReCaptchaEnterpriseProvider
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js";
 import {
@@ -402,7 +402,7 @@ const db = getFirestore(app);
 
 // App Check protège l'accès à Gemini (obligatoire depuis juillet 2026 pour Firebase AI Logic).
 initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider("6LfMXVYtAAAAANBguWmwEv4ia9T1n72uWYhKwn5G"),
+  provider: new ReCaptchaEnterpriseProvider("6LfMXVYtAAAAANBguWmwEv4ia9T1n72uWYhKwn5G"),
   isTokenAutoRefreshEnabled: true
 });
 
