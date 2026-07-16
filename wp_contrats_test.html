@@ -5,7 +5,7 @@
   <link rel="icon"
       type="image/png"
       href="images/logo.png">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Contrats & ASP - V2.3</title>
 <script src="version.js"></script>
 <style>
 body{font-family:Arial,sans-serif;background:#f5f5f5;margin:0}
@@ -291,6 +291,9 @@ select:focus{
   <input id="clientOrange"
          placeholder="🟧 N° Client Orange (ex : 1.9763217)">
 
+  <input id="contratEneco"
+         placeholder="🟦 N° Contrat Eneco">
+
   <input id="contratSmart"
          placeholder="📋 N° Contrat My Smart (ex : 0000282697)">
   <input id="email"
@@ -326,6 +329,11 @@ select:focus{
 </div>
 
 </div>
+
+<label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#555;font-size:13px;margin:8px 0 4px;cursor:pointer;">
+  <input type="checkbox" id="ancienContrat" style="width:auto;margin:0;">
+  🕰️ Ancien contrat (déjà comptabilisé — ne pas ajouter à mon ASP)
+</label>
 
 <div class="asp-badge" id="contract-summary" style="display:block;width:100%;box-sizing:border-box;margin-bottom:12px;padding:10px 14px;font-size:13px;">
   Statut actuel : <b id="consultant-statut-label">—</b> · Total contrat : <b><span id="contract-asp-preview">0</span> ASP</b> · <b><span id="contract-eur-preview">0,00 €</span></b>
@@ -522,6 +530,7 @@ window.refreshAspTotal = async function () {
   snap.forEach(d => {
     const c = d.data();
     if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé') return;
+    if (c.ancien) return; // ancien contrat déjà comptabilisé dans l'ASP de départ
     aspFromContracts += c.aspTotal || 0;
   });
 
@@ -721,7 +730,7 @@ Le PDF joint est un contrat. Réponds UNIQUEMENT avec un objet JSON valide, sans
 
 {
   "fournisseur": "Orange" | "Eneco" | "VOO" | "Proximus" | "Base" | "Autre",
-  "client": { "nom": "", "societe": "", "tel": "", "tva": "", "email": "", "adresse": "", "clientOrange": "", "contratSmart": "" },
+  "client": { "nom": "", "societe": "", "tel": "", "tva": "", "email": "", "adresse": "", "clientOrange": "", "contratEneco": "", "contratSmart": "" },
   "produits": [ { "id": "", "quantite": 1, "convergence": false, "portabilite": false, "sohoIndep": false } ]
 }
 
@@ -735,6 +744,9 @@ ${catalog}
 - "convergence" = true si le contrat mentionne une offre convergente (fixe + mobile groupés).
 - "sohoIndep" = true si le client est identifié comme indépendant / SoHo / professionnel.
 - "tva" au format belge si possible (ex: BE0123456789).
+- "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
+- "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
+- "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS sur un contrat Orange/Eneco/autre fournisseur. Laisse ce champ TOUJOURS vide ("") — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF.
 - N'ajoute AUCUN champ en dehors de ce schéma.`;
 }
 
@@ -787,7 +799,7 @@ function applyImportedContract(data){
   const client = data.client || {};
   const fieldMap = {
     nom: client.nom, societe: client.societe, tel: client.tel,
-    tva: client.tva, clientOrange: client.clientOrange,
+    tva: client.tva, clientOrange: client.clientOrange, contratEneco: client.contratEneco,
     contratSmart: client.contratSmart, email: client.email, adresse: client.adresse
   };
   Object.keys(fieldMap).forEach(id => {
@@ -856,6 +868,8 @@ async function saveContract(){
    return;
  }
 
+ const ancien = document.getElementById('ancienContrat').checked;
+
  const data = {
    consultantId: window._currentConsultantId,
    consultantStatutAuMoment: window._currentConsultantStatut || 'BC',
@@ -865,6 +879,7 @@ async function saveContract(){
    tel: document.getElementById('tel').value.trim(),
    tva: document.getElementById('tva').value.trim(),
    clientOrange: document.getElementById('clientOrange').value.trim(),
+   contratEneco: document.getElementById('contratEneco').value.trim(),
    contratSmart: document.getElementById('contratSmart').value.trim(),
    email: document.getElementById('email').value.trim(),
    adresse: document.getElementById('adresse').value.trim(),
@@ -873,12 +888,15 @@ async function saveContract(){
    produitsDetail,
    aspTotal: Math.round(aspTotal*10)/10,
    eurTotal: Math.round(eurTotal*100)/100,
-   prospectId: window._currentProspectId || null
+   prospectId: window._currentProspectId || null,
+   ancien
  };
 
  try {
    const ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
-   showToast(`✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
+   showToast(ancien
+     ? `✅ Ancien contrat enregistré (non compté dans l'ASP)`
+     : `✅ Contrat enregistré (+${data.aspTotal} ASP · ${data.eurTotal.toFixed(2)} €)`);
 
    // Fait apparaître (ou met à jour) ce client dans Gestion Clients, que le contrat
    // vienne d'un prospect ou ait été encodé directement ici.
@@ -902,9 +920,10 @@ async function saveContract(){
    }
 
    // Réinitialiser le formulaire
-   ['nom','societe','tel','tva','clientOrange','contratSmart','email','adresse'].forEach(id => {
+   ['nom','societe','tel','tva','clientOrange','contratEneco','contratSmart','email','adresse'].forEach(id => {
      document.getElementById(id).value = '';
    });
+   document.getElementById('ancienContrat').checked = false;
    PRODUCTS.forEach(p => units[p.id] = []);
    buildProductsUI();
    updateContractPreview();
@@ -937,6 +956,7 @@ async function syncContractToClients(contractData, contractId){
       societe: contractData.societe || '',
       tva: contractData.tva || '',
       clientOrange: contractData.clientOrange || '',
+      contratEneco: contractData.contratEneco || '',
       contratSmart: contractData.contratSmart || '',
       reference: '',
       etat: 'actif',
@@ -985,7 +1005,8 @@ async function renderHistory(){
 
       <b>👤 ${escapeHtml(c.nom||'Sans nom')}</b>
       <span class="asp-badge">+${Math.round((c.aspTotal||0)*10)/10} ASP</span>
-      <span class="asp-badge" style="background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;">${(c.eurTotal||0).toFixed(2)} €</span><br>
+      <span class="asp-badge" style="background:#E8F5E9;color:#2E7D32;border-color:#c8e6c9;">${(c.eurTotal||0).toFixed(2)} €</span>
+      ${c.ancien ? '<span class="asp-badge" style="background:#eee;color:#666;border-color:#ddd;">🕰️ Ancien (hors ASP)</span>' : ''}<br>
 
       🏢 ${escapeHtml(c.societe||'-')}<br>
 
@@ -1038,8 +1059,9 @@ function viewContract(docId){
     .join('\n');
   alert(
     `Client: ${c.nom}\nSociété: ${c.societe||'-'}\nTél: ${c.tel||'-'}\nEmail: ${c.email||'-'}\n` +
-    `TVA: ${c.tva||'-'}\nÉtat: ${c.etatContrat}\nStatut au moment: ${c.consultantStatutAuMoment||'BC'}\n` +
-    `ASP: ${c.aspTotal} · Montant: ${(c.eurTotal||0).toFixed(2)}€\n\nProduits:\n${produitsTxt || 'Aucun'}`
+    `TVA: ${c.tva||'-'}\nN° Client Orange: ${c.clientOrange||'-'}\nN° Contrat Eneco: ${c.contratEneco||'-'}\nN° Contrat My Smart: ${c.contratSmart||'-'}\n` +
+    `État: ${c.etatContrat}\nStatut au moment: ${c.consultantStatutAuMoment||'BC'}\n` +
+    `ASP: ${c.aspTotal} · Montant: ${(c.eurTotal||0).toFixed(2)}€${c.ancien ? ' (ancien, hors total)' : ''}\n\nProduits:\n${produitsTxt || 'Aucun'}`
   );
 }
 
@@ -1080,6 +1102,7 @@ async function renderStats(){
    Object.keys(c.produitsDetail||{}).forEach(pid => {
      totals[pid] = (totals[pid]||0) + c.produitsDetail[pid].length;
    });
+   if (c.ancien) return; // ancien contrat déjà comptabilisé dans l'ASP de départ
    totalASP += c.aspTotal || 0;
    totalEUR += c.eurTotal || 0;
  });
