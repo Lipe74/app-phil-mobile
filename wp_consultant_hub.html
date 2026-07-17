@@ -478,6 +478,8 @@ Build <span id="app-version-1">…</span> — Promotions
 
           <button onclick="showMessages(this)" class="menu-item" id="menu-messages">💬 Messages<span id="messages-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 
+          <button onclick="showChatOnline(this)" class="menu-item" id="menu-chatonline">🗨️ Chat online</button>
+
 <!-- AGENDA, FORMATIONS & NEWS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
@@ -835,6 +837,19 @@ Build <span id="app-version-1">…</span> — Promotions
                 <div id="messages-input" contenteditable="true" class="rte-editor" data-placeholder="Écrire un message..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendMessage();}" style="flex:1;min-height:42px;max-height:120px;overflow-y:auto;padding:10px 12px;border:1px solid #f97316;border-radius:10px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;"></div>
                 <button onclick="sendMessage()" style="background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;flex-shrink:0;">Envoyer</button>
               </div>
+            </div>
+          </div>
+
+          <!-- Panel Chat online (chat général tous consultants + bot FAQ) -->
+          <div id="panel-chatonline" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🗨️ Chat online</div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">Discutez en direct avec tous les consultants. Tapez <b style="color:#f97316;">@bot</b> suivi d'une question pour interroger l'assistant.</div>
+            <div id="chatonline-thread" style="display:flex;flex-direction:column;gap:8px;min-height:250px;max-height:55vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;">
+              <div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Chargement...</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <div id="chatonline-input" contenteditable="true" class="rte-editor" data-placeholder="Écrire un message... (@bot pour l'assistant)" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatOnline();}" style="flex:1;min-height:42px;max-height:120px;overflow-y:auto;padding:10px 12px;border:1px solid #f97316;border-radius:10px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;"></div>
+              <button onclick="sendChatOnline()" style="background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;flex-shrink:0;">Envoyer</button>
             </div>
           </div>
 
@@ -2304,6 +2319,173 @@ function switchTab(tab) {
   // kept for compatibility but no-op now (single tab)
 }
 
+// ===== CHAT ONLINE (chat général : tous les consultants + bot FAQ) =====
+// Collection Firestore 'chat' : { senderId, senderName, text, createdAt, isBot? }
+// Collection Firestore 'faq'  : { keywords: ["barème","asp"], reponse: "..." } — gérable sans toucher au code.
+let chatOnlineUnsub = null;
+let chatOnlineFaq = null;
+
+function showChatOnline(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-chatonline').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  subscribeChatOnline();
+  loadChatOnlineFaq();
+}
+
+function subscribeChatOnline() {
+  if (chatOnlineUnsub) { chatOnlineUnsub(); chatOnlineUnsub = null; }
+  if (!window.onSnapshot || !window.query || !window.orderBy || !window.db) return;
+
+  // Les 50 derniers messages, en temps réel
+  let q;
+  if (window.limitToLast) {
+    q = window.query(window.collection(window.db, 'chat'), window.orderBy('createdAt'), window.limitToLast(50));
+  } else {
+    q = window.query(window.collection(window.db, 'chat'), window.orderBy('createdAt'));
+  }
+
+  chatOnlineUnsub = window.onSnapshot(q, (snap) => {
+    const thread = document.getElementById('chatonline-thread');
+    if (!thread) return;
+    const msgs = [];
+    snap.forEach(d => msgs.push({ _id: d.id, ...d.data() }));
+
+    if (msgs.length === 0) {
+      thread.innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Aucun message pour le moment — écrivez le premier !</div>';
+      return;
+    }
+
+    const isAdmin = pmCurrentUser && pmCurrentUser.isAdmin === true;
+
+    thread.innerHTML = msgs.map(m => {
+      const mine = pmCurrentUser && m.senderId === pmCurrentUser.id;
+      const canDelete = mine || isAdmin;
+      const delBtn = canDelete
+        ? `<span onclick="deleteChatOnlineMsg('${m._id}')" title="Supprimer" style="cursor:pointer;font-size:10px;color:#9ca3af;margin:0 4px;">✕</span>`
+        : '';
+      if (m.isBot) {
+        const docBtn = m.document
+          ? `<div style="margin-top:6px;"><a href="${escapeHtmlMessages(m.document)}" target="_blank" rel="noopener" style="display:inline-block;background:#f97316;color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;">📄 Ouvrir le document</a></div>`
+          : '';
+        return `<div style="align-self:flex-start;max-width:85%;">
+          <div style="font-size:10px;font-weight:700;color:#f97316;margin-bottom:2px;">🤖 ${escapeHtmlMessages(m.senderName || 'Assistant')}</div>
+          <div style="background:#fff7ed;color:#1a1a1a;border:1px solid #f97316;padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;white-space:pre-line;">${escapeHtmlMessages(m.text)}${docBtn}</div>
+          <div style="font-size:9px;color:#9ca3af;margin-top:2px;">${pmFormatMsgTime(m.createdAt)}${isAdmin ? delBtn : ''}</div>
+        </div>`;
+      }
+      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:78%;">
+        ${mine ? '' : `<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:2px;">${escapeHtmlMessages(m.senderName || '')}</div>`}
+        <div style="background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#1a1a1a'};border:${mine ? 'none' : '1px solid #f0f0f0'};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${escapeHtmlMessages(m.text)}</div>
+        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};">${mine ? delBtn : ''}${pmFormatMsgTime(m.createdAt)}${!mine && isAdmin ? delBtn : ''}</div>
+      </div>`;
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+  }, (err) => {
+    console.log('Lecture chat online impossible:', err.message);
+  });
+}
+
+window.deleteChatOnlineMsg = async function(msgId) {
+  if (!confirm('Supprimer ce message ?')) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, 'chat', msgId));
+  } catch(err) {
+    console.log('Suppression message impossible:', err.message);
+    alert("❌ Suppression impossible. Réessayez.");
+  }
+};
+
+window.sendChatOnline = async function() {
+  const input = document.getElementById('chatonline-input');
+  const text = input.innerText.trim();
+  if (!text || !pmCurrentUser) return;
+
+  input.innerHTML = '';
+
+  try {
+    await window.addDoc(window.collection(window.db, 'chat'), {
+      senderId: pmCurrentUser.id,
+      senderName: pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id,
+      text,
+      createdAt: new Date().toISOString()
+    });
+  } catch(err) {
+    console.log('Envoi chat online impossible:', err.message);
+    alert("❌ Impossible d'envoyer le message. Réessayez.");
+    return;
+  }
+
+  // Question pour le bot ? (message commençant par @bot)
+  const botMatch = text.match(/^@bot\s*(.*)$/i);
+  if (botMatch) {
+    chatOnlineBotReply(botMatch[1] || '');
+  }
+};
+
+async function loadChatOnlineFaq() {
+  try {
+    const snap = await window.getDocs(window.collection(window.db, 'faq'));
+    chatOnlineFaq = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if (data && Array.isArray(data.keywords) && data.reponse) {
+        chatOnlineFaq.push({ keywords: data.keywords, reponse: data.reponse, document: data.document || '' });
+      }
+    });
+  } catch(err) {
+    console.log('Chargement FAQ impossible:', err.message);
+    chatOnlineFaq = [];
+  }
+}
+
+// Normalisation : minuscules + sans accents, pour un matching mots-clés tolérant
+function chatOnlineNormalize(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+async function chatOnlineBotReply(question) {
+  if (chatOnlineFaq === null) await loadChatOnlineFaq();
+
+  const q = chatOnlineNormalize(question);
+  let best = null;
+  let bestScore = 0;
+
+  (chatOnlineFaq || []).forEach(item => {
+    let score = 0;
+    item.keywords.forEach(kw => {
+      if (kw && q.includes(chatOnlineNormalize(kw))) score++;
+    });
+    if (score > bestScore) { bestScore = score; best = item; }
+  });
+
+  const reponse = best
+    ? best.reponse
+    : "Je n'ai pas encore de réponse à cette question. 🙏 Reformulez avec d'autres mots-clés, ou contactez Phil-Mobile via Messages.";
+  const docLink = best && best.document ? best.document : '';
+
+  // Petit délai pour un rendu naturel
+  setTimeout(async () => {
+    try {
+      await window.addDoc(window.collection(window.db, 'chat'), {
+        senderId: '_bot',
+        senderName: 'Assistant Phil-Mobile',
+        isBot: true,
+        text: reponse,
+        document: docLink,
+        createdAt: new Date().toISOString()
+      });
+    } catch(err) {
+      console.log('Réponse bot impossible:', err.message);
+    }
+  }, 600);
+}
+
 
 async function checkCode() {
   if (Object.keys(PM_USERS).length === 0) await loadPMUsers();
@@ -3326,6 +3508,7 @@ var _crmCoData = [];
 window.showCrmPanel = function(panelId) {
   document.querySelectorAll('.menu-item').forEach(function(b){ b.classList.remove('active-item'); });
   var btn = document.getElementById('btn-' + panelId.replace('panel-crm-','crm-'));
+  if (!btn) btn = document.getElementById('btn-' + panelId.replace('panel-',''));
   if (btn) btn.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
   document.getElementById('iframe-panel').style.display = 'none';
@@ -3726,6 +3909,7 @@ import {
   query,
   where,
   orderBy,
+  limitToLast,
   arrayUnion,
   arrayRemove,
   deleteDoc
@@ -3754,6 +3938,7 @@ window.updateDoc = updateDoc;
 window.onSnapshot = onSnapshot;
 window.query = query;
 window.orderBy = orderBy;
+window.limitToLast = limitToLast;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
 window.where = where;
