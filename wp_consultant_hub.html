@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Promotions
+Build <span id="app-version-1">…</span> — Chat &amp; Bot
      </span>
     </div>
     </div>
@@ -478,7 +478,7 @@ Build <span id="app-version-1">…</span> — Promotions
 
           <button onclick="showMessages(this)" class="menu-item" id="menu-messages">💬 Messages<span id="messages-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 
-          <button onclick="showChatOnline(this)" class="menu-item" id="menu-chatonline">🗨️ Chat online</button>
+          <button onclick="showChatOnline(this)" class="menu-item" id="menu-chatonline">🗨️ Chat online<span id="chatonline-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">0</span></button>
 
 <!-- AGENDA, FORMATIONS & NEWS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
@@ -847,8 +847,13 @@ Build <span id="app-version-1">…</span> — Promotions
             <div id="chatonline-thread" style="display:flex;flex-direction:column;gap:8px;min-height:250px;max-height:55vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;">
               <div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Chargement...</div>
             </div>
+            <div id="chatonline-reply-bar" style="display:none;align-items:center;gap:8px;background:#fff7ed;border:1px solid #f97316;border-left:3px solid #f97316;border-radius:8px;padding:6px 10px;margin-bottom:8px;font-size:12px;">
+              <span style="color:#f97316;font-weight:700;flex-shrink:0;">↩ Réponse à</span>
+              <span id="chatonline-reply-text" style="color:#6b7280;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+              <span onclick="clearChatReply()" title="Annuler" style="cursor:pointer;color:#9ca3af;font-weight:700;flex-shrink:0;">✕</span>
+            </div>
             <div style="display:flex;gap:8px;align-items:flex-end;">
-              <div id="chatonline-input" contenteditable="true" class="rte-editor" data-placeholder="Écrire un message... (@bot pour l'assistant)" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatOnline();}" style="flex:1;min-height:42px;max-height:120px;overflow-y:auto;padding:10px 12px;border:1px solid #f97316;border-radius:10px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;"></div>
+              <div id="chatonline-input" contenteditable="true" class="rte-editor" data-placeholder="Écrire un message... (@bot pour l'assistant, @prénom pour mentionner)" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendChatOnline();}" style="flex:1;min-height:42px;max-height:120px;overflow-y:auto;padding:10px 12px;border:1px solid #f97316;border-radius:10px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;"></div>
               <button onclick="sendChatOnline()" style="background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;flex-shrink:0;">Envoyer</button>
             </div>
           </div>
@@ -2324,6 +2329,10 @@ function switchTab(tab) {
 // Collection Firestore 'faq'  : { keywords: ["barème","asp"], reponse: "..." } — gérable sans toucher au code.
 let chatOnlineUnsub = null;
 let chatOnlineFaq = null;
+let chatOnlineFaqUnsub = null;
+let chatOnlineMsgs = [];
+let chatReplyContext = null;          // { id, name, text } quand on répond à un message
+let chatOnlineBadgeUnsub = null;      // écoute permanente pour le badge non-lus du menu
 
 function showChatOnline(btn) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
@@ -2334,8 +2343,11 @@ function showChatOnline(btn) {
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById('panel-chatonline').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
+  clearChatReply();
   subscribeChatOnline();
-  loadChatOnlineFaq();
+  subscribeChatOnlineFaq();
+  // Ouvrir le panel = tout marquer comme lu
+  markChatOnlineSeen(chatOnlineMsgs);
 }
 
 function subscribeChatOnline() {
@@ -2355,6 +2367,7 @@ function subscribeChatOnline() {
     if (!thread) return;
     const msgs = [];
     snap.forEach(d => msgs.push({ _id: d.id, ...d.data() }));
+    chatOnlineMsgs = msgs;
 
     if (msgs.length === 0) {
       thread.innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Aucun message pour le moment — écrivez le premier !</div>';
@@ -2369,6 +2382,7 @@ function subscribeChatOnline() {
       const delBtn = canDelete
         ? `<span onclick="deleteChatOnlineMsg('${m._id}')" title="Supprimer" style="cursor:pointer;font-size:10px;color:#9ca3af;margin:0 4px;">✕</span>`
         : '';
+
       if (m.isBot) {
         const docBtn = m.document
           ? `<div style="margin-top:6px;"><a href="${escapeHtmlMessages(m.document)}" target="_blank" rel="noopener" style="display:inline-block;background:#f97316;color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;">📄 Ouvrir le document</a></div>`
@@ -2376,19 +2390,58 @@ function subscribeChatOnline() {
         return `<div style="align-self:flex-start;max-width:85%;">
           <div style="font-size:10px;font-weight:700;color:#f97316;margin-bottom:2px;">🤖 ${escapeHtmlMessages(m.senderName || 'Assistant')}</div>
           <div style="background:#fff7ed;color:#1a1a1a;border:1px solid #f97316;padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;white-space:pre-line;">${escapeHtmlMessages(m.text)}${docBtn}</div>
-          <div style="font-size:9px;color:#9ca3af;margin-top:2px;">${pmFormatMsgTime(m.createdAt)}${isAdmin ? delBtn : ''}</div>
+          <div style="font-size:9px;color:#9ca3af;margin-top:2px;">${pmFormatMsgTime(m.createdAt)}${chatReactionsBar(m)}${isAdmin ? delBtn : ''}</div>
         </div>`;
       }
-      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:78%;">
+
+      // Surlignage si je suis mentionné dans ce message
+      const iAmMentioned = pmCurrentUser && Array.isArray(m.mentions) && m.mentions.includes(pmCurrentUser.id);
+      const bubbleBorder = mine ? 'none' : (iAmMentioned ? '2px solid #f97316' : '1px solid #f0f0f0');
+      const bubbleBg = mine ? '#f97316' : (iAmMentioned ? '#fff7ed' : '#fff');
+
+      // Bloc "réponse à" (citation)
+      const replyQuote = m.replyToName
+        ? `<div style="border-left:3px solid ${mine ? '#ffd9b3' : '#f97316'};padding:2px 8px;margin-bottom:4px;font-size:11px;color:${mine ? '#ffe9d6' : '#9ca3af'};background:${mine ? 'rgba(255,255,255,.12)' : '#f8f8f8'};border-radius:6px;">
+             <b>${escapeHtmlMessages(m.replyToName)}</b> · ${escapeHtmlMessages((m.replyToText || '').slice(0, 60))}
+           </div>`
+        : '';
+
+      const replyBtn = `<span onclick="setChatReply('${m._id}')" title="Répondre" style="cursor:pointer;font-size:10px;color:#f97316;font-weight:700;margin:0 4px;">↩ Répondre</span>`;
+
+      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:82%;">
         ${mine ? '' : `<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:2px;">${escapeHtmlMessages(m.senderName || '')}</div>`}
-        <div style="background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#1a1a1a'};border:${mine ? 'none' : '1px solid #f0f0f0'};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${escapeHtmlMessages(m.text)}</div>
-        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};">${mine ? delBtn : ''}${pmFormatMsgTime(m.createdAt)}${!mine && isAdmin ? delBtn : ''}</div>
+        <div style="background:${bubbleBg};color:${mine ? '#fff' : '#1a1a1a'};border:${bubbleBorder};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${replyQuote}${chatHighlightMentions(m.text)}</div>
+        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:${mine ? 'flex-end' : 'flex-start'};">
+          <span>${pmFormatMsgTime(m.createdAt)}</span>${replyBtn}${chatReactionsBar(m)}${delBtn}
+        </div>
       </div>`;
     }).join('');
     thread.scrollTop = thread.scrollHeight;
+
+    // Ce panel est ouvert : tout est considéré comme lu
+    markChatOnlineSeen(msgs);
   }, (err) => {
     console.log('Lecture chat online impossible:', err.message);
   });
+}
+
+// Barre de réactions (👍 ❤️ 😂 👏) affichée sous chaque message
+const CHAT_REACTIONS = ['👍', '❤️', '😂', '👏'];
+function chatReactionsBar(m) {
+  const reactions = m.reactions || {};
+  return `<span style="display:inline-flex;gap:4px;align-items:center;margin-left:4px;">` + CHAT_REACTIONS.map(emo => {
+    const arr = Array.isArray(reactions[emo]) ? reactions[emo] : [];
+    const count = arr.length;
+    const mineReact = pmCurrentUser && arr.includes(pmCurrentUser.id);
+    return `<span onclick="toggleChatReaction('${m._id}','${emo}')" title="Réagir" style="cursor:pointer;font-size:11px;line-height:1;padding:1px 5px;border-radius:99px;border:1px solid ${mineReact ? '#f97316' : '#e5e7eb'};background:${mineReact ? '#fff7ed' : '#fff'};color:#374151;">${emo}${count ? ' ' + count : ''}</span>`;
+  }).join('') + `</span>`;
+}
+
+// Met en évidence les mentions @Nom dans le texte affiché
+function chatHighlightMentions(text) {
+  let safe = escapeHtmlMessages(text || '');
+  safe = safe.replace(/@([\wÀ-ÿ][\wÀ-ÿ'’.-]*)/g, '<b style="color:#f97316;">@$1</b>');
+  return safe;
 }
 
 window.deleteChatOnlineMsg = async function(msgId) {
@@ -2408,13 +2461,28 @@ window.sendChatOnline = async function() {
 
   input.innerHTML = '';
 
+  // Détection des @mentions (hors @bot) → tableau d'ids consultants mentionnés
+  const mentions = detectChatMentions(text);
+
+  // Réponse à un message ?
+  const reply = chatReplyContext;
+  clearChatReply();
+
+  const payload = {
+    senderId: pmCurrentUser.id,
+    senderName: pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id,
+    text,
+    createdAt: new Date().toISOString()
+  };
+  if (mentions.length) payload.mentions = mentions;
+  if (reply) {
+    payload.replyToId = reply.id;
+    payload.replyToName = reply.name;
+    payload.replyToText = (reply.text || '').slice(0, 120);
+  }
+
   try {
-    await window.addDoc(window.collection(window.db, 'chat'), {
-      senderId: pmCurrentUser.id,
-      senderName: pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id,
-      text,
-      createdAt: new Date().toISOString()
-    });
+    await window.addDoc(window.collection(window.db, 'chat'), payload);
   } catch(err) {
     console.log('Envoi chat online impossible:', err.message);
     alert("❌ Impossible d'envoyer le message. Réessayez.");
@@ -2428,6 +2496,65 @@ window.sendChatOnline = async function() {
   }
 };
 
+// Répondre à un message : mémorise le contexte et affiche la barre au-dessus du champ
+window.setChatReply = function(msgId) {
+  const m = (chatOnlineMsgs || []).find(x => x._id === msgId);
+  if (!m) return;
+  chatReplyContext = {
+    id: msgId,
+    name: m.isBot ? (m.senderName || 'Assistant') : (m.senderName || 'Consultant'),
+    text: m.text || ''
+  };
+  const bar = document.getElementById('chatonline-reply-bar');
+  const txt = document.getElementById('chatonline-reply-text');
+  if (txt) txt.textContent = chatReplyContext.name + ' — ' + chatReplyContext.text.slice(0, 60);
+  if (bar) bar.style.display = 'flex';
+  const input = document.getElementById('chatonline-input');
+  if (input) input.focus();
+};
+
+window.clearChatReply = function() {
+  chatReplyContext = null;
+  const bar = document.getElementById('chatonline-reply-bar');
+  if (bar) bar.style.display = 'none';
+};
+
+// Toggle d'une réaction sur un message (👍 ❤️ 😂 👏)
+window.toggleChatReaction = async function(msgId, emoji) {
+  if (!pmCurrentUser) return;
+  const m = (chatOnlineMsgs || []).find(x => x._id === msgId);
+  const already = m && m.reactions && Array.isArray(m.reactions[emoji]) && m.reactions[emoji].includes(pmCurrentUser.id);
+  try {
+    await window.updateDoc(window.doc(window.db, 'chat', msgId), {
+      ['reactions.' + emoji]: already ? window.arrayRemove(pmCurrentUser.id) : window.arrayUnion(pmCurrentUser.id)
+    });
+  } catch(err) {
+    console.log('Réaction impossible:', err.message);
+  }
+};
+
+// Cherche les @mentions dans le texte et renvoie les ids de consultants correspondants.
+// Compare sur le prénom, le nom complet, ou l'id. Ignore @bot.
+function detectChatMentions(text) {
+  const ids = new Set();
+  const raw = (text.match(/@([\wÀ-ÿ][\wÀ-ÿ'’.-]*)/g) || []).map(s => s.slice(1).toLowerCase());
+  if (!raw.length) return [];
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  Object.values(PM_USERS || {}).forEach(u => {
+    const first = norm((u.fullName || u.name || '').split(' ')[0]);
+    const full = norm(u.fullName || u.name || '').replace(/\s+/g, '');
+    const id = norm(u.id || '');
+    raw.forEach(token => {
+      const t = norm(token);
+      if (t === 'bot') return;
+      if (t && (t === first || t === id || full.startsWith(t) && t.length >= 3)) {
+        if (u.id && u.id !== pmCurrentUser?.id) ids.add(u.id);
+      }
+    });
+  });
+  return Array.from(ids);
+}
+
 async function loadChatOnlineFaq() {
   try {
     const snap = await window.getDocs(window.collection(window.db, 'faq'));
@@ -2435,13 +2562,32 @@ async function loadChatOnlineFaq() {
     snap.forEach(d => {
       const data = d.data();
       if (data && Array.isArray(data.keywords) && data.reponse) {
-        chatOnlineFaq.push({ keywords: data.keywords, reponse: data.reponse, document: data.document || '' });
+        chatOnlineFaq.push({ id: d.id, keywords: data.keywords, reponse: data.reponse, document: data.document || '' });
       }
     });
   } catch(err) {
     console.log('Chargement FAQ impossible:', err.message);
     chatOnlineFaq = [];
   }
+}
+
+// Abonnement temps réel à la FAQ : dès que l'admin ajoute/modifie une entrée,
+// le bot la connaît immédiatement — aucun rafraîchissement (F5) nécessaire.
+function subscribeChatOnlineFaq() {
+  if (chatOnlineFaqUnsub) return; // déjà abonné
+  if (!window.onSnapshot || !window.collection || !window.db) return;
+  chatOnlineFaqUnsub = window.onSnapshot(window.collection(window.db, 'faq'), (snap) => {
+    const list = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if (data && Array.isArray(data.keywords) && data.reponse) {
+        list.push({ id: d.id, keywords: data.keywords, reponse: data.reponse, document: data.document || '' });
+      }
+    });
+    chatOnlineFaq = list;
+  }, (err) => {
+    console.log('Suivi FAQ impossible:', err.message);
+  });
 }
 
 // Normalisation : minuscules + sans accents, pour un matching mots-clés tolérant
@@ -2464,10 +2610,36 @@ async function chatOnlineBotReply(question) {
     if (score > bestScore) { bestScore = score; best = item; }
   });
 
+  const matched = !!best;
   const reponse = best
     ? best.reponse
-    : "Je n'ai pas encore de réponse à cette question. 🙏 Reformulez avec d'autres mots-clés, ou contactez Phil-Mobile via Messages.";
+    : "Je n'ai pas encore de réponse à cette question. 🙏 Elle a été transmise à l'administrateur, qui pourra l'ajouter à la FAQ. En attendant, contactez Phil-Mobile via Messages.";
   const docLink = best && best.document ? best.document : '';
+
+  // Journal du bot (statistiques admin) : chaque interaction est tracée
+  try {
+    await window.addDoc(window.collection(window.db, 'botLog'), {
+      question: (question || '').trim(),
+      matched,
+      faqId: matched ? (best.id || '') : '',
+      askedById: pmCurrentUser ? pmCurrentUser.id : '',
+      askedByName: pmCurrentUser ? (pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id) : '',
+      createdAt: new Date().toISOString()
+    });
+  } catch(err) { console.log('Log bot impossible:', err.message); }
+
+  // Question inconnue → file "Demandes en attente" (transformable en FAQ en 1 clic côté admin)
+  if (!matched && (question || '').trim()) {
+    try {
+      await window.addDoc(window.collection(window.db, 'botPending'), {
+        question: question.trim(),
+        askedById: pmCurrentUser ? pmCurrentUser.id : '',
+        askedByName: pmCurrentUser ? (pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id) : '',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+    } catch(err) { console.log('Enregistrement question en attente impossible:', err.message); }
+  }
 
   // Petit délai pour un rendu naturel
   setTimeout(async () => {
@@ -2484,6 +2656,72 @@ async function chatOnlineBotReply(question) {
       console.log('Réponse bot impossible:', err.message);
     }
   }, 600);
+}
+
+// ===== Badge non-lus du Chat online (menu) =====
+// "Dernière lecture" mémorisée en local par consultant ; un message plus récent
+// envoyé par quelqu'un d'autre incrémente le compteur. Ouvrir le panel remet à zéro.
+function chatOnlineSeenKey() {
+  return 'chatOnlineLastSeen_' + (pmCurrentUser ? pmCurrentUser.id : 'anon');
+}
+
+function markChatOnlineSeen(msgs) {
+  if (!pmCurrentUser) return;
+  let latest = '';
+  (msgs || []).forEach(m => { if (m.createdAt && m.createdAt > latest) latest = m.createdAt; });
+  if (latest) {
+    try { localStorage.setItem(chatOnlineSeenKey(), latest); } catch(e) {}
+  } else {
+    try { localStorage.setItem(chatOnlineSeenKey(), new Date().toISOString()); } catch(e) {}
+  }
+  updateChatOnlineBadge([]);
+}
+
+function updateChatOnlineBadge(msgs) {
+  const badge = document.getElementById('chatonline-badge');
+  if (!badge || !pmCurrentUser) return;
+  const panelOpen = document.getElementById('panel-chatonline') &&
+                    document.getElementById('panel-chatonline').style.display === 'block';
+  if (panelOpen) { badge.style.display = 'none'; return; }
+
+  let lastSeen = '';
+  try { lastSeen = localStorage.getItem(chatOnlineSeenKey()) || ''; } catch(e) {}
+
+  let count = 0;
+  let mentioned = false;
+  (msgs || []).forEach(m => {
+    if (!m.createdAt) return;
+    if (m.senderId === pmCurrentUser.id) return;       // pas mes propres messages
+    if (lastSeen && m.createdAt <= lastSeen) return;    // déjà vu
+    count++;
+    if (Array.isArray(m.mentions) && m.mentions.includes(pmCurrentUser.id)) mentioned = true;
+  });
+
+  if (count > 0) {
+    badge.textContent = mentioned ? ('@ ' + count) : String(count);
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Écoute permanente (dès la connexion) pour alimenter le badge, même hors du panel.
+function subscribeChatOnlineBadge() {
+  if (chatOnlineBadgeUnsub) { chatOnlineBadgeUnsub(); chatOnlineBadgeUnsub = null; }
+  if (!window.onSnapshot || !window.query || !window.orderBy || !window.db) return;
+  let q;
+  if (window.limitToLast) {
+    q = window.query(window.collection(window.db, 'chat'), window.orderBy('createdAt'), window.limitToLast(50));
+  } else {
+    q = window.query(window.collection(window.db, 'chat'), window.orderBy('createdAt'));
+  }
+  chatOnlineBadgeUnsub = window.onSnapshot(q, (snap) => {
+    const msgs = [];
+    snap.forEach(d => msgs.push({ _id: d.id, ...d.data() }));
+    updateChatOnlineBadge(msgs);
+  }, (err) => {
+    console.log('Suivi badge chat impossible:', err.message);
+  });
 }
 
 
@@ -2536,6 +2774,8 @@ function doUnlock(user) {
   pmNiveauAgent = user.agent;
   // Module Messages (contacts + badge non-lu)
   initMessages();
+  // Chat online : badge non-lus dès la connexion (même sans ouvrir le panel)
+  subscribeChatOnlineBadge();
 }
 
 // Remplit le panel "Contacts" (sidebar) avec les coordonnées du vrai upline du consultant connecté.
