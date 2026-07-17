@@ -277,7 +277,7 @@ select:focus{
 <div id="import-status"></div>
 
 <input type="file" id="import-pdf-bulk-input" accept="application/pdf" multiple style="display:none;" onchange="handleBulkImport(this.files)">
-<button type="button" class="import-pdf-btn" id="import-pdf-bulk-btn" style="background:#555;" onclick="document.getElementById('import-pdf-bulk-input').click()">
+<button type="button" class="import-pdf-btn" id="import-pdf-bulk-btn" style="background:#555;display:none;" onclick="document.getElementById('import-pdf-bulk-input').click()">
   <span class="import-spinner" id="bulk-spinner"></span>
   <span id="import-pdf-bulk-btn-label">📚 Import en masse (plusieurs PDF — anciens contrats uniquement)</span>
 </button>
@@ -489,6 +489,10 @@ onAuthStateChanged(auth, async (user) => {
   window._currentConsultantId = found.id || foundDocId;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
+
+  // Import en masse : réservé à l'administrateur (masqué pour les autres consultants)
+  const bulkBtn = document.getElementById('import-pdf-bulk-btn');
+  if (bulkBtn) bulkBtn.style.display = found.isAdmin === true ? 'inline-flex' : 'none';
 
   // Calcul du statut (BC ou SC+) à partir de l'ASP total actuel, même seuil que wp_consultant_hub.html (SC à 70 pts)
   const aspTotal = (found.aspInit || 0) + (found.aspFromContracts || 0);
