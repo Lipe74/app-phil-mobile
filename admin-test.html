@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.3.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.6</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -186,6 +186,11 @@
           <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
           <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
         </div>
+
+        <div class="menu-label">🤖 Bot FAQ</div>
+        <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
+        <button onclick="showAdminPanel('panel-bot-pending', this)" class="menu-item" id="menu-bot-pending">📥 Demandes en attente <span id="bot-pending-count"></span></button>
+        <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
 
         <div class="menu-label">📰 News</div>
         <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
@@ -331,6 +336,76 @@
             ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
           </div>
           <div id="promos-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-faq">
+          <div class="section-title">🤖 FAQ du bot (Chat online)</div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px;">
+            Le bot répond dans le Chat online quand un consultant écrit <b>@bot</b> suivi d'une question. Il détecte les <b>mots-clés</b> (peu importe accents/majuscules) et renvoie la réponse — avec un bouton document si un lien est renseigné.
+          </div>
+          <div class="card">
+            <input type="hidden" id="faq-edit-id" value="">
+            <div class="form-row">
+              <label>Thème (pour le lexique, optionnel)</label>
+              <input type="text" id="faq-theme" placeholder="ex: Barème & commissions">
+            </div>
+            <div class="form-row">
+              <label>Mots-clés (séparés par des virgules) *</label>
+              <input type="text" id="faq-keywords" placeholder="ex: bareme, asp, points, commission">
+            </div>
+            <div class="form-row">
+              <label>Réponse du bot *</label>
+              <textarea id="faq-reponse" rows="3" placeholder="ex: Le barème ASP complet est disponible dans le hub, section Mes Outils." style="width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;padding:8px;border:1px solid #ddd;border-radius:8px;"></textarea>
+            </div>
+            <div class="form-row">
+              <label>Document / lien (optionnel)</label>
+              <input type="text" id="faq-document" placeholder="ex: documents/wp_commissions.pdf ou https://...">
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="saveFaqEntry()" id="faq-save-btn">➕ Ajouter</button>
+              <button class="btn btn-secondary" onclick="resetFaqForm()" id="faq-cancel-btn" style="display:none;">✖ Annuler</button>
+            </div>
+          </div>
+
+          <details style="margin-top:12px;border:1px solid #eee;border-radius:10px;padding:10px 12px;background:#fafafa;">
+            <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:13px;">📥 Importer une base FAQ (JSON)</summary>
+            <div style="font-size:11px;color:#888;margin:8px 0;">
+              Collez un tableau JSON d'entrées <code>[{ "theme": "...", "keywords": ["..."], "reponse": "...", "document": "..." }, ...]</code>.
+              <code>theme</code> et <code>document</code> sont optionnels.
+            </div>
+            <textarea id="faq-import-json" rows="6" placeholder='[{"theme":"Barème","keywords":["bareme","commission"],"reponse":"..."}]' style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:8px;"></textarea>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin:8px 0;">
+              <input type="checkbox" id="faq-import-dedup" checked> Ignorer les doublons (même réponse déjà présente)
+            </label>
+            <button class="btn btn-primary" onclick="importFaqJson()">📥 Importer</button>
+            <div id="faq-import-status" style="font-size:12px;margin-top:8px;"></div>
+          </details>
+
+          <div class="form-row" style="margin-top:14px;">
+            <input type="text" id="faq-search" placeholder="🔎 Rechercher une question / un mot-clé..." oninput="renderFaqList()" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;">
+          </div>
+          <div id="faq-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <!-- Panneau : Demandes en attente du bot (questions inconnues) -->
+        <div class="admin-panel" id="panel-bot-pending">
+          <div class="section-title">📥 Demandes en attente du bot</div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px;">
+            Questions posées au bot (<b>@bot</b>) auxquelles il n'a pas su répondre. Cliquez sur <b>➕ Créer la FAQ</b> pour pré-remplir une entrée à partir de la question, puis complétez les mots-clés et la réponse.
+          </div>
+          <div id="bot-pending-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <!-- Panneau : Statistiques du bot -->
+        <div class="admin-panel" id="panel-bot-stats">
+          <div class="section-title">📊 Statistiques du bot</div>
+          <div style="font-size:11px;color:#888;margin-bottom:10px;">
+            Vue d'ensemble de l'activité du bot du Chat online. Utile pour repérer les questions à ajouter à la FAQ.
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+            <button class="btn btn-secondary" onclick="loadBotStats()">🔄 Actualiser</button>
+          </div>
+          <div id="bot-stats-content"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-messages">
@@ -820,6 +895,8 @@ onAuthStateChanged(auth, async (user) => {
   loadFeedback();
   loadPromosAdmin();
   onPromoTypeChange();
+  loadFaqAdmin();
+  loadBotPending();
   loadNewsItemsAdmin();
   loadConsultants();
   loadMessagesAdmin();
@@ -875,6 +952,9 @@ window.showAdminPanel = function (panelId, btn) {
   document.querySelectorAll('.admin-panel').forEach(p => p.style.display = 'none');
   const panel = document.getElementById(panelId);
   if (panel) panel.style.display = 'block';
+  // Rafraîchir les panneaux dynamiques à l'ouverture
+  if (panelId === 'panel-bot-pending') loadBotPending();
+  if (panelId === 'panel-bot-stats') loadBotStats();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
   if (btn) {
     btn.classList.add('active-item');
@@ -1916,6 +1996,363 @@ window.togglePromoActive = async function (docId, newState) {
     alert('Erreur: ' + err.message);
   }
 };
+
+// ===== FAQ DU BOT (Chat online) =====
+// Collection Firestore 'faq' : { keywords: [...], reponse: "...", document: "..." (optionnel) }
+let faqCache = [];
+let pendingSourceId = null; // demande "en attente" à clôturer quand la FAQ issue de cette question est créée
+
+async function loadFaqAdmin() {
+  const container = document.getElementById('faq-list');
+  if (!container) return;
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'faq'));
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    faqCache = list;
+
+    const countEl = document.getElementById('faq-count');
+    if (countEl) countEl.textContent = list.length > 0 ? '(' + list.length + ')' : '';
+
+    renderFaqList();
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement FAQ impossible:', err.message);
+  }
+}
+
+// Rend la liste FAQ en appliquant le filtre de recherche (mots-clés ou réponse)
+window.renderFaqList = function () {
+  const container = document.getElementById('faq-list');
+  if (!container) return;
+
+  const term = (document.getElementById('faq-search')?.value || '')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let list = faqCache;
+  if (term) {
+    list = faqCache.filter(f => {
+      const kw = Array.isArray(f.keywords) ? f.keywords.join(' ') : '';
+      return norm(kw).includes(term) || norm(f.reponse).includes(term) || norm(f.document).includes(term);
+    });
+  }
+
+  if (faqCache.length === 0) {
+    container.innerHTML = '<div class="empty">Aucune entrée FAQ. Ajoutez-en une avec le formulaire ci-dessus.</div>';
+    return;
+  }
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty">Aucun résultat pour cette recherche.</div>';
+    return;
+  }
+
+  let html = '<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">' + list.length + (term ? ' résultat(s)' : ' entrée(s)') + '</div>';
+  list.forEach(f => {
+    const kw = Array.isArray(f.keywords) ? f.keywords.join(', ') : '';
+    html += `
+    <div class="card">
+      <div class="card-row">
+        <div class="card-info">
+          ${f.theme ? `<div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">📖 ${escapeHtmlAdmin(f.theme)}</div>` : ''}
+          <strong>🔑 ${escapeHtmlAdmin(kw)}</strong>
+          <div class="meta" style="white-space:pre-line;">${escapeHtmlAdmin(f.reponse || '')}</div>
+          ${f.document ? `<div class="meta" style="color:#f97316;font-weight:700;">📄 ${escapeHtmlAdmin(f.document)}</div>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="editFaqEntry('${f.docId}')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="deleteFaqEntry('${f.docId}')">🗑 Supprimer</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+};
+
+window.saveFaqEntry = async function () {
+  const kwRaw = document.getElementById('faq-keywords').value.trim();
+  const reponse = document.getElementById('faq-reponse').value.trim();
+  const docLink = document.getElementById('faq-document').value.trim();
+  const theme = document.getElementById('faq-theme').value.trim();
+  const editId = document.getElementById('faq-edit-id').value;
+
+  if (!kwRaw || !reponse) {
+    alert('Mots-clés et réponse sont obligatoires.');
+    return;
+  }
+
+  const keywords = kwRaw.split(',').map(k => k.trim()).filter(k => k.length > 0);
+  const data = { keywords, reponse };
+  data.document = docLink || '';
+  data.theme = theme || '';
+
+  try {
+    if (editId) {
+      await updateDoc(doc(db, 'faq', editId), data);
+      showToast('✏️ Entrée FAQ modifiée.');
+    } else {
+      await addDoc(collection(db, 'faq'), data);
+      showToast('✅ Entrée FAQ ajoutée.');
+      // Si cette FAQ provient d'une "demande en attente", on la clôture automatiquement
+      if (pendingSourceId) {
+        try { await updateDoc(doc(db, 'botPending', pendingSourceId), { status: 'answered' }); } catch (e) {}
+        pendingSourceId = null;
+        loadBotPending();
+      }
+    }
+    resetFaqForm();
+    loadFaqAdmin();
+  } catch (err) {
+    alert('Erreur pendant la sauvegarde: ' + err.message);
+  }
+};
+
+window.editFaqEntry = function (docId) {
+  const f = faqCache.find(x => x.docId === docId);
+  if (!f) return;
+  document.getElementById('faq-edit-id').value = docId;
+  document.getElementById('faq-theme').value = f.theme || '';
+  document.getElementById('faq-keywords').value = Array.isArray(f.keywords) ? f.keywords.join(', ') : '';
+  document.getElementById('faq-reponse').value = f.reponse || '';
+  document.getElementById('faq-document').value = f.document || '';
+  document.getElementById('faq-save-btn').innerHTML = '💾 Enregistrer';
+  document.getElementById('faq-cancel-btn').style.display = 'inline-block';
+  document.getElementById('faq-keywords').focus();
+};
+
+window.resetFaqForm = function () {
+  pendingSourceId = null;
+  document.getElementById('faq-edit-id').value = '';
+  document.getElementById('faq-theme').value = '';
+  document.getElementById('faq-keywords').value = '';
+  document.getElementById('faq-reponse').value = '';
+  document.getElementById('faq-document').value = '';
+  document.getElementById('faq-save-btn').innerHTML = '➕ Ajouter';
+  document.getElementById('faq-cancel-btn').style.display = 'none';
+};
+
+window.deleteFaqEntry = async function (docId) {
+  if (!confirm('Supprimer cette entrée FAQ ?')) return;
+  try {
+    await deleteDoc(doc(db, 'faq', docId));
+    showToast('🗑️ Entrée FAQ supprimée.');
+    loadFaqAdmin();
+  } catch (err) {
+    alert('Erreur pendant la suppression: ' + err.message);
+  }
+};
+
+// Import d'une base FAQ au format JSON : [{ theme?, keywords[], reponse, document? }, ...]
+window.importFaqJson = async function () {
+  const raw = document.getElementById('faq-import-json').value.trim();
+  const dedup = document.getElementById('faq-import-dedup').checked;
+  const statusEl = document.getElementById('faq-import-status');
+  const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || '#555'; } };
+
+  if (!raw) { setStatus('Collez d\'abord un JSON.', '#c0392b'); return; }
+
+  let arr;
+  try {
+    arr = JSON.parse(raw);
+  } catch (e) {
+    setStatus('❌ JSON invalide : ' + e.message, '#c0392b');
+    return;
+  }
+  if (!Array.isArray(arr)) { setStatus('❌ Le JSON doit être un tableau [ ... ].', '#c0392b'); return; }
+
+  // Réponses déjà présentes (pour éviter les doublons)
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const existing = new Set(faqCache.map(f => norm(f.reponse)));
+
+  let added = 0, skipped = 0, invalid = 0;
+  setStatus('Import en cours...', '#555');
+
+  for (const item of arr) {
+    const keywords = Array.isArray(item.keywords)
+      ? item.keywords.map(k => String(k).trim()).filter(Boolean)
+      : (typeof item.keywords === 'string' ? item.keywords.split(',').map(k => k.trim()).filter(Boolean) : []);
+    const reponse = (item.reponse || '').toString().trim();
+
+    if (!keywords.length || !reponse) { invalid++; continue; }
+    if (dedup && existing.has(norm(reponse))) { skipped++; continue; }
+
+    try {
+      await addDoc(collection(db, 'faq'), {
+        keywords,
+        reponse,
+        document: (item.document || '').toString().trim(),
+        theme: (item.theme || '').toString().trim()
+      });
+      existing.add(norm(reponse));
+      added++;
+    } catch (e) {
+      invalid++;
+    }
+  }
+
+  setStatus(`✅ ${added} ajoutée(s) · ${skipped} doublon(s) ignoré(s) · ${invalid} invalide(s).`, '#2E7D32');
+  if (added > 0) {
+    document.getElementById('faq-import-json').value = '';
+    loadFaqAdmin();
+  }
+};
+
+// ===== DEMANDES EN ATTENTE DU BOT (questions inconnues) =====
+// Collection Firestore 'botPending' : { question, askedByName, status:'pending', createdAt }
+let botPendingCache = [];
+
+async function loadBotPending() {
+  const container = document.getElementById('bot-pending-list');
+  const countEl = document.getElementById('bot-pending-count');
+  if (!container) return;
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'botPending'));
+    const list = [];
+    snap.forEach(d => {
+      const data = d.data();
+      if ((data.status || 'pending') === 'pending') list.push({ docId: d.id, ...data });
+    });
+    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    botPendingCache = list;
+
+    if (countEl) countEl.textContent = list.length > 0 ? '(' + list.length + ')' : '';
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucune question en attente. 🎉 Le bot a réponse à tout !</div>';
+      return;
+    }
+
+    let html = '<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:4px 0 8px;">' + list.length + ' question(s) sans réponse</div>';
+    list.forEach(p => {
+      const dateStr = p.createdAt ? new Date(p.createdAt).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      html += `
+      <div class="card">
+        <div class="card-row">
+          <div class="card-info">
+            <strong>❓ ${escapeHtmlAdmin(p.question || '')}</strong>
+            <div class="meta">${escapeHtmlAdmin(p.askedByName || 'Consultant')} · ${dateStr}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" onclick="convertPendingToFaq('${p.docId}')">➕ Créer la FAQ</button>
+            <button class="btn btn-secondary" onclick="dismissPending('${p.docId}')">✖ Ignorer</button>
+          </div>
+        </div>
+      </div>`;
+    });
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement demandes bot impossible:', err.message);
+  }
+}
+
+// Transforme une question en attente en entrée FAQ, en un clic :
+// pré-remplit le formulaire FAQ (mots-clés déduits de la question) et bascule sur le panneau FAQ.
+window.convertPendingToFaq = function (docId) {
+  const p = botPendingCache.find(x => x.docId === docId);
+  if (!p) return;
+
+  // Mots-clés suggérés : mots significatifs de la question (>3 lettres, hors mots vides)
+  const stop = new Set(['avec','pour','dans','elle','vous','nous','être','sont','mais','plus','tout','tous','cette','quel','quelle','quels','quelles','comment','pourquoi','quand','est-ce','estce','faut','faire','peux','peut','puis','sur','les','des','une','un','le','la','de','du','et','ou','à','au','aux','en','ce','se','sa','son','ses','que','qui','quoi','je','tu','il','on','ai','as']);
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const kw = (p.question || '').split(/[^\wÀ-ÿ]+/)
+    .map(w => w.trim()).filter(w => w.length > 3 && !stop.has(norm(w)))
+    .slice(0, 6).join(', ');
+
+  showAdminPanel('panel-faq', document.getElementById('menu-faq'));
+  document.getElementById('faq-edit-id').value = '';
+  document.getElementById('faq-keywords').value = kw;
+  document.getElementById('faq-reponse').value = '';
+  document.getElementById('faq-document').value = '';
+  document.getElementById('faq-save-btn').innerHTML = '➕ Ajouter';
+  document.getElementById('faq-cancel-btn').style.display = 'none';
+  // Mémorise la demande source pour la clôturer automatiquement après enregistrement
+  pendingSourceId = docId;
+  const rep = document.getElementById('faq-reponse');
+  if (rep) { rep.focus(); }
+  showToast('📝 Complétez la réponse, puis « Ajouter ».');
+};
+
+window.dismissPending = async function (docId) {
+  if (!confirm('Ignorer cette question ? Elle ne réapparaîtra plus dans la liste.')) return;
+  try {
+    await updateDoc(doc(db, 'botPending', docId), { status: 'dismissed' });
+    showToast('✖ Question ignorée.');
+    loadBotPending();
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+// ===== STATISTIQUES DU BOT =====
+// Collection Firestore 'botLog' : { question, matched, faqId, createdAt }
+async function loadBotStats() {
+  const container = document.getElementById('bot-stats-content');
+  if (!container) return;
+  container.innerHTML = '<div class="empty">Calcul en cours...</div>';
+  try {
+    const [faqSnap, logSnap, pendSnap] = await Promise.all([
+      getDocs(collection(db, 'faq')),
+      getDocs(collection(db, 'botLog')),
+      getDocs(collection(db, 'botPending'))
+    ]);
+
+    const faqCount = faqSnap.size;
+
+    let answered = 0, unknown = 0;
+    const freq = {};
+    const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    logSnap.forEach(d => {
+      const l = d.data();
+      if (l.matched) answered++; else unknown++;
+      const key = norm(l.question);
+      if (key) freq[key] = freq[key] || { count: 0, label: (l.question || '').trim() };
+      if (key) freq[key].count++;
+    });
+    const total = answered + unknown;
+
+    let pendingCount = 0;
+    pendSnap.forEach(d => { if ((d.data().status || 'pending') === 'pending') pendingCount++; });
+
+    const top = Object.values(freq).sort((a, b) => b.count - a.count).slice(0, 10);
+    const rate = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+    const stat = (label, value, color) =>
+      `<div style="flex:1;min-width:120px;background:#fff;border:1px solid #eee;border-radius:12px;padding:14px;text-align:center;">
+         <div style="font-size:24px;font-weight:800;color:${color};">${value}</div>
+         <div style="font-size:11px;color:#888;margin-top:2px;">${label}</div>
+       </div>`;
+
+    let html = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">';
+    html += stat('Entrées FAQ', faqCount, '#f97316');
+    html += stat('Questions répondues', answered, '#16a34a');
+    html += stat('Questions inconnues', unknown, '#ef4444');
+    html += stat('En attente', pendingCount, '#eab308');
+    html += stat('Taux de réponse', rate + '%', '#2563eb');
+    html += '</div>';
+
+    html += '<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 8px;">🔝 Top 10 des questions les plus fréquentes</div>';
+    if (top.length === 0) {
+      html += '<div class="empty">Aucune question posée au bot pour le moment.</div>';
+    } else {
+      top.forEach((t, i) => {
+        html += `
+        <div class="card" style="padding:8px 12px;">
+          <div class="card-row">
+            <div class="card-info"><strong>${i + 1}. ${escapeHtmlAdmin(t.label)}</strong></div>
+            <div class="card-actions"><span style="font-weight:800;color:#f97316;">${t.count}×</span></div>
+          </div>
+        </div>`;
+      });
+    }
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement des statistiques.</div>';
+    console.log('Chargement stats bot impossible:', err.message);
+  }
+}
 
 window.deletePromo = async function (docId) {
   if (!confirm('Supprimer définitivement cette promo ?')) return;

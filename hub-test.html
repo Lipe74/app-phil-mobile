@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Chat &amp; Bot
+Build <span id="app-version-1">…</span> — Chat &amp; Lexique
      </span>
     </div>
     </div>
@@ -842,8 +842,19 @@ Build <span id="app-version-1">…</span> — Chat &amp; Bot
 
           <!-- Panel Chat online (chat général tous consultants + bot FAQ) -->
           <div id="panel-chatonline" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🗨️ Chat online</div>
-            <div style="font-size:12px;color:#9ca3af;margin-bottom:12px;">Discutez en direct avec tous les consultants. Tapez <b style="color:#f97316;">@bot</b> suivi d'une question pour interroger l'assistant.</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">
+              <div style="font-size:14px;font-weight:700;color:#f97316;">🗨️ Chat online</div>
+              <button id="chatonline-clear-btn" onclick="clearChatOnlineAll()" style="display:none;background:#fff;color:#ef4444;border:1px solid #ef4444;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">🧹 Vider le chat</button>
+            </div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">Discutez en direct avec tous les consultants. Tapez <b style="color:#f97316;">@bot</b> suivi d'une question pour interroger l'assistant. Le chat se réinitialise chaque jour (les messages épinglés restent).</div>
+
+            <div style="margin-bottom:10px;">
+              <button onclick="toggleChatLexique()" id="chatonline-lexique-toggle" style="width:100%;text-align:left;background:#fff7ed;color:#f97316;border:1px solid #f97316;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;">📖 Que sait le bot ? (voir les sujets de la FAQ)</button>
+              <div id="chatonline-lexique" style="display:none;margin-top:8px;padding:10px;background:#fafafa;border:1px solid #f0f0f0;border-radius:10px;font-size:12px;"></div>
+            </div>
+
+            <div id="chatonline-pinned" style="display:none;margin-bottom:10px;"></div>
+
             <div id="chatonline-thread" style="display:flex;flex-direction:column;gap:8px;min-height:250px;max-height:55vh;overflow-y:auto;padding:10px;background:#f8f8f8;border-radius:10px;margin-bottom:10px;">
               <div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Chargement...</div>
             </div>
@@ -2343,6 +2354,9 @@ function showChatOnline(btn) {
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById('panel-chatonline').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
+  // Bouton "Vider le chat" : admin uniquement
+  const clearBtn = document.getElementById('chatonline-clear-btn');
+  if (clearBtn) clearBtn.style.display = (pmCurrentUser && pmCurrentUser.isAdmin === true) ? 'inline-block' : 'none';
   clearChatReply();
   subscribeChatOnline();
   subscribeChatOnlineFaq();
@@ -2364,59 +2378,38 @@ function subscribeChatOnline() {
 
   chatOnlineUnsub = window.onSnapshot(q, (snap) => {
     const thread = document.getElementById('chatonline-thread');
+    const pinnedBox = document.getElementById('chatonline-pinned');
     if (!thread) return;
     const msgs = [];
     snap.forEach(d => msgs.push({ _id: d.id, ...d.data() }));
     chatOnlineMsgs = msgs;
 
-    if (msgs.length === 0) {
-      thread.innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Aucun message pour le moment — écrivez le premier !</div>';
-      return;
-    }
-
     const isAdmin = pmCurrentUser && pmCurrentUser.isAdmin === true;
 
-    thread.innerHTML = msgs.map(m => {
-      const mine = pmCurrentUser && m.senderId === pmCurrentUser.id;
-      const canDelete = mine || isAdmin;
-      const delBtn = canDelete
-        ? `<span onclick="deleteChatOnlineMsg('${m._id}')" title="Supprimer" style="cursor:pointer;font-size:10px;color:#9ca3af;margin:0 4px;">✕</span>`
-        : '';
+    // Réinitialisation quotidienne : on n'affiche que les messages du jour + les épinglés
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    const pinned = msgs.filter(m => m.pinned);
+    const dayMsgs = msgs.filter(m => !m.pinned && m.createdAt && new Date(m.createdAt) >= startOfToday);
 
-      if (m.isBot) {
-        const docBtn = m.document
-          ? `<div style="margin-top:6px;"><a href="${escapeHtmlMessages(m.document)}" target="_blank" rel="noopener" style="display:inline-block;background:#f97316;color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;">📄 Ouvrir le document</a></div>`
-          : '';
-        return `<div style="align-self:flex-start;max-width:85%;">
-          <div style="font-size:10px;font-weight:700;color:#f97316;margin-bottom:2px;">🤖 ${escapeHtmlMessages(m.senderName || 'Assistant')}</div>
-          <div style="background:#fff7ed;color:#1a1a1a;border:1px solid #f97316;padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;white-space:pre-line;">${escapeHtmlMessages(m.text)}${docBtn}</div>
-          <div style="font-size:9px;color:#9ca3af;margin-top:2px;">${pmFormatMsgTime(m.createdAt)}${chatReactionsBar(m)}${isAdmin ? delBtn : ''}</div>
-        </div>`;
+    // Bandeau des messages épinglés (toujours visibles)
+    if (pinnedBox) {
+      if (pinned.length) {
+        pinnedBox.style.display = 'block';
+        pinnedBox.innerHTML = '<div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">📌 Épinglé(s)</div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px;padding:10px;background:#fff7ed;border:1px solid #f97316;border-radius:10px;">' +
+          pinned.map(m => renderChatMsg(m, isAdmin, true)).join('') + '</div>';
+      } else {
+        pinnedBox.style.display = 'none';
+        pinnedBox.innerHTML = '';
       }
+    }
 
-      // Surlignage si je suis mentionné dans ce message
-      const iAmMentioned = pmCurrentUser && Array.isArray(m.mentions) && m.mentions.includes(pmCurrentUser.id);
-      const bubbleBorder = mine ? 'none' : (iAmMentioned ? '2px solid #f97316' : '1px solid #f0f0f0');
-      const bubbleBg = mine ? '#f97316' : (iAmMentioned ? '#fff7ed' : '#fff');
-
-      // Bloc "réponse à" (citation)
-      const replyQuote = m.replyToName
-        ? `<div style="border-left:3px solid ${mine ? '#ffd9b3' : '#f97316'};padding:2px 8px;margin-bottom:4px;font-size:11px;color:${mine ? '#ffe9d6' : '#9ca3af'};background:${mine ? 'rgba(255,255,255,.12)' : '#f8f8f8'};border-radius:6px;">
-             <b>${escapeHtmlMessages(m.replyToName)}</b> · ${escapeHtmlMessages((m.replyToText || '').slice(0, 60))}
-           </div>`
-        : '';
-
-      const replyBtn = `<span onclick="setChatReply('${m._id}')" title="Répondre" style="cursor:pointer;font-size:10px;color:#f97316;font-weight:700;margin:0 4px;">↩ Répondre</span>`;
-
-      return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:82%;">
-        ${mine ? '' : `<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:2px;">${escapeHtmlMessages(m.senderName || '')}</div>`}
-        <div style="background:${bubbleBg};color:${mine ? '#fff' : '#1a1a1a'};border:${bubbleBorder};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${replyQuote}${chatHighlightMentions(m.text)}</div>
-        <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:${mine ? 'flex-end' : 'flex-start'};">
-          <span>${pmFormatMsgTime(m.createdAt)}</span>${replyBtn}${chatReactionsBar(m)}${delBtn}
-        </div>
-      </div>`;
-    }).join('');
-    thread.scrollTop = thread.scrollHeight;
+    if (dayMsgs.length === 0) {
+      thread.innerHTML = '<div style="font-size:12px;color:#9ca3af;text-align:center;padding:10px;">Aucun message aujourd\'hui — écrivez le premier !</div>';
+    } else {
+      thread.innerHTML = dayMsgs.map(m => renderChatMsg(m, isAdmin, false)).join('');
+      thread.scrollTop = thread.scrollHeight;
+    }
 
     // Ce panel est ouvert : tout est considéré comme lu
     markChatOnlineSeen(msgs);
@@ -2424,6 +2417,127 @@ function subscribeChatOnline() {
     console.log('Lecture chat online impossible:', err.message);
   });
 }
+
+// Rendu d'un seul message (utilisé pour le fil du jour ET le bandeau épinglé)
+function renderChatMsg(m, isAdmin, isPinnedContext) {
+  const mine = pmCurrentUser && m.senderId === pmCurrentUser.id;
+  const canDelete = mine || isAdmin;
+  const delBtn = canDelete
+    ? `<span onclick="deleteChatOnlineMsg('${m._id}')" title="Supprimer" style="cursor:pointer;font-size:10px;color:#9ca3af;margin:0 4px;">✕</span>`
+    : '';
+  // Épinglage : admin uniquement
+  const pinBtn = isAdmin
+    ? `<span onclick="togglePinChatMsg('${m._id}',${m.pinned ? 'false' : 'true'})" title="${m.pinned ? 'Détacher' : 'Épingler'}" style="cursor:pointer;font-size:10px;color:#f97316;font-weight:700;margin:0 4px;">📌 ${m.pinned ? 'Détacher' : 'Épingler'}</span>`
+    : '';
+
+  if (m.isBot) {
+    const docBtn = m.document
+      ? `<div style="margin-top:6px;"><a href="${escapeHtmlMessages(m.document)}" target="_blank" rel="noopener" style="display:inline-block;background:#f97316;color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;">📄 Ouvrir le document</a></div>`
+      : '';
+    return `<div style="align-self:flex-start;max-width:85%;">
+      <div style="font-size:10px;font-weight:700;color:#f97316;margin-bottom:2px;">🤖 ${escapeHtmlMessages(m.senderName || 'Assistant')}</div>
+      <div style="background:${isPinnedContext ? '#fff' : '#fff7ed'};color:#1a1a1a;border:1px solid #f97316;padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;white-space:pre-line;">${escapeHtmlMessages(m.text)}${docBtn}</div>
+      <div style="font-size:9px;color:#9ca3af;margin-top:2px;">${pmFormatMsgTime(m.createdAt)}${chatReactionsBar(m)}${pinBtn}${isAdmin ? delBtn : ''}</div>
+    </div>`;
+  }
+
+  // Surlignage si je suis mentionné dans ce message
+  const iAmMentioned = pmCurrentUser && Array.isArray(m.mentions) && m.mentions.includes(pmCurrentUser.id);
+  const bubbleBorder = mine ? 'none' : (iAmMentioned ? '2px solid #f97316' : '1px solid #f0f0f0');
+  const bubbleBg = mine ? '#f97316' : (iAmMentioned ? '#fff7ed' : '#fff');
+
+  const replyQuote = m.replyToName
+    ? `<div style="border-left:3px solid ${mine ? '#ffd9b3' : '#f97316'};padding:2px 8px;margin-bottom:4px;font-size:11px;color:${mine ? '#ffe9d6' : '#9ca3af'};background:${mine ? 'rgba(255,255,255,.12)' : '#f8f8f8'};border-radius:6px;">
+         <b>${escapeHtmlMessages(m.replyToName)}</b> · ${escapeHtmlMessages((m.replyToText || '').slice(0, 60))}
+       </div>`
+    : '';
+
+  const replyBtn = `<span onclick="setChatReply('${m._id}')" title="Répondre" style="cursor:pointer;font-size:10px;color:#f97316;font-weight:700;margin:0 4px;">↩ Répondre</span>`;
+
+  return `<div style="align-self:${mine ? 'flex-end' : 'flex-start'};max-width:82%;">
+    ${mine ? '' : `<div style="font-size:10px;font-weight:700;color:#6b7280;margin-bottom:2px;">${escapeHtmlMessages(m.senderName || '')}</div>`}
+    <div style="background:${bubbleBg};color:${mine ? '#fff' : '#1a1a1a'};border:${bubbleBorder};padding:8px 12px;border-radius:12px;font-size:13px;word-break:break-word;">${replyQuote}${chatHighlightMentions(m.text)}</div>
+    <div style="font-size:9px;color:#9ca3af;margin-top:2px;text-align:${mine ? 'right' : 'left'};display:flex;flex-wrap:wrap;gap:2px;align-items:center;justify-content:${mine ? 'flex-end' : 'flex-start'};">
+      <span>${pmFormatMsgTime(m.createdAt)}</span>${replyBtn}${chatReactionsBar(m)}${pinBtn}${delBtn}
+    </div>
+  </div>`;
+}
+
+// Épingler / détacher un message (admin uniquement)
+window.togglePinChatMsg = async function(msgId, pin) {
+  if (!pmCurrentUser || pmCurrentUser.isAdmin !== true) return;
+  try {
+    await window.updateDoc(window.doc(window.db, 'chat', msgId), { pinned: pin === true || pin === 'true' });
+  } catch(err) {
+    console.log('Épinglage impossible:', err.message);
+    alert("❌ Action impossible. Réessayez.");
+  }
+};
+
+// Vider le chat (admin) : supprime tous les messages NON épinglés (les épinglés sont conservés)
+window.clearChatOnlineAll = async function() {
+  if (!pmCurrentUser || pmCurrentUser.isAdmin !== true) return;
+  if (!confirm('Vider le chat ?\n\nTous les messages seront supprimés, SAUF les messages épinglés 📌.')) return;
+  try {
+    const snap = await window.getDocs(window.collection(window.db, 'chat'));
+    const toDelete = [];
+    snap.forEach(d => { if (!d.data().pinned) toDelete.push(d.id); });
+    for (const id of toDelete) {
+      try { await window.deleteDoc(window.doc(window.db, 'chat', id)); } catch(e) {}
+    }
+    alert('🧹 Chat vidé (' + toDelete.length + ' message(s) supprimé(s)). Les épinglés sont conservés.');
+  } catch(err) {
+    console.log('Vidage du chat impossible:', err.message);
+    alert("❌ Impossible de vider le chat. Réessayez.");
+  }
+};
+
+// Lexique "Que sait le bot ?" — se construit depuis la FAQ (temps réel) pour montrer les sujets couverts
+window.toggleChatLexique = function() {
+  const box = document.getElementById('chatonline-lexique');
+  if (!box) return;
+  const open = box.style.display !== 'none';
+  if (open) { box.style.display = 'none'; return; }
+  renderChatLexique();
+  box.style.display = 'block';
+};
+
+function renderChatLexique() {
+  const box = document.getElementById('chatonline-lexique');
+  if (!box) return;
+  const faq = chatOnlineFaq || [];
+  if (!faq.length) {
+    box.innerHTML = '<div style="color:#9ca3af;">Le lexique se remplit dès que des questions sont ajoutées à la FAQ.</div>';
+    return;
+  }
+  // Un "sujet" par entrée : son thème si défini, sinon ses premiers mots-clés
+  const items = faq.map(f => {
+    const label = (f.theme && f.theme.trim())
+      ? f.theme.trim()
+      : (Array.isArray(f.keywords) ? f.keywords.slice(0, 3).join(', ') : '');
+    const ask = (f.theme && f.theme.trim()) ? f.theme.trim() : (Array.isArray(f.keywords) ? f.keywords[0] : '');
+    return { label, ask };
+  }).filter(x => x.label);
+  items.sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+
+  box.innerHTML =
+    '<div style="color:#6b7280;margin-bottom:6px;">Cliquez sur un sujet pour interroger le bot :</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
+    items.map(x => `<span onclick="askBotFromLexique('${(x.ask || '').replace(/'/g, "\\'")}')" style="cursor:pointer;background:#fff;border:1px solid #f97316;color:#f97316;border-radius:99px;padding:4px 10px;font-size:11px;font-weight:600;">${escapeHtmlMessages(x.label)}</span>`).join('') +
+    '</div>';
+}
+
+// Clic sur un sujet du lexique : pré-remplit le champ avec @bot <sujet>
+window.askBotFromLexique = function(term) {
+  const input = document.getElementById('chatonline-input');
+  if (!input) return;
+  input.innerText = '@bot ' + (term || '');
+  input.focus();
+  // Place le curseur à la fin
+  const range = document.createRange(); const sel = window.getSelection();
+  range.selectNodeContents(input); range.collapse(false);
+  sel.removeAllRanges(); sel.addRange(range);
+};
 
 // Barre de réactions (👍 ❤️ 😂 👏) affichée sous chaque message
 const CHAT_REACTIONS = ['👍', '❤️', '😂', '👏'];
@@ -2585,6 +2699,9 @@ function subscribeChatOnlineFaq() {
       }
     });
     chatOnlineFaq = list;
+    // Si le lexique est ouvert, on le rafraîchit en direct
+    const lex = document.getElementById('chatonline-lexique');
+    if (lex && lex.style.display !== 'none') renderChatLexique();
   }, (err) => {
     console.log('Suivi FAQ impossible:', err.message);
   });
@@ -2687,11 +2804,15 @@ function updateChatOnlineBadge(msgs) {
   let lastSeen = '';
   try { lastSeen = localStorage.getItem(chatOnlineSeenKey()) || ''; } catch(e) {}
 
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+
   let count = 0;
   let mentioned = false;
   (msgs || []).forEach(m => {
     if (!m.createdAt) return;
-    if (m.senderId === pmCurrentUser.id) return;       // pas mes propres messages
+    if (m.pinned) return;                               // les épinglés ne comptent pas comme "non lu"
+    if (new Date(m.createdAt) < startOfToday) return;   // hors du jour → non affiché
+    if (m.senderId === pmCurrentUser.id) return;        // pas mes propres messages
     if (lastSeen && m.createdAt <= lastSeen) return;    // déjà vu
     count++;
     if (Array.isArray(m.mentions) && m.mentions.includes(pmCurrentUser.id)) mentioned = true;

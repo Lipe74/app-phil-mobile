@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.5</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.6</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -346,6 +346,10 @@
           <div class="card">
             <input type="hidden" id="faq-edit-id" value="">
             <div class="form-row">
+              <label>Thème (pour le lexique, optionnel)</label>
+              <input type="text" id="faq-theme" placeholder="ex: Barème & commissions">
+            </div>
+            <div class="form-row">
               <label>Mots-clés (séparés par des virgules) *</label>
               <input type="text" id="faq-keywords" placeholder="ex: bareme, asp, points, commission">
             </div>
@@ -362,6 +366,21 @@
               <button class="btn btn-secondary" onclick="resetFaqForm()" id="faq-cancel-btn" style="display:none;">✖ Annuler</button>
             </div>
           </div>
+
+          <details style="margin-top:12px;border:1px solid #eee;border-radius:10px;padding:10px 12px;background:#fafafa;">
+            <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:13px;">📥 Importer une base FAQ (JSON)</summary>
+            <div style="font-size:11px;color:#888;margin:8px 0;">
+              Collez un tableau JSON d'entrées <code>[{ "theme": "...", "keywords": ["..."], "reponse": "...", "document": "..." }, ...]</code>.
+              <code>theme</code> et <code>document</code> sont optionnels.
+            </div>
+            <textarea id="faq-import-json" rows="6" placeholder='[{"theme":"Barème","keywords":["bareme","commission"],"reponse":"..."}]' style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:8px;"></textarea>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin:8px 0;">
+              <input type="checkbox" id="faq-import-dedup" checked> Ignorer les doublons (même réponse déjà présente)
+            </label>
+            <button class="btn btn-primary" onclick="importFaqJson()">📥 Importer</button>
+            <div id="faq-import-status" style="font-size:12px;margin-top:8px;"></div>
+          </details>
+
           <div class="form-row" style="margin-top:14px;">
             <input type="text" id="faq-search" placeholder="🔎 Rechercher une question / un mot-clé..." oninput="renderFaqList()" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;">
           </div>
@@ -2036,6 +2055,7 @@ window.renderFaqList = function () {
     <div class="card">
       <div class="card-row">
         <div class="card-info">
+          ${f.theme ? `<div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">📖 ${escapeHtmlAdmin(f.theme)}</div>` : ''}
           <strong>🔑 ${escapeHtmlAdmin(kw)}</strong>
           <div class="meta" style="white-space:pre-line;">${escapeHtmlAdmin(f.reponse || '')}</div>
           ${f.document ? `<div class="meta" style="color:#f97316;font-weight:700;">📄 ${escapeHtmlAdmin(f.document)}</div>` : ''}
@@ -2054,6 +2074,7 @@ window.saveFaqEntry = async function () {
   const kwRaw = document.getElementById('faq-keywords').value.trim();
   const reponse = document.getElementById('faq-reponse').value.trim();
   const docLink = document.getElementById('faq-document').value.trim();
+  const theme = document.getElementById('faq-theme').value.trim();
   const editId = document.getElementById('faq-edit-id').value;
 
   if (!kwRaw || !reponse) {
@@ -2064,6 +2085,7 @@ window.saveFaqEntry = async function () {
   const keywords = kwRaw.split(',').map(k => k.trim()).filter(k => k.length > 0);
   const data = { keywords, reponse };
   data.document = docLink || '';
+  data.theme = theme || '';
 
   try {
     if (editId) {
@@ -2090,6 +2112,7 @@ window.editFaqEntry = function (docId) {
   const f = faqCache.find(x => x.docId === docId);
   if (!f) return;
   document.getElementById('faq-edit-id').value = docId;
+  document.getElementById('faq-theme').value = f.theme || '';
   document.getElementById('faq-keywords').value = Array.isArray(f.keywords) ? f.keywords.join(', ') : '';
   document.getElementById('faq-reponse').value = f.reponse || '';
   document.getElementById('faq-document').value = f.document || '';
@@ -2101,6 +2124,7 @@ window.editFaqEntry = function (docId) {
 window.resetFaqForm = function () {
   pendingSourceId = null;
   document.getElementById('faq-edit-id').value = '';
+  document.getElementById('faq-theme').value = '';
   document.getElementById('faq-keywords').value = '';
   document.getElementById('faq-reponse').value = '';
   document.getElementById('faq-document').value = '';
@@ -2116,6 +2140,61 @@ window.deleteFaqEntry = async function (docId) {
     loadFaqAdmin();
   } catch (err) {
     alert('Erreur pendant la suppression: ' + err.message);
+  }
+};
+
+// Import d'une base FAQ au format JSON : [{ theme?, keywords[], reponse, document? }, ...]
+window.importFaqJson = async function () {
+  const raw = document.getElementById('faq-import-json').value.trim();
+  const dedup = document.getElementById('faq-import-dedup').checked;
+  const statusEl = document.getElementById('faq-import-status');
+  const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || '#555'; } };
+
+  if (!raw) { setStatus('Collez d\'abord un JSON.', '#c0392b'); return; }
+
+  let arr;
+  try {
+    arr = JSON.parse(raw);
+  } catch (e) {
+    setStatus('❌ JSON invalide : ' + e.message, '#c0392b');
+    return;
+  }
+  if (!Array.isArray(arr)) { setStatus('❌ Le JSON doit être un tableau [ ... ].', '#c0392b'); return; }
+
+  // Réponses déjà présentes (pour éviter les doublons)
+  const norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const existing = new Set(faqCache.map(f => norm(f.reponse)));
+
+  let added = 0, skipped = 0, invalid = 0;
+  setStatus('Import en cours...', '#555');
+
+  for (const item of arr) {
+    const keywords = Array.isArray(item.keywords)
+      ? item.keywords.map(k => String(k).trim()).filter(Boolean)
+      : (typeof item.keywords === 'string' ? item.keywords.split(',').map(k => k.trim()).filter(Boolean) : []);
+    const reponse = (item.reponse || '').toString().trim();
+
+    if (!keywords.length || !reponse) { invalid++; continue; }
+    if (dedup && existing.has(norm(reponse))) { skipped++; continue; }
+
+    try {
+      await addDoc(collection(db, 'faq'), {
+        keywords,
+        reponse,
+        document: (item.document || '').toString().trim(),
+        theme: (item.theme || '').toString().trim()
+      });
+      existing.add(norm(reponse));
+      added++;
+    } catch (e) {
+      invalid++;
+    }
+  }
+
+  setStatus(`✅ ${added} ajoutée(s) · ${skipped} doublon(s) ignoré(s) · ${invalid} invalide(s).`, '#2E7D32');
+  if (added > 0) {
+    document.getElementById('faq-import-json').value = '';
+    loadFaqAdmin();
   }
 };
 
