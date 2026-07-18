@@ -135,7 +135,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Chat &amp; Lexique
+Build <span id="app-version-1">…</span> — Essai
      </span>
     </div>
     </div>
@@ -407,8 +407,6 @@ Build <span id="app-version-1">…</span> — Chat &amp; Lexique
 <label><input type="checkbox" id="req-pqs"> PQS validé</label><br>
 <label><input type="checkbox" id="req-fastsc"> Fast SC validé</label><br>
 <label><input type="checkbox" id="req-fastec"> Fast EC validé</label><br>
-<label style="color:#f97316;font-weight:700;"><input type="checkbox" id="req-demo"> 🧪 Je souhaite un accès Démo de 3 jours</label>
-
 <h4 style="margin-top:15px;">Upline</h4>
 
 <input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
@@ -421,6 +419,29 @@ Build <span id="app-version-1">…</span> — Chat &amp; Lexique
   placeholder="Commentaires"
   style="width:100%;margin-top:10px;padding:10px;height:80px;">
 </textarea>
+
+<div style="margin-top:15px;padding:14px 16px;background:#fff7ed;border:1.5px solid #f97316;border-radius:12px;">
+  <div style="font-weight:700;color:#ea580c;margin-bottom:8px;">🎯 Demande d'essai de l'application</div>
+  <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">Facultatif — laissez sur "Accès standard" pour une demande normale.</div>
+  <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;cursor:pointer;font-size:14px;">
+    <input type="radio" name="req-access-type" id="req-access-none" value="none" checked style="margin-top:2px;accent-color:#f97316;" onchange="document.getElementById('req-trial-commitment').style.display='none'">
+    <span>Accès standard</span>
+  </label>
+  <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;cursor:pointer;font-size:14px;">
+    <input type="radio" name="req-access-type" id="req-access-demo" value="demo" style="margin-top:2px;accent-color:#f97316;" onchange="document.getElementById('req-trial-commitment').style.display='none'">
+    <span>🧪 <strong>Démo de 3 jours</strong></span>
+  </label>
+  <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:14px;">
+    <input type="radio" name="req-access-type" id="req-access-trial" value="trial" style="margin-top:2px;accent-color:#f97316;" onchange="document.getElementById('req-trial-commitment').style.display='block'">
+    <span>🎁 <strong>Premier mois offert</strong> <span style="font-size:12px;color:#6b7280;">— réservé aux ambassadeurs démarrés il y a moins de 2 mois</span></span>
+  </label>
+  <div id="req-trial-commitment" style="display:none;margin-top:10px;padding:10px 12px;background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;">
+    <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;color:#92400e;">
+      <input type="checkbox" id="req-trial-commit-check" style="margin-top:2px;accent-color:#f97316;">
+      <span>Je m&#39;engage à souscrire à l&#39;application Phil-Mobile à l&#39;issue de mon mois d&#39;essai.</span>
+    </label>
+  </div>
+</div>
 
 <button
   onclick="submitAccessRequest()"
@@ -3761,6 +3782,32 @@ window.submitAccessRequest = async function(){
     return;
   }
 
+  // Type d'accès demandé
+  const accessType = document.querySelector('input[name="req-access-type"]:checked')?.value || 'none';
+
+  // Validation : "mois offert" réservé aux ambassadeurs de moins de 2 mois
+  if (accessType === 'trial') {
+    if (!document.getElementById('req-trial-commit-check').checked) {
+      alert("⚠️ Merci de cocher la case d'engagement avant d'envoyer votre demande de mois offert.");
+      return;
+    }
+    const startDateStr = document.getElementById('req-startdate').value.trim();
+    const parts = startDateStr.split('/');
+    if (parts.length === 3) {
+      const startDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      if (startDate < twoMonthsAgo) {
+        alert(
+          "⚠️ L'offre \"Premier mois offert\" est réservée aux ambassadeurs Smart démarrés il y a moins de 2 mois.\n\n" +
+          "D'après votre date d'entrée, vous avez démarré il y a plus de 2 mois.\n\n" +
+          "Vous pouvez soumettre une demande d'accès standard ou une démo de 3 jours."
+        );
+        return;
+      }
+    }
+  }
+
   try {
 
     await window.addDoc(window.collection(window.db, "prospects"), {
@@ -3790,7 +3837,7 @@ window.submitAccessRequest = async function(){
 
       comment: document.getElementById('req-comment').value.trim(),
 
-      demoRequest: document.getElementById('req-demo').checked,
+      accessType: accessType,
 
       status: "pending",
       createdAt: new Date().toISOString()
@@ -3806,10 +3853,16 @@ window.submitAccessRequest = async function(){
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    ['req-pqs', 'req-fastsc', 'req-fastec', 'req-demo'].forEach(id => {
+    ['req-pqs', 'req-fastsc', 'req-fastec'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.checked = false;
     });
+    const radioNone = document.getElementById('req-access-none');
+    if (radioNone) radioNone.checked = true;
+    const commitCheck = document.getElementById('req-trial-commit-check');
+    if (commitCheck) commitCheck.checked = false;
+    const commitDiv = document.getElementById('req-trial-commitment');
+    if (commitDiv) commitDiv.style.display = 'none';
 
     alert(
       "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."

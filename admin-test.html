@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.6</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.7</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -1594,7 +1594,7 @@ function loadProspects() {
         <div class="card-info">
           <strong>${escapeHtml(p.firstName || '')} ${escapeHtml(p.lastName || '')}</strong>
           ${p.smartId ? `<span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(p.smartId)}</span>` : ''}
-          ${p.demoRequest ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🧪 Démo 3 jours</span>' : ''}
+          ${p.accessType === 'demo' ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🧪 Démo 3 jours</span>' : p.accessType === 'trial' ? '<span class="badge" style="background:#f0fdf4;color:#16a34a;">🎁 Mois offert</span>' : ''}
           <div class="meta">${escapeHtml(p.company || '—')} · ${escapeHtml(p.email || '')} · ${escapeHtml(p.phone || '')}</div>
           <div class="meta">ASP actuel: ${escapeHtml(String(p.asp ?? '—'))} · Entrée Smart: ${escapeHtml(p.startDate || '—')}</div>
           <div class="meta">Upline: ${escapeHtml(p.upline || '—')} (${escapeHtml(p.uplinePhone || '—')})</div>
@@ -2424,8 +2424,10 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-isadmin').checked = false;
   document.getElementById('f-istest').checked = false;
   document.getElementById('f-isteams').checked = false;
-  // Demande Démo : durée présélectionnée à 3 jours (modifiable avant validation)
-  document.getElementById('f-duration').value = p?.demoRequest ? '3' : '365';
+  // Durée présélectionnée selon le type d'essai demandé (modifiable avant validation)
+  document.getElementById('f-duration').value =
+    p?.accessType === 'demo'  ? '3'  :
+    p?.accessType === 'trial' ? '30' : '365';
   document.getElementById('f-duration').disabled = false;
   document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
