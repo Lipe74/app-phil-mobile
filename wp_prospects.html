@@ -234,6 +234,43 @@ textarea:focus{
 
 <input id="p-ville" placeholder="📍 Ville">
 
+  <select id="p-op-mobile">
+    <option value="">📱 Opérateur Mobile actuel...</option>
+    <option value="Proximus">Proximus</option>
+    <option value="Orange">Orange</option>
+    <option value="Base">Base</option>
+    <option value="Telenet">Telenet</option>
+    <option value="Mobile Vikings">Mobile Vikings</option>
+    <option value="Scarlet">Scarlet</option>
+    <option value="JOIN">JOIN</option>
+    <option value="Lycamobile">Lycamobile</option>
+    <option value="Odido">Odido</option>
+    <option value="Youfone">Youfone</option>
+    <option value="Simyo">Simyo</option>
+    <option value="Autre">Autre</option>
+  </select>
+  <input id="p-num-mobile" placeholder="📱 N° client Mobile">
+
+  <select id="p-op-internet">
+    <option value="">🌐 Opérateur Internet actuel...</option>
+    <option value="Proximus">Proximus</option>
+    <option value="Orange">Orange</option>
+    <option value="Telenet">Telenet</option>
+    <option value="VOO">VOO</option>
+    <option value="Scarlet">Scarlet</option>
+    <option value="EDPnet">EDPnet</option>
+    <option value="Odido">Odido</option>
+    <option value="Autre">Autre</option>
+  </select>
+  <input id="p-num-internet" placeholder="🌐 N° client Internet">
+
+  <input id="p-easyswitch" placeholder="🔄 N° EasySwitch">
+
+  <div>
+    <label style="font-size:11px;color:#888;font-weight:700;">📅 Date de fin de contrat (facultatif)</label>
+    <input type="date" id="p-date-fin-contrat">
+  </div>
+
   <select id="p-source">
     <option value="Orange">🟠 Orange</option>
     <option value="Eneco">⚡ Eneco</option>
@@ -486,11 +523,13 @@ function toggleReferenceFields(){
 }
 
 function resetProspectForm(){
-  ['p-nom','p-tel','p-email','p-commentaire','p-societe','p-tva','p-ville','p-ref-nom','p-ref-tel'].forEach(id => {
+  ['p-nom','p-tel','p-email','p-commentaire','p-societe','p-tva','p-ville','p-ref-nom','p-ref-tel','p-num-mobile','p-num-internet','p-easyswitch','p-date-fin-contrat'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('p-source').value = 'Orange';
   document.getElementById('p-provenance').value = '';
+  document.getElementById('p-op-mobile').value = '';
+  document.getElementById('p-op-internet').value = '';
   document.getElementById('p-type').value = 'Particulier';
   toggleSocieteFields();
   toggleReferenceFields();
@@ -527,6 +566,12 @@ function editProspect(id){
   document.getElementById('p-tva').value = p.tva || '';
   document.getElementById('p-ref-nom').value = p.referenceNom || '';
   document.getElementById('p-ref-tel').value = p.referenceTel || '';
+  document.getElementById('p-op-mobile').value = p.opMobile || '';
+  document.getElementById('p-num-mobile').value = p.numMobile || '';
+  document.getElementById('p-op-internet').value = p.opInternet || '';
+  document.getElementById('p-num-internet').value = p.numInternet || '';
+  document.getElementById('p-easyswitch').value = p.easySwitch || '';
+  document.getElementById('p-date-fin-contrat').value = p.dateFinContrat || '';
   toggleSocieteFields();
   toggleReferenceFields();
 
@@ -568,6 +613,13 @@ async function saveProspect(){
   societe: document.getElementById('p-societe').value.trim(),
   tva: document.getElementById('p-tva').value.trim(),
   ville: document.getElementById('p-ville').value.trim(),
+
+  opMobile: document.getElementById('p-op-mobile').value,
+  numMobile: document.getElementById('p-num-mobile').value.trim(),
+  opInternet: document.getElementById('p-op-internet').value,
+  numInternet: document.getElementById('p-num-internet').value.trim(),
+  easySwitch: document.getElementById('p-easyswitch').value.trim(),
+  dateFinContrat: document.getElementById('p-date-fin-contrat').value,
 
   source: document.getElementById('p-source').value,
   provenance: document.getElementById('p-provenance').value,
@@ -815,6 +867,10 @@ async function renderList(){
       ${p.email ? '📧 ' + escapeHtml(p.email) + '<br>' : ''}
       ${p.ville ? '📍 ' + escapeHtml(p.ville) + '<br>' : ''}
       ${p.type === 'Société' ? '🏢 ' + escapeHtml(p.societe||'-') + (p.tva ? ' · ' + escapeHtml(p.tva) : '') + '<br>' : ''}
+      ${p.opMobile ? '📱 ' + escapeHtml(p.opMobile) + (p.numMobile ? ' · ' + escapeHtml(p.numMobile) : '') + '<br>' : ''}
+      ${p.opInternet ? '🌐 ' + escapeHtml(p.opInternet) + (p.numInternet ? ' · ' + escapeHtml(p.numInternet) : '') + '<br>' : ''}
+      ${p.easySwitch ? '🔄 EasySwitch : ' + escapeHtml(p.easySwitch) + '<br>' : ''}
+      ${p.dateFinContrat ? '⏳ Fin de contrat : ' + new Date(p.dateFinContrat).toLocaleDateString() + '<br>' : ''}
       🏷 ${escapeHtml(p.source||'-')}<br>
       ${p.provenance ? '🧭 ' + escapeHtml(p.provenance) + '<br>' : ''}
       ${p.referenceNom ? '⭐ Référé par : ' + escapeHtml(p.referenceNom) + (p.referenceTel ? ' (' + escapeHtml(p.referenceTel) + ')' : '') + '<br>' : ''}
@@ -883,6 +939,12 @@ async function migrateAllConverted() {
         societe: p.societe || '',
         tva: p.tva || '',
         reference: '',
+        opMobile: p.opMobile || '',
+        numMobile: p.numMobile || '',
+        opInternet: p.opInternet || '',
+        numInternet: p.numInternet || '',
+        easySwitch: p.easySwitch || '',
+        dateFinContrat: p.dateFinContrat || '',
         etat: 'actif',
         sourceProspectId: p.docId,
         createdAt: new Date().toISOString()
