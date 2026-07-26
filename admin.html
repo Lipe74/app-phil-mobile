@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.7</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.8</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -199,6 +199,9 @@
           <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item" id="menu-news-create">➕ Créer une news</button>
           <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item" id="menu-news-list">📋 News publiées</button>
         </div>
+
+        <div class="menu-label">🏆 Concours</div>
+        <button onclick="showAdminPanel('panel-concours', this)" class="menu-item" id="menu-concours">🏆 Concours</button>
 
         <div class="menu-label">📅 Agenda</div>
         <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
@@ -476,9 +479,11 @@
                 <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
                 <button type="button" class="rte-btn" title="Insérer un lien" onmousedown="event.preventDefault()" onclick="rteInsertLink()">🔗 Lien</button>
                 <button type="button" class="rte-btn" title="Insérer une image" onmousedown="event.preventDefault()" onclick="rteInsertImage()">🖼️ Image</button>
+                <input type="file" id="newsitem-image-input" accept="image/*" style="display:none;" onchange="handleNewsImageSelected(event)">
               </div>
               <div id="newsitem-fulltext" contenteditable="true" class="rte-editor" data-placeholder="Le détail complet de la news..." style="width:100%;min-height:110px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;overflow-y:auto;"></div>
-              <div style="font-size:11px;color:#999;margin-top:4px;">🖼️ Pour une image : dépose le fichier dans <code>/images/news/</code> via GitHub Desktop, pousse-le, puis clique sur "Image" et colle le chemin (ex: <code>images/news/promo.png</code>).</div>
+              <div id="newsitem-image-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              <div style="font-size:11px;color:#999;margin-top:4px;">🖼️ Cliquez sur "Image" pour envoyer une photo depuis votre appareil (JPG/PNG, max 5 Mo, compressée automatiquement).</div>
             </div>
             <button class="btn btn-primary" id="newsitem-submit-btn" onclick="addOrUpdateNewsItem()">➕ Publier dans l'historique</button>
             <button class="btn btn-secondary" id="newsitem-cancel-btn" onclick="cancelNewsItemEdit()" style="display:none;">Annuler la modification</button>
@@ -489,6 +494,75 @@
         <div class="admin-panel" id="panel-news-list">
           <div class="section-title">📋 News publiées</div>
           <div id="newsitems-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-concours">
+          <div class="section-title">🏆 Concours</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Visible dans le hub, sous "Agenda, Formations &amp; News". Un bloc s'affiche automatiquement "Aucun concours pour le moment" tant qu'aucune période valide n'est configurée, ou une fois la date de fin dépassée.
+          </div>
+
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title" style="font-size:13px;margin-bottom:10px;">🔵 Concours Smart SN</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <img id="concours-smart-photo-preview" src="images/smart.png" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid #eee;">
+              <div style="flex:1;">
+                <input type="file" id="concours-smart-photo-input" accept="image/*" onchange="handleConcoursPhotoChange(event,'smart')">
+                <div id="concours-smart-photo-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="concours-smart-title" placeholder="ex: Challenge été 2026">
+            </div>
+            <div class="form-row">
+              <label>Texte</label>
+              <textarea id="concours-smart-text" rows="4" placeholder="Détail du concours, règles, récompenses..." style="width:100%;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial,sans-serif;"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-row">
+                <label>Date de début</label>
+                <input type="date" id="concours-smart-start">
+              </div>
+              <div class="form-row">
+                <label>Date de fin</label>
+                <input type="date" id="concours-smart-end">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveConcours('smart')">💾 Enregistrer le concours Smart SN</button>
+            <div id="concours-smart-save-status" style="font-size:12px;font-weight:600;margin-top:8px;"></div>
+          </div>
+
+          <div class="card">
+            <div class="section-title" style="font-size:13px;margin-bottom:10px;">🟢 Concours Phil-Mobile</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <img id="concours-phil-photo-preview" src="images/logo.png" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid #eee;">
+              <div style="flex:1;">
+                <input type="file" id="concours-phil-photo-input" accept="image/*" onchange="handleConcoursPhotoChange(event,'phil')">
+                <div id="concours-phil-photo-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="concours-phil-title" placeholder="ex: Meilleur vendeur du mois">
+            </div>
+            <div class="form-row">
+              <label>Texte</label>
+              <textarea id="concours-phil-text" rows="4" placeholder="Détail du concours, règles, récompenses..." style="width:100%;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial,sans-serif;"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-row">
+                <label>Date de début</label>
+                <input type="date" id="concours-phil-start">
+              </div>
+              <div class="form-row">
+                <label>Date de fin</label>
+                <input type="date" id="concours-phil-end">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="saveConcours('phil')">💾 Enregistrer le concours Phil-Mobile</button>
+            <div id="concours-phil-save-status" style="font-size:12px;font-weight:600;margin-top:8px;"></div>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-agenda-create">
@@ -813,6 +887,13 @@ import {
   arrayRemove
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
@@ -827,6 +908,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 window.db = db;
 window.doc = doc;
@@ -836,6 +918,10 @@ window.getDocs = getDocs;
 window.updateDoc = updateDoc;
 window.addDoc = addDoc;
 window.deleteDoc = deleteDoc;
+window.storage = storage;
+window.storageRef = storageRef;
+window.uploadBytes = uploadBytes;
+window.getDownloadURL = getDownloadURL;
 
 let currentProspectForActivation = null;
 let isAdminUser = false;
@@ -898,6 +984,7 @@ onAuthStateChanged(auth, async (user) => {
   loadFaqAdmin();
   loadBotPending();
   loadNewsItemsAdmin();
+  loadConcoursAdmin();
   loadConsultants();
   loadMessagesAdmin();
   checkExpiredConsultants();
@@ -935,6 +1022,43 @@ function showToast(msg) {
   t.textContent = msg;
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// --- Compression d'image côté navigateur avant envoi vers Firebase Storage (Concours, News) ---
+function compressImageFile(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = () => reject(new Error('Lecture du fichier impossible'));
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+      else if (height >= width && height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Compression impossible')), 'image/jpeg', quality);
+    };
+    img.onerror = () => reject(new Error('Image invalide'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadImageToStorage(file, folder, statusEl) {
+  if (file.size > 5 * 1024 * 1024) {
+    if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = '❌ Fichier trop volumineux, max 5 Mo.'; }
+    throw new Error('Fichier trop volumineux');
+  }
+  if (statusEl) { statusEl.style.color = '#888'; statusEl.textContent = 'Compression et envoi en cours...'; }
+  const blob = await compressImageFile(file, 1000, 0.82);
+  const fileName = `${folder}/${Date.now()}.jpg`;
+  const sRef = window.storageRef(window.storage, fileName);
+  await window.uploadBytes(sRef, blob, { contentType: 'image/jpeg' });
+  const url = await window.getDownloadURL(sRef);
+  if (statusEl) { statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Image envoyée.'; }
+  return url;
 }
 
 // --- Sections pliables (listes longues : Consultants, catégories Agenda) ---
@@ -1041,25 +1165,44 @@ let newsItemsCache = [];
 let currentEditNewsItemId = null;
 
 // Insertion d'un lien ou d'une image dans l'éditeur riche des News.
-// Convention : les images sont déposées dans /images/news/ via GitHub Desktop (comme le reste des assets de l'app),
-// puis on colle ici simplement le chemin relatif (ex: images/news/promo-disney.png) ou une URL complète.
+// Les images sont désormais envoyées directement vers Firebase Storage (compression automatique),
+// plus besoin de les déposer manuellement dans /images/news/ via GitHub Desktop.
 window.rteInsertLink = function () {
   const url = prompt('URL du lien (ex: https://www.orange.be/...) :', 'https://');
   if (!url || !url.trim()) return;
   document.execCommand('createLink', false, url.trim());
 };
 
+let newsitemImgRange = null;
+
 window.rteInsertImage = function () {
-  const url = prompt(
-    "Chemin ou URL de l'image (le fichier doit déjà être déposé dans /images/news/ et poussé sur GitHub) :\nex: images/news/promo-disney.png",
-    'images/news/'
-  );
-  if (!url || !url.trim()) return;
-  document.execCommand(
-    'insertHTML',
-    false,
-    '<img src="' + url.trim() + '" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;">'
-  );
+  const editor = document.getElementById('newsitem-fulltext');
+  editor.focus();
+  const sel = window.getSelection();
+  newsitemImgRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+  document.getElementById('newsitem-image-input').click();
+};
+
+window.handleNewsImageSelected = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('newsitem-image-status');
+  try {
+    const url = await uploadImageToStorage(file, 'news', statusEl);
+    const editor = document.getElementById('newsitem-fulltext');
+    editor.focus();
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    if (newsitemImgRange) sel.addRange(newsitemImgRange);
+    document.execCommand(
+      'insertHTML',
+      false,
+      '<img src="' + url + '" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;">'
+    );
+  } catch (e) {
+    console.log('Upload image news impossible:', e.message);
+  }
 };
 
 // S'assure que tous les liens créés dans une news s'ouvrent dans un nouvel onglet
@@ -1174,6 +1317,73 @@ window.deleteNewsItem = async function (docId) {
     loadNewsItemsAdmin();
   } catch (err) {
     alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
+// --- Concours (Smart SN + Phil-Mobile) ---
+// Firestore : collection 'concours', documents 'smart' et 'phil'.
+// Un concours n'est visible dans le hub que si la date du jour est comprise entre startDate et endDate.
+let concoursPendingBlob = { smart: null, phil: null };
+
+async function loadConcoursAdmin() {
+  for (const key of ['smart', 'phil']) {
+    try {
+      const snap = await getDoc(doc(db, 'concours', key));
+      if (snap.exists()) {
+        const d = snap.data();
+        document.getElementById(`concours-${key}-title`).value = d.title || '';
+        document.getElementById(`concours-${key}-text`).value = d.text || '';
+        document.getElementById(`concours-${key}-start`).value = d.startDate || '';
+        document.getElementById(`concours-${key}-end`).value = d.endDate || '';
+        if (d.photoURL) document.getElementById(`concours-${key}-photo-preview`).src = d.photoURL;
+      }
+    } catch (err) {
+      console.log(`Chargement concours ${key} impossible:`, err.message);
+    }
+  }
+}
+
+window.handleConcoursPhotoChange = async function (event, key) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById(`concours-${key}-photo-status`);
+  try {
+    const url = await uploadImageToStorage(file, 'concours', statusEl);
+    concoursPendingBlob[key] = url;
+    document.getElementById(`concours-${key}-photo-preview`).src = url;
+  } catch (e) {
+    console.log(`Upload photo concours ${key} impossible:`, e.message);
+  }
+};
+
+window.saveConcours = async function (key) {
+  const statusEl = document.getElementById(`concours-${key}-save-status`);
+  const title = document.getElementById(`concours-${key}-title`).value.trim();
+  const text = document.getElementById(`concours-${key}-text`).value.trim();
+  const startDate = document.getElementById(`concours-${key}-start`).value;
+  const endDate = document.getElementById(`concours-${key}-end`).value;
+
+  if (startDate && endDate && startDate > endDate) {
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = '❌ La date de fin doit être après la date de début.';
+    return;
+  }
+
+  statusEl.style.color = '#888';
+  statusEl.textContent = 'Enregistrement...';
+
+  try {
+    const updateObj = { title, text, startDate, endDate };
+    if (concoursPendingBlob[key]) updateObj.photoURL = concoursPendingBlob[key];
+    await setDoc(doc(db, 'concours', key), updateObj, { merge: true });
+    statusEl.style.color = '#16a34a';
+    statusEl.textContent = '✅ Concours enregistré.';
+    showToast('🏆 Concours enregistré');
+  } catch (e) {
+    console.log(`Enregistrement concours ${key} impossible:`, e.message);
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = '❌ Erreur : impossible d\'enregistrer.';
   }
 };
 
