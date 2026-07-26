@@ -446,6 +446,13 @@ Build <span id="app-version-1">…</span> — Version Stable
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-left:4px;">🏠 Accueil</div>
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
+          <button onclick="toggleMenu('monProfilMenu')" class="menu-item group-toggle">
+👤 Mon Profil
+</button>
+<div id="monProfilMenu" class="submenu">
+          <button onclick="showMonProfil(this)" class="menu-item" id="menu-monprofil">✏️ Modifier mes informations</button>
+</div>
+
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Communication</div>
 
           <button onclick="toggleMenu('contactsMenu')" class="menu-item group-toggle">
@@ -1054,6 +1061,101 @@ Build <span id="app-version-1">…</span> — Version Stable
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
             <div id="news-history-dynamic">
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
+            </div>
+          </div>
+
+          <!-- Panel Mon Profil -->
+          <div id="panel-mon-profil" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:14px;">👤 Mon Profil</div>
+
+            <!-- Photo -->
+            <div class="pm-sec" style="margin-top:0;">Photo de profil</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+              <img id="mp-photo-preview" src="images/smart.png" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;">
+              <div style="flex:1;min-width:180px;">
+                <input type="file" id="mp-photo-input" accept="image/*" onchange="handleProfilPhotoChange(event)" style="font-size:11px;">
+                <div style="font-size:10px;color:#9ca3af;margin-top:4px;">JPG/PNG, max 5 Mo — compressée automatiquement avant envoi.</div>
+                <div id="mp-photo-status" style="font-size:11px;font-weight:600;margin-top:5px;"></div>
+              </div>
+            </div>
+
+            <!-- Infos personnelles -->
+            <div class="pm-sec">Infos personnelles</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
+                <input id="mp-prenom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
+                <input id="mp-nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div style="grid-column:span 2;">
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Pseudo <span style="font-weight:400;color:#9ca3af;">(utilisé dans les offres et le chat, à la place du nom si rempli)</span></div>
+                <input id="mp-pseudo" placeholder="ex: Phil-Mobile" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM</div>
+                <input id="mp-gsm" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email offres</div>
+                <input id="mp-email-offres" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                <div style="font-size:9px;color:#9ca3af;margin-top:2px;">⚠️ Utilisé uniquement pour l'envoi des offres — ne change pas votre email de connexion.</div>
+              </div>
+            </div>
+
+            <!-- Infos Smart SN -->
+            <div class="pm-sec">Infos Smart SN</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date d'entrée Smart SN</div>
+                <input type="date" id="mp-startdate" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP total <span style="font-weight:400;color:#9ca3af;">(vu sur My Smart SN)</span></div>
+                <input type="number" min="0" step="0.5" id="mp-asp-declare" placeholder="0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                <div style="font-size:9px;color:#9ca3af;margin-top:2px;">Recopiez simplement le total affiché chez Smart SN, l'app calcule l'ajustement automatiquement.</div>
+              </div>
+              <div style="grid-column:span 2;">
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date de pointage ASP</div>
+                <input type="date" id="mp-asp-declare-date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div style="grid-column:span 2;display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1a1a;cursor:pointer;"><input type="checkbox" id="mp-pqs"> PQS réussi</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1a1a;cursor:pointer;"><input type="checkbox" id="mp-fastsc"> Fast SC réussi</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1a1a;cursor:pointer;"><input type="checkbox" id="mp-fastec"> Fast EC réussi</label>
+              </div>
+            </div>
+
+            <!-- Échéances (lecture seule) -->
+            <div class="pm-sec">Échéances</div>
+            <div id="mp-echeances" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+            <!-- Abonnement (lecture seule) -->
+            <div class="pm-sec">Abonnement application</div>
+            <div id="mp-abonnement" style="font-size:12px;color:#6b7280;margin-bottom:14px;"></div>
+
+            <button onclick="saveMonProfilInfo()" style="width:100%;padding:10px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">💾 Enregistrer mes informations</button>
+            <div id="mp-save-status" style="font-size:12px;font-weight:600;text-align:center;margin-bottom:10px;"></div>
+
+            <!-- Accordéon mot de passe -->
+            <button onclick="toggleMenu('mp-password-accordion')" class="menu-item group-toggle" style="margin-top:6px;">🔒 Changer mon mot de passe</button>
+            <div id="mp-password-accordion" class="submenu" style="margin-left:0;padding:10px;border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
+              <div style="margin-bottom:8px;">
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Mot de passe actuel</div>
+                <input type="password" id="mp-pwd-current" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div style="margin-bottom:8px;">
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nouveau mot de passe</div>
+                <input type="password" id="mp-pwd-new" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <div style="margin-bottom:10px;">
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Confirmer le nouveau mot de passe</div>
+                <input type="password" id="mp-pwd-confirm" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+              </div>
+              <button onclick="submitPasswordChange()" style="width:100%;padding:9px;border:1px solid #f97316;border-radius:8px;background:#fff;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;">🔒 Modifier le mot de passe</button>
+              <div id="mp-pwd-status" style="font-size:12px;font-weight:600;text-align:center;margin-top:8px;"></div>
             </div>
           </div>
 
@@ -1680,7 +1782,11 @@ async function loadPMUsers() {
         uplineName: c.upline || '',
         uplineId: c.uplineId || '',
         uplineTel: c.uplineTel || '',
-        uplineEmail: c.uplineEmail || ''
+        uplineEmail: c.uplineEmail || '',
+        phone: c.phone || '',
+        emailOffres: c.emailOffres || '',
+        pseudo: c.pseudo || '',
+        photoURL: c.photoURL || ''
       };
     });
   } catch(e) {
@@ -1822,6 +1928,329 @@ function showDashboard(btn) {
 window.closeMobilePanel = function() {
   showDashboard();
 };
+
+function showMonProfil(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-mon-profil').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  renderMonProfil();
+}
+
+// ===== MON PROFIL =====
+function pmDateFRtoISO(fr) {
+  if (!fr || !fr.includes('/')) return '';
+  const parts = fr.split('/');
+  if (parts.length !== 3) return '';
+  return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+}
+function pmDateISOtoFR(iso) {
+  if (!iso) return '';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return '';
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+async function renderMonProfil() {
+  if (!pmCurrentUser) return;
+  const id = pmCurrentUser.id;
+  document.getElementById('mp-save-status').textContent = '';
+  document.getElementById('mp-photo-status').textContent = '';
+  const uploadBtn = document.getElementById('mp-photo-upload-btn');
+  if (uploadBtn) uploadBtn.remove();
+  mpPendingPhotoBlob = null;
+
+  let c = {};
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDoc) && tries < 30) { await new Promise(r=>setTimeout(r,100)); tries++; }
+    if (window.db && window.getDoc) {
+      const snap = await window.getDoc(window.doc(window.db, 'consultants', id));
+      if (snap.exists()) c = snap.data();
+    }
+  } catch(e) {
+    console.log('Lecture profil impossible:', e.message);
+  }
+
+  document.getElementById('mp-prenom').value = c.name || '';
+  document.getElementById('mp-nom').value = c.lastName || (c.fullName && c.name ? c.fullName.replace(c.name,'').trim() : '');
+  document.getElementById('mp-pseudo').value = c.pseudo || '';
+  document.getElementById('mp-gsm').value = c.phone || '';
+  document.getElementById('mp-email-offres').value = c.emailOffres || '';
+  document.getElementById('mp-startdate').value = pmDateFRtoISO(c.startDate || '');
+  const currentTotal = pmGetTotalASP(c.fullName || pmCurrentUser.fullName || pmCurrentUser.agent);
+  mpBaseASP = currentTotal - (c.aspDeclare || 0);
+  document.getElementById('mp-asp-declare').value = Math.round(currentTotal * 100) / 100;
+  document.getElementById('mp-asp-declare-date').value = c.aspDeclareDate || '';
+  document.getElementById('mp-pqs').checked = !!c.pqsValidated;
+  document.getElementById('mp-fastsc').checked = !!c.fastSCValidated;
+  document.getElementById('mp-fastec').checked = !!c.fastECValidated;
+
+  const photo = document.getElementById('mp-photo-preview');
+  photo.onerror = () => { photo.onerror = null; photo.src = 'images/smart.png'; };
+  photo.src = c.photoURL || pmAvatarSrc(id);
+
+  // Échéances (lecture seule, basées sur la startDate actuelle en base)
+  const pqsInfo = pmCalcPQSdb(c.startDate);
+  const scDays = pmCalcFastDays(c.startDate, 90);
+  const ecDays = pmCalcFastDays(c.startDate, 120);
+  const ech = document.getElementById('mp-echeances');
+  if (ech) ech.innerHTML = `
+    ${c.pqsValidated
+      ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ PQS réussi</span>'
+      : pqsInfo && pqsInfo.daysLeft > 0
+        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#FFF3E0;color:#B45309;font-weight:600;border:1px solid #f0d080;">⏱ PQS — ${pqsInfo.daysLeft}j restants</span>`
+        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#fff0f0;color:#E24B4A;font-weight:600;border:1px solid #ffcdd2;">❌ PQS non réussi</span>'}
+    ${c.fastSCValidated
+      ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ Fast SC réussi</span>'
+      : scDays !== null && scDays > 0
+        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC — ${scDays}j</span>`
+        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">🚀 Fast SC expiré</span>'}
+    ${c.fastECValidated
+      ? '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#E8F5E9;color:#2E7D32;font-weight:600;border:1px solid #c8e6c9;">✅ Fast EC réussi</span>'
+      : ecDays !== null && ecDays > 0
+        ? `<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#6b7280;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC — ${ecDays}j</span>`
+        : '<span style="font-size:11px;padding:3px 9px;border-radius:99px;background:#f5f7fa;color:#9ca3af;font-weight:600;border:1px solid #e5e7eb;">⚡ Fast EC expiré</span>'}
+  `;
+
+  // Abonnement application (lecture seule)
+  const ab = document.getElementById('mp-abonnement');
+  if (ab) {
+    if (c.expirationDate) {
+      const expDate = new Date(c.expirationDate);
+      const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
+      ab.innerHTML = `Accès valide jusqu'au <strong>${expDate.toLocaleDateString('fr-BE')}</strong>` +
+        (daysLeft >= 0 ? ` (${daysLeft} jour(s) restant(s))` : ` <span style="color:#E24B4A;">— expiré</span>`);
+    } else {
+      ab.textContent = "Aucune date d'expiration définie.";
+    }
+  }
+}
+
+async function saveMonProfilInfo() {
+  if (!pmCurrentUser) return;
+  const id = pmCurrentUser.id;
+  const status = document.getElementById('mp-save-status');
+  status.style.color = '#6b7280';
+  status.textContent = 'Enregistrement...';
+
+  const prenom = document.getElementById('mp-prenom').value.trim();
+  const nom = document.getElementById('mp-nom').value.trim();
+  const pseudo = document.getElementById('mp-pseudo').value.trim();
+  const gsm = document.getElementById('mp-gsm').value.trim();
+  const emailOffres = document.getElementById('mp-email-offres').value.trim();
+  const startDateISO = document.getElementById('mp-startdate').value;
+  const aspTotalSaisi = parseFloat(document.getElementById('mp-asp-declare').value);
+  const aspDeclare = isNaN(aspTotalSaisi) ? 0 : Math.round((aspTotalSaisi - mpBaseASP) * 100) / 100;
+  const aspDeclareDate = document.getElementById('mp-asp-declare-date').value;
+  const pqs = document.getElementById('mp-pqs').checked;
+  const fastsc = document.getElementById('mp-fastsc').checked;
+  const fastec = document.getElementById('mp-fastec').checked;
+
+  if (!prenom && !nom) {
+    status.style.color = '#E24B4A';
+    status.textContent = '❌ Merci de renseigner au moins un prénom ou un nom.';
+    return;
+  }
+
+  const fullName = `${prenom} ${nom}`.trim();
+  const updateObj = {
+    name: prenom,
+    lastName: nom,
+    fullName: fullName,
+    pseudo: pseudo,
+    phone: gsm,
+    emailOffres: emailOffres,
+    pqsValidated: pqs,
+    fastSCValidated: fastsc,
+    fastECValidated: fastec,
+    aspDeclare: aspDeclare,
+    aspDeclareDate: aspDeclareDate
+  };
+  if (startDateISO) updateObj.startDate = pmDateISOtoFR(startDateISO);
+
+  try {
+    await window.updateDoc(window.doc(window.db, 'consultants', id), updateObj);
+
+    // Rafraîchir les caches locaux (avatar, upline, suivi contrats...)
+    if (PM_USERS[id]) Object.assign(PM_USERS[id], { name: prenom, fullName, agent: fullName, pseudo, phone: gsm, emailOffres, pqsValidated: pqs, fastSCValidated: fastsc, fastECValidated: fastec });
+    pmCurrentUser.name = prenom;
+    pmCurrentUser.fullName = fullName;
+    pmCurrentUser.agent = fullName;
+    pmCurrentUser.pseudo = pseudo;
+    pmCurrentUser.phone = gsm;
+    pmCurrentUser.emailOffres = emailOffres;
+    pmNiveauAgent = fullName;
+
+    await refreshAgentProfiles();
+    const agentSel = document.getElementById('pm-add-agent');
+    if (agentSel) {
+      agentSel.innerHTML = '';
+      Object.keys(PM_AGENT_PROFILES).forEach(name => {
+        const o = document.createElement('option');
+        o.value = name; o.textContent = name;
+        agentSel.appendChild(o);
+      });
+      agentSel.value = fullName;
+    }
+    renderDashboard();
+    setWelcome(pmCurrentUser);
+
+    status.style.color = '#2E7D32';
+    status.textContent = '✅ Informations enregistrées.';
+  } catch(e) {
+    console.log('Enregistrement profil impossible:', e.message);
+    status.style.color = '#E24B4A';
+    status.textContent = "❌ Erreur : impossible d'enregistrer.";
+  }
+}
+
+// --- Photo de profil : compression côté navigateur puis envoi vers Firebase Storage ---
+let mpPendingPhotoBlob = null;
+let mpBaseASP = 0;
+
+function compressImageFile(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = () => reject(new Error('Lecture du fichier impossible'));
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+      else if (height >= width && height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Compression impossible')), 'image/jpeg', quality);
+    };
+    img.onerror = () => reject(new Error('Image invalide'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleProfilPhotoChange(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('mp-photo-status');
+
+  if (file.size > 5 * 1024 * 1024) {
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = '❌ Fichier trop volumineux, max 5 Mo.';
+    event.target.value = '';
+    return;
+  }
+
+  statusEl.style.color = '#6b7280';
+  statusEl.textContent = 'Compression en cours...';
+
+  try {
+    const blob = await compressImageFile(file, 600, 0.8);
+    mpPendingPhotoBlob = blob;
+    document.getElementById('mp-photo-preview').src = URL.createObjectURL(blob);
+    statusEl.style.color = '#6b7280';
+    statusEl.textContent = `Photo prête (${Math.round(blob.size / 1024)} Ko).`;
+
+    let uploadBtn = document.getElementById('mp-photo-upload-btn');
+    if (!uploadBtn) {
+      uploadBtn = document.createElement('button');
+      uploadBtn.id = 'mp-photo-upload-btn';
+      uploadBtn.textContent = '⬆️ Envoyer la photo';
+      uploadBtn.style = 'margin-top:6px;padding:6px 12px;border:1px solid #f97316;border-radius:7px;background:#fff;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;';
+      uploadBtn.onclick = uploadProfilPhoto;
+      statusEl.parentNode.appendChild(uploadBtn);
+    }
+  } catch(e) {
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = '❌ Impossible de traiter cette image.';
+    console.log('Compression photo impossible:', e.message);
+  }
+}
+
+async function uploadProfilPhoto() {
+  if (!mpPendingPhotoBlob || !pmCurrentUser) return;
+  const statusEl = document.getElementById('mp-photo-status');
+  statusEl.style.color = '#6b7280';
+  statusEl.textContent = 'Envoi en cours...';
+
+  try {
+    let tries = 0;
+    while ((!window.storage || !window.storageRef || !window.uploadBytes || !window.getDownloadURL) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100)); tries++;
+    }
+    if (!window.storage) throw new Error('Firebase Storage non disponible');
+
+    const id = pmCurrentUser.id;
+    const sRef = window.storageRef(window.storage, `profiles/${id}.png`);
+    await window.uploadBytes(sRef, mpPendingPhotoBlob, { contentType: 'image/jpeg' });
+    const url = await window.getDownloadURL(sRef);
+
+    await window.updateDoc(window.doc(window.db, 'consultants', id), { photoURL: url });
+
+    if (PM_USERS[id]) PM_USERS[id].photoURL = url;
+    pmCurrentUser.photoURL = url;
+
+    document.getElementById('mp-photo-preview').src = url;
+    const uploadBtn = document.getElementById('mp-photo-upload-btn');
+    if (uploadBtn) uploadBtn.remove();
+    mpPendingPhotoBlob = null;
+
+    statusEl.style.color = '#2E7D32';
+    statusEl.textContent = '✅ Photo mise à jour.';
+    renderDashboard();
+  } catch(e) {
+    console.log('Envoi photo impossible:', e.message);
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = "❌ Erreur lors de l'envoi de la photo.";
+  }
+}
+
+// --- Changement de mot de passe (réauthentification requise) ---
+async function submitPasswordChange() {
+  const statusEl = document.getElementById('mp-pwd-status');
+  const current = document.getElementById('mp-pwd-current').value;
+  const next = document.getElementById('mp-pwd-new').value;
+  const confirmPwd = document.getElementById('mp-pwd-confirm').value;
+
+  if (!current || !next || !confirmPwd) {
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = '❌ Merci de remplir tous les champs.';
+    return;
+  }
+  if (next.length < 6) {
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = '❌ Le nouveau mot de passe doit contenir au moins 6 caractères.';
+    return;
+  }
+  if (next !== confirmPwd) {
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = '❌ Les deux mots de passe ne correspondent pas.';
+    return;
+  }
+
+  statusEl.style.color = '#6b7280';
+  statusEl.textContent = 'Modification en cours...';
+
+  try {
+    await window.changeMyPassword(current, next);
+    statusEl.style.color = '#2E7D32';
+    statusEl.textContent = '✅ Mot de passe modifié.';
+    document.getElementById('mp-pwd-current').value = '';
+    document.getElementById('mp-pwd-new').value = '';
+    document.getElementById('mp-pwd-confirm').value = '';
+  } catch(e) {
+    console.log('Changement mot de passe impossible:', e.message);
+    statusEl.style.color = '#E24B4A';
+    statusEl.textContent = (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential')
+      ? '❌ Mot de passe actuel incorrect.'
+      : '❌ Erreur : ' + (e.message || 'modification impossible.');
+  }
+}
 
 function showContacts(btn) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
@@ -2203,7 +2632,7 @@ function renderMessageContacts() {
     return `
     <div onclick="openConversation('${c.id}', '${c.name.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid ${unread ? '#f97316' : '#f0f0f0'};border-radius:10px;margin-bottom:8px;cursor:pointer;background:${unread ? '#fff8f0' : '#fff'};">
       <div style="position:relative;flex-shrink:0;">
-        <img src="images/${c.id}.png" onerror="this.src='images/smart.png'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;">
+        <img src="${pmAvatarSrc(c.id)}" onerror="this.src='images/smart.png'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;">
         ${unread ? '<span style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff;"></span>' : ''}
       </div>
       <div style="flex:1;">
@@ -2894,7 +3323,7 @@ function fillUplineContactPanel(uplineName, uplineTel, uplineEmail, uplineId) {
   const tel = uplineTel ? uplineTel.replace(/\s+/g, '') : DEFAULT_TEL;
   const telLabel = uplineTel || DEFAULT_TEL_LABEL;
   const mail = uplineEmail || DEFAULT_MAIL;
-  const logo = (uplineId && uplineName) ? `images/${uplineId}.png` : DEFAULT_LOGO;
+  const logo = (uplineId && uplineName) ? pmAvatarSrc(uplineId) : DEFAULT_LOGO;
 
   const elName = document.getElementById('upline-contact-name');
   const elLogo = document.getElementById('upline-contact-logo');
@@ -3020,6 +3449,33 @@ window.sendUplineMessage = async function() {
   }
 };
 
+// ===== Échéances PQS / Fast SC / Fast EC — fonctions pures réutilisées par le Tableau de bord et Mon Profil =====
+function pmCalcFastDays(startDateStr, limitDays) {
+  if (!startDateStr || startDateStr === '—') return null;
+  const parts = startDateStr.split('/');
+  if (parts.length !== 3) return null;
+  const start = new Date(parts[2], parts[1]-1, parts[0]);
+  const deadline = new Date(start.getTime() + limitDays * 86400000);
+  return Math.ceil((deadline - new Date()) / 86400000);
+}
+function pmCalcPQSdb(startDateStr) {
+  if (!startDateStr || startDateStr === '—') return null;
+  const parts = startDateStr.split('/');
+  if (parts.length !== 3) return null;
+  const start = new Date(parts[2], parts[1]-1, parts[0]);
+  const deadline = new Date(start.getTime() + 40 * 86400000);
+  const daysLeft = Math.ceil((deadline - new Date()) / 86400000);
+  const pct = Math.min(100, Math.max(0, Math.round((40 - daysLeft) / 40 * 100)));
+  return { deadline, daysLeft, pct };
+}
+
+// Avatar : privilégie la photo Firebase Storage (photoURL), sinon retombe sur images/{id}.png puis images/smart.png
+function pmAvatarSrc(id) {
+  const u = id ? PM_USERS[id] : null;
+  if (u && u.photoURL) return u.photoURL;
+  return `images/${id || 'smart'}.png`;
+}
+
 function renderDashboard() {
   if (!pmCurrentUser) return;
   const u = pmCurrentUser;
@@ -3030,24 +3486,8 @@ function renderDashboard() {
   const next = pmGetNextNiveau(aspTotal);
 
   // PQS / Fast SC / Fast EC
-  function calcFastDays(limitDays) {
-    if (!p.startDate || p.startDate === '—') return null;
-    const parts = p.startDate.split('/');
-    if (parts.length !== 3) return null;
-    const start = new Date(parts[2], parts[1]-1, parts[0]);
-    const deadline = new Date(start.getTime() + limitDays * 86400000);
-    return Math.ceil((deadline - new Date()) / 86400000);
-  }
-  function calcPQSdb() {
-    if (!p.startDate || p.startDate === '—') return null;
-    const parts = p.startDate.split('/');
-    if (parts.length !== 3) return null;
-    const start = new Date(parts[2], parts[1]-1, parts[0]);
-    const deadline = new Date(start.getTime() + 40 * 86400000);
-    const daysLeft = Math.ceil((deadline - new Date()) / 86400000);
-    const pct = Math.min(100, Math.max(0, Math.round((40 - daysLeft) / 40 * 100)));
-    return { deadline, daysLeft, pct };
-  }
+  function calcFastDays(limitDays) { return pmCalcFastDays(p.startDate, limitDays); }
+  function calcPQSdb() { return pmCalcPQSdb(p.startDate); }
   const pqs = calcPQSdb();
   const fastSCDays = calcFastDays(90);
   const fastECDays = calcFastDays(120);
@@ -3064,7 +3504,7 @@ function renderDashboard() {
     const upWhatsapp = upTel ? upTel.replace(/\s+/g, '').replace('+', '') : '';
     if (upName) {
       sponsorHtml = `<div style="margin-top:10px;background:#fef9f5;border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #fde8cc;">
-        <img src="images/${upId || 'smart'}.png" onerror="this.src='images/smart.png'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+        <img src="${pmAvatarSrc(upId)}" onerror="this.src='images/smart.png'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
         <div style="flex:1;"><div style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Votre sponsor</div>
         <div style="font-size:13px;font-weight:700;color:#f97316;">${upName}</div></div>
         ${upTel?`<a href="https://wa.me/${upWhatsapp}" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#25d366;color:white;border-radius:99px;text-decoration:none;font-size:12px;font-weight:600;">💬 WhatsApp</a>`:''}
@@ -3080,7 +3520,7 @@ function renderDashboard() {
   const el = document.getElementById('pm-dashboard-info');
   if (el) el.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-<img src="images/${pmCurrentUser?.id || 'smart'}.png"
+<img src="${pmAvatarSrc(pmCurrentUser?.id)}"
      style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;"
      onerror="this.src='images/smart.png'">      <div style="flex:1;">
 <div style="font-size:15px;font-weight:700;color:#1a1a1a;">
@@ -3234,7 +3674,7 @@ async function refreshAgentProfiles() {
       if (!c.active || !c.fullName) return;
       const parts = c.fullName.trim().split(' ');
       const initials = parts.map(p=>p[0]).join('').toUpperCase().slice(0,2);
-      newProfiles[c.fullName] = { initials, startDate: c.startDate||'—', aspInit: (c.aspInit||0) + (c.aspFromContracts||0) };
+      newProfiles[c.fullName] = { initials, startDate: c.startDate||'—', aspInit: (c.aspInit||0) + (c.aspFromContracts||0) + (c.aspDeclare||0) };
     });
     if(Object.keys(newProfiles).length > 0) PM_AGENT_PROFILES = newProfiles;
 
@@ -4295,7 +4735,10 @@ import {
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
-  createUserWithEmailAndPassword
+  createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
@@ -4317,6 +4760,13 @@ import {
   deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -4330,6 +4780,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 window.db = getFirestore(app);
+window.storage = getStorage(app);
+window.storageRef = storageRef;
+window.uploadBytes = uploadBytes;
+window.getDownloadURL = getDownloadURL;
 window.addDoc = addDoc;
 window.collection = collection;
 window.getDocs = getDocs;
@@ -4348,6 +4802,13 @@ window.deleteDoc = deleteDoc;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
+window.changeMyPassword = async (currentPassword, newPassword) => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Aucune session active');
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
+};
 
 onAuthStateChanged(auth, async (user) => {
 
@@ -4463,8 +4924,8 @@ window.openSimulator = function(url){
   if (pmCurrentUser) {
     const params = new URLSearchParams({
       consultantId: pmCurrentUser.id || '',
-      consultantName: pmCurrentUser.fullName || pmCurrentUser.name || '',
-      consultantEmail: pmCurrentUser.email || ''
+      consultantName: pmCurrentUser.pseudo || pmCurrentUser.fullName || pmCurrentUser.name || '',
+      consultantEmail: pmCurrentUser.emailOffres || pmCurrentUser.email || ''
     });
     url += (url.includes('?') ? '&' : '?') + params.toString();
   }

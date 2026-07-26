@@ -1113,8 +1113,9 @@ Build <span id="app-version-1">…</span> — Essai
                 <input type="date" id="mp-startdate" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
               </div>
               <div>
-                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP déclaré <span style="font-weight:400;color:#9ca3af;">(pointage Smart SN)</span></div>
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP total <span style="font-weight:400;color:#9ca3af;">(vu sur My Smart SN)</span></div>
                 <input type="number" min="0" step="0.5" id="mp-asp-declare" placeholder="0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                <div style="font-size:9px;color:#9ca3af;margin-top:2px;">Recopiez simplement le total affiché chez Smart SN, l'app calcule l'ajustement automatiquement.</div>
               </div>
               <div style="grid-column:span 2;">
                 <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date de pointage ASP</div>
@@ -1981,7 +1982,9 @@ async function renderMonProfil() {
   document.getElementById('mp-gsm').value = c.phone || '';
   document.getElementById('mp-email-offres').value = c.emailOffres || '';
   document.getElementById('mp-startdate').value = pmDateFRtoISO(c.startDate || '');
-  document.getElementById('mp-asp-declare').value = c.aspDeclare || 0;
+  const currentTotal = pmGetTotalASP(c.fullName || pmCurrentUser.fullName || pmCurrentUser.agent);
+  mpBaseASP = currentTotal - (c.aspDeclare || 0);
+  document.getElementById('mp-asp-declare').value = Math.round(currentTotal * 100) / 100;
   document.getElementById('mp-asp-declare-date').value = c.aspDeclareDate || '';
   document.getElementById('mp-pqs').checked = !!c.pqsValidated;
   document.getElementById('mp-fastsc').checked = !!c.fastSCValidated;
@@ -2041,7 +2044,8 @@ async function saveMonProfilInfo() {
   const gsm = document.getElementById('mp-gsm').value.trim();
   const emailOffres = document.getElementById('mp-email-offres').value.trim();
   const startDateISO = document.getElementById('mp-startdate').value;
-  const aspDeclare = parseFloat(document.getElementById('mp-asp-declare').value) || 0;
+  const aspTotalSaisi = parseFloat(document.getElementById('mp-asp-declare').value);
+  const aspDeclare = isNaN(aspTotalSaisi) ? 0 : Math.round((aspTotalSaisi - mpBaseASP) * 100) / 100;
   const aspDeclareDate = document.getElementById('mp-asp-declare-date').value;
   const pqs = document.getElementById('mp-pqs').checked;
   const fastsc = document.getElementById('mp-fastsc').checked;
@@ -2107,6 +2111,7 @@ async function saveMonProfilInfo() {
 
 // --- Photo de profil : compression côté navigateur puis envoi vers Firebase Storage ---
 let mpPendingPhotoBlob = null;
+let mpBaseASP = 0;
 
 function compressImageFile(file, maxDim, quality) {
   return new Promise((resolve, reject) => {

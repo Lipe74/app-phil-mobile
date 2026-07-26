@@ -334,14 +334,15 @@ window.consultantInfo = {
       });
     });
 
-    // Récupérer le téléphone depuis Firestore (pas transmis dans l'URL)
+    // Récupérer le téléphone + la photo de profil (Firebase Storage) depuis Firestore (pas transmis dans l'URL)
     try {
       const snap = await getDoc(doc(db, 'consultants', consultantId));
-      if (snap.exists() && snap.data().phone) {
-        window.consultantInfo.phone = snap.data().phone;
+      if (snap.exists()) {
+        if (snap.data().phone) window.consultantInfo.phone = snap.data().phone;
+        if (snap.data().photoURL) window.consultantInfo.logoUrl = snap.data().photoURL;
       }
     } catch(e) {
-      console.log('Lecture téléphone consultant impossible:', e.message);
+      console.log('Lecture téléphone/photo consultant impossible:', e.message);
     }
   }
 
