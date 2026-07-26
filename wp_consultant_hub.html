@@ -3628,14 +3628,13 @@ async function refreshAccueilMetrics(u) {
       contratsCeMois++;
       aspMois += c.aspTotal || 0;
 
-      Object.keys(c.produitsDetail || {}).forEach(pid => {
-        const qty = c.produitsDetail[pid].length;
-        if (pid === 'eneco_elec' || pid === 'eneco_gaz' || pid === 'chaudiere') {
-          totalE += qty;
-        } else {
-          totalO += qty;
-        }
-      });
+      const produitIds = Object.keys(c.produitsDetail || {});
+      const isEnecoProduit = pid => pid === 'eneco_elec' || pid === 'eneco_gaz' || pid === 'chaudiere';
+      const hasEneco = produitIds.some(isEnecoProduit);
+      const hasOrange = produitIds.some(pid => !isEnecoProduit(pid));
+
+      if (hasOrange && !hasEneco) totalO++;
+      else if (hasEneco && !hasOrange) totalE++;
     });
 
   } catch(e) {
