@@ -475,7 +475,11 @@ Build <span id="app-version-1">…</span> — Essai
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
 <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
-<button onclick="showConcours(this)" class="menu-item" id="menu-concours">🏆 Concours</button>
+<button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
+<div id="concoursMenu" class="submenu">
+  <button onclick="showConcours(this,'smart')" class="menu-item" id="menu-concours-smart">🔵 Smart SN</button>
+  <button onclick="showConcours(this,'phil')" class="menu-item" id="menu-concours-phil">🟢 Phil-Mobile</button>
+</div>
 
 <!-- MES OUTILS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🧰 Mes Outils</div>
@@ -1068,7 +1072,7 @@ Build <span id="app-version-1">…</span> — Essai
 
           <!-- Panel Concours -->
           <div id="panel-concours" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:16px;">🏆 Concours</div>
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:16px;" id="concours-panel-title">🏆 Concours</div>
             <div id="concours-content">
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
             </div>
@@ -2300,7 +2304,7 @@ function showNews(btn) {
   renderNewsHistory();
 }
 
-function showConcours(btn) {
+function showConcours(btn, key) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   btn.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
@@ -2309,7 +2313,9 @@ function showConcours(btn) {
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
   document.getElementById('panel-concours').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
-  renderConcours();
+  document.getElementById('concours-panel-title').textContent =
+    key === 'smart' ? '🔵 Concours Smart SN' : '🟢 Concours Phil-Mobile';
+  renderConcours(key);
 }
 
 // Un concours n'est actif que si la date du jour est comprise dans [startDate, endDate] (format ISO yyyy-mm-dd).
@@ -2322,18 +2328,17 @@ function pmConcoursActif(d) {
 function pmConcoursCard(label, icon, defaultPhoto, d) {
   if (!pmConcoursActif(d)) {
     return `
-      <div style="border:1px solid #f0f0f0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fafafa;">
-        <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">${icon} ${label}</div>
+      <div style="border:1px solid #f0f0f0;border-radius:12px;padding:16px;background:#fafafa;">
         <div style="font-size:13px;color:#9ca3af;">Aucun concours pour le moment.</div>
       </div>`;
   }
   const photo = d.photoURL || defaultPhoto;
   const dateRange = pmFormatConcoursDate(d.startDate) + ' → ' + pmFormatConcoursDate(d.endDate);
   return `
-    <div style="border:1px solid #fde8cc;border-radius:12px;overflow:hidden;margin-bottom:12px;background:#fff;">
+    <div style="border:1px solid #fde8cc;border-radius:12px;overflow:hidden;background:#fff;">
       <img src="${photo}" style="width:100%;max-height:280px;object-fit:contain;background:#fff;display:block;" onerror="this.style.display='none'">
       <div style="padding:16px;">
-        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${icon} ${label} · ${dateRange}</div>
+        <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${dateRange}</div>
         <div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">${d.title || ''}</div>
         <div style="font-size:13px;color:#4b5563;white-space:pre-wrap;">${d.text || ''}</div>
       </div>
@@ -2347,30 +2352,27 @@ function pmFormatConcoursDate(iso) {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-async function renderConcours() {
+async function renderConcours(key) {
   const el = document.getElementById('concours-content');
   if (!el) return;
   el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Chargement...</div>';
 
-  let smartData = {}, philData = {};
+  let data = {};
   try {
     let tries = 0;
     while ((!window.db || !window.getDoc) && tries < 30) { await new Promise(r => setTimeout(r, 100)); tries++; }
     if (window.db && window.getDoc) {
-      const [smartSnap, philSnap] = await Promise.all([
-        window.getDoc(window.doc(window.db, 'concours', 'smart')),
-        window.getDoc(window.doc(window.db, 'concours', 'phil'))
-      ]);
-      if (smartSnap.exists()) smartData = smartSnap.data();
-      if (philSnap.exists()) philData = philSnap.data();
+      const snap = await window.getDoc(window.doc(window.db, 'concours', key));
+      if (snap.exists()) data = snap.data();
     }
   } catch(e) {
-    console.log('Lecture des concours impossible:', e.message);
+    console.log('Lecture du concours impossible:', e.message);
   }
 
-  el.innerHTML =
-    pmConcoursCard('Concours Smart SN', '🔵', 'images/smart.png', smartData) +
-    pmConcoursCard('Concours Phil-Mobile', '🟢', 'images/logo.png', philData);
+  const defaultPhoto = key === 'smart' ? 'images/smart.png' : 'images/logo.png';
+  const label = key === 'smart' ? 'Concours Smart SN' : 'Concours Phil-Mobile';
+  const icon = key === 'smart' ? '🔵' : '🟢';
+  el.innerHTML = pmConcoursCard(label, icon, defaultPhoto, data);
 }
 
 
