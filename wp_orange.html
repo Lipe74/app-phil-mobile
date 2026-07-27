@@ -542,12 +542,14 @@ let promosTxt=[];
 const w=window.open('','_blank');
 w.document.write(`
 <html><head><title>Offre Client</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
 <style>
 body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
 .box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px}
 h1{color:#ff5a14;text-align:center}
 .btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
 </style></head><body>
+<div id="pdf-content">
 <div style="text-align:center">
 <img src="${ci.logoUrl}" width="120" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
 <h1>OFFRE COMMERCIALE</h1>
@@ -588,8 +590,26 @@ ${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
 ${ci.phone}<br>
 ${ci.email}
 </div>
+</div>
 
-<button class="btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+<button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
+<script>
+function downloadOffrePDF(){
+  const btn=document.getElementById('pdf-download-btn');
+  btn.disabled=true;
+  btn.textContent='⏳ Génération en cours...';
+  html2pdf().set({
+    margin:10,
+    filename:'Offre-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf',
+    image:{type:'jpeg',quality:0.98},
+    html2canvas:{scale:2},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  }).from(document.getElementById('pdf-content')).save().then(()=>{
+    btn.disabled=false;
+    btn.textContent='📄 Télécharger le PDF';
+  });
+}
+<\/script>
 </body></html>`);
 w.document.close();
 }

@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.8</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.9</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -476,6 +476,7 @@
                 <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
                 <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
                 <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Aligner à droite" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')">➡</button>
                 <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
                 <button type="button" class="rte-btn" title="Insérer un lien" onmousedown="event.preventDefault()" onclick="rteInsertLink()">🔗 Lien</button>
                 <button type="button" class="rte-btn" title="Insérer une image" onmousedown="event.preventDefault()" onclick="rteInsertImage()">🖼️ Image</button>
@@ -517,7 +518,17 @@
             </div>
             <div class="form-row">
               <label>Texte</label>
-              <textarea id="concours-smart-text" rows="4" placeholder="Détail du concours, règles, récompenses..." style="width:100%;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial,sans-serif;"></textarea>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Aligner à droite" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')">➡</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+              </div>
+              <div id="concours-smart-text" contenteditable="true" class="rte-editor" data-placeholder="Détail du concours, règles, récompenses..." style="width:100%;min-height:100px;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial,sans-serif;overflow-y:auto;"></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div class="form-row">
@@ -548,7 +559,17 @@
             </div>
             <div class="form-row">
               <label>Texte</label>
-              <textarea id="concours-phil-text" rows="4" placeholder="Détail du concours, règles, récompenses..." style="width:100%;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial,sans-serif;"></textarea>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Aligner à droite" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')">➡</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+              </div>
+              <div id="concours-phil-text" contenteditable="true" class="rte-editor" data-placeholder="Détail du concours, règles, récompenses..." style="width:100%;min-height:100px;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial,sans-serif;overflow-y:auto;"></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
               <div class="form-row">
@@ -1332,7 +1353,7 @@ async function loadConcoursAdmin() {
       if (snap.exists()) {
         const d = snap.data();
         document.getElementById(`concours-${key}-title`).value = d.title || '';
-        document.getElementById(`concours-${key}-text`).value = d.text || '';
+        document.getElementById(`concours-${key}-text`).innerHTML = d.text || '';
         document.getElementById(`concours-${key}-start`).value = d.startDate || '';
         document.getElementById(`concours-${key}-end`).value = d.endDate || '';
         if (d.photoURL) document.getElementById(`concours-${key}-photo-preview`).src = d.photoURL;
@@ -1360,7 +1381,7 @@ window.handleConcoursPhotoChange = async function (event, key) {
 window.saveConcours = async function (key) {
   const statusEl = document.getElementById(`concours-${key}-save-status`);
   const title = document.getElementById(`concours-${key}-title`).value.trim();
-  const text = document.getElementById(`concours-${key}-text`).value.trim();
+  const text = document.getElementById(`concours-${key}-text`).innerHTML.trim();
   const startDate = document.getElementById(`concours-${key}-start`).value;
   const endDate = document.getElementById(`concours-${key}-end`).value;
 
