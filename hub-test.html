@@ -1076,17 +1076,30 @@ Build <span id="app-version-1">…</span> — Essai
             <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🚀 Idées & Projets</div>
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Vote pour les idées qui te plaisent et donne ton avis en commentaire</div>
 
-            <!-- Formulaire de création, admin uniquement -->
+            <!-- Formulaire de création / modification, admin uniquement -->
             <div id="nouveautes-admin-form" style="display:none;border:1px dashed #f97316;border-radius:10px;padding:14px;margin-bottom:18px;background:#fff7ed;">
-              <div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:8px;">➕ Proposer une nouveauté</div>
+              <div id="nv-form-title" style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:8px;">➕ Proposer une nouveauté</div>
               <input id="nv-new-title" placeholder="Titre" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;">
-              <textarea id="nv-new-desc" placeholder="Description" rows="3" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;resize:vertical;"></textarea>
+
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+              </div>
+              <div id="nv-new-desc" contenteditable="true" class="rte-editor" data-placeholder="Description..." style="min-height:70px;max-height:220px;overflow-y:auto;padding:10px 12px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:Arial,sans-serif;box-sizing:border-box;margin-bottom:8px;"></div>
+
               <select id="nv-new-status" style="padding:8px;border:1px solid #ddd;border-radius:7px;font-size:12px;margin-bottom:8px;">
                 <option value="discussion">🔴 En discussion</option>
                 <option value="cours">🟠 En cours</option>
                 <option value="fini">🟢 Finalisé</option>
               </select><br>
-              <button onclick="createNouveaute()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">Publier</button>
+              <button onclick="saveNouveaute()" id="nv-save-btn" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">Publier</button>
+              <button onclick="cancelNvEdit()" id="nv-cancel-btn" style="display:none;background:#fff;color:#374151;border:1px solid #ddd;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;margin-left:6px;">Annuler</button>
               <span id="nv-new-status-msg" style="font-size:11px;font-weight:600;margin-left:8px;"></span>
             </div>
 
@@ -2340,6 +2353,8 @@ const NV_STATUS_META = {
 const NV_REACTIONS = ['👍', '❤️', '😂', '👏'];
 let nouveautesUnsub = null;
 let nvCommentsUnsub = {};
+let nvItemsCache = {};
+let nvEditingId = null;
 
 function showNouveautes(btn) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
@@ -2420,6 +2435,8 @@ function renderNouveautesList(items) {
     if (vb !== va) return vb - va;
     return 0;
   });
+  nvItemsCache = {};
+  items.forEach(it => { nvItemsCache[it._id] = it; });
   el.innerHTML = items.map(nvCard).join('');
   items.forEach(it => listenNvComments(it._id));
 }
@@ -2436,13 +2453,23 @@ function nvCard(it) {
     return `<span onclick="toggleNvReaction('${it._id}','${emo}')" style="cursor:pointer;font-size:12px;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid ${mineReact ? '#f97316' : '#e5e7eb'};background:${mineReact ? '#fff7ed' : '#fff'};margin-right:4px;">${emo}${count ? ' ' + count : ''}</span>`;
   }).join('');
 
+  const isAdmin = pmCurrentUser && pmCurrentUser.isAdmin === true;
+  const adminActions = isAdmin ? `
+        <span style="display:flex;gap:6px;">
+          <button onclick="editNouveaute('${it._id}')" title="Modifier" style="cursor:pointer;font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#374151;">✏️</button>
+          <button onclick="deleteNouveaute('${it._id}')" title="Supprimer" style="cursor:pointer;font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#ef4444;">🗑️</button>
+        </span>` : '';
+
   return `
     <div style="border:1px solid #f0f0f0;border-radius:12px;padding:16px;background:#fff;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
         <div style="font-size:14px;font-weight:700;color:#1a1a1a;">${escapeHtmlMessages(it.title || '')}</div>
-        <span style="font-size:10px;font-weight:700;color:${meta.color};background:${meta.bg};border:1px solid ${meta.color};border-radius:99px;padding:2px 10px;white-space:nowrap;">● ${meta.label}</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;font-weight:700;color:${meta.color};background:${meta.bg};border:1px solid ${meta.color};border-radius:99px;padding:2px 10px;white-space:nowrap;">● ${meta.label}</span>
+          ${adminActions}
+        </span>
       </div>
-      <div style="font-size:13px;color:#4b5563;line-height:1.6;margin:8px 0 12px;white-space:pre-line;">${escapeHtmlMessages(it.description || '')}</div>
+      <div class="rte-content" style="font-size:13px;color:#4b5563;line-height:1.6;margin:8px 0 12px;">${it.description || ''}</div>
 
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
         <button onclick="toggleNvVote('${it._id}')" style="cursor:pointer;font-size:12px;font-weight:700;padding:6px 14px;border-radius:99px;border:1px solid ${mine ? '#f97316' : '#e5e7eb'};background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#374151'};">👍 J'adhère (${votes.length})</button>
@@ -2530,33 +2557,82 @@ async function addNvComment(nvId) {
   }
 }
 
-async function createNouveaute() {
+// Pré-remplit le formulaire avec une idée existante pour la modifier (admin uniquement)
+function editNouveaute(nvId) {
+  const it = nvItemsCache[nvId];
+  if (!it || !pmCurrentUser || pmCurrentUser.isAdmin !== true) return;
+  nvEditingId = nvId;
+  document.getElementById('nv-new-title').value = it.title || '';
+  document.getElementById('nv-new-desc').innerHTML = it.description || '';
+  document.getElementById('nv-new-status').value = it.status || 'discussion';
+  document.getElementById('nv-form-title').textContent = '✏️ Modifier l\'idée';
+  document.getElementById('nv-save-btn').textContent = 'Mettre à jour';
+  document.getElementById('nv-cancel-btn').style.display = 'inline-block';
+  const form = document.getElementById('nouveautes-admin-form');
+  if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelNvEdit() {
+  nvEditingId = null;
+  document.getElementById('nv-new-title').value = '';
+  document.getElementById('nv-new-desc').innerHTML = '';
+  document.getElementById('nv-new-status').value = 'discussion';
+  document.getElementById('nv-form-title').textContent = '➕ Proposer une nouveauté';
+  document.getElementById('nv-save-btn').textContent = 'Publier';
+  document.getElementById('nv-cancel-btn').style.display = 'none';
+  document.getElementById('nv-new-status-msg').textContent = '';
+}
+
+async function deleteNouveaute(nvId) {
+  if (!pmCurrentUser || pmCurrentUser.isAdmin !== true || !window.db) return;
+  if (!confirm('Supprimer définitivement cette idée ?')) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, 'nouveautes', nvId));
+    if (nvEditingId === nvId) cancelNvEdit();
+  } catch (e) {
+    console.log('Suppression impossible:', e.message);
+  }
+}
+
+// Création ou mise à jour selon nvEditingId — un seul bouton pour les deux cas
+async function saveNouveaute() {
   if (!pmCurrentUser || pmCurrentUser.isAdmin !== true || !window.db) return;
   const titleEl = document.getElementById('nv-new-title');
   const descEl = document.getElementById('nv-new-desc');
   const statusEl = document.getElementById('nv-new-status');
   const msgEl = document.getElementById('nv-new-status-msg');
   const title = titleEl.value.trim();
-  const description = descEl.value.trim();
+  const description = descEl.innerHTML.trim();
   if (!title) {
     msgEl.style.color = '#ef4444';
     msgEl.textContent = 'Titre requis.';
     return;
   }
   try {
-    await window.addDoc(window.collection(window.db, 'nouveautes'), {
-      title: title,
-      description: description,
-      status: statusEl.value,
-      votes: [],
-      reactions: {},
-      createdAt: window.serverTimestamp ? window.serverTimestamp() : new Date().toISOString()
-    });
-    titleEl.value = '';
-    descEl.value = '';
-    statusEl.value = 'discussion';
-    msgEl.style.color = '#22c55e';
-    msgEl.textContent = 'Publié !';
+    if (nvEditingId) {
+      await window.updateDoc(window.doc(window.db, 'nouveautes', nvEditingId), {
+        title: title,
+        description: description,
+        status: statusEl.value
+      });
+      msgEl.style.color = '#22c55e';
+      msgEl.textContent = 'Mis à jour !';
+      cancelNvEdit();
+    } else {
+      await window.addDoc(window.collection(window.db, 'nouveautes'), {
+        title: title,
+        description: description,
+        status: statusEl.value,
+        votes: [],
+        reactions: {},
+        createdAt: window.serverTimestamp ? window.serverTimestamp() : new Date().toISOString()
+      });
+      titleEl.value = '';
+      descEl.innerHTML = '';
+      statusEl.value = 'discussion';
+      msgEl.style.color = '#22c55e';
+      msgEl.textContent = 'Publié !';
+    }
     setTimeout(() => { msgEl.textContent = ''; }, 2500);
   } catch (e) {
     msgEl.style.color = '#ef4444';
