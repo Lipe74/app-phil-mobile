@@ -475,6 +475,7 @@ Build <span id="app-version-1">…</span> — Version Stable
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
 <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
+<button onclick="showNouveautes(this)" class="menu-item" id="menu-nouveautes">🚀 Idées &amp; Projets<span id="nouveautes-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 <button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
 <div id="concoursMenu" class="submenu">
   <button onclick="showConcours(this,'smart')" class="menu-item" id="menu-concours-smart">🔵 Smart SN</button>
@@ -1066,6 +1067,30 @@ Build <span id="app-version-1">…</span> — Version Stable
             <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">📰 Historique des News</div>
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
             <div id="news-history-dynamic">
+              <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
+            </div>
+          </div>
+
+          <!-- Panel Nouveautés -->
+          <div id="panel-nouveautes" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🚀 Idées & Projets</div>
+            <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Vote pour les idées qui te plaisent et donne ton avis en commentaire</div>
+
+            <!-- Formulaire de création, admin uniquement -->
+            <div id="nouveautes-admin-form" style="display:none;border:1px dashed #f97316;border-radius:10px;padding:14px;margin-bottom:18px;background:#fff7ed;">
+              <div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:8px;">➕ Proposer une nouveauté</div>
+              <input id="nv-new-title" placeholder="Titre" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;">
+              <textarea id="nv-new-desc" placeholder="Description" rows="3" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;resize:vertical;"></textarea>
+              <select id="nv-new-status" style="padding:8px;border:1px solid #ddd;border-radius:7px;font-size:12px;margin-bottom:8px;">
+                <option value="discussion">🔴 En discussion</option>
+                <option value="cours">🟠 En cours</option>
+                <option value="fini">🟢 Finalisé</option>
+              </select><br>
+              <button onclick="createNouveaute()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">Publier</button>
+              <span id="nv-new-status-msg" style="font-size:11px;font-weight:600;margin-left:8px;"></span>
+            </div>
+
+            <div id="nouveautes-list">
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
             </div>
           </div>
@@ -2304,6 +2329,241 @@ function showNews(btn) {
   renderNewsHistory();
 }
 
+// ===== NOUVEAUTÉS =====
+// Collection Firestore 'nouveautes' : { title, description, status, votes:[uid], reactions:{emoji:[uid]}, createdAt }
+// Sous-collection 'nouveautes/{id}/comments' : { authorId, authorName, text, createdAt }
+const NV_STATUS_META = {
+  discussion: { label: 'En discussion', color: '#ef4444', bg: '#fef2f2' },
+  cours:      { label: 'En cours',      color: '#f97316', bg: '#fff7ed' },
+  fini:       { label: 'Finalisé',      color: '#22c55e', bg: '#ecfdf5' }
+};
+const NV_REACTIONS = ['👍', '❤️', '😂', '👏'];
+let nouveautesUnsub = null;
+let nvCommentsUnsub = {};
+
+function showNouveautes(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-nouveautes').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+
+  const isAdmin = pmCurrentUser && pmCurrentUser.isAdmin === true;
+  const form = document.getElementById('nouveautes-admin-form');
+  if (form) form.style.display = isAdmin ? 'block' : 'none';
+
+  // Marque comme vu → masque le badge
+  if (pmCurrentUser) {
+    localStorage.setItem('pm_nouveautes_lastseen_' + pmCurrentUser.id, new Date().toISOString());
+  }
+  const badge = document.getElementById('nouveautes-badge');
+  if (badge) badge.style.display = 'none';
+
+  listenNouveautes();
+}
+
+function pmNvDisplayName() {
+  if (!pmCurrentUser) return 'Consultant';
+  return pmCurrentUser.pseudo || pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id;
+}
+
+async function listenNouveautes() {
+  const el = document.getElementById('nouveautes-list');
+  if (!el) return;
+  let tries = 0;
+  while ((!window.db || !window.onSnapshot || !window.collection || !window.query || !window.orderBy) && tries < 30) {
+    await new Promise(r => setTimeout(r, 100)); tries++;
+  }
+  if (!window.db) { el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Connexion indisponible.</div>'; return; }
+
+  if (nouveautesUnsub) { nouveautesUnsub(); nouveautesUnsub = null; }
+  const q = window.query(window.collection(window.db, 'nouveautes'), window.orderBy('createdAt', 'desc'));
+  nouveautesUnsub = window.onSnapshot(q, (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ _id: d.id, ...d.data() }));
+    renderNouveautesList(items);
+    updateNouveautesBadge(items);
+  }, (err) => {
+    console.log('Nouveautés indisponibles:', err.message);
+    el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucune nouveauté pour le moment.</div>';
+  });
+}
+
+function updateNouveautesBadge(items) {
+  const badge = document.getElementById('nouveautes-badge');
+  if (!badge || !pmCurrentUser) return;
+  const lastSeen = localStorage.getItem('pm_nouveautes_lastseen_' + pmCurrentUser.id);
+  const panelOpen = document.getElementById('panel-nouveautes') &&
+    document.getElementById('panel-nouveautes').style.display === 'block';
+  if (panelOpen) { badge.style.display = 'none'; return; }
+  const hasNew = items.some(it => {
+    const created = it.createdAt && it.createdAt.toDate ? it.createdAt.toDate().toISOString() : null;
+    return created && (!lastSeen || created > lastSeen);
+  });
+  badge.style.display = hasNew ? 'inline-block' : 'none';
+}
+
+function renderNouveautesList(items) {
+  const el = document.getElementById('nouveautes-list');
+  if (!el) return;
+  if (!items.length) {
+    el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucune nouveauté pour le moment.</div>';
+    return;
+  }
+  // Tri : votes décroissants, puis date décroissante
+  items.sort((a, b) => {
+    const va = Array.isArray(a.votes) ? a.votes.length : 0;
+    const vb = Array.isArray(b.votes) ? b.votes.length : 0;
+    if (vb !== va) return vb - va;
+    return 0;
+  });
+  el.innerHTML = items.map(nvCard).join('');
+  items.forEach(it => listenNvComments(it._id));
+}
+
+function nvCard(it) {
+  const meta = NV_STATUS_META[it.status] || NV_STATUS_META.discussion;
+  const votes = Array.isArray(it.votes) ? it.votes : [];
+  const mine = pmCurrentUser && votes.includes(pmCurrentUser.id);
+  const reactions = it.reactions || {};
+  const reactionsHtml = NV_REACTIONS.map(emo => {
+    const arr = Array.isArray(reactions[emo]) ? reactions[emo] : [];
+    const count = arr.length;
+    const mineReact = pmCurrentUser && arr.includes(pmCurrentUser.id);
+    return `<span onclick="toggleNvReaction('${it._id}','${emo}')" style="cursor:pointer;font-size:12px;line-height:1;padding:3px 7px;border-radius:99px;border:1px solid ${mineReact ? '#f97316' : '#e5e7eb'};background:${mineReact ? '#fff7ed' : '#fff'};margin-right:4px;">${emo}${count ? ' ' + count : ''}</span>`;
+  }).join('');
+
+  return `
+    <div style="border:1px solid #f0f0f0;border-radius:12px;padding:16px;background:#fff;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+        <div style="font-size:14px;font-weight:700;color:#1a1a1a;">${escapeHtmlMessages(it.title || '')}</div>
+        <span style="font-size:10px;font-weight:700;color:${meta.color};background:${meta.bg};border:1px solid ${meta.color};border-radius:99px;padding:2px 10px;white-space:nowrap;">● ${meta.label}</span>
+      </div>
+      <div style="font-size:13px;color:#4b5563;line-height:1.6;margin:8px 0 12px;white-space:pre-line;">${escapeHtmlMessages(it.description || '')}</div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <button onclick="toggleNvVote('${it._id}')" style="cursor:pointer;font-size:12px;font-weight:700;padding:6px 14px;border-radius:99px;border:1px solid ${mine ? '#f97316' : '#e5e7eb'};background:${mine ? '#f97316' : '#fff'};color:${mine ? '#fff' : '#374151'};">👍 J'adhère (${votes.length})</button>
+        ${reactionsHtml}
+      </div>
+
+      <div id="nv-comments-${it._id}" style="border-top:1px solid #f3f4f6;padding-top:10px;">
+        <div style="font-size:11px;color:#9ca3af;">Chargement des commentaires...</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input id="nv-comment-input-${it._id}" placeholder="Ajouter un commentaire..." style="flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){addNvComment('${it._id}');}">
+        <button onclick="addNvComment('${it._id}')" style="background:#f97316;color:#fff;border:none;border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">Envoyer</button>
+      </div>
+    </div>`;
+}
+
+function listenNvComments(nvId) {
+  if (nvCommentsUnsub[nvId]) return; // déjà en écoute
+  if (!window.db || !window.onSnapshot || !window.collection || !window.query || !window.orderBy) return;
+  const q = window.query(
+    window.collection(window.db, 'nouveautes', nvId, 'comments'),
+    window.orderBy('createdAt')
+  );
+  nvCommentsUnsub[nvId] = window.onSnapshot(q, (snap) => {
+    const box = document.getElementById('nv-comments-' + nvId);
+    if (!box) return;
+    const comments = [];
+    snap.forEach(d => comments.push(d.data()));
+    if (!comments.length) {
+      box.innerHTML = '<div style="font-size:11px;color:#9ca3af;">Aucun commentaire pour le moment.</div>';
+      return;
+    }
+    box.innerHTML = comments.map(c => `
+      <div style="font-size:12px;margin-bottom:6px;">
+        <span style="font-weight:700;color:#f97316;">${escapeHtmlMessages(c.authorName || 'Consultant')}</span>
+        <span style="color:#374151;"> — ${escapeHtmlMessages(c.text || '')}</span>
+      </div>`).join('');
+  });
+}
+
+async function toggleNvVote(nvId) {
+  if (!pmCurrentUser || !window.db) return;
+  try {
+    const snap = await window.getDoc(window.doc(window.db, 'nouveautes', nvId));
+    const votes = (snap.exists() && Array.isArray(snap.data().votes)) ? snap.data().votes : [];
+    const already = votes.includes(pmCurrentUser.id);
+    await window.updateDoc(window.doc(window.db, 'nouveautes', nvId), {
+      votes: already ? window.arrayRemove(pmCurrentUser.id) : window.arrayUnion(pmCurrentUser.id)
+    });
+  } catch (e) {
+    console.log('Vote impossible:', e.message);
+  }
+}
+
+async function toggleNvReaction(nvId, emoji) {
+  if (!pmCurrentUser || !window.db) return;
+  try {
+    const snap = await window.getDoc(window.doc(window.db, 'nouveautes', nvId));
+    const reactions = (snap.exists() && snap.data().reactions) ? snap.data().reactions : {};
+    const arr = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+    const already = arr.includes(pmCurrentUser.id);
+    await window.updateDoc(window.doc(window.db, 'nouveautes', nvId), {
+      ['reactions.' + emoji]: already ? window.arrayRemove(pmCurrentUser.id) : window.arrayUnion(pmCurrentUser.id)
+    });
+  } catch (e) {
+    console.log('Réaction impossible:', e.message);
+  }
+}
+
+async function addNvComment(nvId) {
+  const input = document.getElementById('nv-comment-input-' + nvId);
+  if (!input || !pmCurrentUser || !window.db) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    await window.addDoc(window.collection(window.db, 'nouveautes', nvId, 'comments'), {
+      authorId: pmCurrentUser.id,
+      authorName: pmNvDisplayName(),
+      text: text,
+      createdAt: window.serverTimestamp ? window.serverTimestamp() : new Date().toISOString()
+    });
+  } catch (e) {
+    console.log('Commentaire impossible:', e.message);
+  }
+}
+
+async function createNouveaute() {
+  if (!pmCurrentUser || pmCurrentUser.isAdmin !== true || !window.db) return;
+  const titleEl = document.getElementById('nv-new-title');
+  const descEl = document.getElementById('nv-new-desc');
+  const statusEl = document.getElementById('nv-new-status');
+  const msgEl = document.getElementById('nv-new-status-msg');
+  const title = titleEl.value.trim();
+  const description = descEl.value.trim();
+  if (!title) {
+    msgEl.style.color = '#ef4444';
+    msgEl.textContent = 'Titre requis.';
+    return;
+  }
+  try {
+    await window.addDoc(window.collection(window.db, 'nouveautes'), {
+      title: title,
+      description: description,
+      status: statusEl.value,
+      votes: [],
+      reactions: {},
+      createdAt: window.serverTimestamp ? window.serverTimestamp() : new Date().toISOString()
+    });
+    titleEl.value = '';
+    descEl.value = '';
+    statusEl.value = 'discussion';
+    msgEl.style.color = '#22c55e';
+    msgEl.textContent = 'Publié !';
+    setTimeout(() => { msgEl.textContent = ''; }, 2500);
+  } catch (e) {
+    msgEl.style.color = '#ef4444';
+    msgEl.textContent = 'Erreur : ' + e.message;
+  }
+}
+
 function showConcours(btn, key) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   btn.classList.add('active-item');
@@ -3378,6 +3638,8 @@ function doUnlock(user) {
   const adminSection = document.getElementById('admin-menu-section');
   if (adminSection) adminSection.style.display = user.isAdmin ? 'block' : 'none';
 
+  // Nouveautés : lance l'écoute en tâche de fond pour activer le badge sans ouvrir le panneau
+  listenNouveautes();
 
   setWelcome(user);
   // Pré-sélectionner l'agent dans le suivi
