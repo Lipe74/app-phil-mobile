@@ -568,17 +568,22 @@ h1{color:#ff5a14;text-align:center}
 <b>Référence :</b> ${ref}<br>
 <b>Date :</b> ${today}<br>
 <b>Client :</b> ${client}<br>
-<b>Téléphone :</b> ${phone}
+<b>Téléphone :</b> ${phone}<br>
+<b>Mode de prix :</b> ${isTVAC?'TVAC (21%)':'HTVA'}
 </div>
 
 <div class="box">
 <h3>📦 Produits sélectionnés</h3>
-${produits.length?produits.join('<br>'):'Aucun produit sélectionné'}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
+${produits.length?produits.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join(''):'<div style="font-size:13px;">Aucun produit sélectionné</div>'}
+</div>
 </div>
 
 <div class="box">
 <h3>🎁 Promotions activées</h3>
-${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
+${promosTxt.length?promosTxt.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join(''):'<div style="font-size:13px;">Aucune promotion active</div>'}
+</div>
 </div>
 
 <div class="box">
