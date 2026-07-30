@@ -731,6 +731,8 @@ function generateClientOffer(){
   const w = window.open('', '_blank');
   w.document.write(`
 <html><head><title>Offre Client</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
 <style>
 body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
 .box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;}
@@ -740,8 +742,8 @@ table{width:100%;border-collapse:collapse;}
 td{padding:8px;border-bottom:1px solid #eee;}
 .best{background:#e8f5e9;font-weight:700;}
 </style></head><body>
+<div id="pdf-content">
 <div style="text-align:center">
-<img src="${ci.logoUrl}" width="120" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
 <h1>OFFRE ÉNERGIE ENECO</h1>
 </div>
 
@@ -765,13 +767,59 @@ td{padding:8px;border-bottom:1px solid #eee;}
 🏆 Offre recommandée : ${bestOffer}
 </div>
 
-<div class="box">
+<div class="box" style="text-align:center;">
+<img src="${ci.logoUrl}" width="90" onerror="this.src='https://app.phil-mobile.be/images/logo.png'" style="display:block;margin:0 auto 10px;"><br>
 <b>${ci.name.toUpperCase()}</b><br>
 ${ci.phone}<br>
 ${ci.email}
 </div>
+</div>
 
-<button class="btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+<button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
+<script>
+// Génère un PDF à UNE seule page, dont la hauteur s'ajuste exactement au contenu.
+async function downloadOffrePDF(){
+  const btn=document.getElementById('pdf-download-btn');
+  btn.disabled=true;
+  btn.textContent='⏳ Génération en cours...';
+  const el=document.getElementById('pdf-content');
+
+  const genereAndSave=async()=>{
+    try{
+      const scale=2;
+      const canvas=await html2canvas(el,{scale:scale,useCORS:true});
+      const imgData=canvas.toDataURL('image/jpeg',0.98);
+      const mmPerPx=25.4/(96*scale);
+      const marginMm=10;
+      const pdfWidth=canvas.width*mmPerPx+marginMm*2;
+      const pdfHeight=canvas.height*mmPerPx+marginMm*2;
+      const { jsPDF }=window.jspdf;
+      const pdf=new jsPDF({unit:'mm',format:[pdfWidth,pdfHeight],orientation:'portrait'});
+      pdf.addImage(imgData,'JPEG',marginMm,marginMm,canvas.width*mmPerPx,canvas.height*mmPerPx);
+      pdf.save('Offre-Eneco-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf');
+    } finally {
+      btn.disabled=false;
+      btn.textContent='📄 Télécharger le PDF';
+    }
+  };
+
+  // Attend que le logo soit VRAIMENT chargé (avec ses vraies dimensions) avant de générer le PDF.
+  const logoImg=document.querySelector('#pdf-content img');
+  if(logoImg){
+    const attendreLogo=()=>new Promise(resolve=>{
+      const debut=Date.now();
+      const verifier=()=>{
+        if((logoImg.complete && logoImg.naturalWidth>0) || Date.now()-debut>4000) resolve();
+        else setTimeout(verifier,50);
+      };
+      verifier();
+    });
+    attendreLogo().then(genereAndSave);
+  } else {
+    genereAndSave();
+  }
+}
+<\/script>
 </body></html>`);
   w.document.close();
 }

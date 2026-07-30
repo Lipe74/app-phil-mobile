@@ -91,6 +91,16 @@ body { background: #f5f5f5; }
       <div class="header-sub">Découvrez vos économies en changeant d'opérateur</div>
       <div class="header-version">Build <span id="app-version">…</span> - Juillet 2026</div>
     </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+      <img id="logo-img" src="" alt="Logo consultant" style="width:64px;height:64px;border-radius:14px;background:white;padding:4px;object-fit:contain;" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
+      <div style="text-align:center;color:#fff;font-size:11px;line-height:1.5;">
+        <div class="consultant-name" style="font-weight:700;"></div>
+        <div class="consultant-phone"></div>
+        <div class="consultant-email"></div>
+      </div>
+    </div>
+
     <div class="header-selector">
       <label class="header-label">Votre opérateur actuel :</label>
       <div style="display: flex; gap: 8px; align-items: flex-end;">
@@ -430,14 +440,12 @@ function createOffer() {
   const orangeDisplayToday = isTVAC ? orangeToday : (orangeToday / TVA);
   const savings = Math.max(0, oldDisplay - orangeDisplay12);
   
-  // Récupérer les infos du consultant depuis localStorage/Firebase
-  const consultantName = localStorage.getItem('consultantName') || 'Phil-Mobile';
-  const consultantPhone = localStorage.getItem('consultantPhone') || '0475 24 02 05';
-  const consultantEmail = localStorage.getItem('consultantEmail') || 'infos@phil-mobile.be';
-  const consultantId = (typeof window !== 'undefined' && window.pmCurrentUser?.id) || localStorage.getItem('consultantId') || 'default';
-  
-  // Logo personnalisé avec fallback
-  const logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+  // Infos du consultant (identiques à wp_orange.html) : priorité au consultant identifié via l'URL/Firestore
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
+  const consultantName = ci.name;
+  const consultantPhone = ci.phone;
+  const consultantEmail = ci.email;
+  const logoUrl = ci.logoUrl;
   
   // Construire HTML détails de l'offre Orange
   let offerDetailsHTML = '';
@@ -509,12 +517,13 @@ function createOffer() {
     <head>
       <meta charset="UTF-8">
       <title>Offre Orange - Comparatif</title>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .card { background: white; border-radius: 14px; padding: 30px; max-width: 550px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .header { background: #ff5a14; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
-        .logo { height: 80px; margin-bottom: 15px; }
+        .logo { height: 70px; margin-bottom: 10px; }
         .header-title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
         .header-sub { font-size: 14px; opacity: 0.95; }
         .section { border: 1px solid #ffb680; border-radius: 10px; padding: 16px; margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid; }
@@ -533,9 +542,8 @@ function createOffer() {
       </style>
     </head>
     <body>
-      <div class="card">
+      <div class="card" id="pdf-content">
         <div class="header">
-          <img src="${logoUrl}" class="logo" alt="Logo Phil-Mobile" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
           <div class="header-title">Offre Orange</div>
           <div class="header-sub">Passez de ${opName} à Orange</div>
         </div>
@@ -569,9 +577,8 @@ function createOffer() {
           </div>
         </div>
         
-        <button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
-        
         <div class="footer">
+          <img src="${logoUrl}" class="logo" alt="Logo consultant" onerror="this.src='https://app.phil-mobile.be/images/logo.png'"><br>
           <strong>${consultantName}</strong>
           <div class="contact-info">
             📞 ${consultantPhone}<br>
@@ -579,28 +586,50 @@ function createOffer() {
           </div>
         </div>
       </div>
+
+      <div style="max-width:550px;margin:16px auto 0;">
+        <button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
+      </div>
       <script>
-      function downloadOffrePDF(){
+      // Génère un PDF à UNE seule page, dont la hauteur s'ajuste exactement au contenu
+      // (identique à wp_orange.html — évite les coupures entre pages A4).
+      async function downloadOffrePDF(){
         const btn=document.getElementById('pdf-download-btn');
         btn.disabled=true;
         btn.textContent='⏳ Génération en cours...';
-        const genereAndSave=()=>html2pdf().set({
-          margin:10,
-          filename:'Offre-Orange-${Date.now()}.pdf',
-          image:{type:'jpeg',quality:0.98},
-          html2canvas:{scale:2,useCORS:true,onclone:(doc)=>{const b=doc.getElementById('pdf-download-btn');if(b)b.style.display='none';}},
-          jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-          pagebreak:{mode:['avoid-all','css','legacy']}
-        }).from(document.querySelector('.card')).save().then(()=>{
-          btn.disabled=false;
-          btn.textContent='📄 Télécharger le PDF';
-        });
-        // Attend le chargement complet du logo avant de générer le PDF, sinon la hauteur
-        // calculée par html2canvas est fausse et coupe le contenu entre les pages.
-        const logoImg=document.querySelector('.card img');
-        if(logoImg && !logoImg.complete){
-          logoImg.addEventListener('load', genereAndSave, {once:true});
-          logoImg.addEventListener('error', genereAndSave, {once:true});
+        const el=document.getElementById('pdf-content');
+
+        const genereAndSave=async()=>{
+          try{
+            const scale=2;
+            const canvas=await html2canvas(el,{scale:scale,useCORS:true});
+            const imgData=canvas.toDataURL('image/jpeg',0.98);
+            const mmPerPx=25.4/(96*scale);
+            const marginMm=10;
+            const pdfWidth=canvas.width*mmPerPx+marginMm*2;
+            const pdfHeight=canvas.height*mmPerPx+marginMm*2;
+            const { jsPDF }=window.jspdf;
+            const pdf=new jsPDF({unit:'mm',format:[pdfWidth,pdfHeight],orientation:'portrait'});
+            pdf.addImage(imgData,'JPEG',marginMm,marginMm,canvas.width*mmPerPx,canvas.height*mmPerPx);
+            pdf.save('Offre-Orange-${Date.now()}.pdf');
+          } finally {
+            btn.disabled=false;
+            btn.textContent='📄 Télécharger le PDF';
+          }
+        };
+
+        // Attend que le logo soit VRAIMENT chargé (avec ses vraies dimensions) avant de générer le PDF.
+        const logoImg=document.querySelector('#pdf-content img');
+        if(logoImg){
+          const attendreLogo=()=>new Promise(resolve=>{
+            const debut=Date.now();
+            const verifier=()=>{
+              if((logoImg.complete && logoImg.naturalWidth>0) || Date.now()-debut>4000) resolve();
+              else setTimeout(verifier,50);
+            };
+            verifier();
+          });
+          attendreLogo().then(genereAndSave);
         } else {
           genereAndSave();
         }
@@ -665,7 +694,8 @@ calcComparator();
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js');
     const { getAuth, onAuthStateChanged, signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
-    
+    const { getFirestore, doc, getDoc, collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js');
+
     const firebaseConfig = {
       apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
       authDomain: "phil-mobile.firebaseapp.com",
@@ -674,9 +704,80 @@ calcComparator();
       messagingSenderId: "193213939481",
       appId: "1:193213939481:web:f8a750e89f0e645b62cf88"
     };
-    
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Infos du consultant connecté (logo, nom, téléphone, email) — utilisées dans le header et l'offre PDF.
+    // Comportement identique à wp_orange.html : priorité aux paramètres d'URL passés par le hub,
+    // sinon on retrouve le consultant via son email de connexion (cas d'un login direct sur cette page).
+    window.consultantInfo = {
+      id: null,
+      name: 'Phil-Mobile',
+      phone: '0475 24 02 05',
+      email: 'infos@phil-mobile.be',
+      logoUrl: 'https://app.phil-mobile.be/images/logo.png'
+    };
+
+    function pmUpdateConsultantDisplay(){
+      document.querySelectorAll('.consultant-name').forEach(el => el.textContent = window.consultantInfo.name);
+      document.querySelectorAll('.consultant-phone').forEach(el => el.textContent = window.consultantInfo.phone);
+      document.querySelectorAll('.consultant-email').forEach(el => el.textContent = window.consultantInfo.email);
+      const logoImg = document.getElementById('logo-img');
+      if (logoImg) {
+        const testImg = new Image();
+        testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
+        testImg.onerror = () => { logoImg.src = 'https://app.phil-mobile.be/images/logo.png'; };
+        testImg.src = window.consultantInfo.logoUrl;
+      }
+    }
+
+    async function pmLoadConsultantInfo(authUser){
+      const params = new URLSearchParams(window.location.search);
+      let consultantId = params.get('consultantId');
+      const consultantName = params.get('consultantName');
+      const consultantEmail = params.get('consultantEmail');
+
+      if (consultantId) {
+        window.consultantInfo.id = consultantId;
+        window.consultantInfo.name = consultantName || window.consultantInfo.name;
+        window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
+        window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+      } else if (authUser && authUser.email) {
+        // Pas de paramètre d'URL (page ouverte directement, pas via le hub) : on retrouve
+        // le consultant via son email de connexion Firebase.
+        try {
+          const q = query(collection(db, 'consultants'), where('email', '==', authUser.email));
+          const qs = await getDocs(q);
+          if (!qs.empty) {
+            const d0 = qs.docs[0];
+            consultantId = d0.id;
+            window.consultantInfo.id = consultantId;
+            window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+          }
+        } catch (e) {
+          console.log('Recherche du consultant par email impossible:', e.message);
+        }
+      }
+
+      if (consultantId) {
+        try {
+          const snap = await getDoc(doc(db, 'consultants', consultantId));
+          if (snap.exists()) {
+            const d = snap.data();
+            if (d.phone) window.consultantInfo.phone = d.phone;
+            if (d.photoURL) window.consultantInfo.logoUrl = d.photoURL;
+            if (d.fullName || d.name) window.consultantInfo.name = consultantName || d.fullName || d.name;
+            if (!consultantEmail && d.emailOffres) window.consultantInfo.email = d.emailOffres;
+          }
+        } catch (e) {
+          console.log('Lecture téléphone/photo consultant impossible:', e.message);
+        }
+      }
+
+      pmUpdateConsultantDisplay();
+    }
     
     // Créer les éléments de login
     const loginHTML = `
@@ -757,6 +858,7 @@ calcComparator();
         // Connecté: afficher app, masquer login
         if (loginContainer) loginContainer.style.display = 'none';
         if (appDiv) appDiv.style.display = 'block';
+        pmLoadConsultantInfo(user);
       }
     });
   } catch(err) {
