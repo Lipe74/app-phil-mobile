@@ -524,19 +524,28 @@ const ref='PM-'+Date.now();
 const today=new Date().toLocaleDateString('fr-BE');
 const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
 
+// Construit une ligne "Nom xQ — Total €/mois" (ou "(unique)" pour les frais uniques)
+function pmOffreLigne(p, q){
+ const nom=p.name.replace(/<[^>]*>/g,'');
+ const uniteHT=isTVAC?p.price:p.price/TVA;
+ const total=fmt(uniteHT*q);
+ const oneshot=p.oneshot===true || /unique/i.test(p.sub||'');
+ return nom+' x'+q+' — '+total+(oneshot?' (unique)':'/mois');
+}
+
 let produits=[];
 Object.values(productList).flat().forEach(p=>{
  const q=qtyMap[p.id]||0;
- if(q>0) produits.push(p.name.replace(/<[^>]*>/g,'')+' x'+q);
+ if(q>0) produits.push(pmOffreLigne(p,q));
 });
 options.forEach(p=>{
  const q=qtyMap[p.id]||0;
- if(q>0) produits.push(p.name.replace(/<[^>]*>/g,'')+' x'+q);
+ if(q>0) produits.push(pmOffreLigne(p,q));
 });
 
 let promosTxt=[];
 [...promos,...promosPermanent].forEach(p=>{
- if(togMap[p.id]) promosTxt.push(p.name.replace(/<[^>]*>/g,''));
+ if(togMap[p.id]) promosTxt.push(p.name.replace(/<[^>]*>/g,'')+' : '+(p.sub||''));
 });
 
 const w=window.open('','_blank');
