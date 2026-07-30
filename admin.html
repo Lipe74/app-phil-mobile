@@ -252,6 +252,53 @@
               </div>
             </div>
           </div>
+
+          <div class="card" style="margin-top:12px;">
+            <div class="section-title" style="font-size:13px;margin-bottom:6px;">📱 Icônes PWA (écran d'accueil)</div>
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:12px;">
+              ⚠️ Les appareils ayant déjà installé l'app garderont l'ancienne icône tant qu'ils ne sont pas désinstallés/réinstallés (limite du système, pas de l'app). Les nouvelles installations utiliseront toujours la dernière version uploadée ici.
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+              <img id="app-icon192-preview" src="" style="width:48px;height:48px;border-radius:10px;object-fit:contain;border:1px solid #eee;background:#fafafa;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Icône 192×192</div>
+                <input type="file" id="app-icon192-input" accept="image/*" onchange="handleAppIcon192Change(event)">
+                <div id="app-icon192-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+              <img id="app-icon512-preview" src="" style="width:48px;height:48px;border-radius:10px;object-fit:contain;border:1px solid #eee;background:#fafafa;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Icône 512×512</div>
+                <input type="file" id="app-icon512-input" accept="image/*" onchange="handleAppIcon512Change(event)">
+                <div id="app-icon512-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <img id="app-icon512m-preview" src="" style="width:48px;height:48px;border-radius:10px;object-fit:contain;border:1px solid #eee;background:#fafafa;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-weight:600;margin-bottom:2px;">Icône 512×512 (maskable)</div>
+                <div style="font-size:10px;color:#9ca3af;">Doit couvrir tout le carré, sans transparence — le système la découpe (cercle, arrondi...).</div>
+                <input type="file" id="app-icon512m-input" accept="image/*" onchange="handleAppIcon512MaskableChange(event)">
+                <div id="app-icon512m-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <div class="section-title" style="font-size:13px;margin-bottom:6px;">🚀 Écran de démarrage (splash)</div>
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:12px;">
+              Utilisée par certains navigateurs comme aperçu au lancement de l'app. Ne remplace pas l'écran de démarrage généré automatiquement par le système (couleur de fond + icône), qui reste géré par l'OS.
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <img id="app-splash-preview" src="" style="width:40px;height:86px;border-radius:6px;object-fit:cover;border:1px solid #eee;background:#fafafa;">
+              <div style="flex:1;">
+                <input type="file" id="app-splash-input" accept="image/*" onchange="handleAppSplashChange(event)">
+                <div style="font-size:10px;color:#9ca3af;margin-top:4px;">JPG/PNG, format vertical recommandé (ex: 853×1844).</div>
+                <div id="app-splash-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-promo-create">
@@ -1118,7 +1165,15 @@ async function uploadImageToStorage(file, folder, statusEl) {
 
 // --- Logo par défaut de l'application (Firestore: settings/app, champ logoUrl) ---
 // Contrairement à uploadImageToStorage() qui horodate chaque fichier, celui-ci écrase toujours
-// le même chemin Firebase Storage : l'URL ne change jamais, seul le contenu est remplacé.
+// le même chemin Firebase Storage : le fichier est remplacé mais l'URL doit rester identique
+// pour pouvoir être codée en dur (manifest.json). getDownloadURL() génère un NOUVEAU token à
+// chaque upload (l'URL changerait donc à chaque remplacement) : on construit à la place l'URL
+// publique directe (sans token), valable car les règles Storage autorisent la lecture publique
+// sur profiles/ (allow read: if true) — cette URL ne change jamais, quel que soit le contenu.
+const FIREBASE_STORAGE_BUCKET = 'phil-mobile.firebasestorage.app';
+function stableStorageUrl(path) {
+  return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodeURIComponent(path)}?alt=media`;
+}
 async function uploadImageToFixedPath(file, path, statusEl) {
   if (file.size > 5 * 1024 * 1024) {
     if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = '❌ Fichier trop volumineux, max 5 Mo.'; }
@@ -1128,8 +1183,8 @@ async function uploadImageToFixedPath(file, path, statusEl) {
   const blob = await compressImageFile(file, 1000, 0.82);
   const sRef = window.storageRef(window.storage, path);
   await window.uploadBytes(sRef, blob, { contentType: 'image/jpeg' });
-  const url = await window.getDownloadURL(sRef);
-  if (statusEl) { statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Logo mis à jour partout dans l\'app.'; }
+  const url = stableStorageUrl(path);
+  if (statusEl) { statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Mis à jour.'; }
   return url;
 }
 
@@ -1142,6 +1197,11 @@ async function loadAppInfoAdmin() {
   } catch (e) {
     console.log('Lecture logo par défaut impossible:', e.message);
   }
+  // Icônes PWA et splash : chemins fixes, pas besoin de Firestore, on affiche juste l'aperçu actuel.
+  document.getElementById('app-icon192-preview').src = stableStorageUrl('profiles/app-icon-192.png');
+  document.getElementById('app-icon512-preview').src = stableStorageUrl('profiles/app-icon-512.png');
+  document.getElementById('app-icon512m-preview').src = stableStorageUrl('profiles/app-icon-512-maskable.png');
+  document.getElementById('app-splash-preview').src = stableStorageUrl('profiles/app-splash.png');
 }
 
 window.handleAppLogoChange = async function (event) {
@@ -1156,6 +1216,44 @@ window.handleAppLogoChange = async function (event) {
   } catch (e) {
     console.log('Upload logo par défaut impossible:', e.message);
   }
+};
+
+// --- Icônes PWA (écran d'accueil / bureau) et écran de démarrage (splash) ---
+// Chemins fixes référencés directement dans manifest.json : uploader ici suffit, plus jamais
+// besoin de toucher au serveur. Limite connue : les appareils ayant déjà installé l'app ne
+// rafraîchiront pas l'icône automatiquement (mise en cache par l'OS) — seules les nouvelles
+// installations (ou un futur uninstall/reinstall) verront la nouvelle version.
+window.handleAppIcon192Change = async function (event) {
+  const file = event.target.files[0]; event.target.value = ''; if (!file) return;
+  const statusEl = document.getElementById('app-icon192-status');
+  try {
+    const url = await uploadImageToFixedPath(file, 'profiles/app-icon-192.png', statusEl);
+    document.getElementById('app-icon192-preview').src = url;
+  } catch (e) { console.log('Upload icône 192 impossible:', e.message); }
+};
+window.handleAppIcon512Change = async function (event) {
+  const file = event.target.files[0]; event.target.value = ''; if (!file) return;
+  const statusEl = document.getElementById('app-icon512-status');
+  try {
+    const url = await uploadImageToFixedPath(file, 'profiles/app-icon-512.png', statusEl);
+    document.getElementById('app-icon512-preview').src = url;
+  } catch (e) { console.log('Upload icône 512 impossible:', e.message); }
+};
+window.handleAppIcon512MaskableChange = async function (event) {
+  const file = event.target.files[0]; event.target.value = ''; if (!file) return;
+  const statusEl = document.getElementById('app-icon512m-status');
+  try {
+    const url = await uploadImageToFixedPath(file, 'profiles/app-icon-512-maskable.png', statusEl);
+    document.getElementById('app-icon512m-preview').src = url;
+  } catch (e) { console.log('Upload icône 512 maskable impossible:', e.message); }
+};
+window.handleAppSplashChange = async function (event) {
+  const file = event.target.files[0]; event.target.value = ''; if (!file) return;
+  const statusEl = document.getElementById('app-splash-status');
+  try {
+    const url = await uploadImageToFixedPath(file, 'profiles/app-splash.png', statusEl);
+    document.getElementById('app-splash-preview').src = url;
+  } catch (e) { console.log('Upload splash impossible:', e.message); }
 };
 
 // --- Sections pliables (listes longues : Consultants, catégories Agenda) ---

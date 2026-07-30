@@ -12,19 +12,19 @@
   "id": "phil-mobile-app",
   "icons": [
     {
-      "src": "images/logo-192.png",
+      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-icon-192.png?alt=media",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "images/logo-512.png",
+      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-icon-512.png?alt=media",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "images/logo-512-maskable.png",
+      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-icon-512-maskable.png?alt=media",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -32,7 +32,7 @@
   ],
   "screenshots": [
     {
-      "src": "images/splash.png",
+      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-splash.png?alt=media",
       "sizes": "853x1844",
       "type": "image/png",
       "form_factor": "narrow"
