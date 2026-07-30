@@ -545,7 +545,7 @@ w.document.write(`
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
 <style>
 body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
-.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px}
+.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;}
 h1{color:#ff5a14;text-align:center}
 .btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
 </style></head><body>
@@ -581,7 +581,7 @@ ${promosTxt.length?promosTxt.join('<br>'):'Aucune promotion active'}
 <b>🏁 Tarifs après les promotions : ${document.getElementById('s-total').textContent}</b>
 </div>
 
-<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:12px;color:#856404;font-weight:600;margin-bottom:15px;">
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:12px;color:#856404;font-weight:600;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;">
 ⚠️ Tarifs indicatifs sous réserve de modification par Orange. Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
 </div>
 
@@ -598,16 +598,26 @@ function downloadOffrePDF(){
   const btn=document.getElementById('pdf-download-btn');
   btn.disabled=true;
   btn.textContent='⏳ Génération en cours...';
-  html2pdf().set({
+  const genereAndSave=()=>html2pdf().set({
     margin:10,
     filename:'Offre-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf',
     image:{type:'jpeg',quality:0.98},
-    html2canvas:{scale:2},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    pagebreak:{mode:['avoid-all','css','legacy']}
   }).from(document.getElementById('pdf-content')).save().then(()=>{
     btn.disabled=false;
     btn.textContent='📄 Télécharger le PDF';
   });
+  // Attend le chargement complet du logo avant de générer le PDF, sinon la hauteur
+  // calculée par html2canvas est fausse et coupe le contenu entre les pages.
+  const logoImg=document.querySelector('#pdf-content img');
+  if(logoImg && !logoImg.complete){
+    logoImg.addEventListener('load', genereAndSave, {once:true});
+    logoImg.addEventListener('error', genereAndSave, {once:true});
+  } else {
+    genereAndSave();
+  }
 }
 <\/script>
 </body></html>`);
