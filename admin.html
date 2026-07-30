@@ -3042,10 +3042,13 @@ window.confirmEdit = async function () {
     const paidDate = payStatus === 'paid'
       ? (existing.payStatus === 'paid' && existing.paidDate ? existing.paidDate : new Date().toLocaleDateString('fr-FR'))
       : '';
-    await updateDoc(doc(db, 'consultants', currentEditDocId), {
+    const updatePayload = {
       name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
       expirationDate, isTestAccount, isTeamsAccount, payStatus, paidDate, upline, uplineId, uplineTel, uplineEmail
-    });
+    };
+    // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)
+    if (editPhotoPendingUrl) updatePayload.photoURL = editPhotoPendingUrl;
+    await updateDoc(doc(db, 'consultants', currentEditDocId), updatePayload);
     closeEditModal();
     showToast('✅ Consultant mis à jour.');
     loadConsultants();
