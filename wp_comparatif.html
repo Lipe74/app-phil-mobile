@@ -93,7 +93,7 @@ body { background: #f5f5f5; }
     </div>
 
     <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
-      <img id="logo-img" src="" alt="Logo consultant" style="width:64px;height:64px;border-radius:14px;background:white;padding:4px;object-fit:contain;" onerror="this.src='https://app.phil-mobile.be/images/logo.png'">
+      <img id="logo-img" src="" alt="Logo consultant" style="width:64px;height:64px;border-radius:14px;background:white;padding:4px;object-fit:contain;" onerror="this.onerror=null;this.src=window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png'">
       <div style="text-align:center;color:#fff;font-size:11px;line-height:1.5;">
         <div class="consultant-name" style="font-weight:700;"></div>
         <div class="consultant-phone"></div>
@@ -441,7 +441,7 @@ function createOffer() {
   const savings = Math.max(0, oldDisplay - orangeDisplay12);
   
   // Infos du consultant (identiques à wp_orange.html) : priorité au consultant identifié via l'URL/Firestore
-  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png' };
   const consultantName = ci.name;
   const consultantPhone = ci.phone;
   const consultantEmail = ci.email;
@@ -578,7 +578,7 @@ function createOffer() {
         </div>
         
         <div class="footer">
-          <img src="${logoUrl}" class="logo" alt="Logo consultant" onerror="this.src='https://app.phil-mobile.be/images/logo.png'"><br>
+          <img src="${logoUrl}" class="logo" alt="Logo consultant" onerror="this.onerror=null;this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'"><br>
           <strong>${consultantName}</strong>
           <div class="contact-info">
             📞 ${consultantPhone}<br>
@@ -728,12 +728,24 @@ calcComparator();
       if (logoImg) {
         const testImg = new Image();
         testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
-        testImg.onerror = () => { logoImg.src = 'https://app.phil-mobile.be/images/logo.png'; };
+        testImg.onerror = () => { logoImg.src = window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png'; };
         testImg.src = window.consultantInfo.logoUrl;
       }
     }
 
     async function pmLoadConsultantInfo(authUser){
+      // Logo par défaut de l'app, configurable depuis l'admin (Firestore settings/app.logoUrl).
+      // images/logo.png reste l'ultime filet de sécurité si Firebase est injoignable.
+      try {
+        const settingsSnap = await getDoc(doc(db, 'settings', 'app'));
+        if (settingsSnap.exists() && settingsSnap.data().logoUrl) {
+          window.pmDefaultLogoUrl = settingsSnap.data().logoUrl;
+          window.consultantInfo.logoUrl = window.pmDefaultLogoUrl;
+        }
+      } catch(e) {
+        console.log('Lecture logo par défaut impossible:', e.message);
+      }
+
       const params = new URLSearchParams(window.location.search);
       let consultantId = params.get('consultantId');
       const consultantName = params.get('consultantName');

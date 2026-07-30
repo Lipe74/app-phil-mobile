@@ -717,7 +717,7 @@ function generateClientOffer(){
   const phone = document.getElementById('client-phone')?.value || '';
   const ref = 'PM-' + Date.now();
   const today = new Date().toLocaleDateString('fr-BE');
-  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: 'https://app.phil-mobile.be/images/logo.png' };
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png' };
 
   const current = document.getElementById('res-current').textContent;
   const flex = document.getElementById('res-flex').textContent;
@@ -768,7 +768,7 @@ td{padding:8px;border-bottom:1px solid #eee;}
 </div>
 
 <div class="box" style="text-align:center;">
-<img src="${ci.logoUrl}" width="90" onerror="this.src='https://app.phil-mobile.be/images/logo.png'" style="display:block;margin:0 auto 10px;"><br>
+<img src="${ci.logoUrl}" width="90" onerror="this.onerror=null;this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'" style="display:block;margin:0 auto 10px;"><br>
 <b>${ci.name.toUpperCase()}</b><br>
 ${ci.phone}<br>
 ${ci.email}
@@ -889,6 +889,18 @@ window.consultantInfo = {
 };
 
 (async function loadConsultantInfo(){
+  // Logo par défaut de l'app, configurable depuis l'admin (Firestore settings/app.logoUrl).
+  // images/logo.png reste l'ultime filet de sécurité si Firebase est injoignable.
+  try {
+    const settingsSnap = await getDoc(doc(db, 'settings', 'app'));
+    if (settingsSnap.exists() && settingsSnap.data().logoUrl) {
+      window.pmDefaultLogoUrl = settingsSnap.data().logoUrl;
+      window.consultantInfo.logoUrl = window.pmDefaultLogoUrl;
+    }
+  } catch(e) {
+    console.log('Lecture logo par défaut impossible:', e.message);
+  }
+
   const params = new URLSearchParams(window.location.search);
   const consultantId = params.get('consultantId');
   const consultantName = params.get('consultantName');

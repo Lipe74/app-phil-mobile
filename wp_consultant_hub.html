@@ -3720,7 +3720,7 @@ function doUnlock(user) {
   const headerLogo = document.getElementById('top-header-logo');
   if (headerLogo) {
     headerLogo.src = pmAvatarSrc(user.id);
-    headerLogo.onerror = function() { this.onerror = null; this.src = 'images/logo.png'; };
+    headerLogo.onerror = function() { this.onerror = null; this.src = window.pmDefaultLogoUrl || 'images/logo.png'; };
   }
 
   // Lien Admin dans le menu : visible uniquement pour les comptes administrateurs
@@ -5247,6 +5247,12 @@ window.deleteDoc = deleteDoc;
 window.signOut = () => signOut(auth);
 window.createUser = (email, password) => createUserWithEmailAndPassword(auth, email, password);
 window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, password);
+
+// Logo par défaut de l'app, configurable depuis l'admin (Firestore settings/app.logoUrl).
+// Chargé une fois au démarrage ; images/logo.png reste l'ultime filet de sécurité si Firebase est injoignable.
+getDoc(doc(window.db, 'settings', 'app')).then(snap => {
+  if (snap.exists() && snap.data().logoUrl) window.pmDefaultLogoUrl = snap.data().logoUrl;
+}).catch(() => {});
 window.changeMyPassword = async (currentPassword, newPassword) => {
   const user = auth.currentUser;
   if (!user) throw new Error('Aucune session active');
