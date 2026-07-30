@@ -341,6 +341,7 @@ window.consultantInfo = {
     if (settingsSnap.exists() && settingsSnap.data().logoUrl) {
       window.pmDefaultLogoUrl = settingsSnap.data().logoUrl;
       window.consultantInfo.logoUrl = window.pmDefaultLogoUrl;
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(link => link.href = window.pmDefaultLogoUrl);
     }
   } catch(e) {
     console.log('Lecture logo par défaut impossible:', e.message);

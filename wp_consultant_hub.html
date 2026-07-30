@@ -5251,7 +5251,10 @@ window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, p
 // Logo par défaut de l'app, configurable depuis l'admin (Firestore settings/app.logoUrl).
 // Chargé une fois au démarrage ; images/logo.png reste l'ultime filet de sécurité si Firebase est injoignable.
 getDoc(doc(window.db, 'settings', 'app')).then(snap => {
-  if (snap.exists() && snap.data().logoUrl) window.pmDefaultLogoUrl = snap.data().logoUrl;
+  if (snap.exists() && snap.data().logoUrl) {
+    window.pmDefaultLogoUrl = snap.data().logoUrl;
+    document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(link => link.href = window.pmDefaultLogoUrl);
+  }
 }).catch(() => {});
 window.changeMyPassword = async (currentPassword, newPassword) => {
   const user = auth.currentUser;
