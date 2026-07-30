@@ -180,6 +180,9 @@
         <div class="menu-label">👥 Consultants</div>
         <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
 
+        <div class="menu-label">🖼️ Application</div>
+        <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
+
         <div class="menu-label">🎁 Promotions</div>
         <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
         <div id="promosMenu" class="submenu">
@@ -231,6 +234,24 @@
             <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button>
           </div>
           <div id="consultants-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-app-info">
+          <div class="section-title">🖼️ Infos de l'application</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Logo par défaut utilisé partout dans l'app (hub, simulateurs, offres PDF) quand un consultant n'a pas de photo personnalisée. Stocké sur Firebase — le changer ici le met à jour immédiatement, sans toucher au serveur.
+          </div>
+          <div class="card">
+            <div class="section-title" style="font-size:13px;margin-bottom:10px;">🟢 Logo par défaut Phil-Mobile</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <img id="app-logo-preview" src="images/logo.png" style="width:64px;height:64px;border-radius:12px;object-fit:contain;border:1px solid #eee;background:#fafafa;">
+              <div style="flex:1;">
+                <input type="file" id="app-logo-input" accept="image/*" onchange="handleAppLogoChange(event)">
+                <div style="font-size:10px;color:#9ca3af;margin-top:4px;">JPG/PNG, max 5 Mo — compressée automatiquement. Remplace immédiatement le logo par défaut partout dans l'app.</div>
+                <div id="app-logo-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-promo-create">
@@ -1095,6 +1116,48 @@ async function uploadImageToStorage(file, folder, statusEl) {
   return url;
 }
 
+// --- Logo par défaut de l'application (Firestore: settings/app, champ logoUrl) ---
+// Contrairement à uploadImageToStorage() qui horodate chaque fichier, celui-ci écrase toujours
+// le même chemin Firebase Storage : l'URL ne change jamais, seul le contenu est remplacé.
+async function uploadImageToFixedPath(file, path, statusEl) {
+  if (file.size > 5 * 1024 * 1024) {
+    if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = '❌ Fichier trop volumineux, max 5 Mo.'; }
+    throw new Error('Fichier trop volumineux');
+  }
+  if (statusEl) { statusEl.style.color = '#888'; statusEl.textContent = 'Compression et envoi en cours...'; }
+  const blob = await compressImageFile(file, 1000, 0.82);
+  const sRef = window.storageRef(window.storage, path);
+  await window.uploadBytes(sRef, blob, { contentType: 'image/jpeg' });
+  const url = await window.getDownloadURL(sRef);
+  if (statusEl) { statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Logo mis à jour partout dans l\'app.'; }
+  return url;
+}
+
+async function loadAppInfoAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'app'));
+    if (snap.exists() && snap.data().logoUrl) {
+      document.getElementById('app-logo-preview').src = snap.data().logoUrl;
+    }
+  } catch (e) {
+    console.log('Lecture logo par défaut impossible:', e.message);
+  }
+}
+
+window.handleAppLogoChange = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('app-logo-status');
+  try {
+    const url = await uploadImageToFixedPath(file, 'profiles/app-logo.png', statusEl);
+    await setDoc(doc(db, 'settings', 'app'), { logoUrl: url }, { merge: true });
+    document.getElementById('app-logo-preview').src = url;
+  } catch (e) {
+    console.log('Upload logo par défaut impossible:', e.message);
+  }
+};
+
 // --- Sections pliables (listes longues : Consultants, catégories Agenda) ---
 window.toggleSection = function (containerId, headerEl) {
   const el = document.getElementById(containerId);
@@ -1113,6 +1176,7 @@ window.showAdminPanel = function (panelId, btn) {
   // Rafraîchir les panneaux dynamiques à l'ouverture
   if (panelId === 'panel-bot-pending') loadBotPending();
   if (panelId === 'panel-bot-stats') loadBotStats();
+  if (panelId === 'panel-app-info') loadAppInfoAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
   if (btn) {
     btn.classList.add('active-item');
