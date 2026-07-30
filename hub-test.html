@@ -10,6 +10,19 @@
 
 <meta name="theme-color" content="#f97316">
 <script src="version.js"></script>
+<script>
+// Vérifie en arrière-plan (sans bloquer l'affichage) si une version plus récente est en ligne,
+// et recharge automatiquement la page si c'est le cas — évite de rester bloqué sur une vieille version.
+(function(){
+  fetch('version.js?t='+Date.now(), {cache:'no-store'})
+    .then(r=>r.text())
+    .then(txt=>{
+      const m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+      if(m && window.APP_VERSION && m[1]!==window.APP_VERSION) location.reload();
+    })
+    .catch(()=>{});
+})();
+</script>
 <style>
 .menu-item {
   display:block;width:100%;text-align:left;padding:9px 12px;

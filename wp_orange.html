@@ -10,6 +10,19 @@
 <link rel="icon" type="image/png" href="images/logo.png">
 <link rel="apple-touch-icon" href="images/logo.png">
 <script src="version.js"></script>
+<script>
+// Vérifie en arrière-plan (sans bloquer l'affichage) si une version plus récente est en ligne,
+// et recharge automatiquement la page si c'est le cas — évite de rester bloqué sur une vieille version.
+(function(){
+  fetch('version.js?t='+Date.now(), {cache:'no-store'})
+    .then(r=>r.text())
+    .then(txt=>{
+      const m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+      if(m && window.APP_VERSION && m[1]!==window.APP_VERSION) location.reload();
+    })
+    .catch(()=>{});
+})();
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
