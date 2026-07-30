@@ -542,7 +542,8 @@ let promosTxt=[];
 const w=window.open('','_blank');
 w.document.write(`
 <html><head><title>Offre Client</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
 <style>
 body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
 .box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;}
@@ -594,23 +595,35 @@ ${ci.email}
 
 <button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
 <script>
-function downloadOffrePDF(){
+// Génère un PDF à UNE seule page, dont la hauteur s'ajuste exactement au contenu
+// (au lieu de découper en pages A4, ce qui coupait les blocs entre deux pages).
+async function downloadOffrePDF(){
   const btn=document.getElementById('pdf-download-btn');
   btn.disabled=true;
   btn.textContent='⏳ Génération en cours...';
-  const genereAndSave=()=>html2pdf().set({
-    margin:10,
-    filename:'Offre-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf',
-    image:{type:'jpeg',quality:0.98},
-    html2canvas:{scale:2,useCORS:true},
-    jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:['avoid-all','css','legacy']}
-  }).from(document.getElementById('pdf-content')).save().then(()=>{
-    btn.disabled=false;
-    btn.textContent='📄 Télécharger le PDF';
-  });
+  const el=document.getElementById('pdf-content');
+
+  const genereAndSave=async()=>{
+    try{
+      const scale=2;
+      const canvas=await html2canvas(el,{scale:scale,useCORS:true});
+      const imgData=canvas.toDataURL('image/jpeg',0.98);
+      const mmPerPx=25.4/(96*scale);
+      const marginMm=10;
+      const pdfWidth=canvas.width*mmPerPx+marginMm*2;
+      const pdfHeight=canvas.height*mmPerPx+marginMm*2;
+      const { jsPDF }=window.jspdf;
+      const pdf=new jsPDF({unit:'mm',format:[pdfWidth,pdfHeight],orientation:'portrait'});
+      pdf.addImage(imgData,'JPEG',marginMm,marginMm,canvas.width*mmPerPx,canvas.height*mmPerPx);
+      pdf.save('Offre-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf');
+    } finally {
+      btn.disabled=false;
+      btn.textContent='📄 Télécharger le PDF';
+    }
+  };
+
   // Attend le chargement complet du logo avant de générer le PDF, sinon la hauteur
-  // calculée par html2canvas est fausse et coupe le contenu entre les pages.
+  // calculée par html2canvas est fausse.
   const logoImg=document.querySelector('#pdf-content img');
   if(logoImg && !logoImg.complete){
     logoImg.addEventListener('load', genereAndSave, {once:true});
