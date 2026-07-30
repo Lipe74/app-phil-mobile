@@ -765,6 +765,19 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
   <div class="modal-box">
     <h3>✏️ Modifier le consultant</h3>
     <div style="font-size:13px;color:#888;margin-bottom:14px;" id="edit-name-display"></div>
+
+    <div class="form-row">
+      <label>Photo / logo du consultant</label>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <img id="e-photo-preview" src="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #f97316;flex-shrink:0;background:#f5f5f5;" onerror="this.src='images/logo.png'">
+        <div style="flex:1;min-width:180px;">
+          <input type="file" id="e-photo-input" accept="image/*" onchange="handleConsultantPhotoChange(event)" style="font-size:12px;">
+          <div style="font-size:10px;color:#9ca3af;margin-top:4px;">JPG/PNG, max 5 Mo — compressée automatiquement. Remplace le logo utilisé dans les offres PDF et le hub.</div>
+          <div id="e-photo-status" style="font-size:11px;font-weight:600;margin-top:5px;"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-row">
       <label>Prénom</label>
       <input type="text" id="e-name">
@@ -2912,12 +2925,30 @@ window.toggleActive = async function (docId, newState) {
 
 let currentEditDocId = null;
 let currentEditOriginalEmail = null;
+let editPhotoPendingUrl = null; // URL Firebase Storage si une nouvelle photo a été uploadée dans le modal
+
+window.handleConsultantPhotoChange = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('e-photo-status');
+  try {
+    const url = await uploadImageToStorage(file, 'consultants', statusEl);
+    editPhotoPendingUrl = url;
+    document.getElementById('e-photo-preview').src = url;
+  } catch (e) {
+    console.log('Upload photo consultant impossible:', e.message);
+  }
+};
 
 window.openEditModal = function (docId) {
   const c = (window._consultantsCache || []).find(x => x.docId === docId);
   if (!c) return;
   currentEditDocId = docId;
   currentEditOriginalEmail = c.email || '';
+  editPhotoPendingUrl = null;
+  document.getElementById('e-photo-preview').src = c.photoURL || `images/${c.id || c.docId}.png`;
+  document.getElementById('e-photo-status').textContent = '';
   document.getElementById('edit-name-display').textContent =
     'ID: ' + (c.id || c.docId);
   document.getElementById('e-name').value = c.name || '';
