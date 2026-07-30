@@ -500,13 +500,13 @@ function createOffer() {
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .card { background: white; border-radius: 14px; padding: 30px; max-width: 550px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .header { background: #ff5a14; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .header { background: #ff5a14; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
         .logo { height: 80px; margin-bottom: 15px; }
         .header-title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
         .header-sub { font-size: 14px; opacity: 0.95; }
-        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 16px; margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid; }
         .section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 16px; }
+        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid; }
         .savings-value { font-size: 36px; font-weight: bold; color: #2e7d32; }
         .savings-sub { font-size: 14px; color: #2e7d32; margin-top: 8px; }
         .price-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
@@ -515,7 +515,7 @@ function createOffer() {
         .price-value { font-size: 14px; font-weight: bold; color: #ff5a14; }
         .btn { background: #ff5a14; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 10px; width: 100%; }
         .btn:hover { background: #e64a04; }
-        .footer { border-top: 1px solid #ddd; margin-top: 20px; padding-top: 15px; font-size: 12px; color: #666; text-align: center; }
+        .footer { border-top: 1px solid #ddd; margin-top: 20px; padding-top: 15px; font-size: 12px; color: #666; text-align: center; page-break-inside: avoid; break-inside: avoid; }
         .contact-info { font-size: 11px; line-height: 1.6; margin-top: 10px; }
       </style>
     </head>
@@ -571,16 +571,26 @@ function createOffer() {
         const btn=document.getElementById('pdf-download-btn');
         btn.disabled=true;
         btn.textContent='⏳ Génération en cours...';
-        html2pdf().set({
+        const genereAndSave=()=>html2pdf().set({
           margin:10,
           filename:'Offre-Orange-${Date.now()}.pdf',
           image:{type:'jpeg',quality:0.98},
-          html2canvas:{scale:2,onclone:(doc)=>{const b=doc.getElementById('pdf-download-btn');if(b)b.style.display='none';}},
-          jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+          html2canvas:{scale:2,useCORS:true,onclone:(doc)=>{const b=doc.getElementById('pdf-download-btn');if(b)b.style.display='none';}},
+          jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+          pagebreak:{mode:['avoid-all','css','legacy']}
         }).from(document.querySelector('.card')).save().then(()=>{
           btn.disabled=false;
           btn.textContent='📄 Télécharger le PDF';
         });
+        // Attend le chargement complet du logo avant de générer le PDF, sinon la hauteur
+        // calculée par html2canvas est fausse et coupe le contenu entre les pages.
+        const logoImg=document.querySelector('.card img');
+        if(logoImg && !logoImg.complete){
+          logoImg.addEventListener('load', genereAndSave, {once:true});
+          logoImg.addEventListener('error', genereAndSave, {once:true});
+        } else {
+          genereAndSave();
+        }
       }
       <\/script>
     </body>
