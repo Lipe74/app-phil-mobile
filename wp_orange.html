@@ -543,10 +543,18 @@ options.forEach(p=>{
  if(q>0) produits.push(pmOffreLigne(p,q));
 });
 
-let promosTxt=[];
-[...promos,...promosPermanent].forEach(p=>{
- if(togMap[p.id]) promosTxt.push(p.name.replace(/<[^>]*>/g,'')+' : '+(p.sub||''));
+// Promotions permanentes vs temporaires affichées séparément, + remises Love automatiques
+let promosPermanentTxt=[];
+promosPermanent.forEach(p=>{
+ if(togMap[p.id]) promosPermanentTxt.push(p.name.replace(/<[^>]*>/g,'')+' : '+(p.sub||''));
 });
+let promosTempTxt=[];
+promos.forEach(p=>{
+ if(togMap[p.id]) promosTempTxt.push(p.name.replace(/<[^>]*>/g,'')+' : '+(p.sub||''));
+});
+const loveResult=calcLoveLines();
+const loveTxt=loveResult.lines.filter(l=>l.active).map(l=>l.text+' — '+fmt(l.disc));
+const hasAnyPromo=promosPermanentTxt.length||promosTempTxt.length||loveTxt.length;
 
 const w=window.open('','_blank');
 w.document.write(`
@@ -581,9 +589,26 @@ ${produits.length?produits.map(p=>`<div style="font-size:13px;line-height:1.5;">
 
 <div class="box">
 <h3>🎁 Promotions activées</h3>
+${!hasAnyPromo?'<div style="font-size:13px;">Aucune promotion active</div>':''}
+
+${promosPermanentTxt.length?`
+<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">🔒 Promotions permanentes</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:12px;">
+${promosPermanentTxt.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join('')}
+</div>` : ''}
+
+${promosTempTxt.length?`
+<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">⏳ Promotions temporaires</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:12px;">
+${promosTempTxt.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join('')}
+</div>` : ''}
+
+${loveTxt.length?`
+<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">🧡 Remises Love — automatiques</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
-${promosTxt.length?promosTxt.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join(''):'<div style="font-size:13px;">Aucune promotion active</div>'}
+${loveTxt.map(t=>`<div style="font-size:13px;line-height:1.5;">${t}</div>`).join('')}
 </div>
+<div style="font-size:13px;font-weight:700;margin-top:8px;">Total remises Love — ${fmt(loveResult.total)}</div>` : ''}
 </div>
 
 <div class="box">
@@ -766,7 +791,9 @@ function fmt(v) { return Math.abs(v).toFixed(2).replace('.',',') + ' €'; }
 function hasInternet() { return ['inet_start','inet_zen','inet_giga'].some(id => qtyMap[id] > 0); }
 function totalMobileAbo() { return ['mob_small','mob_medium','mob_large','mob_unlim','mob_child'].reduce((s,id) => s + (qtyMap[id]||0), 0); }
 
-function calcLove() {
+// Calcule les lignes de remise Love (pur, sans toucher au DOM) — réutilisé par calcLove()
+// pour l'affichage à l'écran et par generateClientOffer() pour le PDF.
+function calcLoveLines() {
   const inet = hasInternet();
   const totalAbo = totalMobileAbo();
   let total = 0;
@@ -793,6 +820,11 @@ function calcLove() {
     total += disc;
     lines.push({ text: label + ' ' + palier, disc, active: true });
   });
+  return { lines, total };
+}
+
+function calcLove() {
+  const { lines, total } = calcLoveLines();
   const box = document.getElementById('love-detail');
   if (lines.length === 0) {
     box.innerHTML = '<div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>';
