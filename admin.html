@@ -2933,7 +2933,7 @@ window.handleConsultantPhotoChange = async function (event) {
   if (!file) return;
   const statusEl = document.getElementById('e-photo-status');
   try {
-    const url = await uploadImageToStorage(file, 'consultants', statusEl);
+    const url = await uploadImageToStorage(file, 'profiles', statusEl);
     editPhotoPendingUrl = url;
     document.getElementById('e-photo-preview').src = url;
   } catch (e) {
