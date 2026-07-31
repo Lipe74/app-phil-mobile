@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.3 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.4 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -366,11 +366,15 @@
 
         <div class="admin-panel" id="panel-web-leads">
           <div class="section-title">📋 Demandes reçues (site web phil-mobile.be) <span id="web-leads-count"></span></div>
-          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="filterWebLeads('all')">Toutes</button>
             <button class="btn btn-secondary" onclick="filterWebLeads('client')">💼 Analyse tarifaire</button>
             <button class="btn btn-secondary" onclick="filterWebLeads('consultant')">🚀 Rejoindre l'équipe</button>
           </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-bottom:14px;">
+            <input type="checkbox" id="web-leads-show-converted" onchange="renderWebLeads()">
+            Afficher aussi les demandes déjà converties (déjà présentes dans Prospects Clients/Consultants)
+          </label>
           <div id="web-leads-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
@@ -3888,6 +3892,8 @@ function renderWebLeads() {
   if (!container) return;
   let list = window._webLeadsCache || [];
   if (webLeadsFilter !== 'all') list = list.filter(l => l.type === webLeadsFilter);
+  const showConverted = document.getElementById('web-leads-show-converted')?.checked;
+  if (!showConverted) list = list.filter(l => l.status !== 'converti');
 
   if (list.length === 0) {
     container.innerHTML = '<div class="empty">Aucune demande.</div>';
