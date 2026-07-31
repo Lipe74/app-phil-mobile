@@ -489,7 +489,11 @@ Build <span id="app-version-1">…</span> — Version Stable
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
-<button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
+<button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News et Blog Smart SN</button>
+<div id="newsMenu" class="submenu">
+  <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
+  <button onclick="showBlogSmart(this)" class="menu-item" id="menu-blogsmart">📰 Blog Smart SN</button>
+</div>
 <button onclick="showNouveautes(this)" class="menu-item" id="menu-nouveautes">🚀 Idées &amp; Projets<span id="nouveautes-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 <button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
 <div id="concoursMenu" class="submenu">
@@ -1086,18 +1090,18 @@ Build <span id="app-version-1">…</span> — Version Stable
             <div id="news-history-dynamic">
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
             </div>
+          </div>
 
-            <div style="border-top:2px solid #f3f4f6;margin:28px 0 18px;padding-top:20px;">
-              <div style="font-size:14px;font-weight:700;color:#1e3a8a;margin-bottom:4px;">📰 Blog Smart SN</div>
-              <div style="font-size:12px;color:#1e3a8a;margin-bottom:16px;">Les annonces du blog Smart, reprises ici</div>
-              <input id="blogsmart-search" type="text" placeholder="🔍 Rechercher dans le Blog Smart SN..." oninput="renderBlogSmartList()"
-                style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
-              <div id="blogsmart-cat-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
-              <div id="blogsmart-grid">
-                <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
-              </div>
-              <div id="blogsmart-pagination" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;"></div>
+          <div id="panel-blogsmart" class="script-panel" style="display:none;border:1px solid #1e3a8a;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#1e3a8a;margin-bottom:4px;">📰 Blog Smart SN</div>
+            <div style="font-size:12px;color:#1e3a8a;margin-bottom:16px;">Les annonces du blog Smart, reprises ici</div>
+            <input id="blogsmart-search" type="text" placeholder="🔍 Rechercher dans le Blog Smart SN..." oninput="renderBlogSmartList()"
+              style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
+            <div id="blogsmart-cat-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+            <div id="blogsmart-grid">
+              <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
             </div>
+            <div id="blogsmart-pagination" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;"></div>
           </div>
 
           <!-- Panel Nouveautés -->
@@ -2369,6 +2373,17 @@ function showNews(btn) {
   document.getElementById('panel-news').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
   renderNewsHistory();
+}
+
+function showBlogSmart(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-blogsmart').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
   loadBlogSmartHub();
 }
 
