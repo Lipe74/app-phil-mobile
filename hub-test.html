@@ -1086,7 +1086,8 @@ Build <span id="app-version-1">…</span> — Essai
             <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">📰 Historique des News</div>
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
             <input id="news-search" type="text" placeholder="🔍 Rechercher dans les News..." oninput="renderNewsHistoryFiltered()"
-              style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:14px;">
+              style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
+            <div id="news-type-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
             <div id="news-history-dynamic">
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
             </div>
@@ -1094,7 +1095,7 @@ Build <span id="app-version-1">…</span> — Essai
 
           <div id="panel-blogsmart" class="script-panel" style="display:none;border:1px solid #1e3a8a;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="font-size:14px;font-weight:700;color:#1e3a8a;margin-bottom:4px;">📰 Blog Smart SN</div>
-            <div style="font-size:12px;color:#1e3a8a;margin-bottom:16px;">Les annonces du blog Smart, reprises ici</div>
+            <div style="font-size:12px;color:#1e3a8a;margin-bottom:16px;">Les annonces du blog Smart, en résumé rapide — pour l'article complet, direction le site Smart</div>
             <input id="blogsmart-search" type="text" placeholder="🔍 Rechercher dans le Blog Smart SN..." oninput="renderBlogSmartList()"
               style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
             <div id="blogsmart-cat-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
@@ -2782,6 +2783,7 @@ const NEWS_HISTORY_META = {
 };
 
 let newsHistoryCache = [];
+let newsHistoryTypeFilter = 'all';
 
 async function renderNewsHistory() {
   const el = document.getElementById('news-history-dynamic');
@@ -2799,12 +2801,34 @@ async function renderNewsHistory() {
     snap.forEach(d => items.push({ docId: d.id, ...d.data() }));
     items.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     newsHistoryCache = items;
+    renderNewsTypeFilters();
     renderNewsHistoryFiltered();
   } catch (err) {
     el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">News momentanément indisponibles.</div>';
     console.log('Lecture historique news impossible:', err.message);
   }
 }
+
+function renderNewsTypeFilters() {
+  const el = document.getElementById('news-type-filters');
+  if (!el) return;
+  const typesPresent = [...new Set(newsHistoryCache.map(n => n.type).filter(Boolean))];
+  const chip = (value, label, color) => {
+    const active = newsHistoryTypeFilter === value;
+    return `<button onclick="setNewsTypeFilter('${value}')" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:99px;cursor:pointer;border:1px solid ${color};background:${active ? color : '#fff'};color:${active ? '#fff' : color};">${label}</button>`;
+  };
+  el.innerHTML = chip('all', 'Tous', '#f97316') +
+    typesPresent.map(t => {
+      const meta = NEWS_HISTORY_META[t] || NEWS_HISTORY_META.orange;
+      return chip(t, `${meta.icon} ${meta.label || 'Alerte'}`, meta.border);
+    }).join('');
+}
+
+window.setNewsTypeFilter = function (type) {
+  newsHistoryTypeFilter = type;
+  renderNewsTypeFilters();
+  renderNewsHistoryFiltered();
+};
 
 function normalizeNewsSearch(str) {
   return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -2816,13 +2840,14 @@ function renderNewsHistoryFiltered() {
 
   const q = normalizeNewsSearch(document.getElementById('news-search')?.value || '');
   let items = newsHistoryCache;
+  if (newsHistoryTypeFilter !== 'all') items = items.filter(n => n.type === newsHistoryTypeFilter);
   if (q) {
     items = items.filter(n => normalizeNewsSearch(`${n.title || ''} ${(n.fullText || '').replace(/<[^>]+>/g, ' ')}`).includes(q));
   }
 
   try {
     if (items.length === 0) {
-      el.innerHTML = `<div style="font-size:12px;color:#9ca3af;">${q ? 'Aucun résultat.' : 'Aucune news pour le moment.'}</div>`;
+      el.innerHTML = `<div style="font-size:12px;color:#9ca3af;">${q || newsHistoryTypeFilter !== 'all' ? 'Aucun résultat.' : 'Aucune news pour le moment.'}</div>`;
       return;
     }
 
