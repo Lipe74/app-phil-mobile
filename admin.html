@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 3.9</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.0</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -179,6 +179,10 @@
 
         <div class="menu-label">👥 Consultants</div>
         <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
+
+        <div class="menu-label">🌐 Phil-Mobile (Web)</div>
+        <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
+        <button onclick="showAdminPanel('panel-web-leads', this)" class="menu-item" id="menu-web-leads">📋 Demandes reçues <span id="web-leads-count-badge"></span></button>
 
         <div class="menu-label">🖼️ Application</div>
         <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
@@ -306,6 +310,59 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="admin-panel" id="panel-avis-web">
+          <div class="section-title">⭐ Avis clients (site web phil-mobile.be)</div>
+          <div class="card">
+            <div class="section-title" style="font-size:13px;margin-bottom:10px;">➕ Ajouter un avis</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">Copie-colle le nom, le texte et la date depuis Google Avis.</div>
+            <div class="form-row">
+              <label>Nom du client</label>
+              <input type="text" id="avis-nom" placeholder="Ex: Julie Dupont">
+            </div>
+            <div class="form-row">
+              <label>Note</label>
+              <select id="avis-note">
+                <option value="5">★★★★★ (5)</option>
+                <option value="4">★★★★☆ (4)</option>
+                <option value="3">★★★☆☆ (3)</option>
+                <option value="2">★★☆☆☆ (2)</option>
+                <option value="1">★☆☆☆☆ (1)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Date affichée (ex: Juillet 2026)</label>
+              <input type="text" id="avis-date" placeholder="Juillet 2026">
+            </div>
+            <div class="form-row">
+              <label>Texte de l'avis</label>
+              <textarea id="avis-texte" rows="3" placeholder="Texte copié depuis Google Avis..." style="width:100%;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial, sans-serif;"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="addAvisWeb()">💾 Ajouter l'avis</button>
+          </div>
+
+          <div class="section-title" style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;">
+            <span>📋 Avis enregistrés <span id="avis-web-count"></span></span>
+            <button class="btn btn-secondary" onclick="generateAvisHtmlBlock()">🔗 Générer le bloc HTML</button>
+          </div>
+          <div id="avis-web-list" style="display:block;"><div class="empty">Chargement...</div></div>
+
+          <div id="avis-html-output" style="display:none;margin-top:14px;" class="card">
+            <div class="section-title" style="font-size:13px;">📄 Code à coller dans index.html (section Avis, phil-mobile.be)</div>
+            <textarea id="avis-html-code" readonly rows="10" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"></textarea>
+            <button class="btn btn-primary" style="margin-top:8px;" onclick="copyAvisHtml()">📋 Copier le code</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-web-leads">
+          <div class="section-title">📋 Demandes reçues (site web phil-mobile.be) <span id="web-leads-count"></span></div>
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="filterWebLeads('all')">Toutes</button>
+            <button class="btn btn-secondary" onclick="filterWebLeads('client')">💼 Analyse tarifaire</button>
+            <button class="btn btn-secondary" onclick="filterWebLeads('consultant')">🚀 Rejoindre l'équipe</button>
+          </div>
+          <div id="web-leads-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-promo-create">
@@ -1044,6 +1101,39 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
   </div>
 </div>
 
+<!-- Modal : édition d'un avis client -->
+<div class="modal-overlay" id="edit-avis-modal">
+  <div class="modal-box">
+    <h3>✏️ Modifier l'avis</h3>
+    <div class="form-row">
+      <label>Nom du client</label>
+      <input type="text" id="edit-avis-nom">
+    </div>
+    <div class="form-row">
+      <label>Note</label>
+      <select id="edit-avis-note">
+        <option value="5">★★★★★ (5)</option>
+        <option value="4">★★★★☆ (4)</option>
+        <option value="3">★★★☆☆ (3)</option>
+        <option value="2">★★☆☆☆ (2)</option>
+        <option value="1">★☆☆☆☆ (1)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Date affichée</label>
+      <input type="text" id="edit-avis-date">
+    </div>
+    <div class="form-row">
+      <label>Texte de l'avis</label>
+      <textarea id="edit-avis-texte" rows="3" style="width:100%;padding:9px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-family:Arial, sans-serif;"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeEditAvisModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditAvis()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
@@ -1174,6 +1264,8 @@ onAuthStateChanged(auth, async (user) => {
   loadConcoursAdmin();
   loadConsultants();
   loadMessagesAdmin();
+  loadAvisWebAdmin();
+  loadWebLeadsAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -3602,6 +3694,262 @@ function escapeHtml(str) {
   div.textContent = str ?? '';
   return div.innerHTML;
 }
+
+// ===== AVIS CLIENTS (site web phil-mobile.be) =====
+let avisWebUnsub = null;
+let avisWebEditId = null;
+
+function loadAvisWebAdmin() {
+  const container = document.getElementById('avis-web-list');
+  if (!container) return;
+  if (avisWebUnsub) { try { avisWebUnsub(); } catch (e) {} avisWebUnsub = null; }
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  avisWebUnsub = onSnapshot(collection(db, 'avisWeb'), (snap) => {
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    window._avisWebCache = list;
+
+    const countEl = document.getElementById('avis-web-count');
+    if (countEl) countEl.textContent = list.length ? `(${list.length})` : '';
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucun avis enregistré.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    list.forEach(a => {
+      const noteNum = Number(a.note) || 5;
+      const stars = '★'.repeat(noteNum) + '☆'.repeat(5 - noteNum);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-row">
+          <div class="card-info">
+            <strong>${escapeHtml(a.nom || '')}</strong>
+            <span style="color:#f59e0b;font-size:12px;">${stars}</span>
+            <div class="meta">${escapeHtml(a.date || '')}</div>
+            <div class="meta" style="font-style:italic;">"${escapeHtml(a.texte || '')}"</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" onclick="openEditAvisModal('${a.docId}')">✏️ Modifier</button>
+            <button class="btn btn-danger" onclick="deleteAvisWeb('${a.docId}')">🗑 Supprimer</button>
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement avis impossible:', err.message);
+  });
+}
+
+window.addAvisWeb = async function () {
+  const nom = document.getElementById('avis-nom').value.trim();
+  const texte = document.getElementById('avis-texte').value.trim();
+  const note = document.getElementById('avis-note').value;
+  const date = document.getElementById('avis-date').value.trim();
+  if (!nom || !texte) { alert('Nom et texte de l\'avis obligatoires.'); return; }
+  try {
+    await addDoc(collection(db, 'avisWeb'), {
+      nom, texte, note: Number(note), date: date || '',
+      createdAt: new Date().toISOString()
+    });
+    document.getElementById('avis-nom').value = '';
+    document.getElementById('avis-texte').value = '';
+    document.getElementById('avis-date').value = '';
+    showToast('✅ Avis ajouté.');
+  } catch (err) {
+    alert('Erreur lors de l\'ajout: ' + err.message);
+  }
+};
+
+window.openEditAvisModal = function (docId) {
+  const a = (window._avisWebCache || []).find(x => x.docId === docId);
+  if (!a) return;
+  avisWebEditId = docId;
+  document.getElementById('edit-avis-nom').value = a.nom || '';
+  document.getElementById('edit-avis-texte').value = a.texte || '';
+  document.getElementById('edit-avis-note').value = String(a.note || 5);
+  document.getElementById('edit-avis-date').value = a.date || '';
+  document.getElementById('edit-avis-modal').classList.add('open');
+};
+
+window.closeEditAvisModal = function () {
+  document.getElementById('edit-avis-modal').classList.remove('open');
+  avisWebEditId = null;
+};
+
+window.saveEditAvis = async function () {
+  if (!avisWebEditId) return;
+  const nom = document.getElementById('edit-avis-nom').value.trim();
+  const texte = document.getElementById('edit-avis-texte').value.trim();
+  const note = document.getElementById('edit-avis-note').value;
+  const date = document.getElementById('edit-avis-date').value.trim();
+  if (!nom || !texte) { alert('Nom et texte de l\'avis obligatoires.'); return; }
+  try {
+    await updateDoc(doc(db, 'avisWeb', avisWebEditId), { nom, texte, note: Number(note), date: date || '' });
+    closeEditAvisModal();
+    showToast('✅ Avis mis à jour.');
+  } catch (err) {
+    alert('Erreur lors de la mise à jour: ' + err.message);
+  }
+};
+
+window.deleteAvisWeb = async function (docId) {
+  if (!confirm('Supprimer définitivement cet avis ?')) return;
+  try {
+    await deleteDoc(doc(db, 'avisWeb', docId));
+    showToast('🗑 Avis supprimé.');
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
+function avisInitiales(nom) {
+  return (nom || '').trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+}
+
+window.generateAvisHtmlBlock = function () {
+  const list = window._avisWebCache || [];
+  if (list.length === 0) { alert('Aucun avis à générer.'); return; }
+  const cards = list.map(a => {
+    const noteNum = Number(a.note) || 5;
+    const stars = '★'.repeat(noteNum) + '☆'.repeat(5 - noteNum);
+    const initiales = avisInitiales(a.nom);
+    return `      <div class="review-card"><div class="review-header"><div class="review-avatar">${escapeHtml(initiales)}</div><div><div class="review-name">${escapeHtml(a.nom)}</div><div class="review-stars">${stars}</div></div><div class="review-date">${escapeHtml(a.date || '')}</div></div><p class="review-text">"${escapeHtml(a.texte)}"</p></div>`;
+  }).join('\n');
+  document.getElementById('avis-html-code').value = cards;
+  document.getElementById('avis-html-output').style.display = 'block';
+};
+
+window.copyAvisHtml = function () {
+  const ta = document.getElementById('avis-html-code');
+  const code = ta.value;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(() => showToast('📋 Code copié dans le presse-papiers.'))
+      .catch(() => { ta.select(); document.execCommand('copy'); showToast('📋 Code copié.'); });
+  } else {
+    ta.select();
+    document.execCommand('copy');
+    showToast('📋 Code copié.');
+  }
+};
+
+// ===== DEMANDES REÇUES (formulaires du site web phil-mobile.be) =====
+let webLeadsUnsub = null;
+let webLeadsFilter = 'all';
+
+function loadWebLeadsAdmin() {
+  const container = document.getElementById('web-leads-list');
+  if (!container) return;
+  if (webLeadsUnsub) { try { webLeadsUnsub(); } catch (e) {} webLeadsUnsub = null; }
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  webLeadsUnsub = onSnapshot(collection(db, 'webLeads'), (snap) => {
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    window._webLeadsCache = list;
+
+    const newCount = list.filter(l => !l.status || l.status === 'nouveau').length;
+    ['web-leads-count', 'web-leads-count-badge'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = newCount > 0 ? `<span class="count-badge">${newCount}</span>` : '';
+    });
+
+    renderWebLeads();
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement demandes impossible:', err.message);
+  });
+}
+
+window.filterWebLeads = function (type) {
+  webLeadsFilter = type;
+  renderWebLeads();
+};
+
+function renderWebLeads() {
+  const container = document.getElementById('web-leads-list');
+  if (!container) return;
+  let list = window._webLeadsCache || [];
+  if (webLeadsFilter !== 'all') list = list.filter(l => l.type === webLeadsFilter);
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty">Aucune demande.</div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  list.forEach(l => {
+    const isNew = !l.status || l.status === 'nouveau';
+    const statusLabel = isNew ? 'Nouveau' : (l.status === 'converti' ? 'Converti' : 'Traité');
+    const typeLabel = l.type === 'consultant' ? "🚀 Rejoindre l'équipe" : '💼 Analyse tarifaire';
+    const waPhone = (l.telephone || '').replace(/[^0-9+]/g, '').replace(/^\+/, '');
+    const mailSubject = encodeURIComponent(l.type === 'consultant' ? 'Votre demande – Rejoindre Phil-Mobile' : "Votre demande d'analyse – Phil-Mobile");
+    const mailBody = encodeURIComponent(`Bonjour ${l.prenom || ''},\n\n`);
+    const waText = encodeURIComponent(`Bonjour ${l.prenom || ''}, suite à votre demande sur phil-mobile.be...`);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <div class="card-info">
+          <strong>${escapeHtml(l.prenom || '')} ${escapeHtml(l.nom || '')}</strong>
+          <span class="badge ${isNew ? 'badge-active' : 'badge-inactive'}">${statusLabel}</span>
+          <div class="meta">${typeLabel}</div>
+          <div class="meta">${escapeHtml(l.email || '—')} · ${escapeHtml(l.telephone || '—')}</div>
+          ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}</div>` : ''}
+          ${l.motivation ? `<div class="meta">💬 ${escapeHtml(l.motivation)}</div>` : ''}
+          ${l.message ? `<div class="meta">💬 ${escapeHtml(l.message)}</div>` : ''}
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-secondary" href="mailto:${escapeHtml(l.email || '')}?subject=${mailSubject}&body=${mailBody}" target="_blank">✉️ Email</a>
+          ${waPhone ? `<a class="btn btn-secondary" href="https://wa.me/${waPhone}?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
+          <button class="btn btn-primary" onclick="convertWebLead('${l.docId}')">➡️ Convertir</button>
+          <button class="btn btn-danger" onclick="dismissWebLead('${l.docId}')">Ignorer</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+window.dismissWebLead = async function (docId) {
+  if (!confirm('Marquer cette demande comme traitée ?')) return;
+  try {
+    await updateDoc(doc(db, 'webLeads', docId), { status: 'traite' });
+    showToast('Demande marquée comme traitée.');
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+window.convertWebLead = async function (docId) {
+  const l = (window._webLeadsCache || []).find(x => x.docId === docId);
+  if (!l) return;
+  try {
+    if (l.type === 'consultant') {
+      await addDoc(collection(db, 'prospectsConsultants'), {
+        prenom: l.prenom || '', nom: l.nom || '', email: l.email || '', telephone: l.telephone || '',
+        source: 'Site Web', statutPro: l.residence || '', presentation: l.motivation || '',
+        status: 'Nouveau', createdAt: new Date().toISOString()
+      });
+    } else {
+      await addDoc(collection(db, 'prospectsClients'), {
+        prenom: l.prenom || '', nom: l.nom || '', email: l.email || '', telephone: l.telephone || '',
+        type: l.vousEtes || 'Particulier', source: l.produitSource || 'Autre', ville: '',
+        commentaire: l.message || '', status: 'Nouveau', createdAt: new Date().toISOString()
+      });
+    }
+    await updateDoc(doc(db, 'webLeads', docId), { status: 'converti' });
+    showToast('✅ Converti en prospect.');
+  } catch (err) {
+    alert('Erreur lors de la conversion: ' + err.message);
+  }
+};
 
 // ===== MESSAGES (chat admin ↔ consultants) =====
 let chatActiveConvId = null;
