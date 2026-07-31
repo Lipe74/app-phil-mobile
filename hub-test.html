@@ -1081,8 +1081,22 @@ Build <span id="app-version-1">…</span> — Essai
           <div id="panel-news" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">📰 Historique des News</div>
             <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Cliquez sur une news pour la lire en entier</div>
+            <input id="news-search" type="text" placeholder="🔍 Rechercher dans les News..." oninput="renderNewsHistoryFiltered()"
+              style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:14px;">
             <div id="news-history-dynamic">
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
+            </div>
+
+            <div style="border-top:2px solid #f3f4f6;margin:28px 0 18px;padding-top:20px;">
+              <div style="font-size:14px;font-weight:700;color:#1e3a8a;margin-bottom:4px;">📰 Blog Smart SN</div>
+              <div style="font-size:12px;color:#1e3a8a;margin-bottom:16px;">Les annonces du blog Smart, reprises ici</div>
+              <input id="blogsmart-search" type="text" placeholder="🔍 Rechercher dans le Blog Smart SN..." oninput="renderBlogSmartList()"
+                style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
+              <div id="blogsmart-cat-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+              <div id="blogsmart-grid">
+                <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
+              </div>
+              <div id="blogsmart-pagination" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;"></div>
             </div>
           </div>
 
@@ -2355,6 +2369,7 @@ function showNews(btn) {
   document.getElementById('panel-news').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
   renderNewsHistory();
+  loadBlogSmartHub();
 }
 
 // ===== NOUVEAUTÉS =====
@@ -2751,6 +2766,8 @@ const NEWS_HISTORY_META = {
   alert:   { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' }
 };
 
+let newsHistoryCache = [];
+
 async function renderNewsHistory() {
   const el = document.getElementById('news-history-dynamic');
   if (!el) return;
@@ -2766,9 +2783,31 @@ async function renderNewsHistory() {
     const items = [];
     snap.forEach(d => items.push({ docId: d.id, ...d.data() }));
     items.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    newsHistoryCache = items;
+    renderNewsHistoryFiltered();
+  } catch (err) {
+    el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">News momentanément indisponibles.</div>';
+    console.log('Lecture historique news impossible:', err.message);
+  }
+}
 
+function normalizeNewsSearch(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+function renderNewsHistoryFiltered() {
+  const el = document.getElementById('news-history-dynamic');
+  if (!el) return;
+
+  const q = normalizeNewsSearch(document.getElementById('news-search')?.value || '');
+  let items = newsHistoryCache;
+  if (q) {
+    items = items.filter(n => normalizeNewsSearch(`${n.title || ''} ${(n.fullText || '').replace(/<[^>]+>/g, ' ')}`).includes(q));
+  }
+
+  try {
     if (items.length === 0) {
-      el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucune news pour le moment.</div>';
+      el.innerHTML = `<div style="font-size:12px;color:#9ca3af;">${q ? 'Aucun résultat.' : 'Aucune news pour le moment.'}</div>`;
       return;
     }
 
@@ -2809,6 +2848,120 @@ function escapeHtmlNews(str) {
   div.textContent = str ?? '';
   return div.innerHTML;
 }
+
+// ===== BLOG SMART SN =====
+// Firestore : collection 'smartBlogPosts' : { title, date (YYYY-MM-DD), categories: string[], photoUrl, fullText, createdAt }
+// Séparé des News : reprend les annonces du blog Smart, texte complet affiché en accordéon (même principe que News).
+let blogSmartHubCache = [];
+let blogSmartHubCatFilter = 'all';
+let blogSmartHubPage = 1;
+const BLOGSMART_PAGE_SIZE = 6;
+
+async function loadBlogSmartHub() {
+  const grid = document.getElementById('blogsmart-grid');
+  if (!grid) return;
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    const snap = await window.getDocs(window.collection(window.db, 'smartBlogPosts'));
+    const items = [];
+    snap.forEach(d => items.push({ docId: d.id, ...d.data() }));
+    items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    blogSmartHubCache = items;
+    blogSmartHubPage = 1;
+    renderBlogSmartCatFilters();
+    renderBlogSmartList();
+  } catch (err) {
+    grid.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Blog Smart SN momentanément indisponible.</div>';
+    console.log('Lecture Blog Smart SN impossible:', err.message);
+  }
+}
+
+function renderBlogSmartCatFilters() {
+  const el = document.getElementById('blogsmart-cat-filters');
+  if (!el) return;
+  const cats = [...new Set(blogSmartHubCache.flatMap(p => p.categories || []))].sort((a, b) => a.localeCompare(b));
+  const chip = (value, label) => {
+    const active = blogSmartHubCatFilter === value;
+    return `<button onclick="setBlogSmartCatFilter('${value.replace(/'/g, "\\'")}')" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:99px;cursor:pointer;border:1px solid #1e3a8a;background:${active ? '#1e3a8a' : '#fff'};color:${active ? '#fff' : '#1e3a8a'};">${label}</button>`;
+  };
+  el.innerHTML = chip('all', 'Tous') + cats.map(c => chip(c, c)).join('');
+}
+
+window.setBlogSmartCatFilter = function (cat) {
+  blogSmartHubCatFilter = cat;
+  blogSmartHubPage = 1;
+  renderBlogSmartCatFilters();
+  renderBlogSmartList();
+};
+
+window.renderBlogSmartList = function () {
+  const grid = document.getElementById('blogsmart-grid');
+  const pagerEl = document.getElementById('blogsmart-pagination');
+  if (!grid) return;
+
+  const q = normalizeNewsSearch(document.getElementById('blogsmart-search')?.value || '');
+  let items = blogSmartHubCache;
+  if (blogSmartHubCatFilter !== 'all') items = items.filter(p => (p.categories || []).includes(blogSmartHubCatFilter));
+  if (q) {
+    items = items.filter(p => normalizeNewsSearch(`${p.title || ''} ${(p.fullText || '').replace(/<[^>]+>/g, ' ')}`).includes(q));
+  }
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div style="font-size:12px;color:#9ca3af;">${q || blogSmartHubCatFilter !== 'all' ? 'Aucun résultat.' : 'Aucun article pour le moment.'}</div>`;
+    if (pagerEl) pagerEl.innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(items.length / BLOGSMART_PAGE_SIZE));
+  if (blogSmartHubPage > totalPages) blogSmartHubPage = totalPages;
+  const pageItems = items.slice((blogSmartHubPage - 1) * BLOGSMART_PAGE_SIZE, blogSmartHubPage * BLOGSMART_PAGE_SIZE);
+
+  grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">` +
+    pageItems.map((p, i) => {
+      const dateStr = p.date ? p.date.split('-').reverse().join('/') : '';
+      const cats = (p.categories || []).map(c => `<span style="font-size:9px;font-weight:700;background:#eff6ff;color:#1e3a8a;padding:2px 7px;border-radius:99px;">${escapeHtmlNews(c)}</span>`).join(' ');
+      const bodyId = 'blogsmart-item-' + (p.docId || i);
+      return `
+      <div style="border:1px solid #dbeafe;border-radius:10px;overflow:hidden;background:#fff;">
+        ${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:110px;object-fit:cover;display:block;">` : ''}
+        <div style="padding:10px 12px;">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${cats}${dateStr ? `<span style="font-size:9px;color:#9ca3af;align-self:center;">${dateStr}</span>` : ''}</div>
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">${escapeHtmlNews(p.title || '')}</div>
+          <button onclick="toggleBlogSmartItem('${bodyId}')" style="font-size:11px;font-weight:700;color:#1e3a8a;background:none;border:none;cursor:pointer;padding:0;">en lire plus ▾</button>
+          <div id="${bodyId}" class="rte-content" style="display:none;margin-top:8px;font-size:12px;color:#374151;line-height:1.7;">${p.fullText || ''}</div>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+
+  if (pagerEl) {
+    if (totalPages <= 1) {
+      pagerEl.innerHTML = '';
+    } else {
+      let pager = '';
+      for (let n = 1; n <= totalPages; n++) {
+        const active = n === blogSmartHubPage;
+        pager += `<button onclick="setBlogSmartPage(${n})" style="min-width:28px;padding:5px 8px;border-radius:6px;border:1px solid #1e3a8a;background:${active ? '#1e3a8a' : '#fff'};color:${active ? '#fff' : '#1e3a8a'};font-size:12px;font-weight:700;cursor:pointer;">${n}</button>`;
+      }
+      pagerEl.innerHTML = pager;
+    }
+  }
+};
+
+window.setBlogSmartPage = function (n) {
+  blogSmartHubPage = n;
+  renderBlogSmartList();
+  document.getElementById('blogsmart-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.toggleBlogSmartItem = function (id) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+};
 
 const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements', 'Événements spéciaux'];
 // La valeur stockée "Team meetings" est conservée en base — affichée "BOM" partout.

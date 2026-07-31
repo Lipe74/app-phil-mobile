@@ -203,6 +203,13 @@
           <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item" id="menu-news-list">📋 News publiées</button>
         </div>
 
+        <div class="menu-label">📰 Blog Smart SN</div>
+        <button onclick="toggleMenu('blogSmartMenu')" class="menu-item group-toggle">📰 Blog Smart SN</button>
+        <div id="blogSmartMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-blogsmart-create', this)" class="menu-item" id="menu-blogsmart-create">➕ Créer / Importer</button>
+          <button onclick="showAdminPanel('panel-blogsmart-list', this)" class="menu-item" id="menu-blogsmart-list">📋 Articles publiés</button>
+        </div>
+
         <div class="menu-label">🏆 Concours</div>
         <button onclick="showAdminPanel('panel-concours', this)" class="menu-item" id="menu-concours">🏆 Concours</button>
 
@@ -563,6 +570,82 @@
         <div class="admin-panel" id="panel-news-list">
           <div class="section-title">📋 News publiées</div>
           <div id="newsitems-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-blogsmart-create">
+          <div class="section-title">➕ Créer / Importer un article Blog Smart SN</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Séparé des News — reprend les annonces du blog Smart (texte complet, comme pour les News). Visible dans le hub sous "News", bloc "Blog Smart SN".
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="bs-title" placeholder="ex: Orange Sports arrive le 1er août !">
+            </div>
+            <div class="form-row">
+              <label>Date de l'article</label>
+              <input type="date" id="bs-date">
+            </div>
+            <div class="form-row">
+              <label>Catégorie(s) — séparées par ;</label>
+              <input type="text" id="bs-categories" placeholder="ex: Orange;Incentive">
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <img id="bs-photo-preview" src="images/smart.png" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid #eee;">
+              <div style="flex:1;">
+                <input type="file" id="bs-photo-input" accept="image/*" onchange="handleBlogSmartPhotoChange(event)">
+                <div style="font-size:10px;color:#9ca3af;margin-top:4px;">Optionnelle — JPG/PNG, max 5 Mo, compressée automatiquement.</div>
+                <div id="bs-photo-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Texte complet</label>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Aligner à droite" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')">➡</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+                <button type="button" class="rte-btn" title="Insérer une image" onmousedown="event.preventDefault()" onclick="rteInsertImageBS()">🖼️ Image</button>
+                <input type="file" id="bs-inline-image-input" accept="image/*" style="display:none;" onchange="handleBlogSmartInlineImageSelected(event)">
+              </div>
+              <div id="bs-fulltext" contenteditable="true" class="rte-editor" data-placeholder="Le texte complet de l'article..." style="width:100%;min-height:110px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;overflow-y:auto;"></div>
+              <div id="bs-inline-image-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+            </div>
+            <button class="btn btn-primary" id="bs-submit-btn" onclick="addOrUpdateBlogSmartPost()">➕ Publier dans le Blog Smart SN</button>
+            <button class="btn btn-secondary" id="bs-cancel-btn" onclick="cancelBlogSmartEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Un bloc par article, séparés par une ligne <code>===</code>. Le texte peut faire plusieurs lignes.<br>
+              Dédoublonnage automatique sur titre + date (les articles déjà importés sont ignorés). Les photos restent à ajouter manuellement, article par article, une fois importés.
+            </div>
+            <textarea id="bs-bulk-text" rows="10" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="TITRE: Orange Sports arrive le 1er août !
+DATE: 28/07/2026
+CATEGORIE: Orange
+TEXTE:
+À partir du 1er août, ORANGE FOOTBALL évolue et devient ORANGE SPORTS.
+Au programme : un nouveau nom, le grand retour du football belge...
+===
+TITRE: Recrute un consultant et repart avec un iPhone 17 Pro Max !
+DATE: 24/07/2026
+CATEGORIE: Incentive
+TEXTE:
+Un seul recrutement cet été et tu pourrais gagner un iPhone 17 Pro Max 256 GB...
+==="></textarea>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportBlogSmart()">📥 Importer la liste</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-blogsmart-list">
+          <div class="section-title">📋 Articles Blog Smart SN publiés</div>
+          <div id="blogsmart-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-concours">
@@ -1275,6 +1358,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-bot-pending') loadBotPending();
   if (panelId === 'panel-bot-stats') loadBotStats();
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
+  if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
   if (btn) {
     btn.classList.add('active-item');
@@ -1514,6 +1598,252 @@ window.deleteNewsItem = async function (docId) {
   } catch (err) {
     alert('Erreur lors de la suppression: ' + err.message);
   }
+};
+
+// --- Blog Smart SN (feed séparé des News : annonces reprises depuis le blog Smart, texte complet) ---
+// Firestore : collection 'smartBlogPosts' : { title, date (YYYY-MM-DD), categories: string[], photoUrl, fullText, createdAt }
+let blogSmartCache = [];
+let currentEditBlogSmartId = null;
+let bsPhotoPendingUrl = null;
+
+function normalizeBlogSmartTitle(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[-–—_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function loadBlogSmartAdmin() {
+  const container = document.getElementById('blogsmart-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'smartBlogPosts'));
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    blogSmartCache = list;
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucun article pour le moment.</div>';
+      return;
+    }
+
+    container.innerHTML = list.map(p => {
+      const dateStr = p.date ? p.date.split('-').reverse().join('/') : '—';
+      const cats = (p.categories || []).map(c => `<span class="badge" style="background:#eff6ff;color:#1e3a8a;border:1px solid #1e3a8a;">${escapeHtmlAdmin(c)}</span>`).join(' ');
+      return `
+      <div class="card">
+        <div class="card-row">
+          ${p.photoUrl ? `<img src="${p.photoUrl}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #eee;align-self:center;">` : ''}
+          <div class="card-info">
+            <span class="meta">${dateStr}</span> ${cats}
+            <div style="margin-top:6px;"><strong>${escapeHtmlAdmin(p.title || '')}</strong></div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" onclick="editBlogSmartPost('${p.docId}')">✏️ Modifier</button>
+            <button class="btn btn-danger" onclick="deleteBlogSmartPost('${p.docId}')">🗑 Supprimer</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement Blog Smart SN impossible:', err.message);
+  }
+}
+
+window.handleBlogSmartPhotoChange = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('bs-photo-status');
+  try {
+    const url = await uploadImageToStorage(file, 'smartblog', statusEl);
+    bsPhotoPendingUrl = url;
+    document.getElementById('bs-photo-preview').src = url;
+  } catch (e) {
+    console.log('Upload photo Blog Smart SN impossible:', e.message);
+  }
+};
+
+let bsInlineImgRange = null;
+window.rteInsertImageBS = function () {
+  const editor = document.getElementById('bs-fulltext');
+  editor.focus();
+  const sel = window.getSelection();
+  bsInlineImgRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+  document.getElementById('bs-inline-image-input').click();
+};
+
+window.handleBlogSmartInlineImageSelected = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('bs-inline-image-status');
+  try {
+    const url = await uploadImageToStorage(file, 'smartblog', statusEl);
+    const editor = document.getElementById('bs-fulltext');
+    editor.focus();
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    if (bsInlineImgRange) sel.addRange(bsInlineImgRange);
+    document.execCommand('insertHTML', false, '<img src="' + url + '" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;">');
+  } catch (e) {
+    console.log('Upload image inline Blog Smart SN impossible:', e.message);
+  }
+};
+
+window.editBlogSmartPost = function (docId) {
+  const p = blogSmartCache.find(x => x.docId === docId);
+  if (!p) return;
+  currentEditBlogSmartId = docId;
+  bsPhotoPendingUrl = null;
+  document.getElementById('bs-title').value = p.title || '';
+  document.getElementById('bs-date').value = p.date || '';
+  document.getElementById('bs-categories').value = (p.categories || []).join(';');
+  document.getElementById('bs-photo-preview').src = p.photoUrl || 'images/smart.png';
+  document.getElementById('bs-fulltext').innerHTML = p.fullText || '';
+  document.getElementById('bs-submit-btn').textContent = '💾 Enregistrer les modifications';
+  document.getElementById('bs-cancel-btn').style.display = 'inline-block';
+  goToPanel('blogSmartMenu', 'menu-blogsmart-create', 'panel-blogsmart-create');
+  document.getElementById('bs-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelBlogSmartEdit = function () {
+  const wasEditing = !!currentEditBlogSmartId;
+  currentEditBlogSmartId = null;
+  bsPhotoPendingUrl = null;
+  document.getElementById('bs-title').value = '';
+  document.getElementById('bs-date').value = '';
+  document.getElementById('bs-categories').value = '';
+  document.getElementById('bs-photo-preview').src = 'images/smart.png';
+  document.getElementById('bs-fulltext').innerHTML = '';
+  document.getElementById('bs-submit-btn').textContent = '➕ Publier dans le Blog Smart SN';
+  document.getElementById('bs-cancel-btn').style.display = 'none';
+  if (wasEditing) goToPanel('blogSmartMenu', 'menu-blogsmart-list', 'panel-blogsmart-list');
+};
+
+window.addOrUpdateBlogSmartPost = async function () {
+  const title = document.getElementById('bs-title').value.trim();
+  const date = document.getElementById('bs-date').value;
+  const categories = document.getElementById('bs-categories').value.split(';').map(c => c.trim()).filter(Boolean);
+  const fullText = normalizeNewsLinks(document.getElementById('bs-fulltext').innerHTML.trim());
+
+  if (!title || !date || !fullText) {
+    alert('Merci de renseigner au moins le titre, la date et le texte complet.');
+    return;
+  }
+
+  const payload = { title, date, categories, fullText };
+  if (bsPhotoPendingUrl) payload.photoUrl = bsPhotoPendingUrl;
+
+  try {
+    if (currentEditBlogSmartId) {
+      await updateDoc(doc(db, 'smartBlogPosts', currentEditBlogSmartId), payload);
+      showToast('✅ Article modifié.');
+      cancelBlogSmartEdit();
+    } else {
+      if (!payload.photoUrl) payload.photoUrl = '';
+      await addDoc(collection(db, 'smartBlogPosts'), { ...payload, createdAt: new Date().toISOString() });
+      showToast('✅ Article publié dans le Blog Smart SN.');
+      document.getElementById('bs-title').value = '';
+      document.getElementById('bs-date').value = '';
+      document.getElementById('bs-categories').value = '';
+      document.getElementById('bs-photo-preview').src = 'images/smart.png';
+      document.getElementById('bs-fulltext').innerHTML = '';
+      bsPhotoPendingUrl = null;
+    }
+    loadBlogSmartAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+window.deleteBlogSmartPost = async function (docId) {
+  if (!confirm('Supprimer définitivement cet article du Blog Smart SN ?')) return;
+  try {
+    await deleteDoc(doc(db, 'smartBlogPosts', docId));
+    showToast('🗑 Article supprimé.');
+    loadBlogSmartAdmin();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
+window.bulkImportBlogSmart = async function () {
+  const raw = document.getElementById('bs-bulk-text').value.trim();
+  if (!raw) {
+    alert('Le champ est vide.');
+    return;
+  }
+
+  // Découpe en blocs séparés par une ligne "===", puis parse les champs labellisés de chaque bloc.
+  const blocks = raw.split(/\n\s*===\s*\n?/).map(b => b.trim()).filter(Boolean);
+  const valid = [];
+  const errors = [];
+  const duplicates = [];
+
+  const existingKeys = new Set(
+    blogSmartCache.map(p => `${normalizeBlogSmartTitle(p.title)}|${p.date}`)
+  );
+  const seenInBatch = new Set();
+
+  blocks.forEach((block, idx) => {
+    const titleMatch = block.match(/^TITRE\s*:\s*(.+)$/mi);
+    const dateMatch = block.match(/^DATE\s*:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/mi);
+    const catMatch = block.match(/^CATEGORIE\s*:\s*(.+)$/mi);
+    const texteMatch = block.match(/^TEXTE\s*:\s*\n?([\s\S]*)$/mi);
+
+    const title = titleMatch ? titleMatch[1].trim() : '';
+    if (!title || !dateMatch) {
+      errors.push(`Bloc ${idx + 1} : titre ou date invalide (attendu "TITRE: ..." et "DATE: JJ/MM/AAAA")`);
+      return;
+    }
+    const date = `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
+    const categories = catMatch ? catMatch[1].split(';').map(c => c.trim()).filter(Boolean) : [];
+    const fullTextRaw = texteMatch ? texteMatch[1].trim() : '';
+    if (!fullTextRaw) {
+      errors.push(`Bloc ${idx + 1} ("${title}") : pas de texte ("TEXTE: ..." manquant)`);
+      return;
+    }
+    // Texte brut → paragraphes HTML simples (une ligne vide = nouveau paragraphe)
+    const fullText = fullTextRaw.split(/\n\s*\n/).map(p => `<p>${escapeHtmlAdmin(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+
+    const key = `${normalizeBlogSmartTitle(title)}|${date}`;
+    if (existingKeys.has(key) || seenInBatch.has(key)) {
+      duplicates.push(`Bloc ${idx + 1} : "${title}" (${dateMatch[0].split(':')[1].trim()}) existe déjà → ignoré`);
+      return;
+    }
+    seenInBatch.add(key);
+
+    valid.push({ title, date, categories, fullText, photoUrl: '' });
+  });
+
+  let msg = `${valid.length} article(s) prêt(s) à être importé(s).`;
+  if (duplicates.length > 0) msg += `\n\n🔁 ${duplicates.length} doublon(s) détecté(s) et ignoré(s) :\n` + duplicates.join('\n');
+  if (errors.length > 0) msg += `\n\n⚠️ ${errors.length} bloc(s) avec souci :\n` + errors.join('\n');
+  msg += '\n\nContinuer l\'import ?';
+
+  if (valid.length === 0) {
+    alert(msg);
+    return;
+  }
+  if (!confirm(msg)) return;
+
+  let done = 0;
+  for (const post of valid) {
+    try {
+      await addDoc(collection(db, 'smartBlogPosts'), { ...post, createdAt: new Date().toISOString() });
+      done++;
+    } catch (err) {
+      console.log('Erreur import bloc:', post, err.message);
+    }
+  }
+  showToast(`✅ ${done} article(s) importé(s).`);
+  document.getElementById('bs-bulk-text').value = '';
+  loadBlogSmartAdmin();
 };
 
 // --- Concours (Smart SN + Phil-Mobile) ---
