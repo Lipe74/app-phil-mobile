@@ -2895,12 +2895,20 @@ async function renderAgenda() {
   }
 }
 
+// Date du jour au format YYYY-MM-DD (heure locale), pour comparer avec e.date lexicalement.
+function agendaTodayStr() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+}
+
 window.renderAgendaList = function () {
   const el = document.getElementById('agenda-dynamic');
   if (!el) return;
 
   const q = normalizeAgendaSearch(document.getElementById('agenda-search')?.value || '');
-  let events = agendaHubEvents;
+  // Les événements passés n'ont plus d'intérêt pour un consultant (inscription impossible) : masqués d'office.
+  const todayStr = agendaTodayStr();
+  let events = agendaHubEvents.filter(e => (e.date || '') >= todayStr);
 
   if (agendaHubLangFilter !== 'all') {
     // Les événements "communs" (langue vide) restent visibles dans les deux filtres

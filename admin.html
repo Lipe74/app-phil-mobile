@@ -1722,6 +1722,42 @@ window.cancelAgendaEdit = function () {
   if (wasEditing) goToPanel('agendaMenu', 'menu-agenda-list', 'panel-agenda-list');
 };
 
+// Date du jour au format YYYY-MM-DD (heure locale), pour comparer avec e.date lexicalement.
+function agendaTodayStr() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+}
+
+// Carte d'un événement agenda (factorisée : utilisée pour les événements à venir et passés).
+function agendaEventCardAdmin(e, cat) {
+  const color = AGENDA_CATEGORY_COLOR[cat] || '#f97316';
+  const day = (e.date || '').slice(8, 10) || '?';
+  const monthIdx = Number((e.date || '').slice(5, 7)) - 1;
+  const month = AGENDA_MONTHS_FR[monthIdx] || '';
+  const cancelled = !!e.cancelled;
+  return `
+    <div class="card" style="border-left:4px solid ${color};${cancelled ? 'opacity:.55;background:#fafafa;' : ''}">
+      <div class="card-row">
+        <div style="min-width:48px;text-align:center;background:${color}18;border-radius:8px;padding:5px 4px;align-self:center;">
+          <div style="font-size:17px;font-weight:800;color:${color};line-height:1;">${day}</div>
+          <div style="font-size:9px;font-weight:700;color:${color};letter-spacing:.05em;">${month}</div>
+        </div>
+        <div class="card-info">
+          <strong style="${cancelled ? 'text-decoration:line-through;color:#9ca3af;' : ''}">${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
+          ${e.lang === 'nl' ? '<span class="badge" style="background:#fff7cc;color:#92700c;">🇳🇱 NL</span>' : (e.lang === 'fr' ? '<span class="badge" style="background:#e3f2fd;color:#1565c0;">🇫🇷 FR</span>' : '<span class="badge" style="background:#f3f4f6;color:#6b7280;">🌍 FR+NL</span>')}
+          ${cancelled ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">❌ Annulé</span>' : ''}
+          <div class="meta">⏰ ${e.timeStart || '?'}–${e.timeEnd || '?'}${e.lieu ? ` · 📍 ${escapeHtmlAdmin(e.lieu)}` : ''}</div>
+          ${e.remark ? `<div class="meta">📝 ${escapeHtmlAdmin(e.remark)}</div>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-secondary" onclick="toggleAgendaCancelled('${e.docId}')">${cancelled ? '↩️ Rétablir' : '❌ Annuler'}</button>
+          <button class="btn btn-secondary" onclick="editAgendaEvent('${e.docId}')">✏️ Modifier</button>
+          <button class="btn btn-danger" onclick="deleteAgendaEvent('${e.docId}')">🗑 Supprimer</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 async function loadAgendaAdmin() {
   try {
     const snap = await getDocs(collection(db, 'agendaEvents'));
@@ -1740,10 +1776,15 @@ async function loadAgendaAdmin() {
       return;
     }
 
+    const todayStr = agendaTodayStr();
     let html = '';
     AGENDA_CATEGORY_ORDER.forEach((cat, idx) => {
       const inCat = events.filter(e => e.category === cat);
       if (inCat.length === 0) return;
+
+      // Événements passés masqués par défaut (repliés) : ils encombrent la liste sans utilité au quotidien.
+      const upcoming = inCat.filter(e => (e.date || '') >= todayStr);
+      const past = inCat.filter(e => (e.date || '') < todayStr);
 
       const bodyId = 'agenda-cat-body-' + idx;
       html += `
@@ -1754,34 +1795,20 @@ async function loadAgendaAdmin() {
         </div>
         <div id="${bodyId}" style="display:none;margin-top:8px;">`;
 
-      inCat.forEach(e => {
-        const color = AGENDA_CATEGORY_COLOR[cat] || '#f97316';
-        const day = (e.date || '').slice(8, 10) || '?';
-        const monthIdx = Number((e.date || '').slice(5, 7)) - 1;
-        const month = AGENDA_MONTHS_FR[monthIdx] || '';
-        const cancelled = !!e.cancelled;
+      upcoming.forEach(e => { html += agendaEventCardAdmin(e, cat); });
+
+      if (past.length > 0) {
+        const pastBodyId = bodyId + '-past';
         html += `
-        <div class="card" style="border-left:4px solid ${color};${cancelled ? 'opacity:.55;background:#fafafa;' : ''}">
-          <div class="card-row">
-            <div style="min-width:48px;text-align:center;background:${color}18;border-radius:8px;padding:5px 4px;align-self:center;">
-              <div style="font-size:17px;font-weight:800;color:${color};line-height:1;">${day}</div>
-              <div style="font-size:9px;font-weight:700;color:${color};letter-spacing:.05em;">${month}</div>
-            </div>
-            <div class="card-info">
-              <strong style="${cancelled ? 'text-decoration:line-through;color:#9ca3af;' : ''}">${escapeHtmlAdmin(e.title || 'Sans titre')}</strong>
-              ${e.lang === 'nl' ? '<span class="badge" style="background:#fff7cc;color:#92700c;">🇳🇱 NL</span>' : (e.lang === 'fr' ? '<span class="badge" style="background:#e3f2fd;color:#1565c0;">🇫🇷 FR</span>' : '<span class="badge" style="background:#f3f4f6;color:#6b7280;">🌍 FR+NL</span>')}
-              ${cancelled ? '<span class="badge" style="background:#fde2e1;color:#c0392b;">❌ Annulé</span>' : ''}
-              <div class="meta">⏰ ${e.timeStart || '?'}–${e.timeEnd || '?'}${e.lieu ? ` · 📍 ${escapeHtmlAdmin(e.lieu)}` : ''}</div>
-              ${e.remark ? `<div class="meta">📝 ${escapeHtmlAdmin(e.remark)}</div>` : ''}
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-secondary" onclick="toggleAgendaCancelled('${e.docId}')">${cancelled ? '↩️ Rétablir' : '❌ Annuler'}</button>
-              <button class="btn btn-secondary" onclick="editAgendaEvent('${e.docId}')">✏️ Modifier</button>
-              <button class="btn btn-danger" onclick="deleteAgendaEvent('${e.docId}')">🗑 Supprimer</button>
-            </div>
+        <div style="margin:10px 0 4px;">
+          <div onclick="toggleSection('${pastBodyId}', this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#f5f5f5;border-radius:6px;">
+            <span style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">🕓 Événements passés <span class="count-badge" style="background:#e5e7eb;color:#6b7280;">${past.length}</span></span>
+            <span class="section-chevron" style="font-size:12px;color:#9ca3af;transition:transform .2s;display:inline-block;">▸</span>
           </div>
-        </div>`;
-      });
+          <div id="${pastBodyId}" style="display:none;margin-top:6px;opacity:.7;">`;
+        past.forEach(e => { html += agendaEventCardAdmin(e, cat); });
+        html += `</div></div>`;
+      }
 
       html += `</div></div>`;
     });
