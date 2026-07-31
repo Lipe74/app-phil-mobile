@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.3</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -358,17 +358,10 @@
             <button class="btn btn-primary" onclick="addAvisWeb()">💾 Ajouter l'avis</button>
           </div>
 
-          <div class="section-title" style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;">
-            <span>📋 Avis enregistrés <span id="avis-web-count"></span></span>
-            <button class="btn btn-secondary" onclick="generateAvisHtmlBlock()">🔗 Générer le bloc HTML</button>
+          <div class="section-title" style="margin-top:20px;">
+            📋 Avis enregistrés <span id="avis-web-count"></span>
           </div>
           <div id="avis-web-list" style="display:block;"><div class="empty">Chargement...</div></div>
-
-          <div id="avis-html-output" style="display:none;margin-top:14px;" class="card">
-            <div class="section-title" style="font-size:13px;">📄 Code à coller dans index.html (remplace tout le bloc, de &lt;div class="rating-bar"&gt; à la fin de &lt;div class="reviews-grid"&gt;)</div>
-            <textarea id="avis-html-code" readonly rows="10" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"></textarea>
-            <button class="btn btn-primary" style="margin-top:8px;" onclick="copyAvisHtml()">📋 Copier le code</button>
-          </div>
         </div>
 
         <div class="admin-panel" id="panel-web-leads">
@@ -3854,49 +3847,6 @@ window.deleteAvisWeb = async function (docId) {
     showToast('🗑 Avis supprimé.');
   } catch (err) {
     alert('Erreur lors de la suppression: ' + err.message);
-  }
-};
-
-function avisInitiales(nom) {
-  return (nom || '').trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-}
-
-window.generateAvisHtmlBlock = function () {
-  const list = window._avisWebCache || [];
-  if (list.length === 0) { alert('Aucun avis à générer.'); return; }
-  const score = document.getElementById('avis-global-score').value.trim() || '5.0';
-  const label = document.getElementById('avis-global-label').value.trim() || 'Excellent';
-  const cards = list.map(a => {
-    const noteNum = Number(a.note) || 5;
-    const stars = '★'.repeat(noteNum) + '☆'.repeat(5 - noteNum);
-    const initiales = avisInitiales(a.nom);
-    return `      <div class="review-card"><div class="review-header"><div class="review-avatar">${escapeHtml(initiales)}</div><div><div class="review-name">${escapeHtml(a.nom)}</div><div class="review-stars">${stars}</div></div><div class="review-date">${escapeHtml(frMonthLabel(a.dateMonth))}</div></div><p class="review-text">"${escapeHtml(a.texte)}"</p></div>`;
-  }).join('\n');
-  const fullBlock = `<div class="rating-bar">
-  <div class="rating-score">${escapeHtml(score)}</div>
-  <div class="rating-info">
-    <div class="stars">★★★★★</div>
-    <div class="rtxt">${escapeHtml(label)}</div>
-    <small>sur Google Reviews</small>
-  </div>
-</div>
-<div class="reviews-grid">
-${cards}
-</div>`;
-  document.getElementById('avis-html-code').value = fullBlock;
-  document.getElementById('avis-html-output').style.display = 'block';
-};
-
-window.copyAvisHtml = function () {
-  const ta = document.getElementById('avis-html-code');
-  const code = ta.value;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => showToast('📋 Code copié dans le presse-papiers.'))
-      .catch(() => { ta.select(); document.execCommand('copy'); showToast('📋 Code copié.'); });
-  } else {
-    ta.select();
-    document.execCommand('copy');
-    showToast('📋 Code copié.');
   }
 };
 
