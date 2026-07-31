@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.0</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.1</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -332,8 +332,8 @@
               </select>
             </div>
             <div class="form-row">
-              <label>Date affichée (ex: Juillet 2026)</label>
-              <input type="text" id="avis-date" placeholder="Juillet 2026">
+              <label>Date de l'avis</label>
+              <input type="month" id="avis-date">
             </div>
             <div class="form-row">
               <label>Texte de l'avis</label>
@@ -1120,8 +1120,8 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       </select>
     </div>
     <div class="form-row">
-      <label>Date affichée</label>
-      <input type="text" id="edit-avis-date">
+      <label>Date de l'avis</label>
+      <input type="month" id="edit-avis-date">
     </div>
     <div class="form-row">
       <label>Texte de l'avis</label>
@@ -3699,6 +3699,15 @@ function escapeHtml(str) {
 let avisWebUnsub = null;
 let avisWebEditId = null;
 
+const FR_MONTHS = ['Jan.', 'Fév.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
+function frMonthLabel(dateMonth) {
+  if (!dateMonth) return '';
+  const parts = dateMonth.split('-');
+  const y = parts[0], m = parseInt(parts[1], 10);
+  if (!y || !m || m < 1 || m > 12) return dateMonth;
+  return `${FR_MONTHS[m - 1]} ${y}`;
+}
+
 function loadAvisWebAdmin() {
   const container = document.getElementById('avis-web-list');
   if (!container) return;
@@ -3707,7 +3716,8 @@ function loadAvisWebAdmin() {
   avisWebUnsub = onSnapshot(collection(db, 'avisWeb'), (snap) => {
     const list = [];
     snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
-    list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    // Tri par date réelle de l'avis (la plus récente en premier), pas par date d'ajout dans l'admin
+    list.sort((a, b) => (b.dateMonth || '').localeCompare(a.dateMonth || ''));
     window._avisWebCache = list;
 
     const countEl = document.getElementById('avis-web-count');
@@ -3729,7 +3739,7 @@ function loadAvisWebAdmin() {
           <div class="card-info">
             <strong>${escapeHtml(a.nom || '')}</strong>
             <span style="color:#f59e0b;font-size:12px;">${stars}</span>
-            <div class="meta">${escapeHtml(a.date || '')}</div>
+            <div class="meta">${escapeHtml(frMonthLabel(a.dateMonth))}</div>
             <div class="meta" style="font-style:italic;">"${escapeHtml(a.texte || '')}"</div>
           </div>
           <div class="card-actions">
@@ -3750,11 +3760,11 @@ window.addAvisWeb = async function () {
   const nom = document.getElementById('avis-nom').value.trim();
   const texte = document.getElementById('avis-texte').value.trim();
   const note = document.getElementById('avis-note').value;
-  const date = document.getElementById('avis-date').value.trim();
+  const dateMonth = document.getElementById('avis-date').value;
   if (!nom || !texte) { alert('Nom et texte de l\'avis obligatoires.'); return; }
   try {
     await addDoc(collection(db, 'avisWeb'), {
-      nom, texte, note: Number(note), date: date || '',
+      nom, texte, note: Number(note), dateMonth: dateMonth || '',
       createdAt: new Date().toISOString()
     });
     document.getElementById('avis-nom').value = '';
@@ -3773,7 +3783,7 @@ window.openEditAvisModal = function (docId) {
   document.getElementById('edit-avis-nom').value = a.nom || '';
   document.getElementById('edit-avis-texte').value = a.texte || '';
   document.getElementById('edit-avis-note').value = String(a.note || 5);
-  document.getElementById('edit-avis-date').value = a.date || '';
+  document.getElementById('edit-avis-date').value = a.dateMonth || '';
   document.getElementById('edit-avis-modal').classList.add('open');
 };
 
@@ -3787,10 +3797,10 @@ window.saveEditAvis = async function () {
   const nom = document.getElementById('edit-avis-nom').value.trim();
   const texte = document.getElementById('edit-avis-texte').value.trim();
   const note = document.getElementById('edit-avis-note').value;
-  const date = document.getElementById('edit-avis-date').value.trim();
+  const dateMonth = document.getElementById('edit-avis-date').value;
   if (!nom || !texte) { alert('Nom et texte de l\'avis obligatoires.'); return; }
   try {
-    await updateDoc(doc(db, 'avisWeb', avisWebEditId), { nom, texte, note: Number(note), date: date || '' });
+    await updateDoc(doc(db, 'avisWeb', avisWebEditId), { nom, texte, note: Number(note), dateMonth: dateMonth || '' });
     closeEditAvisModal();
     showToast('✅ Avis mis à jour.');
   } catch (err) {
@@ -3819,7 +3829,7 @@ window.generateAvisHtmlBlock = function () {
     const noteNum = Number(a.note) || 5;
     const stars = '★'.repeat(noteNum) + '☆'.repeat(5 - noteNum);
     const initiales = avisInitiales(a.nom);
-    return `      <div class="review-card"><div class="review-header"><div class="review-avatar">${escapeHtml(initiales)}</div><div><div class="review-name">${escapeHtml(a.nom)}</div><div class="review-stars">${stars}</div></div><div class="review-date">${escapeHtml(a.date || '')}</div></div><p class="review-text">"${escapeHtml(a.texte)}"</p></div>`;
+    return `      <div class="review-card"><div class="review-header"><div class="review-avatar">${escapeHtml(initiales)}</div><div><div class="review-name">${escapeHtml(a.nom)}</div><div class="review-stars">${stars}</div></div><div class="review-date">${escapeHtml(frMonthLabel(a.dateMonth))}</div></div><p class="review-text">"${escapeHtml(a.texte)}"</p></div>`;
   }).join('\n');
   document.getElementById('avis-html-code').value = cards;
   document.getElementById('avis-html-output').style.display = 'block';
