@@ -624,11 +624,13 @@
             <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Un bloc par article, séparés par une ligne <code>===</code>. Le texte peut faire plusieurs lignes.<br>
-              Dédoublonnage automatique sur titre + date (les articles déjà importés sont ignorés). Les photos restent à ajouter manuellement, article par article, une fois importés.
+              Ligne <code>PHOTO:</code> optionnelle (URL directe de l'image — pas besoin d'upload manuel si le lien est déjà public).<br>
+              Dédoublonnage automatique sur titre + date (les articles déjà importés sont ignorés).
             </div>
             <textarea id="bs-bulk-text" rows="10" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="TITRE: Orange Sports arrive le 1er août !
 DATE: 28/07/2026
 CATEGORIE: Orange
+PHOTO: https://storage.googleapis.com/dam-ssn-prod/xxx_original.png
 TEXTE:
 À partir du 1er août, ORANGE FOOTBALL évolue et devient ORANGE SPORTS.
 Au programme : un nouveau nom, le grand retour du football belge...
@@ -1660,7 +1662,8 @@ window.handleBlogSmartPhotoChange = async function (event) {
   if (!file) return;
   const statusEl = document.getElementById('bs-photo-status');
   try {
-    const url = await uploadImageToStorage(file, 'smartblog', statusEl);
+    // 'smartblog' n'a pas de règle Storage dédiée → on réutilise 'news', déjà autorisé (allow write: if request.auth != null).
+    const url = await uploadImageToStorage(file, 'news', statusEl);
     bsPhotoPendingUrl = url;
     document.getElementById('bs-photo-preview').src = url;
   } catch (e) {
@@ -1683,7 +1686,8 @@ window.handleBlogSmartInlineImageSelected = async function (event) {
   if (!file) return;
   const statusEl = document.getElementById('bs-inline-image-status');
   try {
-    const url = await uploadImageToStorage(file, 'smartblog', statusEl);
+    // 'smartblog' n'a pas de règle Storage dédiée → on réutilise 'news', déjà autorisé (allow write: if request.auth != null).
+    const url = await uploadImageToStorage(file, 'news', statusEl);
     const editor = document.getElementById('bs-fulltext');
     editor.focus();
     const sel = window.getSelection();
@@ -1794,6 +1798,7 @@ window.bulkImportBlogSmart = async function () {
     const titleMatch = block.match(/^TITRE\s*:\s*(.+)$/mi);
     const dateMatch = block.match(/^DATE\s*:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/mi);
     const catMatch = block.match(/^CATEGORIE\s*:\s*(.+)$/mi);
+    const photoMatch = block.match(/^PHOTO\s*:\s*(\S+)\s*$/mi);
     const texteMatch = block.match(/^TEXTE\s*:\s*\n?([\s\S]*)$/mi);
 
     const title = titleMatch ? titleMatch[1].trim() : '';
@@ -1803,6 +1808,7 @@ window.bulkImportBlogSmart = async function () {
     }
     const date = `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
     const categories = catMatch ? catMatch[1].split(';').map(c => c.trim()).filter(Boolean) : [];
+    const photoUrl = photoMatch ? photoMatch[1].trim() : '';
     const fullTextRaw = texteMatch ? texteMatch[1].trim() : '';
     if (!fullTextRaw) {
       errors.push(`Bloc ${idx + 1} ("${title}") : pas de texte ("TEXTE: ..." manquant)`);
@@ -1818,7 +1824,7 @@ window.bulkImportBlogSmart = async function () {
     }
     seenInBatch.add(key);
 
-    valid.push({ title, date, categories, fullText, photoUrl: '' });
+    valid.push({ title, date, categories, fullText, photoUrl });
   });
 
   let msg = `${valid.length} article(s) prêt(s) à être importé(s).`;
