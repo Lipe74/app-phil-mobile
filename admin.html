@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.1</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.2</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -172,6 +172,12 @@
       <!-- MENU (style hub) -->
       <div class="admin-menu">
 
+        <div class="menu-label">🌐 Phil-Mobile (Web)</div>
+        <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
+        <button onclick="showAdminPanel('panel-web-leads', this)" class="menu-item" id="menu-web-leads">📋 Demandes reçues <span id="web-leads-count-badge"></span></button>
+
+        <div class="menu-label">📱 App Phil-Mobile</div>
+
         <div class="menu-label">📥 Activité</div>
         <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">📝 Demandes en attente <span id="prospects-count"></span></button>
         <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
@@ -179,10 +185,6 @@
 
         <div class="menu-label">👥 Consultants</div>
         <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
-
-        <div class="menu-label">🌐 Phil-Mobile (Web)</div>
-        <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
-        <button onclick="showAdminPanel('panel-web-leads', this)" class="menu-item" id="menu-web-leads">📋 Demandes reçues <span id="web-leads-count-badge"></span></button>
 
         <div class="menu-label">🖼️ Application</div>
         <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
@@ -314,6 +316,20 @@
 
         <div class="admin-panel" id="panel-avis-web">
           <div class="section-title">⭐ Avis clients (site web phil-mobile.be)</div>
+
+          <div class="card">
+            <div class="section-title" style="font-size:13px;margin-bottom:10px;">🌟 Note globale (bloc "5.0 Excellent")</div>
+            <div class="form-row">
+              <label>Note (ex: 5.0)</label>
+              <input type="text" id="avis-global-score" placeholder="5.0">
+            </div>
+            <div class="form-row">
+              <label>Libellé (ex: Excellent)</label>
+              <input type="text" id="avis-global-label" placeholder="Excellent">
+            </div>
+            <button class="btn btn-primary" onclick="saveGlobalRating()">💾 Enregistrer la note globale</button>
+          </div>
+
           <div class="card">
             <div class="section-title" style="font-size:13px;margin-bottom:10px;">➕ Ajouter un avis</div>
             <div style="font-size:11px;color:#888;margin-bottom:10px;">Copie-colle le nom, le texte et la date depuis Google Avis.</div>
@@ -349,7 +365,7 @@
           <div id="avis-web-list" style="display:block;"><div class="empty">Chargement...</div></div>
 
           <div id="avis-html-output" style="display:none;margin-top:14px;" class="card">
-            <div class="section-title" style="font-size:13px;">📄 Code à coller dans index.html (section Avis, phil-mobile.be)</div>
+            <div class="section-title" style="font-size:13px;">📄 Code à coller dans index.html (remplace tout le bloc, de &lt;div class="rating-bar"&gt; à la fin de &lt;div class="reviews-grid"&gt;)</div>
             <textarea id="avis-html-code" readonly rows="10" style="width:100%;font-family:monospace;font-size:11px;padding:8px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"></textarea>
             <button class="btn btn-primary" style="margin-top:8px;" onclick="copyAvisHtml()">📋 Copier le code</button>
           </div>
@@ -1265,6 +1281,7 @@ onAuthStateChanged(auth, async (user) => {
   loadConsultants();
   loadMessagesAdmin();
   loadAvisWebAdmin();
+  loadGlobalRatingAdmin();
   loadWebLeadsAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
@@ -3708,6 +3725,28 @@ function frMonthLabel(dateMonth) {
   return `${FR_MONTHS[m - 1]} ${y}`;
 }
 
+async function loadGlobalRatingAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'avisWeb', '_globalRating'));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('avis-global-score').value = d.score || '5.0';
+    document.getElementById('avis-global-label').value = d.label || 'Excellent';
+  } catch (e) {
+    console.log('Chargement note globale impossible:', e.message);
+  }
+}
+
+window.saveGlobalRating = async function () {
+  const score = document.getElementById('avis-global-score').value.trim();
+  const label = document.getElementById('avis-global-label').value.trim();
+  try {
+    await setDoc(doc(db, 'avisWeb', '_globalRating'), { score: score || '5.0', label: label || 'Excellent' });
+    showToast('✅ Note globale enregistrée.');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
 function loadAvisWebAdmin() {
   const container = document.getElementById('avis-web-list');
   if (!container) return;
@@ -3715,7 +3754,7 @@ function loadAvisWebAdmin() {
   container.innerHTML = '<div class="empty">Chargement...</div>';
   avisWebUnsub = onSnapshot(collection(db, 'avisWeb'), (snap) => {
     const list = [];
-    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    snap.forEach(d => { if (d.id !== '_globalRating') list.push({ docId: d.id, ...d.data() }); });
     // Tri par date réelle de l'avis (la plus récente en premier), pas par date d'ajout dans l'admin
     list.sort((a, b) => (b.dateMonth || '').localeCompare(a.dateMonth || ''));
     window._avisWebCache = list;
@@ -3825,13 +3864,26 @@ function avisInitiales(nom) {
 window.generateAvisHtmlBlock = function () {
   const list = window._avisWebCache || [];
   if (list.length === 0) { alert('Aucun avis à générer.'); return; }
+  const score = document.getElementById('avis-global-score').value.trim() || '5.0';
+  const label = document.getElementById('avis-global-label').value.trim() || 'Excellent';
   const cards = list.map(a => {
     const noteNum = Number(a.note) || 5;
     const stars = '★'.repeat(noteNum) + '☆'.repeat(5 - noteNum);
     const initiales = avisInitiales(a.nom);
     return `      <div class="review-card"><div class="review-header"><div class="review-avatar">${escapeHtml(initiales)}</div><div><div class="review-name">${escapeHtml(a.nom)}</div><div class="review-stars">${stars}</div></div><div class="review-date">${escapeHtml(frMonthLabel(a.dateMonth))}</div></div><p class="review-text">"${escapeHtml(a.texte)}"</p></div>`;
   }).join('\n');
-  document.getElementById('avis-html-code').value = cards;
+  const fullBlock = `<div class="rating-bar">
+  <div class="rating-score">${escapeHtml(score)}</div>
+  <div class="rating-info">
+    <div class="stars">★★★★★</div>
+    <div class="rtxt">${escapeHtml(label)}</div>
+    <small>sur Google Reviews</small>
+  </div>
+</div>
+<div class="reviews-grid">
+${cards}
+</div>`;
+  document.getElementById('avis-html-code').value = fullBlock;
   document.getElementById('avis-html-output').style.display = 'block';
 };
 
