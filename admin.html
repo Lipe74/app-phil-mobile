@@ -1903,6 +1903,20 @@ function normalizeAgendaTitle(str) {
     .trim();
 }
 
+// Reconnaît les variantes de catégorie rencontrées dans les exports Smart / ChatGPT
+// (ex: "Team meetings (= BOM)", "BOM", "Evenements") et les ramène à une valeur exacte
+// de AGENDA_CATEGORY_ORDER. Renvoie null si vraiment aucune correspondance.
+function normalizeAgendaCategory(raw) {
+  const n = normalizeAgendaTitle(raw);
+  if (!n) return null;
+  if (n.includes('bom') || n.includes('team meeting')) return 'Team meetings';
+  if (n.includes('formation')) return 'Formations';
+  if (n.includes('evenement special') || n.includes('special event')) return 'Événements spéciaux';
+  if (n.includes('evenement') || n.includes('event')) return 'Événements';
+  // Correspondance exacte en dernier recours (au cas où une nouvelle catégorie serait ajoutée un jour)
+  return AGENDA_CATEGORY_ORDER.find(c => normalizeAgendaTitle(c) === n) || null;
+}
+
 window.bulkImportAgenda = async function () {
   const raw = document.getElementById('ag-bulk-text').value.trim();
   if (!raw) {
@@ -1942,8 +1956,8 @@ window.bulkImportAgenda = async function () {
       return;
     }
 
-    let category = categoryRaw;
-    if (!AGENDA_CATEGORY_ORDER.includes(category)) {
+    let category = AGENDA_CATEGORY_ORDER.includes(categoryRaw) ? categoryRaw : normalizeAgendaCategory(categoryRaw);
+    if (!category) {
       errors.push(`Ligne ${idx + 1} : catégorie "${categoryRaw}" non reconnue → mise dans "Événements" par défaut`);
       category = 'Événements';
     }
