@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.4 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.5 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -3948,18 +3948,40 @@ window.dismissWebLead = async function (docId) {
 window.convertWebLead = async function (docId) {
   const l = (window._webLeadsCache || []).find(x => x.docId === docId);
   if (!l) return;
+  const now = new Date().toISOString();
+  const nomComplet = `${l.prenom || ''} ${l.nom || ''}`.trim();
+
   try {
     if (l.type === 'consultant') {
+      const infosComp = [
+        l.motivation ? `Motivation: ${l.motivation}` : '',
+        l.tva ? `TVA: ${l.tva}` : '',
+        l.residence ? `Réside en Belgique: ${l.residence}` : ''
+      ].filter(Boolean).join(' | ');
+
       await addDoc(collection(db, 'prospectsConsultants'), {
-        prenom: l.prenom || '', nom: l.nom || '', email: l.email || '', telephone: l.telephone || '',
-        source: 'Site Web', statutPro: l.residence || '', presentation: l.motivation || '',
-        status: 'Nouveau', createdAt: new Date().toISOString()
+        consultantId: 'delta835',
+        nom: nomComplet, tel: l.telephone || '', email: l.email || '',
+        source: 'Site Web', commentaire: infosComp,
+        statutPro: 'Indépendant', presentation: 'Non présentée',
+        statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
     } else {
+      const sourceMap = { 'Orange': 'Orange', 'Eneco': 'Eneco', 'Orange+Eneco': 'Orange + Eneco' };
+      const typeMap = { 'Société': 'Société', 'Indépendant': 'Société', 'Particulier': 'Particulier' };
+      const infosComp = [
+        l.message || '',
+        l.operateurMobile ? `Opérateur mobile actuel: ${l.operateurMobile}` : '',
+        l.fournisseurInternet ? `Fournisseur internet actuel: ${l.fournisseurInternet}` : '',
+        l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : ''
+      ].filter(Boolean).join(' | ');
+
       await addDoc(collection(db, 'prospectsClients'), {
-        prenom: l.prenom || '', nom: l.nom || '', email: l.email || '', telephone: l.telephone || '',
-        type: l.vousEtes || 'Particulier', source: l.produitSource || 'Autre', ville: '',
-        commentaire: l.message || '', status: 'Nouveau', createdAt: new Date().toISOString()
+        consultantId: 'delta835',
+        nom: nomComplet, tel: l.telephone || '', email: l.email || '',
+        type: typeMap[l.vousEtes] || 'Particulier', source: sourceMap[l.produitSource] || 'Autre',
+        societe: '', tva: '', ville: '',
+        commentaire: infosComp, statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
     }
     await updateDoc(doc(db, 'webLeads', docId), { status: 'converti' });
