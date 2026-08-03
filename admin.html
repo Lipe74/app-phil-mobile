@@ -3968,6 +3968,7 @@ window.openWebLeadDetail = function (docId) {
 
   if (isConsultant) {
     rows.push(['Réside en Belgique', l.residence || '—']);
+    rows.push(['Statut actuel', l.statutActuel || '—']);
     rows.push(['Commune', l.commune ? `${l.commune}${l.codePostal ? ' (' + l.codePostal + ')' : ''}` : '—']);
     rows.push(['Activité indépendante', l.independant || '—']);
     rows.push(['Terrain / sans télétravail', l.terrain || '—']);
@@ -4059,6 +4060,7 @@ window.convertWebLead = async function (docId) {
         l.motivation ? `Motivation: ${l.motivation}` : '',
         l.tva ? `TVA: ${l.tva}` : '',
         l.residence ? `Réside en Belgique: ${l.residence}` : '',
+        l.statutActuel ? `Statut actuel: ${l.statutActuel}` : '',
         l.commune ? `Commune: ${l.commune}${l.codePostal ? ' (' + l.codePostal + ')' : ''}` : '',
         l.deplacement ? `Moyen de déplacement: ${l.deplacement}` : '',
         l.experience ? `Expérience: ${l.experience}` : '',
