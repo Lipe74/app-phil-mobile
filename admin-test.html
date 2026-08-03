@@ -3931,7 +3931,7 @@ function renderWebLeads() {
           <span class="badge ${isNew ? 'badge-active' : 'badge-inactive'}">${statusLabel}</span>
           <div class="meta">${typeLabel}${l.origineTrafic ? ` · 📍 ${escapeHtml(l.origineTrafic)}` : ''}</div>
           <div class="meta">${escapeHtml(l.email || '—')} · ${escapeHtml(l.telephone || '—')}</div>
-          ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}</div>` : ''}
+          ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}${l.montantFacture ? ` · 💶 ${escapeHtml(String(l.montantFacture))} €/mois` : ''}${l.factureUrl ? ' · 📎 Facture jointe' : ''}</div>` : ''}
           ${l.motivation ? `<div class="meta">💬 ${escapeHtml(l.motivation)}</div>` : ''}
           ${l.message ? `<div class="meta">💬 ${escapeHtml(l.message)}</div>` : ''}
         </div>
@@ -3979,6 +3979,8 @@ window.openWebLeadDetail = function (docId) {
     rows.push(['Opérateur mobile actuel', l.operateurMobile || '—']);
     rows.push(['Fournisseur internet actuel', l.fournisseurInternet || '—']);
     rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie || '—']);
+    rows.push(['Montant facture actuelle', l.montantFacture ? `${l.montantFacture} €/mois` : '—']);
+    rows.push(['Facture', l.factureUrl ? `<a href="${escapeHtml(l.factureUrl)}" target="_blank">📎 Ouvrir la facture</a>` : '—']);
     rows.push(['Message', l.message || '—']);
   }
   rows.push(['Reçu le', l.createdAt ? new Date(l.createdAt).toLocaleString('fr-BE') : '—']);
@@ -4054,6 +4056,8 @@ window.convertWebLead = async function (docId) {
         l.operateurMobile ? `Opérateur mobile actuel: ${l.operateurMobile}` : '',
         l.fournisseurInternet ? `Fournisseur internet actuel: ${l.fournisseurInternet}` : '',
         l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : '',
+        l.montantFacture ? `Montant facture actuelle: ${l.montantFacture} €/mois` : '',
+        l.factureUrl ? `Facture: ${l.factureUrl}` : '',
         l.origineTrafic ? `Origine: ${l.origineTrafic}` : ''
       ].filter(Boolean).join(' | ');
 
