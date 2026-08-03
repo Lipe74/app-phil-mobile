@@ -1114,6 +1114,18 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
   </div>
 </div>
 
+<!-- Modal : détail d'une demande reçue (avant validation) -->
+<div class="modal-overlay" id="web-lead-detail-modal">
+  <div class="modal-box" style="max-width:520px;">
+    <h3 id="wld-title">📋 Détail de la demande</h3>
+    <div id="wld-body" style="font-size:13px;line-height:1.8;"></div>
+    <div class="form-actions" id="wld-actions" style="flex-wrap:wrap;margin-top:16px;"></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" style="width:100%;" onclick="closeWebLeadDetail()">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal : édition d'un avis client -->
 <div class="modal-overlay" id="edit-avis-modal">
   <div class="modal-box">
@@ -3917,13 +3929,14 @@ function renderWebLeads() {
         <div class="card-info">
           <strong>${escapeHtml(l.prenom || '')} ${escapeHtml(l.nom || '')}</strong>
           <span class="badge ${isNew ? 'badge-active' : 'badge-inactive'}">${statusLabel}</span>
-          <div class="meta">${typeLabel}</div>
+          <div class="meta">${typeLabel}${l.origineTrafic ? ` · 📍 ${escapeHtml(l.origineTrafic)}` : ''}</div>
           <div class="meta">${escapeHtml(l.email || '—')} · ${escapeHtml(l.telephone || '—')}</div>
           ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}</div>` : ''}
           ${l.motivation ? `<div class="meta">💬 ${escapeHtml(l.motivation)}</div>` : ''}
           ${l.message ? `<div class="meta">💬 ${escapeHtml(l.message)}</div>` : ''}
         </div>
         <div class="card-actions">
+          <button class="btn btn-secondary" onclick="openWebLeadDetail('${l.docId}')">👁 Détail</button>
           <a class="btn btn-secondary" href="mailto:${escapeHtml(l.email || '')}?subject=${mailSubject}&body=${mailBody}" target="_blank">✉️ Email</a>
           ${waPhone ? `<a class="btn btn-secondary" href="https://wa.me/${waPhone}?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
           <button class="btn btn-primary" onclick="convertWebLead('${l.docId}')">➡️ Convertir</button>
@@ -3934,6 +3947,68 @@ function renderWebLeads() {
     container.appendChild(card);
   });
 }
+
+window.openWebLeadDetail = function (docId) {
+  const l = (window._webLeadsCache || []).find(x => x.docId === docId);
+  if (!l) return;
+  const isConsultant = l.type === 'consultant';
+
+  document.getElementById('wld-title').textContent = isConsultant
+    ? "🚀 Détail — Rejoindre l'équipe"
+    : '💼 Détail — Analyse tarifaire';
+
+  const rows = [];
+  rows.push(['Nom', `${l.prenom || ''} ${l.nom || ''}`.trim() || '—']);
+  rows.push(['Email', l.email || '—']);
+  rows.push(['Téléphone', l.telephone || '—']);
+
+  if (isConsultant) {
+    rows.push(['Réside en Belgique', l.residence || '—']);
+    rows.push(['Commune', l.commune ? `${l.commune}${l.codePostal ? ' (' + l.codePostal + ')' : ''}` : '—']);
+    rows.push(['Activité indépendante', l.independant || '—']);
+    rows.push(['Terrain / sans télétravail', l.terrain || '—']);
+    rows.push(['TVA belge', l.tva || '—']);
+    rows.push(['Moyen de déplacement', l.deplacement || '—']);
+    rows.push(['Expérience vente/télécom/énergie', l.experience || '—']);
+    rows.push(['Motivation', l.motivation || '—']);
+    rows.push(['Confirmation candidat', l.confirmation ? '✅ Oui' : '—']);
+    rows.push(['CV', l.cvUrl ? `<a href="${escapeHtml(l.cvUrl)}" target="_blank">📎 Ouvrir le CV</a>` : '—']);
+  } else {
+    rows.push(['Vous êtes', l.vousEtes || '—']);
+    rows.push(['Sujet', l.sujet || '—']);
+    rows.push(['Opérateur mobile actuel', l.operateurMobile || '—']);
+    rows.push(['Fournisseur internet actuel', l.fournisseurInternet || '—']);
+    rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie || '—']);
+    rows.push(['Message', l.message || '—']);
+  }
+  rows.push(['Reçu le', l.createdAt ? new Date(l.createdAt).toLocaleString('fr-BE') : '—']);
+  rows.push(['Origine', l.origineTrafic || '—']);
+
+  document.getElementById('wld-body').innerHTML = rows.map(([label, value]) => `
+    <div style="margin-bottom:10px;">
+      <strong style="color:#999;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:2px;">${escapeHtml(label)}</strong>
+      ${typeof value === 'string' && value.startsWith('<a ') ? value : escapeHtml(String(value))}
+    </div>
+  `).join('');
+
+  const waPhone = (l.telephone || '').replace(/[^0-9+]/g, '').replace(/^\+/, '');
+  const mailSubject = encodeURIComponent(isConsultant ? 'Votre demande – Rejoindre Phil-Mobile' : "Votre demande d'analyse – Phil-Mobile");
+  const mailBody = encodeURIComponent(`Bonjour ${l.prenom || ''},\n\n`);
+  const waText = encodeURIComponent(`Bonjour ${l.prenom || ''}, suite à votre demande sur phil-mobile.be...`);
+
+  document.getElementById('wld-actions').innerHTML = `
+    <a class="btn btn-secondary" href="mailto:${escapeHtml(l.email || '')}?subject=${mailSubject}&body=${mailBody}" target="_blank">✉️ Email</a>
+    ${waPhone ? `<a class="btn btn-secondary" href="https://wa.me/${waPhone}?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
+    <button class="btn btn-primary" onclick="convertWebLead('${docId}'); closeWebLeadDetail();">➡️ Convertir</button>
+    <button class="btn btn-danger" onclick="dismissWebLead('${docId}'); closeWebLeadDetail();">Ignorer</button>
+  `;
+
+  document.getElementById('web-lead-detail-modal').classList.add('open');
+};
+
+window.closeWebLeadDetail = function () {
+  document.getElementById('web-lead-detail-modal').classList.remove('open');
+};
 
 window.dismissWebLead = async function (docId) {
   if (!confirm('Marquer cette demande comme traitée ?')) return;
@@ -3956,7 +4031,12 @@ window.convertWebLead = async function (docId) {
       const infosComp = [
         l.motivation ? `Motivation: ${l.motivation}` : '',
         l.tva ? `TVA: ${l.tva}` : '',
-        l.residence ? `Réside en Belgique: ${l.residence}` : ''
+        l.residence ? `Réside en Belgique: ${l.residence}` : '',
+        l.commune ? `Commune: ${l.commune}${l.codePostal ? ' (' + l.codePostal + ')' : ''}` : '',
+        l.deplacement ? `Moyen de déplacement: ${l.deplacement}` : '',
+        l.experience ? `Expérience: ${l.experience}` : '',
+        l.cvUrl ? `CV: ${l.cvUrl}` : '',
+        l.origineTrafic ? `Origine: ${l.origineTrafic}` : ''
       ].filter(Boolean).join(' | ');
 
       await addDoc(collection(db, 'prospectsConsultants'), {
@@ -3973,7 +4053,8 @@ window.convertWebLead = async function (docId) {
         l.message || '',
         l.operateurMobile ? `Opérateur mobile actuel: ${l.operateurMobile}` : '',
         l.fournisseurInternet ? `Fournisseur internet actuel: ${l.fournisseurInternet}` : '',
-        l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : ''
+        l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : '',
+        l.origineTrafic ? `Origine: ${l.origineTrafic}` : ''
       ].filter(Boolean).join(' | ');
 
       await addDoc(collection(db, 'prospectsClients'), {
