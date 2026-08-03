@@ -368,7 +368,7 @@
           <div class="section-title">📋 Demandes reçues (site web phil-mobile.be) <span id="web-leads-count"></span></div>
           <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="filterWebLeads('all')">Toutes</button>
-            <button class="btn btn-secondary" onclick="filterWebLeads('client')">💼 Analyse tarifaire</button>
+            <button class="btn btn-secondary" onclick="filterWebLeads('client')">💼 Demandes clients</button>
             <button class="btn btn-secondary" onclick="filterWebLeads('consultant')">🚀 Rejoindre l'équipe</button>
           </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-bottom:14px;">
@@ -3916,7 +3916,9 @@ function renderWebLeads() {
   list.forEach(l => {
     const isNew = !l.status || l.status === 'nouveau';
     const statusLabel = isNew ? 'Nouveau' : (l.status === 'converti' ? 'Converti' : 'Traité');
-    const typeLabel = l.type === 'consultant' ? "🚀 Rejoindre l'équipe" : '💼 Analyse tarifaire';
+    const typeLabel = l.type === 'consultant'
+      ? "🚀 Rejoindre l'équipe"
+      : (l.demandeType === 'simulation' ? '📊 Simulation complète' : '📋 Demande d\'infos');
     const waPhone = (l.telephone || '').replace(/[^0-9+]/g, '').replace(/^\+/, '');
     const mailSubject = encodeURIComponent(l.type === 'consultant' ? 'Votre demande – Rejoindre Phil-Mobile' : "Votre demande d'analyse – Phil-Mobile");
     const mailBody = encodeURIComponent(`Bonjour ${l.prenom || ''},\n\n`);
@@ -3932,6 +3934,7 @@ function renderWebLeads() {
           <div class="meta">${typeLabel}${l.origineTrafic ? ` · 📍 ${escapeHtml(l.origineTrafic)}` : ''}</div>
           <div class="meta">${escapeHtml(l.email || '—')} · ${escapeHtml(l.telephone || '—')}</div>
           ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}${l.montantFacture ? ` · 💶 ${escapeHtml(String(l.montantFacture))} €/mois` : ''}${l.factureUrl ? ' · 📎 Facture jointe' : ''}</div>` : ''}
+          ${l.montantTotal ? `<div class="meta">💶 ${escapeHtml(String(l.montantTotal))} €/mois${l.factureUrl ? ' · 📎 Facture jointe' : ''}</div>` : ''}
           ${l.motivation ? `<div class="meta">💬 ${escapeHtml(l.motivation)}</div>` : ''}
           ${l.message ? `<div class="meta">💬 ${escapeHtml(l.message)}</div>` : ''}
         </div>
@@ -3952,10 +3955,11 @@ window.openWebLeadDetail = function (docId) {
   const l = (window._webLeadsCache || []).find(x => x.docId === docId);
   if (!l) return;
   const isConsultant = l.type === 'consultant';
+  const isSimulation = l.demandeType === 'simulation';
 
   document.getElementById('wld-title').textContent = isConsultant
     ? "🚀 Détail — Rejoindre l'équipe"
-    : '💼 Détail — Analyse tarifaire';
+    : (isSimulation ? '📊 Détail — Simulation complète' : "📋 Détail — Demande d'infos");
 
   const rows = [];
   rows.push(['Nom', `${l.prenom || ''} ${l.nom || ''}`.trim() || '—']);
@@ -3973,14 +3977,29 @@ window.openWebLeadDetail = function (docId) {
     rows.push(['Motivation', l.motivation || '—']);
     rows.push(['Confirmation candidat', l.confirmation ? '✅ Oui' : '—']);
     rows.push(['CV', l.cvUrl ? `<a href="${escapeHtml(l.cvUrl)}" target="_blank">📎 Ouvrir le CV</a>` : '—']);
+  } else if (isSimulation) {
+    rows.push(['Vous êtes', l.vousEtes || '—']);
+    rows.push(['Opérateur mobile actuel', l.operateurMobile || '—']);
+    rows.push(['Nombre de lignes mobiles', l.nombreLignesMobile || '—']);
+    rows.push(['Opérateur internet actuel', l.fournisseurInternet || '—']);
+    rows.push(["Nombre d'abonnements internet", l.nombreAbonnementsInternet || '—']);
+    rows.push(['TV', l.tv || '—']);
+    rows.push(['Autres options', l.autresOptions || '—']);
+    rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie || '—']);
+    rows.push(['Montant total actuel', l.montantTotal ? `${l.montantTotal} €/mois` : '—']);
+    rows.push(['dont mobile', l.montantMobile ? `${l.montantMobile} €/mois` : '—']);
+    rows.push(['dont internet', l.montantInternet ? `${l.montantInternet} €/mois` : '—']);
+    rows.push(['Facture', l.factureUrl ? `<a href="${escapeHtml(l.factureUrl)}" target="_blank">📎 Ouvrir la facture</a>` : '—']);
+    rows.push(['Message', l.message || '—']);
   } else {
     rows.push(['Vous êtes', l.vousEtes || '—']);
-    rows.push(['Sujet', l.sujet || '—']);
-    rows.push(['Opérateur mobile actuel', l.operateurMobile || '—']);
-    rows.push(['Fournisseur internet actuel', l.fournisseurInternet || '—']);
-    rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie || '—']);
-    rows.push(['Montant facture actuelle', l.montantFacture ? `${l.montantFacture} €/mois` : '—']);
-    rows.push(['Facture', l.factureUrl ? `<a href="${escapeHtml(l.factureUrl)}" target="_blank">📎 Ouvrir la facture</a>` : '—']);
+    // Compatibilité avec les anciennes demandes (avant la refonte du formulaire)
+    if (l.sujet) rows.push(['Sujet', l.sujet]);
+    if (l.operateurMobile) rows.push(['Opérateur mobile actuel', l.operateurMobile]);
+    if (l.fournisseurInternet) rows.push(['Fournisseur internet actuel', l.fournisseurInternet]);
+    if (l.fournisseurEnergie) rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie]);
+    if (l.montantFacture) rows.push(['Montant facture actuelle', `${l.montantFacture} €/mois`]);
+    if (l.factureUrl) rows.push(['Facture', `<a href="${escapeHtml(l.factureUrl)}" target="_blank">📎 Ouvrir la facture</a>`]);
     rows.push(['Message', l.message || '—']);
   }
   rows.push(['Reçu le', l.createdAt ? new Date(l.createdAt).toLocaleString('fr-BE') : '—']);
@@ -4049,13 +4068,31 @@ window.convertWebLead = async function (docId) {
         statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
     } else {
-      const sourceMap = { 'Orange': 'Orange', 'Eneco': 'Eneco', 'Orange+Eneco': 'Orange + Eneco' };
       const typeMap = { 'Société': 'Société', 'Indépendant': 'Société', 'Particulier': 'Particulier' };
+
+      let source = 'Site Web';
+      if (l.demandeType === 'simulation') {
+        const hasTelecom = !!(l.operateurMobile || l.fournisseurInternet);
+        const hasEnergie = !!l.fournisseurEnergie;
+        source = (hasTelecom && hasEnergie) ? 'Orange + Eneco' : hasEnergie ? 'Eneco' : 'Orange';
+      } else if (l.produitSource) {
+        const sourceMap = { 'Orange': 'Orange', 'Eneco': 'Eneco', 'Orange+Eneco': 'Orange + Eneco' };
+        source = sourceMap[l.produitSource] || 'Site Web';
+      }
+
       const infosComp = [
+        l.demandeType === 'information' ? 'Demande simple : informations' : '',
         l.message || '',
         l.operateurMobile ? `Opérateur mobile actuel: ${l.operateurMobile}` : '',
+        l.nombreLignesMobile ? `Nombre de lignes mobiles: ${l.nombreLignesMobile}` : '',
         l.fournisseurInternet ? `Fournisseur internet actuel: ${l.fournisseurInternet}` : '',
+        l.nombreAbonnementsInternet ? `Nombre d'abonnements internet: ${l.nombreAbonnementsInternet}` : '',
+        l.tv ? `TV: ${l.tv}` : '',
+        l.autresOptions ? `Autres options: ${l.autresOptions}` : '',
         l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : '',
+        l.montantTotal ? `Montant total actuel: ${l.montantTotal} €/mois` : '',
+        l.montantMobile ? `dont mobile: ${l.montantMobile} €/mois` : '',
+        l.montantInternet ? `dont internet: ${l.montantInternet} €/mois` : '',
         l.montantFacture ? `Montant facture actuelle: ${l.montantFacture} €/mois` : '',
         l.factureUrl ? `Facture: ${l.factureUrl}` : '',
         l.origineTrafic ? `Origine: ${l.origineTrafic}` : ''
@@ -4064,7 +4101,7 @@ window.convertWebLead = async function (docId) {
       await addDoc(collection(db, 'prospectsClients'), {
         consultantId: 'delta835',
         nom: nomComplet, tel: l.telephone || '', email: l.email || '',
-        type: typeMap[l.vousEtes] || 'Particulier', source: sourceMap[l.produitSource] || 'Autre',
+        type: typeMap[l.vousEtes] || 'Particulier', source: source,
         societe: '', tva: '', ville: '',
         commentaire: infosComp, statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
