@@ -373,7 +373,7 @@
           </div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-bottom:14px;">
             <input type="checkbox" id="web-leads-show-converted" onchange="renderWebLeads()">
-            Afficher aussi les demandes déjà converties (déjà présentes dans Prospects Clients/Consultants)
+            Afficher aussi les demandes traitées ou converties (Ignorer / déjà présentes dans Prospects Clients/Consultants)
           </label>
           <div id="web-leads-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
@@ -3905,7 +3905,7 @@ function renderWebLeads() {
   let list = window._webLeadsCache || [];
   if (webLeadsFilter !== 'all') list = list.filter(l => l.type === webLeadsFilter);
   const showConverted = document.getElementById('web-leads-show-converted')?.checked;
-  if (!showConverted) list = list.filter(l => l.status !== 'converti');
+  if (!showConverted) list = list.filter(l => l.status !== 'converti' && l.status !== 'traite');
 
   if (list.length === 0) {
     container.innerHTML = '<div class="empty">Aucune demande.</div>';
