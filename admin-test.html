@@ -3984,8 +3984,14 @@ window.openWebLeadDetail = function (docId) {
     rows.push(['Opérateur internet actuel', l.fournisseurInternet || '—']);
     rows.push(["Nombre d'abonnements internet", l.nombreAbonnementsInternet || '—']);
     rows.push(['TV', l.tv || '—']);
+    rows.push(['Décodeur supplémentaire', l.decodeurSupplementaire || '—']);
     rows.push(['Autres options', l.autresOptions || '—']);
     rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie || '—']);
+    if (l.energieInfosSouhaitees === 'Oui') {
+      rows.push(['Panneaux solaires', l.panneauxSolaires || '—']);
+      rows.push(['Montant mensualités énergie', l.montantEnergie ? `${l.montantEnergie} €/mois` : '—']);
+      rows.push(["Infos d'utilisation énergie", l.infosUtilisationEnergie || '—']);
+    }
     rows.push(['Montant total actuel', l.montantTotal ? `${l.montantTotal} €/mois` : '—']);
     rows.push(['dont mobile', l.montantMobile ? `${l.montantMobile} €/mois` : '—']);
     rows.push(['dont internet', l.montantInternet ? `${l.montantInternet} €/mois` : '—']);
@@ -4088,8 +4094,12 @@ window.convertWebLead = async function (docId) {
         l.fournisseurInternet ? `Fournisseur internet actuel: ${l.fournisseurInternet}` : '',
         l.nombreAbonnementsInternet ? `Nombre d'abonnements internet: ${l.nombreAbonnementsInternet}` : '',
         l.tv ? `TV: ${l.tv}` : '',
+        l.decodeurSupplementaire ? `Décodeur supplémentaire: ${l.decodeurSupplementaire}` : '',
         l.autresOptions ? `Autres options: ${l.autresOptions}` : '',
         l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : '',
+        l.panneauxSolaires ? `Panneaux solaires: ${l.panneauxSolaires}` : '',
+        l.montantEnergie ? `Montant mensualités énergie: ${l.montantEnergie} €/mois` : '',
+        l.infosUtilisationEnergie ? `Infos utilisation énergie: ${l.infosUtilisationEnergie}` : '',
         l.montantTotal ? `Montant total actuel: ${l.montantTotal} €/mois` : '',
         l.montantMobile ? `dont mobile: ${l.montantMobile} €/mois` : '',
         l.montantInternet ? `dont internet: ${l.montantInternet} €/mois` : '',
