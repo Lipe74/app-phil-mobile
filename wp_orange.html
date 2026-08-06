@@ -321,6 +321,7 @@ const db = getFirestore(app);
 
 // Exposés globalement pour que le script classique plus bas (promos dynamiques) puisse les utiliser
 window.db = db;
+window.auth = auth;
 window.collection = collection;
 window.getDocs = getDocs;
 
@@ -1153,25 +1154,17 @@ document.body.appendChild(msgEl);
 <script>
 (async () => {
   try {
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js');
-    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
-    
-    const firebaseConfig = {
-      apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
-      authDomain: "phil-mobile.firebaseapp.com",
-      projectId: "phil-mobile",
-      storageBucket: "phil-mobile.firebasestorage.app",
-      messagingSenderId: "193213939481",
-      appId: "1:193213939481:web:f8a750e89f0e645b62cf88"
-    };
-    
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    
+    const { signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
+
+    // Réutilise la connexion Firebase déjà initialisée plus haut dans le fichier
+    // (un 2e appel à initializeApp() ici provoquait une erreur "app/duplicate-app" qui empêchait
+    // ce bloc de s'exécuter, et donc désactivait complètement l'écran de connexion).
+    const auth = window.auth;
+
     const loginHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
         <div style="background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
-          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Build 8.0</div>
+          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Build ${window.APP_VERSION || '?'}</div>
           <div style="font-size:24px;font-weight:bold;color:#222;margin-bottom:8px;">Simulateur Orange</div>
           <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Connectez-vous avec votre adresse e-mail.</div>
           
