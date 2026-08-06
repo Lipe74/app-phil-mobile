@@ -658,7 +658,7 @@ ${loveTxt.map(t=>`<div style="font-size:13px;line-height:1.5;">${t}</div>`).join
 </div>
 
 <div class="box" style="text-align:center;">
-<img src="${ci.logoUrl}" width="90" onerror="this.onerror=null;this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'" style="display:block;margin:0 auto 10px;"><br>
+<img src="${ci.logoUrl}" crossorigin="anonymous" width="90" onerror="this.onerror=null;this.removeAttribute('crossorigin');this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'" style="display:block;margin:0 auto 10px;"><br>
 <b>${ci.name.toUpperCase()}</b><br>
 ${ci.phone}<br>
 ${ci.email}
