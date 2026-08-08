@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.0</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.1</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -440,7 +440,16 @@
 
             <div class="form-row">
               <label>Description / conditions (affiché sous le nom)</label>
-              <input type="text" id="promo-sub" placeholder="ex: -15€/mois pendant 6 mois (Client LOVE uniquement)">
+              <div style="display:flex;gap:3px;margin:3px 0 4px;flex-wrap:wrap;">
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')" title="Aligner à gauche" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">⬅</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')" title="Centrer" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">↔</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')" title="Aligner à droite" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">➡</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
+              </div>
+              <div contenteditable="true" id="promo-sub" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
             </div>
             <div class="form-row">
               <label>Montant de la remise (€)</label>
@@ -2741,7 +2750,7 @@ async function loadPromosAdmin() {
               <span class="badge" style="background:#fff3e8;color:#f97316;">${PROMO_TYPE_LABEL[p.type] || p.type}</span>
               ${catBadge}
               ${inactive ? '<span class="badge badge-inactive">Désactivée</span>' : ''}
-              <div class="meta">${escapeHtmlAdmin(p.sub || '')}</div>
+              <div class="meta">${p.sub || ''}</div>
               ${p.condition ? `<div class="meta" style="color:#cc4400;font-weight:700;">📌 Condition : ${escapeHtmlAdmin(p.condition)}</div>` : ''}
               ${(p.dateDebut || p.dateFin) ? `<div class="meta" style="color:#0369a1;font-weight:700;">📅 ${p.dateDebut ? 'Du ' + formatDateFr(p.dateDebut) : ''}${p.dateFin ? ' au ' + formatDateFr(p.dateFin) : ''}</div>` : ''}
               <div class="meta">-${p.price}€ · ${durLabel}${mobileLabel}</div>
@@ -2777,7 +2786,7 @@ window.editPromo = function (docId) {
     : storedType;
   document.getElementById('promo-type').value = uiType;
   document.getElementById('promo-name').value = p.name || '';
-  document.getElementById('promo-sub').value = p.sub || '';
+  document.getElementById('promo-sub').innerHTML = p.sub || '';
   document.getElementById('promo-price').value = p.price ?? 0;
   document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
   document.getElementById('promo-hascondition').checked = !!p.condition;
@@ -2797,7 +2806,7 @@ window.cancelPromoEdit = function () {
   const wasEditing = !!currentEditPromoId;
   currentEditPromoId = null;
   document.getElementById('promo-name').value = '';
-  document.getElementById('promo-sub').value = '';
+  document.getElementById('promo-sub').innerHTML = '';
   document.getElementById('promo-price').value = '';
   document.getElementById('promo-hascondition').checked = false;
   document.getElementById('promo-condition').value = '';
@@ -2820,7 +2829,7 @@ window.addOrUpdatePromo = async function () {
   // Mapping UI → stockage Firestore : "internet" et "option" restent stockés en "monthly"
   // (aucun changement de données, wp_orange.html continue de lire les promos à l'identique)
   const type = (uiType === 'internet' || uiType === 'option') ? 'monthly' : uiType;
-  const sub = document.getElementById('promo-sub').value.trim();
+  const sub = document.getElementById('promo-sub').innerHTML.trim();
   const price = Number(document.getElementById('promo-price').value);
   const durationRaw = document.getElementById('promo-duration').value;
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
@@ -2871,7 +2880,7 @@ window.addOrUpdatePromo = async function () {
       });
       showToast('✅ Promo ajoutée.');
       document.getElementById('promo-name').value = '';
-      document.getElementById('promo-sub').value = '';
+      document.getElementById('promo-sub').innerHTML = '';
       document.getElementById('promo-price').value = '';
       document.getElementById('promo-date-debut').value = '';
       document.getElementById('promo-date-fin').value = '';
@@ -2907,7 +2916,7 @@ window.addOrUpdatePromo = async function () {
   try {
     await addDoc(collection(db, 'promosOrange'), data);
     showToast('✅ Promo ajoutée.');
-    document.getElementById('promo-sub').value = '';
+    document.getElementById('promo-sub').innerHTML = '';
     document.getElementById('promo-price').value = '';
     document.getElementById('promo-date-debut').value = '';
     document.getElementById('promo-date-fin').value = '';
@@ -4223,6 +4232,19 @@ window.sendChatMessage = async function () {
 // IMPORTANT : les "id" ci-dessous sont des identifiants techniques référencés en dur dans le calcul
 // du simulateur (wp_orange.html : hasInternet(), totalMobileAbo(), etc.). On ne les modifie/supprime
 // jamais depuis l'admin — seuls nom/sous-titre/prix sont éditables.
+function richToolbarHtml() {
+  const btn = (cmd, label, title) => `<button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('${cmd}')" title="${title}" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">${label}</button>`;
+  return `<div style="display:flex;gap:3px;margin:3px 0 4px;flex-wrap:wrap;">
+    ${btn('bold', '<b>B</b>', 'Gras')}
+    ${btn('italic', '<i>I</i>', 'Italique')}
+    ${btn('underline', '<u>U</u>', 'Souligné')}
+    ${btn('justifyLeft', '⬅', 'Aligner à gauche')}
+    ${btn('justifyCenter', '↔', 'Centrer')}
+    ${btn('justifyRight', '➡', 'Aligner à droite')}
+    ${btn('justifyFull', '≡', 'Justifié')}
+  </div>`;
+}
+
 const PRODUITS_ORANGE_CATEGORIES = [
   { key: 'internet', label: '🌍 Internet' },
   { key: 'tv', label: '📺 TV' },
@@ -4301,10 +4323,7 @@ function loadProduitsOrangeAdmin() {
           </div>
           <div style="flex:2;min-width:160px;">
             <label style="font-size:11px;">Sous-titre</label>
-            <div style="display:flex;gap:4px;margin:2px 0 3px;">
-              <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:24px;height:22px;font-weight:bold;font-size:11px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">B</button>
-              <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:24px;height:22px;font-size:11px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
-            </div>
+            ${richToolbarHtml()}
             <div contenteditable="true" id="po-${p.id}-sub" style="min-height:34px;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;">${p.sub}</div>
           </div>
           <div style="flex:1;min-width:90px;">
