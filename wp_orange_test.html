@@ -26,7 +26,13 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
-.header { background:#ff5a14; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; }
+.header { background:#ff5a14; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+@media (max-width: 480px) {
+  .header { padding:16px; gap:10px; }
+  .header-title { font-size:22px; }
+  .header-sub { font-size:13px; }
+  .header-actions { width:100%; align-items:center !important; }
+}
 .header-logo { width:64px; height:64px; border-radius:14px; background:white; padding:4px; object-fit:contain; flex-shrink:0; }
 .header-text { flex: 1; }
 .header-title { color:#fff; font-size:30px; font-weight:bold; }
@@ -99,7 +105,7 @@
       </div>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+    <div class="header-actions" style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
 
       <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
         <button onclick="resetCache()" title="Actualiser l'application"
