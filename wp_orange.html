@@ -26,7 +26,13 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
-.header { background:#ff5a14; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; }
+.header { background:#ff5a14; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+@media (max-width: 480px) {
+  .header { padding:16px; gap:10px; }
+  .header-title { font-size:22px; }
+  .header-sub { font-size:13px; }
+  .header-actions { width:100%; align-items:center !important; }
+}
 .header-logo { width:64px; height:64px; border-radius:14px; background:white; padding:4px; object-fit:contain; flex-shrink:0; }
 .header-text { flex: 1; }
 .header-title { color:#fff; font-size:30px; font-weight:bold; }
@@ -86,27 +92,27 @@
       </div>
 
       <div style="margin-top:8px;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
-        Build <span id="app-version-1">…</span> Stable - Juin 2026
+        Build <span id="app-version-1">…</span> Stable
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <img class="header-logo" id="logo-img" src="" alt="Logo consultant" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;" onerror="this.onerror=null;this.src=window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png'">
+        <div style="color:#fff;font-size:11px;line-height:1.4;">
+          <span class="consultant-name" style="font-weight:700;"></span>
+          &nbsp;·&nbsp;<span class="consultant-phone"></span>
+          &nbsp;·&nbsp;<span class="consultant-email"></span>
+        </div>
       </div>
     </div>
 
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
-      <img class="header-logo" id="logo-img" src="" alt="Logo consultant" onerror="this.onerror=null;this.src=window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png'">
-      <div style="text-align:center;color:#fff;font-size:11px;line-height:1.5;">
-        <div class="consultant-name" style="font-weight:700;"></div>
-        <div class="consultant-phone"></div>
-        <div class="consultant-email"></div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
-
-      <button onclick="resetCache()"
-        style="background:white;color:#ff5a14;border:2px solid white;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-        🔧 Actualiser l'application
-      </button>
+    <div class="header-actions" style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
 
       <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
+        <button onclick="resetCache()" title="Actualiser l'application"
+          style="background:white;color:#ff5a14;border:none;border-right:2px solid white;padding:7px 12px;font-size:15px;cursor:pointer;line-height:1;">
+          🔧
+        </button>
+
         <button id="btn-tvac" onclick="setTVAC(true)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:white;color:#ff5a14;">
           TVAC
         </button>
@@ -397,6 +403,12 @@ window.consultantInfo = {
 // --- Promotions dynamiques depuis Firestore (admin.html) ---
 // Si la lecture échoue ou que la collection est vide, les promos codées en dur dans le script
 // classique plus bas (variables `promos` / `promosPermanent`) restent affichées tel quel : aucun risque de page vide.
+function formatDateFrOrange(isoDate) {
+  if (!isoDate) return '';
+  const [y, m, d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 async function loadPromosFromFirestore() {
   try {
     let tries = 0;
@@ -410,13 +422,23 @@ async function loadPromosFromFirestore() {
     const fetchedTemp = [];
     const fetchedPermanent = [];
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+
     snap.forEach(docSnap => {
       const p = docSnap.data();
       if (p.active === false) return;
+      // Masque automatiquement la promo si elle n'est pas (ou plus) dans sa période de validité
+      if (p.dateDebut && todayStr < p.dateDebut) return;
+      if (p.dateFin && todayStr > p.dateFin) return;
+
+      const dateLabel = (p.dateDebut || p.dateFin)
+        ? `<br><span style="color:#0369a1;font-weight:700;">📅 ${p.dateDebut ? 'Du ' + formatDateFrOrange(p.dateDebut) : ''}${p.dateFin ? ' au ' + formatDateFrOrange(p.dateFin) : ''}</span>`
+        : '';
+
       const item = {
         id: docSnap.id,
         name: window.wrapPromoName(p.name || ''),
-        sub: window.escapeHtmlOrange(p.sub || '') + (p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 ' + window.escapeHtmlOrange(p.condition) + '</span>' : ''),
+        sub: window.escapeHtmlOrange(p.sub || '') + (p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 ' + window.escapeHtmlOrange(p.condition) + '</span>' : '') + dateLabel,
         price: Number(p.price) || 0,
         perAbo: !!p.perAbo,
         mobileId: p.mobileId || undefined,
@@ -449,8 +471,53 @@ async function loadPromosFromFirestore() {
   }
 }
 
+// --- Produits Orange dynamiques depuis Firestore (admin.html) ---
+// Édite uniquement nom/sous-titre/prix des produits existants (les id techniques ne sont jamais
+// modifiés ici, car ils sont référencés en dur ailleurs dans le calcul : hasInternet(), totalMobileAbo(), etc.).
+// Si la lecture échoue ou que la collection est vide, les produits codés en dur dans le script
+// classique plus bas (variable `productList` / `options`) restent affichés tel quel : aucun risque de page vide.
+async function loadProductsFromFirestore() {
+  try {
+    let tries = 0;
+    while ((!window.productList || !window.options || !window.buildQtyRows) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.productList) throw new Error('Script principal pas encore prêt');
+
+    const snap = await getDocs(collection(db, 'produitsOrange'));
+    if (snap.empty) return; // rien d'importé côté admin : on garde les valeurs par défaut codées en dur
+
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      const id = docSnap.id;
+      const target = d.category === 'options'
+        ? window.options.find(o => o.id === id)
+        : (window.productList[d.category] || []).find(p => p.id === id);
+      if (!target) return;
+      if (d.name) target.name = d.name;
+      if (d.sub !== undefined) target.sub = d.sub;
+      if (d.price !== undefined) target.price = Number(d.price);
+    });
+
+    Object.entries(window.productList).forEach(([key, items]) => {
+      const el = document.getElementById(key + '-rows');
+      if (el) { el.innerHTML = ''; window.buildQtyRows(key + '-rows', items); }
+    });
+    const uniqueEl = document.getElementById('options-unique-rows');
+    const monthlyEl = document.getElementById('options-monthly-rows');
+    if (uniqueEl) { uniqueEl.innerHTML = ''; window.buildQtyRows('options-unique-rows', window.options.filter(o => ['opt_raccord'].includes(o.id))); }
+    if (monthlyEl) { monthlyEl.innerHTML = ''; window.buildQtyRows('options-monthly-rows', window.options.filter(o => ['opt_booster','opt_confort','opt_surf'].includes(o.id))); }
+
+    window.renderOrangeApp();
+  } catch (err) {
+    console.log('Chargement produits Firestore impossible, conservation des valeurs par défaut:', err.message);
+  }
+}
+
 onAuthStateChanged(auth, () => {
   loadPromosFromFirestore();
+  loadProductsFromFirestore();
 });
 </script>
 
@@ -1088,12 +1155,15 @@ buildToggleRows('promos-permanent-rows', promosPermanent);
 buildToggleRows('promos-rows', promos);
 render();
 
-// Exposés globalement pour permettre le rafraîchissement dynamique des promos depuis Firestore (voir module plus haut)
+// Exposés globalement pour permettre le rafraîchissement dynamique des promos ET produits depuis Firestore (voir module plus haut)
 window.promos = promos;
 window.promosPermanent = promosPermanent;
 window.togMap = togMap;
 window.buildToggleRows = buildToggleRows;
 window.renderOrangeApp = render;
+window.productList = productList;
+window.options = options;
+window.buildQtyRows = buildQtyRows;
 window.escapeHtmlOrange = function(str) {
   const div = document.createElement('div');
   div.textContent = str ?? '';
