@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.9 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.0 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4301,7 +4301,11 @@ function loadProduitsOrangeAdmin() {
           </div>
           <div style="flex:2;min-width:160px;">
             <label style="font-size:11px;">Sous-titre</label>
-            <input type="text" id="po-${p.id}-sub" value="${escapeHtml(p.sub)}">
+            <div style="display:flex;gap:4px;margin:2px 0 3px;">
+              <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:24px;height:22px;font-weight:bold;font-size:11px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">B</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:24px;height:22px;font-size:11px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
+            </div>
+            <div contenteditable="true" id="po-${p.id}-sub" style="min-height:34px;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;">${p.sub}</div>
           </div>
           <div style="flex:1;min-width:90px;">
             <label style="font-size:11px;">Prix (€)</label>
@@ -4328,7 +4332,7 @@ window.saveProduitsOrangeCategorie = async function (categoryKey) {
   try {
     await Promise.all(items.map(p => {
       const name = document.getElementById(`po-${p.id}-name`).value.trim();
-      const sub = document.getElementById(`po-${p.id}-sub`).value.trim();
+      const sub = document.getElementById(`po-${p.id}-sub`).innerHTML.trim();
       const price = parseFloat(document.getElementById(`po-${p.id}-price`).value);
       return setDoc(doc(db, 'produitsOrange', p.id), {
         category: p.category, name: name || p.name, sub, price: isNaN(price) ? p.price : price
