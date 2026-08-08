@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.1 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.2 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4304,21 +4304,32 @@ function loadProduitsOrangeAdmin() {
     const stored = {};
     snap.forEach(d => { stored[d.id] = d.data(); });
     window._produitsOrangeCache = Object.keys(stored);
+    const defaultIds = new Set(PRODUITS_ORANGE_DEFAULTS.map(d => d.id));
 
-    // Fusion : valeur Firestore si elle existe, sinon valeur par défaut codée en dur
-    const merged = PRODUITS_ORANGE_DEFAULTS.map(def => ({
-      id: def.id, category: def.category,
+    // Produits par défaut : valeur Firestore si elle existe, sinon valeur codée en dur
+    const defaults = PRODUITS_ORANGE_DEFAULTS.map(def => ({
+      id: def.id, category: def.category, custom: false,
       name: (stored[def.id] && stored[def.id].name) || def.name,
       sub: (stored[def.id] && stored[def.id].sub !== undefined) ? stored[def.id].sub : def.sub,
-      price: (stored[def.id] && stored[def.id].price !== undefined) ? stored[def.id].price : def.price
+      price: (stored[def.id] && stored[def.id].price !== undefined) ? stored[def.id].price : def.price,
+      max: (stored[def.id] && stored[def.id].max) || 9
     }));
+    // Produits personnalisés : tout document Firestore qui n'est pas dans la liste par défaut
+    const customs = Object.keys(stored).filter(id => !defaultIds.has(id)).map(id => ({
+      id, category: stored[id].category, custom: true,
+      name: stored[id].name || '', sub: stored[id].sub || '',
+      price: stored[id].price || 0, max: stored[id].max || 9,
+      countsAsInternet: stored[id].countsAsInternet !== false
+    }));
+    const merged = [...defaults, ...customs];
+    window._produitsOrangeMerged = merged;
 
     container.innerHTML = PRODUITS_ORANGE_CATEGORIES.map(cat => {
       const items = merged.filter(p => p.category === cat.key);
       const rows = items.map(p => `
         <div class="form-row" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
           <div style="flex:2;min-width:160px;">
-            <label style="font-size:11px;">Nom</label>
+            <label style="font-size:11px;">Nom ${p.custom ? '<span style=\"color:#f97316;\">(ajouté)</span>' : ''}</label>
             <input type="text" id="po-${p.id}-name" value="${escapeHtml(p.name)}">
           </div>
           <div style="flex:2;min-width:160px;">
@@ -4330,13 +4341,50 @@ function loadProduitsOrangeAdmin() {
             <label style="font-size:11px;">Prix (€)</label>
             <input type="number" step="0.01" id="po-${p.id}-price" value="${p.price}">
           </div>
+          ${p.custom ? `<button class="btn btn-danger" style="height:34px;" onclick="deleteProduitOrange('${p.id}')">🗑</button>` : ''}
         </div>
       `).join('');
+
+      const internetCheckbox = cat.key === 'internet' ? `
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#555;margin:8px 0;">
+          <input type="checkbox" id="po-new-${cat.key}-internet" checked>
+          Compte comme un abonnement Internet (frais d'activation, promos nécessitant internet)
+        </label>` : '';
+      const mobileWarning = cat.key === 'mobile' ? `
+        <div style="font-size:11px;color:#cc4400;margin:8px 0;">
+          ⚠️ Un nouveau forfait mobile s'affiche et se chiffre correctement, mais n'aura pas de remise "Love" automatique — donne-moi les taux Orange pour ce forfait si besoin, je les ajoute.
+        </div>` : '';
+
       return `
         <div class="card" style="margin-bottom:16px;">
           <div class="section-title" style="font-size:14px;margin-bottom:10px;">${cat.label}</div>
           ${rows}
           <button class="btn btn-primary" onclick="saveProduitsOrangeCategorie('${cat.key}')">💾 Enregistrer ${cat.label}</button>
+
+          <div style="margin-top:16px;padding-top:14px;border-top:1px dashed #ddd;">
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">➕ Ajouter un nouveau produit — ${cat.label}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div style="flex:2;min-width:160px;">
+                <label style="font-size:11px;">Nom</label>
+                <input type="text" id="po-new-${cat.key}-name" placeholder="ex: Internet Méga">
+              </div>
+              <div style="flex:2;min-width:160px;">
+                <label style="font-size:11px;">Sous-titre</label>
+                <input type="text" id="po-new-${cat.key}-sub" placeholder="ex: Vitesse jusqu'à 2000MB">
+              </div>
+              <div style="flex:1;min-width:80px;">
+                <label style="font-size:11px;">Prix (€)</label>
+                <input type="number" step="0.01" id="po-new-${cat.key}-price" placeholder="0">
+              </div>
+              <div style="flex:1;min-width:70px;">
+                <label style="font-size:11px;">Qté max</label>
+                <input type="number" id="po-new-${cat.key}-max" value="9">
+              </div>
+            </div>
+            ${internetCheckbox}
+            ${mobileWarning}
+            <button class="btn btn-secondary" style="margin-top:8px;" onclick="addNewProduitOrange('${cat.key}')">➕ Créer ce produit</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -4346,16 +4394,57 @@ function loadProduitsOrangeAdmin() {
   });
 }
 
+window.addNewProduitOrange = async function (categoryKey) {
+  const name = document.getElementById(`po-new-${categoryKey}-name`).value.trim();
+  const sub = document.getElementById(`po-new-${categoryKey}-sub`).value.trim();
+  const price = parseFloat(document.getElementById(`po-new-${categoryKey}-price`).value);
+  const max = parseInt(document.getElementById(`po-new-${categoryKey}-max`).value, 10) || 9;
+  if (!name) { alert('Merci de renseigner un nom.'); return; }
+  if (isNaN(price)) { alert('Merci de renseigner un prix.'); return; }
+
+  const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const id = `custom_${categoryKey}_${slug}_${Date.now().toString(36)}`;
+
+  const data = { category: categoryKey, name, sub, price, max, custom: true };
+  if (categoryKey === 'internet') {
+    const cb = document.getElementById(`po-new-${categoryKey}-internet`);
+    data.countsAsInternet = cb ? cb.checked : true;
+  }
+
+  try {
+    await setDoc(doc(db, 'produitsOrange', id), data);
+    showToast('✅ Produit créé.');
+  } catch (err) {
+    alert("Erreur lors de la création: " + err.message);
+  }
+};
+
+window.deleteProduitOrange = async function (id) {
+  if (!confirm('Supprimer définitivement ce produit ?')) return;
+  try {
+    await deleteDoc(doc(db, 'produitsOrange', id));
+    showToast('🗑 Produit supprimé.');
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
 window.saveProduitsOrangeCategorie = async function (categoryKey) {
-  const items = PRODUITS_ORANGE_DEFAULTS.filter(p => p.category === categoryKey);
+  const items = (window._produitsOrangeMerged || []).filter(p => p.category === categoryKey);
   try {
     await Promise.all(items.map(p => {
       const name = document.getElementById(`po-${p.id}-name`).value.trim();
       const sub = document.getElementById(`po-${p.id}-sub`).innerHTML.trim();
       const price = parseFloat(document.getElementById(`po-${p.id}-price`).value);
-      return setDoc(doc(db, 'produitsOrange', p.id), {
+      const data = {
         category: p.category, name: name || p.name, sub, price: isNaN(price) ? p.price : price
-      });
+      };
+      if (p.custom) {
+        data.custom = true;
+        data.max = p.max;
+        if (categoryKey === 'internet') data.countsAsInternet = p.countsAsInternet !== false;
+      }
+      return setDoc(doc(db, 'produitsOrange', p.id), data, { merge: true });
     }));
     showToast('✅ Enregistré.');
   } catch (err) {

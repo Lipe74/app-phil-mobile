@@ -501,13 +501,22 @@ async function loadProductsFromFirestore() {
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
-      const target = d.category === 'options'
-        ? window.options.find(o => o.id === id)
-        : (window.productList[d.category] || []).find(p => p.id === id);
-      if (!target) return;
-      if (d.name) target.name = d.name;
-      if (d.sub !== undefined) target.sub = d.sub;
-      if (d.price !== undefined) target.price = Number(d.price);
+      const isOption = d.category === 'options';
+      const arr = isOption ? window.options : window.productList[d.category];
+      if (!arr) return;
+      let target = arr.find(x => x.id === id);
+      if (target) {
+        // Produit existant : mise à jour nom/sous-titre/prix
+        if (d.name) target.name = d.name;
+        if (d.sub !== undefined) target.sub = d.sub;
+        if (d.price !== undefined) target.price = Number(d.price);
+      } else {
+        // Nouveau produit ajouté depuis l'admin : ajout à la liste + initialisation de sa quantité
+        target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9 };
+        if (d.category === 'internet') target.countsAsInternet = d.countsAsInternet !== false;
+        arr.push(target);
+        window.qtyMap[id] = 0;
+      }
     });
 
     Object.entries(window.productList).forEach(([key, items]) => {
@@ -516,8 +525,10 @@ async function loadProductsFromFirestore() {
     });
     const uniqueEl = document.getElementById('options-unique-rows');
     const monthlyEl = document.getElementById('options-monthly-rows');
-    if (uniqueEl) { uniqueEl.innerHTML = ''; window.buildQtyRows('options-unique-rows', window.options.filter(o => ['opt_raccord'].includes(o.id))); }
-    if (monthlyEl) { monthlyEl.innerHTML = ''; window.buildQtyRows('options-monthly-rows', window.options.filter(o => ['opt_booster','opt_confort','opt_surf'].includes(o.id))); }
+    // "Raccordement" reste seul en frais unique ; "Frais d'activation" n'est jamais affiché en ligne (fee implicite) ;
+    // toute autre option (y compris les nouvelles ajoutées depuis l'admin) rejoint le bloc mensuel.
+    if (uniqueEl) { uniqueEl.innerHTML = ''; window.buildQtyRows('options-unique-rows', window.options.filter(o => o.id === 'opt_raccord')); }
+    if (monthlyEl) { monthlyEl.innerHTML = ''; window.buildQtyRows('options-monthly-rows', window.options.filter(o => !['opt_raccord', 'opt_install_m'].includes(o.id))); }
 
     window.renderOrangeApp();
   } catch (err) {
@@ -833,7 +844,7 @@ const productList = {
     { id:'inet_start', name:'Internet Start', sub:'Vitesse jusqu\'à 200MB', price:49, max:2 },
     { id:'inet_zen',   name:'Internet Zen',   sub:'Vitesse jusqu\'à 500MB', price:58, max:2 },
     { id:'inet_giga',  name:'Internet Giga',  sub:'Vitesse jusqu\'à 1000MB', price:68, max:2 },
-    { id:'inet_fixe',  name:'Ligne Fixe',     sub:'Téléphone fixe', price:12, max:2 },
+    { id:'inet_fixe',  name:'Ligne Fixe',     sub:'Téléphone fixe', price:12, max:2, countsAsInternet:false },
   ],
   tv: [
     { id:'tv_deco',   name:'TV Deco Sup', price:9,  max:1 },
@@ -898,8 +909,8 @@ const togMap = {};
 [...promos, ...promosPermanent].forEach(p => togMap[p.id] = false);
 
 function fmt(v) { return Math.abs(v).toFixed(2).replace('.',',') + ' €'; }
-function hasInternet() { return ['inet_start','inet_zen','inet_giga'].some(id => qtyMap[id] > 0); }
-function totalMobileAbo() { return ['mob_small','mob_medium','mob_large','mob_unlim','mob_child'].reduce((s,id) => s + (qtyMap[id]||0), 0); }
+function hasInternet() { return (productList.internet || []).some(p => p.countsAsInternet !== false && (qtyMap[p.id] || 0) > 0); }
+function totalMobileAbo() { return (productList.mobile || []).reduce((s, p) => s + (qtyMap[p.id] || 0), 0); }
 
 // Calcule les lignes de remise Love (pur, sans toucher au DOM) — réutilisé par calcLove()
 // pour l'affichage à l'écran et par generateClientOffer() pour le PDF.
@@ -955,23 +966,19 @@ function calcProducts() {
 }
 function calcOptions() {
   let t = 0;
-  ['opt_booster','opt_confort','opt_surf'].forEach(id=>{
-    const o=options.find(x=>x.id===id);
-    if(o) t+=o.price*(qtyMap[id]||0);
+  // Toute option sauf les frais uniques gérés à part (activation, raccordement) compte comme mensuelle —
+  // une nouvelle option ajoutée depuis l'admin est donc automatiquement prise en compte ici.
+  options.filter(o => !['opt_install_m', 'opt_raccord'].includes(o.id)).forEach(o => {
+    t += o.price * (qtyMap[o.id] || 0);
   });
   return t;
 }
 
 function calcFraisUniques() {
 
-  const hasInternet =
-    (qtyMap['inet_start'] || 0) +
-    (qtyMap['inet_zen'] || 0) +
-    (qtyMap['inet_giga'] || 0) > 0;
-
   let frais = 0;
 
-  if (hasInternet) {
+  if (hasInternet()) {
     frais += 39;
   }
 
@@ -1025,7 +1032,7 @@ function render() {
   const prom6 = promosCalc.promo6 || 0;
   const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
   const mob = calcMobiles(), inet = calcInternet();
-  const hasInet = (qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0)+(qtyMap['inet_giga']||0) > 0;
+  const hasInet = hasInternet();
   const mobileCount = totalMobileAbo();
   const homeFee = (hasInet && mobileCount===0) ? 4 : 0;
   const total = Math.max(0, prod + opts + homeFee - love - prom);
@@ -1174,6 +1181,7 @@ window.renderOrangeApp = render;
 window.productList = productList;
 window.options = options;
 window.buildQtyRows = buildQtyRows;
+window.qtyMap = qtyMap;
 window.escapeHtmlOrange = function(str) {
   const div = document.createElement('div');
   div.textContent = str ?? '';
