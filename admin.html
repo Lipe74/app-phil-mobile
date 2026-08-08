@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.5</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 4.9</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -189,12 +189,13 @@
         <div class="menu-label">🖼️ Application</div>
         <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
 
-        <div class="menu-label">🎁 Promotions</div>
+        <div class="menu-label">🎁 Promotions &amp; Produits</div>
         <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
         <div id="promosMenu" class="submenu">
           <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
           <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
         </div>
+        <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
 
         <div class="menu-label">🤖 Bot FAQ</div>
         <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
@@ -366,15 +367,13 @@
 
         <div class="admin-panel" id="panel-web-leads">
           <div class="section-title">📋 Demandes reçues (site web phil-mobile.be) <span id="web-leads-count"></span></div>
-          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="filterWebLeads('all')">Toutes</button>
-            <button class="btn btn-secondary" onclick="filterWebLeads('client')">💼 Demandes clients</button>
+            <button class="btn btn-secondary" onclick="filterWebLeads('client')">💼 Analyse tarifaire</button>
             <button class="btn btn-secondary" onclick="filterWebLeads('consultant')">🚀 Rejoindre l'équipe</button>
+            <button class="btn btn-secondary" onclick="filterWebLeads('ignored')">🚫 Ignorées</button>
+            <button class="btn btn-secondary" onclick="filterWebLeads('converted')">✅ Converties</button>
           </div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#666;margin-bottom:14px;">
-            <input type="checkbox" id="web-leads-show-converted" onchange="renderWebLeads()">
-            Afficher aussi les demandes traitées ou converties (Ignorer / déjà présentes dans Prospects Clients/Consultants)
-          </label>
           <div id="web-leads-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
@@ -455,6 +454,19 @@
                 <option value="">À vie (pas de durée)</option>
               </select>
             </div>
+            <div class="form-row" style="display:flex;gap:10px;">
+              <div style="flex:1;">
+                <label>Date de début (optionnel)</label>
+                <input type="date" id="promo-date-debut">
+              </div>
+              <div style="flex:1;">
+                <label>Date de fin (optionnel)</label>
+                <input type="date" id="promo-date-fin">
+              </div>
+            </div>
+            <div style="font-size:11px;color:#888;margin:-6px 0 10px;">
+              📅 Si renseignées, les dates s'affichent automatiquement dans le simulateur — inutile de les écrire dans la description. La promo se masque toute seule après la date de fin.
+            </div>
             <div class="form-row" id="promo-condition-row" style="display:none;">
               <div class="checkbox-row">
                 <input type="checkbox" id="promo-hascondition" onchange="document.getElementById('promo-condition').style.display = this.checked ? 'block' : 'none';">
@@ -484,6 +496,17 @@
             ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
           </div>
           <div id="promos-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-produits-orange">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>📦 Produits &amp; tarifs Orange (simulateur)</span>
+            <button class="btn btn-secondary" onclick="importDefaultProduitsOrange()">📥 Importer les produits actuels</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Modifie ici les noms et prix affichés dans le simulateur Orange (les identifiants techniques ne sont jamais touchés, aucun risque pour les calculs de commission). Si tu n'as encore rien importé, clique d'abord sur "Importer les produits actuels" pour pré-remplir avec les valeurs déjà en place — tu n'as ensuite qu'à ajuster ce qui change.
+          </div>
+          <div id="produits-orange-content"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-faq">
@@ -1114,18 +1137,6 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
   </div>
 </div>
 
-<!-- Modal : détail d'une demande reçue (avant validation) -->
-<div class="modal-overlay" id="web-lead-detail-modal">
-  <div class="modal-box" style="max-width:520px;">
-    <h3 id="wld-title">📋 Détail de la demande</h3>
-    <div id="wld-body" style="font-size:13px;line-height:1.8;"></div>
-    <div class="form-actions" id="wld-actions" style="flex-wrap:wrap;margin-top:16px;"></div>
-    <div class="form-actions">
-      <button class="btn btn-secondary" style="width:100%;" onclick="closeWebLeadDetail()">Fermer</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal : édition d'un avis client -->
 <div class="modal-overlay" id="edit-avis-modal">
   <div class="modal-box">
@@ -1292,6 +1303,7 @@ onAuthStateChanged(auth, async (user) => {
   loadAvisWebAdmin();
   loadGlobalRatingAdmin();
   loadWebLeadsAdmin();
+  loadProduitsOrangeAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -2684,6 +2696,12 @@ window.onPromoTypeChange = function () {
   document.getElementById('promo-name-row').style.display = (isEditing || type === 'unique') ? 'block' : 'none';
 };
 
+function formatDateFr(isoDate) {
+  if (!isoDate) return '';
+  const [y, m, d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 async function loadPromosAdmin() {
   const container = document.getElementById('promos-list');
   container.innerHTML = '<div class="empty">Chargement...</div>';
@@ -2725,6 +2743,7 @@ async function loadPromosAdmin() {
               ${inactive ? '<span class="badge badge-inactive">Désactivée</span>' : ''}
               <div class="meta">${escapeHtmlAdmin(p.sub || '')}</div>
               ${p.condition ? `<div class="meta" style="color:#cc4400;font-weight:700;">📌 Condition : ${escapeHtmlAdmin(p.condition)}</div>` : ''}
+              ${(p.dateDebut || p.dateFin) ? `<div class="meta" style="color:#0369a1;font-weight:700;">📅 ${p.dateDebut ? 'Du ' + formatDateFr(p.dateDebut) : ''}${p.dateFin ? ' au ' + formatDateFr(p.dateFin) : ''}</div>` : ''}
               <div class="meta">-${p.price}€ · ${durLabel}${mobileLabel}</div>
             </div>
             <div class="card-actions">
@@ -2764,6 +2783,8 @@ window.editPromo = function (docId) {
   document.getElementById('promo-hascondition').checked = !!p.condition;
   document.getElementById('promo-condition').value = p.condition || '';
   document.getElementById('promo-condition').style.display = p.condition ? 'block' : 'none';
+  document.getElementById('promo-date-debut').value = p.dateDebut || '';
+  document.getElementById('promo-date-fin').value = p.dateFin || '';
   onPromoTypeChange();
   document.getElementById('promo-submit-btn').textContent = '💾 Enregistrer les modifications';
   document.getElementById('promo-cancel-btn').style.display = 'inline-block';
@@ -2781,6 +2802,8 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-hascondition').checked = false;
   document.getElementById('promo-condition').value = '';
   document.getElementById('promo-condition').style.display = 'none';
+  document.getElementById('promo-date-debut').value = '';
+  document.getElementById('promo-date-fin').value = '';
   document.getElementById('promo-product-mobile').selectedIndex = 0;
   document.getElementById('promo-product-internet').selectedIndex = 0;
   document.getElementById('promo-product-option').selectedIndex = 0;
@@ -2804,6 +2827,8 @@ window.addOrUpdatePromo = async function () {
   const condition = (type !== 'unique' && document.getElementById('promo-hascondition').checked)
     ? document.getElementById('promo-condition').value.trim()
     : '';
+  const dateDebut = document.getElementById('promo-date-debut').value || null;
+  const dateFin = document.getElementById('promo-date-fin').value || null;
 
   if (!price) {
     alert('Merci de renseigner le montant de la remise.');
@@ -2818,7 +2843,7 @@ window.addOrUpdatePromo = async function () {
     const data = {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
-      condition,
+      condition, dateDebut, dateFin,
       productFamily: existing ? derivePromoFamily(existing) : (type === 'mobile' ? 'mobile' : 'divers'),
       perAbo: type === 'mobile',
       isUnique: type === 'unique'
@@ -2841,13 +2866,15 @@ window.addOrUpdatePromo = async function () {
     try {
       await addDoc(collection(db, 'promosOrange'), {
         category, type, name, sub, price, duration: null,
-        mobileId: null, productFamily: 'divers',
+        mobileId: null, productFamily: 'divers', dateDebut, dateFin,
         perAbo: false, isUnique: true, active: true, createdAt: new Date().toISOString()
       });
       showToast('✅ Promo ajoutée.');
       document.getElementById('promo-name').value = '';
       document.getElementById('promo-sub').value = '';
       document.getElementById('promo-price').value = '';
+      document.getElementById('promo-date-debut').value = '';
+      document.getElementById('promo-date-fin').value = '';
       loadPromosAdmin();
     } catch (err) {
       alert('Erreur lors de l\'enregistrement: ' + err.message);
@@ -2869,7 +2896,7 @@ window.addOrUpdatePromo = async function () {
   const data = {
     category, type, name: label, sub, price, duration,
     mobileId: type === 'mobile' ? productId : null,
-    condition,
+    condition, dateDebut, dateFin,
     productFamily: family,
     perAbo: type === 'mobile',
     isUnique: false,
@@ -2882,6 +2909,8 @@ window.addOrUpdatePromo = async function () {
     showToast('✅ Promo ajoutée.');
     document.getElementById('promo-sub').value = '';
     document.getElementById('promo-price').value = '';
+    document.getElementById('promo-date-debut').value = '';
+    document.getElementById('promo-date-fin').value = '';
     loadPromosAdmin();
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
@@ -3903,9 +3932,16 @@ function renderWebLeads() {
   const container = document.getElementById('web-leads-list');
   if (!container) return;
   let list = window._webLeadsCache || [];
-  if (webLeadsFilter !== 'all') list = list.filter(l => l.type === webLeadsFilter);
-  const showConverted = document.getElementById('web-leads-show-converted')?.checked;
-  if (!showConverted) list = list.filter(l => l.status !== 'converti' && l.status !== 'traite');
+
+  if (webLeadsFilter === 'ignored') {
+    list = list.filter(l => l.status === 'traite');
+  } else if (webLeadsFilter === 'converted') {
+    list = list.filter(l => l.status === 'converti');
+  } else {
+    // Toutes / Analyse tarifaire / Rejoindre l'équipe : uniquement les demandes actives (ni ignorées ni converties)
+    list = list.filter(l => l.status !== 'traite' && l.status !== 'converti');
+    if (webLeadsFilter !== 'all') list = list.filter(l => l.type === webLeadsFilter);
+  }
 
   if (list.length === 0) {
     container.innerHTML = '<div class="empty">Aucune demande.</div>';
@@ -3916,9 +3952,7 @@ function renderWebLeads() {
   list.forEach(l => {
     const isNew = !l.status || l.status === 'nouveau';
     const statusLabel = isNew ? 'Nouveau' : (l.status === 'converti' ? 'Converti' : 'Traité');
-    const typeLabel = l.type === 'consultant'
-      ? "🚀 Rejoindre l'équipe"
-      : (l.demandeType === 'simulation' ? '📊 Simulation complète' : '📋 Demande d\'infos');
+    const typeLabel = l.type === 'consultant' ? "🚀 Rejoindre l'équipe" : '💼 Analyse tarifaire';
     const waPhone = (l.telephone || '').replace(/[^0-9+]/g, '').replace(/^\+/, '');
     const mailSubject = encodeURIComponent(l.type === 'consultant' ? 'Votre demande – Rejoindre Phil-Mobile' : "Votre demande d'analyse – Phil-Mobile");
     const mailBody = encodeURIComponent(`Bonjour ${l.prenom || ''},\n\n`);
@@ -3931,15 +3965,13 @@ function renderWebLeads() {
         <div class="card-info">
           <strong>${escapeHtml(l.prenom || '')} ${escapeHtml(l.nom || '')}</strong>
           <span class="badge ${isNew ? 'badge-active' : 'badge-inactive'}">${statusLabel}</span>
-          <div class="meta">${typeLabel}${l.origineTrafic ? ` · 📍 ${escapeHtml(l.origineTrafic)}` : ''}</div>
+          <div class="meta">${typeLabel}</div>
           <div class="meta">${escapeHtml(l.email || '—')} · ${escapeHtml(l.telephone || '—')}</div>
-          ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}${l.montantFacture ? ` · 💶 ${escapeHtml(String(l.montantFacture))} €/mois` : ''}${l.factureUrl ? ' · 📎 Facture jointe' : ''}</div>` : ''}
-          ${l.montantTotal ? `<div class="meta">💶 ${escapeHtml(String(l.montantTotal))} €/mois${l.factureUrl ? ' · 📎 Facture jointe' : ''}</div>` : ''}
+          ${l.sujet ? `<div class="meta">Sujet: ${escapeHtml(l.sujet)}</div>` : ''}
           ${l.motivation ? `<div class="meta">💬 ${escapeHtml(l.motivation)}</div>` : ''}
           ${l.message ? `<div class="meta">💬 ${escapeHtml(l.message)}</div>` : ''}
         </div>
         <div class="card-actions">
-          <button class="btn btn-secondary" onclick="openWebLeadDetail('${l.docId}')">👁 Détail</button>
           <a class="btn btn-secondary" href="mailto:${escapeHtml(l.email || '')}?subject=${mailSubject}&body=${mailBody}" target="_blank">✉️ Email</a>
           ${waPhone ? `<a class="btn btn-secondary" href="https://wa.me/${waPhone}?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
           <button class="btn btn-primary" onclick="convertWebLead('${l.docId}')">➡️ Convertir</button>
@@ -3950,94 +3982,6 @@ function renderWebLeads() {
     container.appendChild(card);
   });
 }
-
-window.openWebLeadDetail = function (docId) {
-  const l = (window._webLeadsCache || []).find(x => x.docId === docId);
-  if (!l) return;
-  const isConsultant = l.type === 'consultant';
-  const isSimulation = l.demandeType === 'simulation';
-
-  document.getElementById('wld-title').textContent = isConsultant
-    ? "🚀 Détail — Rejoindre l'équipe"
-    : (isSimulation ? '📊 Détail — Simulation complète' : "📋 Détail — Demande d'infos");
-
-  const rows = [];
-  rows.push(['Nom', `${l.prenom || ''} ${l.nom || ''}`.trim() || '—']);
-  rows.push(['Email', l.email || '—']);
-  rows.push(['Téléphone', l.telephone || '—']);
-
-  if (isConsultant) {
-    rows.push(['Réside en Belgique', l.residence || '—']);
-    rows.push(['Statut actuel', l.statutActuel || '—']);
-    rows.push(['Commune', l.commune ? `${l.commune}${l.codePostal ? ' (' + l.codePostal + ')' : ''}` : '—']);
-    rows.push(['Région', l.region || '—']);
-    rows.push(['Activité indépendante', l.independant || '—']);
-    rows.push(['Terrain / sans télétravail', l.terrain || '—']);
-    rows.push(['TVA belge', l.tva || '—']);
-    rows.push(['Moyen de déplacement', l.deplacement || '—']);
-    rows.push(['Expérience vente/télécom/énergie', l.experience || '—']);
-    rows.push(['Motivation', l.motivation || '—']);
-    rows.push(['Confirmation candidat', l.confirmation ? '✅ Oui' : '—']);
-    rows.push(['CV', l.cvUrl ? `<a href="${escapeHtml(l.cvUrl)}" target="_blank">📎 Ouvrir le CV</a>` : '—']);
-  } else if (isSimulation) {
-    rows.push(['Vous êtes', l.vousEtes || '—']);
-    rows.push(['Opérateur mobile actuel', l.operateurMobile || '—']);
-    rows.push(['Nombre de lignes mobiles', l.nombreLignesMobile || '—']);
-    rows.push(['Opérateur internet actuel', l.fournisseurInternet || '—']);
-    rows.push(["Nombre d'abonnements internet", l.nombreAbonnementsInternet || '—']);
-    rows.push(['TV', l.tv || '—']);
-    rows.push(['Décodeur supplémentaire', l.decodeurSupplementaire || '—']);
-    rows.push(['Autres options', l.autresOptions || '—']);
-    rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie || '—']);
-    if (l.energieInfosSouhaitees === 'Oui') {
-      rows.push(['Panneaux solaires', l.panneauxSolaires || '—']);
-      rows.push(['Montant mensualités énergie', l.montantEnergie ? `${l.montantEnergie} €/mois` : '—']);
-      rows.push(["Infos d'utilisation énergie", l.infosUtilisationEnergie || '—']);
-    }
-    rows.push(['Montant total actuel', l.montantTotal ? `${l.montantTotal} €/mois` : '—']);
-    rows.push(['dont mobile', l.montantMobile ? `${l.montantMobile} €/mois` : '—']);
-    rows.push(['dont internet', l.montantInternet ? `${l.montantInternet} €/mois` : '—']);
-    rows.push(['Facture', l.factureUrl ? `<a href="${escapeHtml(l.factureUrl)}" target="_blank">📎 Ouvrir la facture</a>` : '—']);
-    rows.push(['Message', l.message || '—']);
-  } else {
-    rows.push(['Vous êtes', l.vousEtes || '—']);
-    // Compatibilité avec les anciennes demandes (avant la refonte du formulaire)
-    if (l.sujet) rows.push(['Sujet', l.sujet]);
-    if (l.operateurMobile) rows.push(['Opérateur mobile actuel', l.operateurMobile]);
-    if (l.fournisseurInternet) rows.push(['Fournisseur internet actuel', l.fournisseurInternet]);
-    if (l.fournisseurEnergie) rows.push(['Fournisseur énergie actuel', l.fournisseurEnergie]);
-    if (l.montantFacture) rows.push(['Montant facture actuelle', `${l.montantFacture} €/mois`]);
-    if (l.factureUrl) rows.push(['Facture', `<a href="${escapeHtml(l.factureUrl)}" target="_blank">📎 Ouvrir la facture</a>`]);
-    rows.push(['Message', l.message || '—']);
-  }
-  rows.push(['Reçu le', l.createdAt ? new Date(l.createdAt).toLocaleString('fr-BE') : '—']);
-  rows.push(['Origine', l.origineTrafic || '—']);
-
-  document.getElementById('wld-body').innerHTML = rows.map(([label, value]) => `
-    <div style="margin-bottom:10px;">
-      <strong style="color:#999;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:2px;">${escapeHtml(label)}</strong>
-      ${typeof value === 'string' && value.startsWith('<a ') ? value : escapeHtml(String(value))}
-    </div>
-  `).join('');
-
-  const waPhone = (l.telephone || '').replace(/[^0-9+]/g, '').replace(/^\+/, '');
-  const mailSubject = encodeURIComponent(isConsultant ? 'Votre demande – Rejoindre Phil-Mobile' : "Votre demande d'analyse – Phil-Mobile");
-  const mailBody = encodeURIComponent(`Bonjour ${l.prenom || ''},\n\n`);
-  const waText = encodeURIComponent(`Bonjour ${l.prenom || ''}, suite à votre demande sur phil-mobile.be...`);
-
-  document.getElementById('wld-actions').innerHTML = `
-    <a class="btn btn-secondary" href="mailto:${escapeHtml(l.email || '')}?subject=${mailSubject}&body=${mailBody}" target="_blank">✉️ Email</a>
-    ${waPhone ? `<a class="btn btn-secondary" href="https://wa.me/${waPhone}?text=${waText}" target="_blank">💬 WhatsApp</a>` : ''}
-    <button class="btn btn-primary" onclick="convertWebLead('${docId}'); closeWebLeadDetail();">➡️ Convertir</button>
-    <button class="btn btn-danger" onclick="dismissWebLead('${docId}'); closeWebLeadDetail();">Ignorer</button>
-  `;
-
-  document.getElementById('web-lead-detail-modal').classList.add('open');
-};
-
-window.closeWebLeadDetail = function () {
-  document.getElementById('web-lead-detail-modal').classList.remove('open');
-};
 
 window.dismissWebLead = async function (docId) {
   if (!confirm('Marquer cette demande comme traitée ?')) return;
@@ -4060,14 +4004,7 @@ window.convertWebLead = async function (docId) {
       const infosComp = [
         l.motivation ? `Motivation: ${l.motivation}` : '',
         l.tva ? `TVA: ${l.tva}` : '',
-        l.residence ? `Réside en Belgique: ${l.residence}` : '',
-        l.statutActuel ? `Statut actuel: ${l.statutActuel}` : '',
-        l.commune ? `Commune: ${l.commune}${l.codePostal ? ' (' + l.codePostal + ')' : ''}` : '',
-        l.region ? `Région: ${l.region}` : '',
-        l.deplacement ? `Moyen de déplacement: ${l.deplacement}` : '',
-        l.experience ? `Expérience: ${l.experience}` : '',
-        l.cvUrl ? `CV: ${l.cvUrl}` : '',
-        l.origineTrafic ? `Origine: ${l.origineTrafic}` : ''
+        l.residence ? `Réside en Belgique: ${l.residence}` : ''
       ].filter(Boolean).join(' | ');
 
       await addDoc(collection(db, 'prospectsConsultants'), {
@@ -4078,44 +4015,19 @@ window.convertWebLead = async function (docId) {
         statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
     } else {
+      const sourceMap = { 'Orange': 'Orange', 'Eneco': 'Eneco', 'Orange+Eneco': 'Orange + Eneco' };
       const typeMap = { 'Société': 'Société', 'Indépendant': 'Société', 'Particulier': 'Particulier' };
-
-      let source = 'Site Web';
-      if (l.demandeType === 'simulation') {
-        const hasTelecom = !!(l.operateurMobile || l.fournisseurInternet);
-        const hasEnergie = !!l.fournisseurEnergie;
-        source = (hasTelecom && hasEnergie) ? 'Orange + Eneco' : hasEnergie ? 'Eneco' : 'Orange';
-      } else if (l.produitSource) {
-        const sourceMap = { 'Orange': 'Orange', 'Eneco': 'Eneco', 'Orange+Eneco': 'Orange + Eneco' };
-        source = sourceMap[l.produitSource] || 'Site Web';
-      }
-
       const infosComp = [
-        l.demandeType === 'information' ? 'Demande simple : informations' : '',
         l.message || '',
         l.operateurMobile ? `Opérateur mobile actuel: ${l.operateurMobile}` : '',
-        l.nombreLignesMobile ? `Nombre de lignes mobiles: ${l.nombreLignesMobile}` : '',
         l.fournisseurInternet ? `Fournisseur internet actuel: ${l.fournisseurInternet}` : '',
-        l.nombreAbonnementsInternet ? `Nombre d'abonnements internet: ${l.nombreAbonnementsInternet}` : '',
-        l.tv ? `TV: ${l.tv}` : '',
-        l.decodeurSupplementaire ? `Décodeur supplémentaire: ${l.decodeurSupplementaire}` : '',
-        l.autresOptions ? `Autres options: ${l.autresOptions}` : '',
-        l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : '',
-        l.panneauxSolaires ? `Panneaux solaires: ${l.panneauxSolaires}` : '',
-        l.montantEnergie ? `Montant mensualités énergie: ${l.montantEnergie} €/mois` : '',
-        l.infosUtilisationEnergie ? `Infos utilisation énergie: ${l.infosUtilisationEnergie}` : '',
-        l.montantTotal ? `Montant total actuel: ${l.montantTotal} €/mois` : '',
-        l.montantMobile ? `dont mobile: ${l.montantMobile} €/mois` : '',
-        l.montantInternet ? `dont internet: ${l.montantInternet} €/mois` : '',
-        l.montantFacture ? `Montant facture actuelle: ${l.montantFacture} €/mois` : '',
-        l.factureUrl ? `Facture: ${l.factureUrl}` : '',
-        l.origineTrafic ? `Origine: ${l.origineTrafic}` : ''
+        l.fournisseurEnergie ? `Fournisseur énergie actuel: ${l.fournisseurEnergie}` : ''
       ].filter(Boolean).join(' | ');
 
       await addDoc(collection(db, 'prospectsClients'), {
         consultantId: 'delta835',
         nom: nomComplet, tel: l.telephone || '', email: l.email || '',
-        type: typeMap[l.vousEtes] || 'Particulier', source: source,
+        type: typeMap[l.vousEtes] || 'Particulier', source: sourceMap[l.produitSource] || 'Autre',
         societe: '', tva: '', ville: '',
         commentaire: infosComp, statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
@@ -4304,6 +4216,127 @@ window.sendChatMessage = async function () {
   } catch (err) {
     console.log('Envoi du message admin impossible:', err.message);
     alert("❌ Impossible d'envoyer le message. Réessayez.");
+  }
+};
+
+// ===== PRODUITS ORANGE (tarifs du simulateur wp_orange.html) =====
+// IMPORTANT : les "id" ci-dessous sont des identifiants techniques référencés en dur dans le calcul
+// du simulateur (wp_orange.html : hasInternet(), totalMobileAbo(), etc.). On ne les modifie/supprime
+// jamais depuis l'admin — seuls nom/sous-titre/prix sont éditables.
+const PRODUITS_ORANGE_CATEGORIES = [
+  { key: 'internet', label: '🌍 Internet' },
+  { key: 'tv', label: '📺 TV' },
+  { key: 'mobile', label: '📱 Mobile' },
+  { key: 'netflix', label: '🎬 Netflix' },
+  { key: 'disney', label: '✨ Disney+' },
+  { key: 'options', label: '⚙️ Options & Frais' }
+];
+const PRODUITS_ORANGE_DEFAULTS = [
+  { id: 'inet_start', category: 'internet', name: 'Internet Start', sub: "Vitesse jusqu'à 200MB", price: 49 },
+  { id: 'inet_zen', category: 'internet', name: 'Internet Zen', sub: "Vitesse jusqu'à 500MB", price: 58 },
+  { id: 'inet_giga', category: 'internet', name: 'Internet Giga', sub: "Vitesse jusqu'à 1000MB", price: 68 },
+  { id: 'inet_fixe', category: 'internet', name: 'Ligne Fixe', sub: 'Téléphone fixe', price: 12 },
+  { id: 'tv_deco', category: 'tv', name: 'TV Deco Sup', sub: '', price: 9 },
+  { id: 'tv_light', category: 'tv', name: 'TV Light', sub: '', price: 10 },
+  { id: 'tv_orange', category: 'tv', name: 'TV Orange', sub: '', price: 20 },
+  { id: 'mob_small', category: 'mobile', name: 'Mobile Small 12GB', sub: '', price: 15 },
+  { id: 'mob_medium', category: 'mobile', name: 'Mobile Medium 70GB', sub: '', price: 23 },
+  { id: 'mob_large', category: 'mobile', name: 'Mobile Large 140GB', sub: '', price: 29 },
+  { id: 'mob_unlim', category: 'mobile', name: 'Mobile Unlimited 300GB', sub: '', price: 40 },
+  { id: 'mob_child', category: 'mobile', name: 'Mobile Child 5GB', sub: '', price: 5 },
+  { id: 'net_ess', category: 'netflix', name: 'Netflix Essentiel', sub: '', price: 10.99 },
+  { id: 'net_std', category: 'netflix', name: 'Netflix Standard', sub: '', price: 16.99 },
+  { id: 'net_prem', category: 'netflix', name: 'Netflix Premium', sub: '', price: 21.99 },
+  { id: 'disney_std_ads', category: 'disney', name: 'Disney+ Standard avec Pub', sub: '', price: 6.99 },
+  { id: 'disney_std', category: 'disney', name: 'Disney+ Standard', sub: '', price: 10.99 },
+  { id: 'disney_prem', category: 'disney', name: 'Disney+ Premium', sub: '', price: 15.99 },
+  { id: 'opt_install_m', category: 'options', name: "Frais d'activation", sub: 'Frais Unique', price: 39 },
+  { id: 'opt_raccord', category: 'options', name: 'Frais de Raccordement', sub: "Si pas de cable dans la maison (Frais d'installation)", price: 99 },
+  { id: 'opt_booster', category: 'options', name: 'WiFi Booster', sub: 'Prix / booster', price: 3 },
+  { id: 'opt_confort', category: 'options', name: 'Option WiFi Confort', sub: '3 Booster + Boitier 4G (Prix / mois)', price: 10 },
+  { id: 'opt_surf', category: 'options', name: 'Carte Extra Surf Mobile', sub: 'Prix par carte', price: 3 }
+];
+
+window.importDefaultProduitsOrange = async function () {
+  const existing = window._produitsOrangeCache || [];
+  if (existing.length > 0) {
+    if (!confirm("Des produits sont déjà enregistrés. Réimporter écrasera leurs valeurs actuelles par les valeurs par défaut d'origine. Continuer ?")) return;
+  }
+  try {
+    await Promise.all(PRODUITS_ORANGE_DEFAULTS.map(p =>
+      setDoc(doc(db, 'produitsOrange', p.id), { category: p.category, name: p.name, sub: p.sub, price: p.price })
+    ));
+    showToast('✅ Produits importés.');
+  } catch (err) {
+    alert("Erreur lors de l'import: " + err.message);
+  }
+};
+
+let produitsOrangeUnsub = null;
+
+function loadProduitsOrangeAdmin() {
+  const container = document.getElementById('produits-orange-content');
+  if (!container) return;
+  if (produitsOrangeUnsub) { try { produitsOrangeUnsub(); } catch (e) {} produitsOrangeUnsub = null; }
+  produitsOrangeUnsub = onSnapshot(collection(db, 'produitsOrange'), (snap) => {
+    const stored = {};
+    snap.forEach(d => { stored[d.id] = d.data(); });
+    window._produitsOrangeCache = Object.keys(stored);
+
+    // Fusion : valeur Firestore si elle existe, sinon valeur par défaut codée en dur
+    const merged = PRODUITS_ORANGE_DEFAULTS.map(def => ({
+      id: def.id, category: def.category,
+      name: (stored[def.id] && stored[def.id].name) || def.name,
+      sub: (stored[def.id] && stored[def.id].sub !== undefined) ? stored[def.id].sub : def.sub,
+      price: (stored[def.id] && stored[def.id].price !== undefined) ? stored[def.id].price : def.price
+    }));
+
+    container.innerHTML = PRODUITS_ORANGE_CATEGORIES.map(cat => {
+      const items = merged.filter(p => p.category === cat.key);
+      const rows = items.map(p => `
+        <div class="form-row" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+          <div style="flex:2;min-width:160px;">
+            <label style="font-size:11px;">Nom</label>
+            <input type="text" id="po-${p.id}-name" value="${escapeHtml(p.name)}">
+          </div>
+          <div style="flex:2;min-width:160px;">
+            <label style="font-size:11px;">Sous-titre</label>
+            <input type="text" id="po-${p.id}-sub" value="${escapeHtml(p.sub)}">
+          </div>
+          <div style="flex:1;min-width:90px;">
+            <label style="font-size:11px;">Prix (€)</label>
+            <input type="number" step="0.01" id="po-${p.id}-price" value="${p.price}">
+          </div>
+        </div>
+      `).join('');
+      return `
+        <div class="card" style="margin-bottom:16px;">
+          <div class="section-title" style="font-size:14px;margin-bottom:10px;">${cat.label}</div>
+          ${rows}
+          <button class="btn btn-primary" onclick="saveProduitsOrangeCategorie('${cat.key}')">💾 Enregistrer ${cat.label}</button>
+        </div>
+      `;
+    }).join('');
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement produits Orange impossible:', err.message);
+  });
+}
+
+window.saveProduitsOrangeCategorie = async function (categoryKey) {
+  const items = PRODUITS_ORANGE_DEFAULTS.filter(p => p.category === categoryKey);
+  try {
+    await Promise.all(items.map(p => {
+      const name = document.getElementById(`po-${p.id}-name`).value.trim();
+      const sub = document.getElementById(`po-${p.id}-sub`).value.trim();
+      const price = parseFloat(document.getElementById(`po-${p.id}-price`).value);
+      return setDoc(doc(db, 'produitsOrange', p.id), {
+        category: p.category, name: name || p.name, sub, price: isNaN(price) ? p.price : price
+      });
+    }));
+    showToast('✅ Enregistré.');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
 };
 </script>
