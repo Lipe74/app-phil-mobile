@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.4</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.7</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -174,25 +174,26 @@
 
         <div class="menu-label">🌐 Phil-Mobile (Web)</div>
         <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
-        <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Gestion des demandes <span id="web-leads-count-badge"></span></button>
+        <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Demandes du site web <span id="web-leads-count-badge"></span></button>
         <div id="demandesMenu" class="submenu">
           <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire)</button>
           <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement</button>
         </div>
+        <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
 
         <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
 
         <div class="menu-label">📋 CRM</div>
         <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
-        <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">📝 Demandes en attente <span id="prospects-count"></span></button>
         <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
         <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
-        <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq)</button>
+        <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
         <div id="botFaqMenu" class="submenu">
           <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
           <button onclick="showAdminPanel('panel-bot-pending', this)" class="menu-item" id="menu-bot-pending">📥 Demandes en attente <span id="bot-pending-count"></span></button>
           <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
         </div>
+        <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
         <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
 
         <div class="menu-label">📰 Blog, News, Concours &amp; Agenda</div>
@@ -370,6 +371,20 @@
             <button class="btn btn-secondary" onclick="filterWebLeads('converted')">✅ Converties</button>
           </div>
           <div id="web-leads-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-video-recrutement">
+          <div class="section-title">🎥 Vidéo de recrutement (phil-mobile.be/recrutement.html)</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:12px;">
+              Vidéo Vimeo affichée sur la page de recrutement du site. Renseigne uniquement l'ID de la vidéo (le nombre dans l'URL Vimeo, ex: pour <code>vimeo.com/1214945528</code>, l'ID est <code>1214945528</code>).
+            </div>
+            <div class="form-row">
+              <label>ID vidéo Vimeo</label>
+              <input type="text" id="video-recrutement-id" placeholder="1214945528">
+            </div>
+            <button class="btn btn-primary" onclick="saveVideoRecrutement()">💾 Enregistrer</button>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-promo-create">
@@ -1308,6 +1323,7 @@ onAuthStateChanged(auth, async (user) => {
   loadGlobalRatingAdmin();
   loadWebLeadsAdmin();
   loadProduitsOrangeAdmin();
+  loadVideoRecrutementAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -3152,6 +3168,8 @@ async function loadBotPending() {
     botPendingCache = list;
 
     if (countEl) countEl.textContent = list.length > 0 ? '(' + list.length + ')' : '';
+    const groupBadge = document.getElementById('botfaq-count-badge');
+    if (groupBadge) groupBadge.innerHTML = list.length > 0 ? `<span class="count-badge">${list.length}</span>` : '';
 
     if (list.length === 0) {
       container.innerHTML = '<div class="empty">Aucune question en attente. 🎉 Le bot a réponse à tout !</div>';
@@ -4444,6 +4462,27 @@ window.saveProduitsOrangeCategorie = async function (categoryKey) {
     showToast('✅ Enregistré.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// ===== VIDÉO DE RECRUTEMENT (phil-mobile.be/recrutement.html, Vimeo) =====
+async function loadVideoRecrutementAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'recrutementVideo'));
+    document.getElementById('video-recrutement-id').value = (snap.exists() && snap.data().vimeoId) || '1214945528';
+  } catch (e) {
+    console.log('Chargement vidéo recrutement impossible:', e.message);
+  }
+}
+
+window.saveVideoRecrutement = async function () {
+  const vimeoId = document.getElementById('video-recrutement-id').value.trim();
+  if (!vimeoId) { alert("Merci de renseigner l'ID de la vidéo."); return; }
+  try {
+    await setDoc(doc(db, 'settings', 'recrutementVideo'), { vimeoId });
+    showToast('✅ Vidéo enregistrée.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
   }
 };
 </script>
