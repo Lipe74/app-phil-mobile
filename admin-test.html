@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.2 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.4 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -174,58 +174,53 @@
 
         <div class="menu-label">🌐 Phil-Mobile (Web)</div>
         <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
-        <button onclick="showAdminPanel('panel-web-leads', this)" class="menu-item" id="menu-web-leads">📋 Demandes reçues <span id="web-leads-count-badge"></span></button>
+        <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Gestion des demandes <span id="web-leads-count-badge"></span></button>
+        <div id="demandesMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire)</button>
+          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement</button>
+        </div>
 
-        <div class="menu-label">📱 App Phil-Mobile</div>
+        <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
 
-        <div class="menu-label">📥 Activité</div>
+        <div class="menu-label">📋 CRM</div>
+        <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
         <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">📝 Demandes en attente <span id="prospects-count"></span></button>
         <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
         <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
-
-        <div class="menu-label">👥 Consultants</div>
+        <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq)</button>
+        <div id="botFaqMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
+          <button onclick="showAdminPanel('panel-bot-pending', this)" class="menu-item" id="menu-bot-pending">📥 Demandes en attente <span id="bot-pending-count"></span></button>
+          <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
+        </div>
         <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
 
-        <div class="menu-label">🖼️ Application</div>
-        <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
-
-        <div class="menu-label">🎁 Promotions &amp; Produits</div>
-        <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
-        <div id="promosMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
-          <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
+        <div class="menu-label">📰 Blog, News, Concours &amp; Agenda</div>
+        <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
+        <div id="agendaMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item" id="menu-agenda-create">➕ Créer un événement</button>
+          <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item" id="menu-agenda-list">📅 Tous les événements</button>
         </div>
-        <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
-
-        <div class="menu-label">🤖 Bot FAQ</div>
-        <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
-        <button onclick="showAdminPanel('panel-bot-pending', this)" class="menu-item" id="menu-bot-pending">📥 Demandes en attente <span id="bot-pending-count"></span></button>
-        <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
-
-        <div class="menu-label">📰 News</div>
+        <button onclick="toggleMenu('blogSmartMenu')" class="menu-item group-toggle">📰 Blog Smart SN</button>
+        <div id="blogSmartMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-blogsmart-create', this)" class="menu-item" id="menu-blogsmart-create">➕ Créer / Importer</button>
+          <button onclick="showAdminPanel('panel-blogsmart-list', this)" class="menu-item" id="menu-blogsmart-list">📋 Articles publiés</button>
+        </div>
         <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
         <div id="newsMenu" class="submenu">
           <button onclick="showAdminPanel('panel-bandeau', this)" class="menu-item" id="menu-bandeau">📢 Message bandeau</button>
           <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item" id="menu-news-create">➕ Créer une news</button>
           <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item" id="menu-news-list">📋 News publiées</button>
         </div>
-
-        <div class="menu-label">📰 Blog Smart SN</div>
-        <button onclick="toggleMenu('blogSmartMenu')" class="menu-item group-toggle">📰 Blog Smart SN</button>
-        <div id="blogSmartMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-blogsmart-create', this)" class="menu-item" id="menu-blogsmart-create">➕ Créer / Importer</button>
-          <button onclick="showAdminPanel('panel-blogsmart-list', this)" class="menu-item" id="menu-blogsmart-list">📋 Articles publiés</button>
-        </div>
-
-        <div class="menu-label">🏆 Concours</div>
         <button onclick="showAdminPanel('panel-concours', this)" class="menu-item" id="menu-concours">🏆 Concours</button>
 
-        <div class="menu-label">📅 Agenda</div>
-        <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
-        <div id="agendaMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item" id="menu-agenda-create">➕ Créer un événement</button>
-          <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item" id="menu-agenda-list">📅 Tous les événements</button>
+        <div class="menu-label">🎁 Produits, Promotions &amp; Commissions</div>
+        <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
+        <div id="promosMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
+          <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
         </div>
+        <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
 
       </div>
 
