@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.9</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.0</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -180,6 +180,7 @@
           <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement <span id="web-leads-count-recrutement"></span></button>
         </div>
         <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
+        <button onclick="showAdminPanel('panel-video-vente', this)" class="menu-item" id="menu-video-vente">🎥 Vidéo vente</button>
 
         <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
 
@@ -390,6 +391,20 @@
               <input type="text" id="video-recrutement-id" placeholder="1214945528">
             </div>
             <button class="btn btn-primary" onclick="saveVideoRecrutement()">💾 Enregistrer</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-video-vente">
+          <div class="section-title">🎥 Vidéo de vente (phil-mobile.be/simulation.html)</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:12px;">
+              Vidéo Vimeo affichée sur la page de demande d'infos/simulation du site. Renseigne uniquement l'ID de la vidéo. En attendant ta vidéo dédiée, l'ID de la vidéo de recrutement est utilisé par défaut pour ne pas rester vide.
+            </div>
+            <div class="form-row">
+              <label>ID vidéo Vimeo</label>
+              <input type="text" id="video-vente-id" placeholder="1214945528">
+            </div>
+            <button class="btn btn-primary" onclick="saveVideoVente()">💾 Enregistrer</button>
           </div>
         </div>
 
@@ -1330,6 +1345,7 @@ onAuthStateChanged(auth, async (user) => {
   loadWebLeadsAdmin();
   loadProduitsOrangeAdmin();
   loadVideoRecrutementAdmin();
+  loadVideoVenteAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -4512,6 +4528,33 @@ window.saveVideoRecrutement = async function () {
   if (!vimeoId) { alert("Merci de renseigner l'ID de la vidéo."); return; }
   try {
     await setDoc(doc(db, 'settings', 'recrutementVideo'), { vimeoId });
+    showToast('✅ Vidéo enregistrée.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+  }
+};
+
+// ===== VIDÉO DE VENTE (phil-mobile.be/simulation.html, Vimeo) =====
+// En attendant la vidéo dédiée, on pré-remplit avec l'ID de la vidéo de recrutement pour ne pas rester vide.
+async function loadVideoVenteAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'venteVideo'));
+    if (snap.exists() && snap.data().vimeoId) {
+      document.getElementById('video-vente-id').value = snap.data().vimeoId;
+      return;
+    }
+    const recrutSnap = await getDoc(doc(db, 'settings', 'recrutementVideo'));
+    document.getElementById('video-vente-id').value = (recrutSnap.exists() && recrutSnap.data().vimeoId) || '1214945528';
+  } catch (e) {
+    console.log('Chargement vidéo vente impossible:', e.message);
+  }
+}
+
+window.saveVideoVente = async function () {
+  const vimeoId = document.getElementById('video-vente-id').value.trim();
+  if (!vimeoId) { alert("Merci de renseigner l'ID de la vidéo."); return; }
+  try {
+    await setDoc(doc(db, 'settings', 'venteVideo'), { vimeoId });
     showToast('✅ Vidéo enregistrée.');
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
