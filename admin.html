@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.8</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.9</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -176,8 +176,8 @@
         <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
         <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Demandes du site web <span id="web-leads-count-badge"></span></button>
         <div id="demandesMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire)</button>
-          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement</button>
+          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire) <span id="web-leads-count-vente"></span></button>
+          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement <span id="web-leads-count-recrutement"></span></button>
         </div>
         <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
 
@@ -3956,11 +3956,18 @@ function loadWebLeadsAdmin() {
     list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     window._webLeadsCache = list;
 
-    const newCount = list.filter(l => !l.status || l.status === 'nouveau').length;
+    const isNew = l => !l.status || l.status === 'nouveau';
+    const newCount = list.filter(isNew).length;
+    const newVente = list.filter(l => isNew(l) && l.type === 'client').length;
+    const newRecrutement = list.filter(l => isNew(l) && l.type === 'consultant').length;
     ['web-leads-count', 'web-leads-count-badge'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = newCount > 0 ? `<span class="count-badge">${newCount}</span>` : '';
     });
+    const venteEl = document.getElementById('web-leads-count-vente');
+    if (venteEl) venteEl.innerHTML = newVente > 0 ? `<span class="count-badge">${newVente}</span>` : '';
+    const recrutEl = document.getElementById('web-leads-count-recrutement');
+    if (recrutEl) recrutEl.innerHTML = newRecrutement > 0 ? `<span class="count-badge">${newRecrutement}</span>` : '';
 
     renderWebLeads();
   }, (err) => {
