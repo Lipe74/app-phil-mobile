@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.7</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 5.8</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -183,45 +183,51 @@
 
         <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
 
-        <div class="menu-label">📋 CRM</div>
-        <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
-        <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
-        <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
-        <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
-        <div id="botFaqMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
-          <button onclick="showAdminPanel('panel-bot-pending', this)" class="menu-item" id="menu-bot-pending">📥 Demandes en attente <span id="bot-pending-count"></span></button>
-          <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
+        <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">📋 CRM <span id="crm-count-badge"></span></button>
+        <div id="crmMenu" class="submenu">
+          <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
+          <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
+          <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
+          <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
+          <div id="botFaqMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
+            <button onclick="showAdminPanel('panel-bot-pending', this)" class="menu-item" id="menu-bot-pending">📥 Demandes en attente <span id="bot-pending-count"></span></button>
+            <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
+          </div>
+          <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
+          <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
         </div>
-        <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
-        <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
 
-        <div class="menu-label">📰 Blog, News, Concours &amp; Agenda</div>
-        <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
-        <div id="agendaMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item" id="menu-agenda-create">➕ Créer un événement</button>
-          <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item" id="menu-agenda-list">📅 Tous les événements</button>
+        <button onclick="toggleMenu('blogNewsMenu')" class="menu-item group-toggle">📰 Blog, News, Concours &amp; Agenda</button>
+        <div id="blogNewsMenu" class="submenu">
+          <button onclick="toggleMenu('agendaMenu')" class="menu-item group-toggle">📅 Agenda</button>
+          <div id="agendaMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-agenda-create', this)" class="menu-item" id="menu-agenda-create">➕ Créer un événement</button>
+            <button onclick="showAdminPanel('panel-agenda-list', this)" class="menu-item" id="menu-agenda-list">📅 Tous les événements</button>
+          </div>
+          <button onclick="toggleMenu('blogSmartMenu')" class="menu-item group-toggle">📰 Blog Smart SN</button>
+          <div id="blogSmartMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-blogsmart-create', this)" class="menu-item" id="menu-blogsmart-create">➕ Créer / Importer</button>
+            <button onclick="showAdminPanel('panel-blogsmart-list', this)" class="menu-item" id="menu-blogsmart-list">📋 Articles publiés</button>
+          </div>
+          <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
+          <div id="newsMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-bandeau', this)" class="menu-item" id="menu-bandeau">📢 Message bandeau</button>
+            <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item" id="menu-news-create">➕ Créer une news</button>
+            <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item" id="menu-news-list">📋 News publiées</button>
+          </div>
+          <button onclick="showAdminPanel('panel-concours', this)" class="menu-item" id="menu-concours">🏆 Concours</button>
         </div>
-        <button onclick="toggleMenu('blogSmartMenu')" class="menu-item group-toggle">📰 Blog Smart SN</button>
-        <div id="blogSmartMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-blogsmart-create', this)" class="menu-item" id="menu-blogsmart-create">➕ Créer / Importer</button>
-          <button onclick="showAdminPanel('panel-blogsmart-list', this)" class="menu-item" id="menu-blogsmart-list">📋 Articles publiés</button>
-        </div>
-        <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
-        <div id="newsMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-bandeau', this)" class="menu-item" id="menu-bandeau">📢 Message bandeau</button>
-          <button onclick="showAdminPanel('panel-news-create', this)" class="menu-item" id="menu-news-create">➕ Créer une news</button>
-          <button onclick="showAdminPanel('panel-news-list', this)" class="menu-item" id="menu-news-list">📋 News publiées</button>
-        </div>
-        <button onclick="showAdminPanel('panel-concours', this)" class="menu-item" id="menu-concours">🏆 Concours</button>
 
-        <div class="menu-label">🎁 Produits, Promotions &amp; Commissions</div>
-        <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
-        <div id="promosMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
-          <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
+        <button onclick="toggleMenu('produitsMenu')" class="menu-item group-toggle">🎁 Produits, Promotions &amp; Commissions</button>
+        <div id="produitsMenu" class="submenu">
+          <button onclick="toggleMenu('promosMenu')" class="menu-item group-toggle">🎁 Promotions</button>
+          <div id="promosMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-promo-create', this)" class="menu-item" id="menu-promo-create">➕ Créer une promotion</button>
+            <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
+          </div>
+          <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
         </div>
-        <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
 
       </div>
 
@@ -1524,6 +1530,21 @@ window.showAdminPanel = function (panelId, btn) {
   }
 };
 
+// Badge combiné sur le groupe CRM (repliable) : somme des compteurs de ses sous-items,
+// pour que la notification reste visible même quand le groupe est replié.
+function updateCrmBadge() {
+  const ids = ['feedback-count', 'messages-count', 'prospects-count', 'bot-pending-count'];
+  let total = 0;
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const n = parseInt((el.textContent || '').replace(/\D/g, ''), 10);
+    if (!isNaN(n)) total += n;
+  });
+  const badge = document.getElementById('crm-count-badge');
+  if (badge) badge.innerHTML = total > 0 ? `<span class="count-badge">${total}</span>` : '';
+}
+
 window.toggleMenu = function (id) {
   const el = document.getElementById(id);
   if (el) el.classList.toggle('open');
@@ -2512,6 +2533,7 @@ function loadProspects() {
 
   const countEl = document.getElementById('prospects-count');
   if (countEl) countEl.innerHTML = pending.length > 0 ? `<span class="count-badge">${pending.length}</span>` : '';
+  updateCrmBadge();
 
   if (pending.length === 0) {
     container.innerHTML = '<div class="empty">Aucune demande en attente.</div>';
@@ -2576,6 +2598,7 @@ function loadFeedback() {
     const unhandledCount = list.filter(f => !f.handled).length;
     const countEl = document.getElementById('feedback-count');
     if (countEl) countEl.innerHTML = unhandledCount > 0 ? `<span class="count-badge">${unhandledCount}</span>` : '';
+    updateCrmBadge();
 
     if (list.length === 0) {
       container.innerHTML = '<div class="empty">Aucun message pour le moment.</div>';
@@ -3170,6 +3193,7 @@ async function loadBotPending() {
     if (countEl) countEl.textContent = list.length > 0 ? '(' + list.length + ')' : '';
     const groupBadge = document.getElementById('botfaq-count-badge');
     if (groupBadge) groupBadge.innerHTML = list.length > 0 ? `<span class="count-badge">${list.length}</span>` : '';
+    updateCrmBadge();
 
     if (list.length === 0) {
       container.innerHTML = '<div class="empty">Aucune question en attente. 🎉 Le bot a réponse à tout !</div>';
@@ -4156,6 +4180,7 @@ function renderMessagesAdmin() {
   container.innerHTML = html;
   const msgCountEl = document.getElementById('messages-count');
   if (msgCountEl) msgCountEl.innerHTML = unreadTotal > 0 ? `<span class="count-badge" style="background:#ef4444;">${unreadTotal}</span>` : '';
+  updateCrmBadge();
 }
 
 window.openChatWithConsultant = async function (consultantId, consultantName) {
