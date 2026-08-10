@@ -199,7 +199,7 @@
   </div>
 
   <div class="section">
-    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS PERMANENTES</div>
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> REMISES PERMANENTES</div>
     <div id="banner-promos-permanentes" style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
       <span id="banner-promos-permanentes-icon" style="flex-shrink:0;line-height:1.4;">✅</span> <span id="banner-promos-permanentes-text" style="line-height:1.4;">Promotions permanentes et réductions uniques.</span>
     </div>
@@ -207,7 +207,8 @@
   </div>
 
   <div class="section">
-    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 PROMOTIONS TEMPORAIRES</div>
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 OFFRES EN COURS</div>
+    <div id="promos-unified-date" style="display:none;margin-bottom:10px;font-size:13px;font-weight:700;color:#0369a1;">📅 </div>
 
     <div id="promo-banner-important" style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
 <span id="promo-banner-important-icon" style="flex-shrink:0;line-height:1.4;">📢</span> <span id="promo-banner-important-text" style="line-height:1.4;">Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.</span>
@@ -456,6 +457,31 @@ async function loadPromosFromFirestore() {
 
     const todayStr = new Date().toISOString().slice(0, 10);
 
+    // Pré-scan : si toutes les offres temporaires (encore valides) partagent exactement
+    // la même période, on l'affiche une seule fois en haut plutôt que sur chaque carte.
+    const tempDatePairs = new Set();
+    let anyTempDate = null;
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      if (p.active === false || p.category === 'permanente') return;
+      if (p.dateDebut && todayStr < p.dateDebut) return;
+      if (p.dateFin && todayStr > p.dateFin) return;
+      if (!p.dateDebut && !p.dateFin) return;
+      const key = (p.dateDebut || '') + '|' + (p.dateFin || '');
+      tempDatePairs.add(key);
+      anyTempDate = p;
+    });
+    const unifiedDate = (tempDatePairs.size === 1) ? anyTempDate : null;
+    const unifiedDateEl = document.getElementById('promos-unified-date');
+    if (unifiedDateEl) {
+      if (unifiedDate) {
+        unifiedDateEl.style.display = 'block';
+        unifiedDateEl.innerHTML = `📅 ${unifiedDate.dateDebut ? 'Du ' + formatDateFrOrange(unifiedDate.dateDebut) : ''}${unifiedDate.dateFin ? ' au ' + formatDateFrOrange(unifiedDate.dateFin) : ''}`;
+      } else {
+        unifiedDateEl.style.display = 'none';
+      }
+    }
+
     snap.forEach(docSnap => {
       const p = docSnap.data();
       if (p.active === false) return;
@@ -463,7 +489,9 @@ async function loadPromosFromFirestore() {
       if (p.dateDebut && todayStr < p.dateDebut) return;
       if (p.dateFin && todayStr > p.dateFin) return;
 
-      const dateLabel = (p.dateDebut || p.dateFin)
+      // Si une date unique s'affiche déjà en haut de la section "Offres en cours", on ne la répète
+      // pas sur chaque carte temporaire (les remises permanentes gardent toujours leur date individuelle).
+      const dateLabel = (!(unifiedDate && p.category !== 'permanente') && (p.dateDebut || p.dateFin))
         ? `<br><span style="color:#0369a1;font-weight:700;">📅 ${p.dateDebut ? 'Du ' + formatDateFrOrange(p.dateDebut) : ''}${p.dateFin ? ' au ' + formatDateFrOrange(p.dateFin) : ''}</span>`
         : '';
 
