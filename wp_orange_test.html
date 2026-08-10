@@ -1109,12 +1109,13 @@ function render() {
   const prod = calcProducts(), opts = calcOptions(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel;
   const prom6 = promosCalc.promo6 || 0;
   const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
+  const promAVie = prom - prom6 - prom12; // part des remises mensuelles sans durée fixe (permanentes)
   const mob = calcMobiles(), inet = calcInternet();
   const hasInet = hasInternet();
   const mobileCount = totalMobileAbo();
   const homeFee = (hasInet && mobileCount===0) ? 4 : 0;
   const total = Math.max(0, prod + opts + homeFee - love - prom);
-  const after = Math.max(0, prod + opts + homeFee - love);
+  const after = Math.max(0, prod + opts + homeFee - love - promAVie);
   const r = isTVAC ? 1 : 1/TVA;
   document.getElementById('s-products').textContent = fmt(prod*r);
   document.getElementById('s-mobiles').textContent = fmt(mob*r);
@@ -1129,7 +1130,7 @@ function render() {
   const p12=document.getElementById('s-promos12');
   if(p6) p6.textContent='- ' + fmt(prom6*r);
   if(p12) p12.textContent='- ' + fmt(prom12*r); document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
-  document.getElementById('s-total').textContent = fmt(after*r);
+  document.getElementById('s-total').textContent = fmt(total*r);
   
 
   const after12 = after;
@@ -1255,6 +1256,11 @@ function buildGroupedPromoRows(containerId, items) {
   c.innerHTML = '';
   PROMO_FAMILY_GROUPS.forEach((group, idx) => {
     const groupItems = items.filter(p => (p.family || 'divers') === group.key);
+    groupItems.sort((a, b) => {
+      const plainA = (a.name || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
+      const plainB = (b.name || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
+      return plainA.localeCompare(plainB, 'fr');
+    });
     if (groupItems.length === 0) return;
     if (idx > 0 && c.children.length > 0) {
       const sep = document.createElement('div');
