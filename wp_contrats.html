@@ -535,7 +535,44 @@ onAuthStateChanged(auth, async (user) => {
 
   window.refreshAspTotal();
   if (window.updateContractPreview) window.updateContractPreview();
+  if (window.loadCommissionsBareme) window.loadCommissionsBareme();
 });
+
+// Charge le barème depuis Firestore (collection "commissions", éditable dans l'admin, partagée
+// avec wp_rem.html) et remplace les produits par défaut. En cas d'échec (offline, collection
+// vide), le barème codé en dur dans DEFAULT_PRODUCTS reste utilisé — aucune interruption.
+window.loadCommissionsBareme = async function () {
+  try {
+    const snap = await getDocs(collection(db, 'commissions'));
+    const stored = {};
+    snap.forEach(d => { stored[d.id] = d.data(); });
+    const defaultIds = new Set(window.DEFAULT_PRODUCTS.map(p => p.id));
+
+    const merged = window.DEFAULT_PRODUCTS.map(def => ({
+      id: def.id,
+      cat: def.cat,
+      label: (stored[def.id] && stored[def.id].label) || def.label,
+      rates: (stored[def.id] && Array.isArray(stored[def.id].rates)) ? stored[def.id].rates : def.rates,
+      asp: def.asp,
+      aspSoho: def.aspSoho
+    }));
+    Object.keys(stored).filter(id => !defaultIds.has(id)).forEach(id => {
+      const s = stored[id];
+      merged.push({
+        id,
+        label: s.label || id,
+        cat: s.cat || 'other',
+        rates: Array.isArray(s.rates) ? s.rates : [null, null, null, null, null],
+        asp: typeof s.asp === 'number' ? s.asp : 0,
+        aspSoho: typeof s.aspSoho === 'number' ? s.aspSoho : 0
+      });
+    });
+
+    if (window.setCommissionsProducts) window.setCommissionsProducts(merged);
+  } catch (e) {
+    console.log('Chargement barème commissions impossible (fallback valeurs par défaut):', e.message);
+  }
+};
 
 // --- Recalcul du total ASP (départ + somme des contrats actifs) ---
 window.refreshAspTotal = async function () {
@@ -573,9 +610,11 @@ window.refreshAspTotal = async function () {
 </script>
 
 <script>
-// Barème exact repris de wp_rem.html : rates = [BC, SC+, Convergence, Portabilité, SoHo-Indép]
-// null = bonus non applicable à ce produit
-const PRODUCTS = [
+// Barème par défaut (fallback hors-ligne / avant chargement Firestore) : rates = [BC, SC+, Convergence,
+// Portabilité, SoHo-Indép], null = bonus non applicable à ce produit. Les montants € sont surchargeables
+// depuis l'admin (collection Firestore "commissions", partagée avec wp_rem.html) — les points ASP restent
+// gérés en dur ici. window.DEFAULT_PRODUCTS est exposé pour le module Firebase (loadCommissionsBareme).
+const DEFAULT_PRODUCTS = [
   { id: "flybox",    label: "📡 Home Flybox",        cat: "fixe",   rates: [25,  30,   null, null, null], asp: 1, aspSoho: 0.5 },
   { id: "internet",  label: "🌐 Internet",            cat: "fixe",   rates: [15,  20,   15,   12,   null], asp: 1, aspSoho: 0.5 },
   { id: "tv",        label: "📺 TV Orange",           cat: "fixe",   rates: [10,  10,   null, null, null], asp: 1, aspSoho: 0 },
@@ -590,6 +629,8 @@ const PRODUCTS = [
   { id: "ebilling",  label: "📧 eBilling",             cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 },
   { id: "domicil",   label: "🏦 Domiciliation",        cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 }
 ];
+let PRODUCTS = DEFAULT_PRODUCTS;
+window.DEFAULT_PRODUCTS = DEFAULT_PRODUCTS;
 
 // units[productId] = liste d'objets { convergence: bool, portabilite: bool, sohoIndep: bool }
 let units = {};
@@ -713,6 +754,18 @@ window.updateContractPreview = updateContractPreview;
 
 buildProductsUI();
 updateContractPreview();
+
+// Appelé depuis le module Firebase une fois le barème Firestore chargé (ou en fallback par défaut).
+// Conserve les unités déjà saisies pour les produits existants ; initialise une liste vide pour
+// tout nouveau produit ajouté depuis l'admin.
+window.setCommissionsProducts = function (merged) {
+  PRODUCTS = merged;
+  const keptUnits = {};
+  PRODUCTS.forEach(p => { keptUnits[p.id] = units[p.id] || []; });
+  units = keptUnits;
+  buildProductsUI();
+  updateContractPreview();
+};
 
 // --- Import automatique de contrat (PDF envoyé directement à Gemini -> pré-remplissage) ---
 

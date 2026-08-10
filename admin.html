@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.1</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.2</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -229,6 +229,7 @@
           </div>
           <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
           <button onclick="showAdminPanel('panel-orange-banners', this)" class="menu-item" id="menu-orange-banners">🎨 Textes &amp; couleurs</button>
+          <button onclick="showAdminPanel('panel-commissions', this)" class="menu-item" id="menu-commissions">💰 Gestion des commissions</button>
         </div>
 
       </div>
@@ -580,6 +581,18 @@
             Icône, couleur et texte de chaque bandeau d'info du simulateur. La couleur choisie colore la bordure/l'icône/le texte, avec un fond clair calculé automatiquement.
           </div>
           <div id="orange-banners-content"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-commissions">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>💰 Gestion des commissions</span>
+            <button class="btn btn-secondary" onclick="previewImportCommissions()">📥 Importer le barème actuel</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Montants € utilisés par le calculateur de commissions (wp_rem.html) et la saisie des contrats (wp_contrats.html), par produit et par colonne (BC / SC ou + / Convergence / Portabilité / SoHo-Indép.). Les cases grisées "N/A" ne s'appliquent pas à ce produit. Si tu n'as encore rien importé, clique d'abord sur "Importer le barème actuel" : les valeurs s'affichent pour vérification, rien n'est écrit tant que tu n'as pas confirmé.
+          </div>
+          <div id="commissions-import-preview" style="display:none;margin-bottom:16px;"></div>
+          <div id="commissions-content"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-faq">
@@ -1378,6 +1391,7 @@ onAuthStateChanged(auth, async (user) => {
   loadGlobalRatingAdmin();
   loadWebLeadsAdmin();
   loadProduitsOrangeAdmin();
+  loadCommissionsAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
   loadOrangeBannersAdmin();
@@ -4580,6 +4594,236 @@ window.saveProduitsOrangeCategorie = async function (categoryKey) {
     showToast('✅ Enregistré.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// ===== GESTION DES COMMISSIONS (collection Firestore "commissions") =====
+// Partagée avec wp_rem.html et wp_contrats.html : montants € du barème par produit et par
+// colonne (BC / SC ou + / Convergence / Portabilité / SoHo-Indép.). Les deux pages consultant
+// lisent cette collection au chargement et retombent sur ces mêmes valeurs par défaut si
+// Firestore est vide ou inaccessible — modifier ce tableau doit rester exceptionnel (il doit
+// rester identique au fallback codé dans wp_rem.html / wp_contrats.html).
+const COMMISSIONS_CATEGORIES = [
+  { key: 'fixe',   label: '📡 Fixe / Internet' },
+  { key: 'mobile', label: '📱 Mobile' },
+  { key: 'energy', label: '⚡ Énergie' },
+  { key: 'other',  label: '📋 Autres' }
+];
+const COMMISSIONS_COLUMNS = ['BC', 'SC ou +', 'Convergence', 'Portabilité', 'SoHo-Indép.'];
+const DEFAULT_COMMISSIONS = [
+  { id: 'flybox',     label: '📡 Home Flybox',        cat: 'fixe',   rates: [25, 30, null, null, null] },
+  { id: 'internet',   label: '🌐 Internet',            cat: 'fixe',   rates: [15, 20, 15,   12,   null] },
+  { id: 'tv',         label: '📺 TV Orange',           cat: 'fixe',   rates: [10, 10, null, null, null] },
+  { id: 'child',      label: '👶 Mobile Child',        cat: 'mobile', rates: [1,  5,  null, null, null] },
+  { id: 'small',      label: '📱 Mobile Small',        cat: 'mobile', rates: [10, 15, null, null, null] },
+  { id: 'medium',     label: '📱 Mobile Medium',       cat: 'mobile', rates: [35, 40, 12,   20,   15]   },
+  { id: 'unlimited',  label: '♾️ Mobile Unlimited',     cat: 'mobile', rates: [60, 65, 12,   20,   15]   },
+  { id: 'large',      label: '📱 Mobile Large',        cat: 'mobile', rates: [50, 55, 12,   20,   15]   },
+  { id: 'eneco_elec', label: '⚡ Eneco Électricité',    cat: 'energy', rates: [20, 25, null, null, 20]   },
+  { id: 'eneco_gaz',  label: '🔥 Eneco Gaz',            cat: 'energy', rates: [20, 25, null, null, 20]   },
+  { id: 'chaudiere',  label: '🔧 Entretien chaudière',  cat: 'energy', rates: [20, 25, null, null, null] },
+  { id: 'ebilling',   label: '📧 eBilling',             cat: 'other',  rates: [5,  5,  null, null, null] },
+  { id: 'domicil',    label: '🏦 Domiciliation',        cat: 'other',  rates: [5,  5,  null, null, null] }
+];
+
+// Aperçu avant import : montre les valeurs par défaut (celles codées en dur dans wp_rem.html /
+// wp_contrats.html) pour vérification, et signale les produits déjà présents dans Firestore qui
+// seraient écrasés. Rien n'est écrit tant que "Confirmer l'import" n'est pas cliqué.
+window.previewImportCommissions = function () {
+  const stored = window._commissionsMerged || [];
+  const storedIds = new Set(stored.filter(p => !p.custom).map(p => p.id));
+  const wouldOverwrite = DEFAULT_COMMISSIONS.some(p => storedIds.has(p.id) &&
+    JSON.stringify((stored.find(s => s.id === p.id) || {}).rates) !== JSON.stringify(p.rates));
+
+  const rows = COMMISSIONS_CATEGORIES.map(cat => {
+    const items = DEFAULT_COMMISSIONS.filter(p => p.cat === cat.key);
+    const lines = items.map(p => {
+      const cells = COMMISSIONS_COLUMNS.map((colLabel, ci) => {
+        const val = p.rates[ci];
+        return `<span style="display:inline-block;min-width:70px;font-size:11px;color:${val === null ? '#ccc' : '#333'};">${colLabel}: ${val === null ? 'N/A' : val + '€'}</span>`;
+      }).join(' ');
+      return `<div style="padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;"><strong>${escapeHtml(p.label)}</strong><br>${cells}</div>`;
+    }).join('');
+    return `<div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:4px;">${cat.label}</div>${lines}</div>`;
+  }).join('');
+
+  const warning = wouldOverwrite
+    ? `<div style="font-size:12px;color:#c0392b;font-weight:700;margin-bottom:10px;">⚠️ Des montants déjà enregistrés seront écrasés par ces valeurs par défaut.</div>`
+    : `<div style="font-size:12px;color:#2E7D32;margin-bottom:10px;">Aucun montant existant ne sera écrasé (ou les valeurs sont identiques).</div>`;
+
+  const container = document.getElementById('commissions-import-preview');
+  container.innerHTML = `
+    <div class="card" style="border:1px solid #f97316;">
+      <div class="section-title" style="font-size:13px;">📥 Aperçu du barème à importer</div>
+      ${warning}
+      <div style="max-height:320px;overflow-y:auto;padding-right:6px;">${rows}</div>
+      <div class="form-actions" style="margin-top:14px;">
+        <button class="btn btn-secondary" onclick="cancelImportCommissions()">✖ Annuler</button>
+        <button class="btn btn-primary" onclick="confirmImportDefaultCommissions()">✅ Confirmer l'import</button>
+      </div>
+    </div>
+  `;
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+window.cancelImportCommissions = function () {
+  const container = document.getElementById('commissions-import-preview');
+  container.style.display = 'none';
+  container.innerHTML = '';
+};
+
+window.confirmImportDefaultCommissions = async function () {
+  try {
+    await Promise.all(DEFAULT_COMMISSIONS.map(p =>
+      setDoc(doc(db, 'commissions', p.id), { label: p.label, cat: p.cat, rates: p.rates })
+    ));
+    cancelImportCommissions();
+    showToast('✅ Barème importé.');
+  } catch (err) {
+    alert("Erreur lors de l'import: " + err.message);
+  }
+};
+
+let commissionsUnsub = null;
+
+function loadCommissionsAdmin() {
+  const container = document.getElementById('commissions-content');
+  if (!container) return;
+  if (commissionsUnsub) { try { commissionsUnsub(); } catch (e) {} commissionsUnsub = null; }
+  commissionsUnsub = onSnapshot(collection(db, 'commissions'), (snap) => {
+    const stored = {};
+    snap.forEach(d => { stored[d.id] = d.data(); });
+    window._commissionsCache = Object.keys(stored);
+    const defaultIds = new Set(DEFAULT_COMMISSIONS.map(d => d.id));
+
+    // Produits par défaut : montants Firestore si présents, sinon valeurs codées en dur
+    const defaults = DEFAULT_COMMISSIONS.map(def => ({
+      id: def.id, cat: def.cat, custom: false,
+      label: (stored[def.id] && stored[def.id].label) || def.label,
+      rates: (stored[def.id] && Array.isArray(stored[def.id].rates)) ? stored[def.id].rates : def.rates
+    }));
+    // Produits personnalisés : tout document Firestore qui n'est pas dans la liste par défaut
+    const customs = Object.keys(stored).filter(id => !defaultIds.has(id)).map(id => ({
+      id, cat: stored[id].cat || 'other', custom: true,
+      label: stored[id].label || id,
+      rates: Array.isArray(stored[id].rates) ? stored[id].rates : [null, null, null, null, null]
+    }));
+    const merged = [...defaults, ...customs];
+    window._commissionsMerged = merged;
+
+    container.innerHTML = COMMISSIONS_CATEGORIES.map(cat => {
+      const items = merged.filter(p => p.cat === cat.key);
+      const rows = items.map(p => {
+        const cells = COMMISSIONS_COLUMNS.map((colLabel, ci) => {
+          if (p.rates[ci] === null) {
+            return `<div style="flex:1;min-width:80px;"><label style="font-size:10px;color:#bbb;">${colLabel}</label><div style="padding:8px 0;color:#ccc;font-size:12px;text-align:center;border:1px solid #f0f0f0;border-radius:6px;background:#f8f8f8;">N/A</div></div>`;
+          }
+          return `<div style="flex:1;min-width:80px;"><label style="font-size:10px;">${colLabel}</label><input type="number" step="0.01" id="cm-${p.id}-r${ci}" value="${p.rates[ci]}"></div>`;
+        }).join('');
+        return `
+          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${escapeHtml(p.label)} ${p.custom ? '<span style="color:#f97316;">(ajouté)</span>' : ''}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              ${cells}
+              ${p.custom ? `<button class="btn btn-danger" style="height:34px;" onclick="deleteCommissionProduit('${p.id}')">🗑</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const newColumns = COMMISSIONS_COLUMNS.map((colLabel, ci) => `
+        <div style="min-width:90px;">
+          <label style="font-size:10px;display:flex;align-items:center;gap:3px;">
+            <input type="checkbox" id="cm-new-${cat.key}-c${ci}" onchange="document.getElementById('cm-new-${cat.key}-r${ci}').disabled = !this.checked;">
+            ${colLabel}
+          </label>
+          <input type="number" step="0.01" id="cm-new-${cat.key}-r${ci}" placeholder="0" disabled>
+        </div>
+      `).join('');
+
+      return `
+        <div class="card" style="margin-bottom:16px;">
+          <div class="section-title" style="font-size:14px;margin-bottom:10px;">${cat.label}</div>
+          ${rows || '<div class="empty">Aucun produit.</div>'}
+          <button class="btn btn-primary" onclick="saveCommissionsCategorie('${cat.key}')">💾 Enregistrer ${cat.label}</button>
+
+          <div style="margin-top:16px;padding-top:14px;border-top:1px dashed #ddd;">
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">➕ Ajouter un produit — ${cat.label}</div>
+            <div class="form-row" style="max-width:280px;">
+              <label>Nom</label>
+              <input type="text" id="cm-new-${cat.key}-label" placeholder="ex: Mobile XL">
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              ${newColumns}
+            </div>
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;">Coche uniquement les colonnes qui s'appliquent à ce produit ; les autres resteront "N/A".</div>
+            <button class="btn btn-secondary" onclick="addNewCommissionProduit('${cat.key}')">➕ Créer ce produit</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement commissions impossible:', err.message);
+  });
+}
+
+window.saveCommissionsCategorie = async function (categoryKey) {
+  const items = (window._commissionsMerged || []).filter(p => p.cat === categoryKey);
+  try {
+    await Promise.all(items.map(p => {
+      const rates = p.rates.map((r, ci) => {
+        if (r === null) return null;
+        const el = document.getElementById(`cm-${p.id}-r${ci}`);
+        const v = el ? parseFloat(el.value) : NaN;
+        return isNaN(v) ? r : v;
+      });
+      const data = { label: p.label, cat: p.cat, rates };
+      if (p.custom) data.custom = true;
+      return setDoc(doc(db, 'commissions', p.id), data, { merge: true });
+    }));
+    showToast('✅ Barème enregistré.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+  }
+};
+
+window.addNewCommissionProduit = async function (categoryKey) {
+  const label = document.getElementById(`cm-new-${categoryKey}-label`).value.trim();
+  if (!label) { alert('Merci de renseigner un nom.'); return; }
+
+  const rates = [];
+  for (let ci = 0; ci < 5; ci++) {
+    const cb = document.getElementById(`cm-new-${categoryKey}-c${ci}`);
+    const inp = document.getElementById(`cm-new-${categoryKey}-r${ci}`);
+    if (cb && cb.checked) {
+      const v = parseFloat(inp.value);
+      rates.push(isNaN(v) ? 0 : v);
+    } else {
+      rates.push(null);
+    }
+  }
+  if (rates.every(r => r === null)) { alert('Coche au moins une colonne applicable.'); return; }
+
+  const slug = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const id = `custom_${categoryKey}_${slug}_${Date.now().toString(36)}`;
+
+  try {
+    await setDoc(doc(db, 'commissions', id), { label, cat: categoryKey, rates, custom: true });
+    showToast('✅ Produit créé.');
+  } catch (err) {
+    alert("Erreur lors de la création: " + err.message);
+  }
+};
+
+window.deleteCommissionProduit = async function (id) {
+  if (!confirm('Supprimer définitivement ce produit du barème ?')) return;
+  try {
+    await deleteDoc(doc(db, 'commissions', id));
+    showToast('🗑 Produit supprimé.');
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
   }
 };
 

@@ -368,6 +368,12 @@ import {
   onAuthStateChanged
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  getDocs
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
@@ -381,6 +387,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 window.doLogin = async function () {
   const email = document.getElementById('login-email').value.trim();
@@ -399,25 +406,62 @@ window.doLogin = async function () {
 onAuthStateChanged(auth, (user) => {
   document.getElementById('login-screen').style.display = user ? 'none' : 'block';
   document.getElementById('app-content').style.display = user ? 'block' : 'none';
+  if (user) loadCommissionsBareme();
 });
+
+// Charge le barème depuis Firestore (collection "commissions", éditable dans l'admin) et
+// remplace les produits par défaut. En cas d'échec (offline, collection vide), le barème
+// codé en dur dans DEFAULT_PRODUCTS reste utilisé — aucune interruption du calculateur.
+async function loadCommissionsBareme() {
+  try {
+    const snap = await getDocs(collection(db, 'commissions'));
+    const stored = {};
+    snap.forEach(d => { stored[d.id] = d.data(); });
+    const defaultIds = new Set(DEFAULT_PRODUCTS.map(p => p.id));
+
+    const merged = DEFAULT_PRODUCTS.map(def => ({
+      id: def.id,
+      cat: def.cat,
+      label: (stored[def.id] && stored[def.id].label) || def.label,
+      rates: (stored[def.id] && Array.isArray(stored[def.id].rates)) ? stored[def.id].rates : def.rates
+    }));
+    Object.keys(stored).filter(id => !defaultIds.has(id)).forEach(id => {
+      const s = stored[id];
+      merged.push({
+        id,
+        label: s.label || id,
+        cat: s.cat || 'other',
+        rates: Array.isArray(s.rates) ? s.rates : [null, null, null, null, null]
+      });
+    });
+
+    if (window.setCommissionsProducts) window.setCommissionsProducts(merged);
+  } catch (e) {
+    console.log('Chargement barème commissions impossible (fallback valeurs par défaut):', e.message);
+  }
+}
 </script>
 
 <script>
-const products = [
-  { label: "Home Flybox",            cat: "fixe",   rates: [25,  30,   null, null, null] },
-  { label: "INTERNET",               cat: "fixe",   rates: [15,  20,   15,   12,   null] },
-  { label: "TV ORANGE",              cat: "fixe",   rates: [10,  10,   null, null, null] },
-  { label: "MOBILE CHILD",          cat: "mobile", rates: [1,   5,    null, null, null] },
-  { label: "MOBILE SMALL",          cat: "mobile", rates: [10,  15,   null, null, null] },
-  { label: "MOBILE MEDIUM",         cat: "mobile", rates: [35,  40,   12,   20,   15]   },
-  { label: "MOBILE UNLIMITED",      cat: "mobile", rates: [60,  65,   12,   20,   15]   },
-  { label: "MOBILE LARGE",          cat: "mobile", rates: [50,  55,   12,   20,   15]   },
-  { label: "ENECO ELECTRICITE",     cat: "energy", rates: [20,  25,   null, null, 20]   },
-  { label: "ENECO GAZ",             cat: "energy", rates: [20,  25,   null, null, 20]   },
-  { label: "Entretien chaudière",   cat: "energy", rates: [20,  25,   null, null, null] },
-  { label: "eBilling",              cat: "other",  rates: [5,   5,    null, null, null] },
-  { label: "Domiciliation",         cat: "other",  rates: [5,   5,    null, null, null] },
+// Barème par défaut (fallback hors-ligne / avant chargement Firestore). Les id sont alignés
+// sur wp_contrats.html — c'est ce qui permet aux deux pages de partager la même collection
+// Firestore "commissions" éditable depuis l'admin.
+const DEFAULT_PRODUCTS = [
+  { id: "flybox",     label: "Home Flybox",            cat: "fixe",   rates: [25,  30,   null, null, null] },
+  { id: "internet",   label: "INTERNET",               cat: "fixe",   rates: [15,  20,   15,   12,   null] },
+  { id: "tv",         label: "TV ORANGE",              cat: "fixe",   rates: [10,  10,   null, null, null] },
+  { id: "child",      label: "MOBILE CHILD",          cat: "mobile", rates: [1,   5,    null, null, null] },
+  { id: "small",      label: "MOBILE SMALL",          cat: "mobile", rates: [10,  15,   null, null, null] },
+  { id: "medium",     label: "MOBILE MEDIUM",         cat: "mobile", rates: [35,  40,   12,   20,   15]   },
+  { id: "unlimited",  label: "MOBILE UNLIMITED",      cat: "mobile", rates: [60,  65,   12,   20,   15]   },
+  { id: "large",      label: "MOBILE LARGE",          cat: "mobile", rates: [50,  55,   12,   20,   15]   },
+  { id: "eneco_elec", label: "ENECO ELECTRICITE",     cat: "energy", rates: [20,  25,   null, null, 20]   },
+  { id: "eneco_gaz",  label: "ENECO GAZ",             cat: "energy", rates: [20,  25,   null, null, 20]   },
+  { id: "chaudiere",  label: "Entretien chaudière",   cat: "energy", rates: [20,  25,   null, null, null] },
+  { id: "ebilling",   label: "eBilling",              cat: "other",  rates: [5,   5,    null, null, null] },
+  { id: "domicil",    label: "Domiciliation",         cat: "other",  rates: [5,   5,    null, null, null] },
 ];
+let products = DEFAULT_PRODUCTS;
 
 const catClass = { fixe:"cat-blue", mobile:"cat-mobile", energy:"cat-energy", other:"cat-other" };
 
@@ -515,6 +559,14 @@ function recalc() {
     el.className = val === 0 ? 'cat-amount zero' : 'cat-amount';
   }
 }
+
+// Appelé depuis le module Firebase une fois le barème Firestore chargé (ou en fallback par défaut).
+window.setCommissionsProducts = function (merged) {
+  products = merged;
+  Object.keys(vals).forEach(k => delete vals[k]);
+  buildTable();
+  recalc();
+};
 
 function resetAll() {
   Object.keys(vals).forEach(k => {
