@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.9</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.0</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -519,6 +519,10 @@
                 <option value="">À vie (pas de durée)</option>
               </select>
             </div>
+            <div class="form-row" id="promo-condition-row" style="display:none;">
+              <label>Condition particulière (affichée sous la promo dans le simulateur, laisser vide si aucune)</label>
+              <input type="text" id="promo-condition" placeholder="ex: Nécessite un Internet dans le contrat">
+            </div>
             <div class="form-row" id="promo-dates-permanente-row" style="display:none;gap:10px;flex-wrap:wrap;">
               <div style="flex:1;min-width:140px;">
                 <label>Date de début (optionnel)</label>
@@ -534,13 +538,6 @@
             </div>
             <div id="promo-dates-temporaire-note" style="font-size:11px;color:#888;margin:-6px 0 10px;">
               📅 Les promos temporaires utilisent la période commune définie en haut de page ("Offres en cours") — rien à renseigner ici.
-            </div>
-            <div class="form-row" id="promo-condition-row" style="display:none;">
-              <div class="checkbox-row">
-                <input type="checkbox" id="promo-hascondition" onchange="document.getElementById('promo-condition').style.display = this.checked ? 'block' : 'none';">
-                <label for="promo-hascondition" style="font-weight:400;">Condition particulière (affichée sous la promo dans le simulateur)</label>
-              </div>
-              <input type="text" id="promo-condition" placeholder="ex: Nécessite un Internet dans le contrat" style="display:none;margin-top:6px;">
             </div>
             <button class="btn btn-primary" id="promo-submit-btn" onclick="addOrUpdatePromo()">➕ Ajouter la/les promo(s)</button>
             <button class="btn btn-secondary" id="promo-cancel-btn" onclick="cancelPromoEdit()" style="display:none;">Annuler la modification</button>
@@ -2902,9 +2899,7 @@ window.editPromo = function (docId) {
   document.getElementById('promo-sub').innerHTML = p.sub || '';
   document.getElementById('promo-price').value = p.price ?? 0;
   document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
-  document.getElementById('promo-hascondition').checked = !!p.condition;
   document.getElementById('promo-condition').value = p.condition || '';
-  document.getElementById('promo-condition').style.display = p.condition ? 'block' : 'none';
   document.getElementById('promo-date-debut').value = p.dateDebut || '';
   document.getElementById('promo-date-fin').value = p.dateFin || '';
   onPromoCategoryChange();
@@ -2922,9 +2917,7 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-name').value = '';
   document.getElementById('promo-sub').innerHTML = '';
   document.getElementById('promo-price').value = '';
-  document.getElementById('promo-hascondition').checked = false;
   document.getElementById('promo-condition').value = '';
-  document.getElementById('promo-condition').style.display = 'none';
   document.getElementById('promo-date-debut').value = '';
   document.getElementById('promo-date-fin').value = '';
   document.getElementById('promo-product-mobile').selectedIndex = 0;
@@ -2947,9 +2940,7 @@ window.addOrUpdatePromo = async function () {
   const price = Number(document.getElementById('promo-price').value);
   const durationRaw = document.getElementById('promo-duration').value;
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
-  const condition = (type !== 'unique' && document.getElementById('promo-hascondition').checked)
-    ? document.getElementById('promo-condition').value.trim()
-    : '';
+  const condition = type !== 'unique' ? document.getElementById('promo-condition').value.trim() : '';
   const dateDebut = category === 'temporaire' ? (window._promoGlobalDate?.dateDebut || null) : (document.getElementById('promo-date-debut').value || null);
   const dateFin = category === 'temporaire' ? (window._promoGlobalDate?.dateFin || null) : (document.getElementById('promo-date-fin').value || null);
 
