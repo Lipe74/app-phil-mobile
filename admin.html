@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.1</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.2</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -479,6 +479,8 @@
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')" title="Centrer" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">↔</button>
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')" title="Aligner à droite" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">➡</button>
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')" title="Liste à puces" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">•</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')" title="Liste numérotée" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">1.</button>
               </div>
               <div contenteditable="true" id="promo-sub" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
             </div>
@@ -537,6 +539,12 @@
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')" title="Aligner à gauche" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">⬅</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')" title="Centrer" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">↔</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')" title="Aligner à droite" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">➡</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')" title="Liste à puces" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">•</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')" title="Liste numérotée" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">1.</button>
               </div>
               <div contenteditable="true" id="promo-banner-important-input" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
             </div>
@@ -547,6 +555,12 @@
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
                 <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')" title="Aligner à gauche" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">⬅</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')" title="Centrer" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">↔</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')" title="Aligner à droite" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">➡</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')" title="Liste à puces" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">•</button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')" title="Liste numérotée" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">1.</button>
               </div>
               <div contenteditable="true" id="promo-banner-attention-input" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
             </div>
@@ -705,6 +719,7 @@
               <label>Texte complet</label>
               <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
                 <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
                 <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
                 <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
                 <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
@@ -4330,6 +4345,8 @@ function richToolbarHtml() {
     ${btn('justifyCenter', '↔', 'Centrer')}
     ${btn('justifyRight', '➡', 'Aligner à droite')}
     ${btn('justifyFull', '≡', 'Justifié')}
+    ${btn('insertUnorderedList', '•', 'Liste à puces')}
+    ${btn('insertOrderedList', '1.', 'Liste numérotée')}
   </div>`;
 }
 
