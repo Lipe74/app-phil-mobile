@@ -138,14 +138,23 @@
 
   <div class="section">
     <div class="section-title"><i class="ti ti-wifi" aria-hidden="true"></i> Internet</div>
+    <div id="banner-internet-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;">
+<span id="banner-internet-info-icon">🌍</span> <span id="banner-internet-info-text">Si aucun forfait mobile n'est ajouté, un supplément de <strong>4€/mois</strong> s'applique (forfait Internet seul).</span>
+</div>
     <div id="internet-rows"></div>
   </div>
   <div class="section">
     <div class="section-title"><i class="ti ti-device-tv" aria-hidden="true"></i> TV</div>
+    <div id="banner-tv-info" style="margin-bottom:12px;background:#f3e5f5;border:1px solid #8e24aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#8e24aa;font-weight:600;">
+<span id="banner-tv-info-icon">📺</span> <span id="banner-tv-info-text">Options TV disponibles en complément de votre abonnement Internet.</span>
+</div>
     <div id="tv-rows"></div>
   </div>
   <div class="section">
     <div class="section-title"><i class="ti ti-device-mobile" aria-hidden="true"></i> Mobile</div>
+    <div id="banner-mobile-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;">
+<span id="banner-mobile-info-icon">📱</span> <span id="banner-mobile-info-text">Ajoutez un ou plusieurs forfaits mobiles à votre offre.</span>
+</div>
     <div id="mobile-rows"></div>
   </div>
   <div class="section">
@@ -545,14 +554,17 @@ async function loadProductsFromFirestore() {
 // --- Bandeaux d'info éditables depuis l'admin (settings/promoBanners) ---
 // Repli sur le texte/icône/couleur codés en dur dans le HTML si rien n'est encore personnalisé.
 // Un seul doc Firestore, un champ par bandeau : {key}, {key}Icon, {key}Color.
-const ORANGE_BANNER_KEYS = ['important', 'attention', 'fraisUniques', 'optionsMensuelles', 'remisesLove', 'promosPermanentes'];
+const ORANGE_BANNER_KEYS = ['important', 'attention', 'fraisUniques', 'optionsMensuelles', 'remisesLove', 'promosPermanentes', 'internetInfo', 'tvInfo', 'mobileInfo'];
 const ORANGE_BANNER_ELEMENT_IDS = {
   important: 'promo-banner-important',
   attention: 'promo-banner-attention',
   fraisUniques: 'banner-frais-uniques',
   optionsMensuelles: 'banner-options-mensuelles',
   remisesLove: 'banner-remises-love',
-  promosPermanentes: 'banner-promos-permanentes'
+  promosPermanentes: 'banner-promos-permanentes',
+  internetInfo: 'banner-internet-info',
+  tvInfo: 'banner-tv-info',
+  mobileInfo: 'banner-mobile-info'
 };
 
 function hexToRgbOrange(hex) {

@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.3</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.4</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4578,18 +4578,36 @@ window.saveVideoVente = async function () {
 
 // ===== TEXTES & COULEURS DES BANDEAUX (wp_orange.html, settings/promoBanners) =====
 // Un seul doc Firestore, un champ par bandeau : {key} (texte HTML), {key}Icon, {key}Color.
+const ORANGE_ICON_OPTIONS = ['ℹ️','⚠️','📢','✅','🎁','📅','💡','🔥','⭐','📌','🚨','💰','📱','🌍','📺','🧡'];
+const ORANGE_COLOR_OPTIONS = [
+  { label: '🔴 Rouge', value: '#e53935' },
+  { label: '🔵 Bleu', value: '#1e88e5' },
+  { label: '🟢 Vert', value: '#43a047' },
+  { label: '🟠 Orange', value: '#fb8c00' },
+  { label: '🟡 Jaune', value: '#fdd835' },
+  { label: '🟣 Violet', value: '#8e24aa' },
+  { label: '⚫ Gris/Noir', value: '#424242' },
+  { label: '🟤 Marron', value: '#6d4c41' }
+];
+
 const ORANGE_BANNERS_DEFS = [
-  { key: 'important', label: 'Bandeau bleu — Promotions temporaires (haut)', icon: '📢', color: '#ff9800',
+  { key: 'important', label: 'Bandeau bleu — Promotions temporaires (haut)', icon: '📢', color: '#fb8c00',
     text: 'Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.' },
-  { key: 'attention', label: 'Bandeau jaune — Promotions temporaires (bas, ex: domiciliation)', icon: '⚠️', color: '#ffc107',
+  { key: 'attention', label: 'Bandeau jaune — Promotions temporaires (bas, ex: domiciliation)', icon: '⚠️', color: '#fdd835',
     text: 'Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.' },
-  { key: 'fraisUniques', label: 'Bandeau — Frais uniques (activation Orange)', icon: 'ℹ️', color: '#ff8c42',
+  { key: 'internetInfo', label: 'Bandeau — Internet', icon: '🌍', color: '#1e88e5',
+    text: "Si aucun forfait mobile n'est ajouté, un supplément de <strong>4€/mois</strong> s'applique (forfait Internet seul)." },
+  { key: 'tvInfo', label: 'Bandeau — TV', icon: '📺', color: '#8e24aa',
+    text: 'Options TV disponibles en complément de votre abonnement Internet.' },
+  { key: 'mobileInfo', label: 'Bandeau — Mobile', icon: '📱', color: '#1e88e5',
+    text: 'Ajoutez un ou plusieurs forfaits mobiles à votre offre.' },
+  { key: 'fraisUniques', label: 'Bandeau — Frais uniques (activation Orange)', icon: 'ℹ️', color: '#fb8c00',
     text: "Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée." },
-  { key: 'optionsMensuelles', label: 'Bandeau — Options mensuelles', icon: '📅', color: '#ff8c42',
+  { key: 'optionsMensuelles', label: 'Bandeau — Options mensuelles', icon: '📅', color: '#fb8c00',
     text: 'Options additionnelles pouvant être ajoutées à votre abonnement Internet.' },
-  { key: 'remisesLove', label: 'Bandeau — Remises Love (calcul automatique)', icon: '🧡', color: '#ff6600',
+  { key: 'remisesLove', label: 'Bandeau — Remises Love (calcul automatique)', icon: '🧡', color: '#fb8c00',
     text: 'Les remises Love sont calculées <strong>automatiquement</strong> selon les produits de votre panier (Internet + Mobile).' },
-  { key: 'promosPermanentes', label: 'Bandeau — Promotions permanentes', icon: '✅', color: '#4caf50',
+  { key: 'promosPermanentes', label: 'Bandeau — Promotions permanentes', icon: '✅', color: '#43a047',
     text: 'Promotions permanentes et réductions uniques.' }
 ];
 
@@ -4600,13 +4618,17 @@ function renderOrangeBannersAdmin(stored) {
     <div class="card" style="margin-bottom:14px;">
       <div class="section-title" style="font-size:13px;margin-bottom:10px;">${b.label}</div>
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;">
-        <div style="width:70px;">
+        <div style="width:80px;">
           <label style="font-size:11px;">Icône</label>
-          <input type="text" id="ob-${b.key}-icon" value="${escapeHtml(stored[b.key + 'Icon'] || b.icon)}" style="text-align:center;font-size:16px;">
+          <select id="ob-${b.key}-icon" style="font-size:16px;text-align:center;">
+            ${ORANGE_ICON_OPTIONS.map(ic => `<option value="${ic}" ${(stored[b.key + 'Icon'] || b.icon) === ic ? 'selected' : ''}>${ic}</option>`).join('')}
+          </select>
         </div>
-        <div style="width:70px;">
+        <div style="width:140px;">
           <label style="font-size:11px;">Couleur</label>
-          <input type="color" id="ob-${b.key}-color" value="${stored[b.key + 'Color'] || b.color}" style="width:100%;height:36px;padding:2px;cursor:pointer;">
+          <select id="ob-${b.key}-color">
+            ${ORANGE_COLOR_OPTIONS.map(c => `<option value="${c.value}" ${(stored[b.key + 'Color'] || b.color) === c.value ? 'selected' : ''}>${c.label}</option>`).join('')}
+          </select>
         </div>
       </div>
       <label style="font-size:11px;">Texte</label>
