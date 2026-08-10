@@ -192,13 +192,13 @@
   <div class="section">
     <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 PROMOTIONS TEMPORAIRES</div>
 
-    <div style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;">
+    <div id="promo-banner-important" style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;">
       📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.
     </div>
 
     <div id="promos-rows"></div>
 
-    <div style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
+    <div id="promo-banner-attention" style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
       ⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.
     </div>
   </div>
@@ -536,9 +536,24 @@ async function loadProductsFromFirestore() {
   }
 }
 
+// --- Bandeaux d'info promotions éditables depuis l'admin (settings/promoBanners) ---
+// Repli sur le texte codé en dur dans le HTML si rien n'est encore personnalisé.
+async function loadPromoBanners() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'promoBanners'));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (d.important) document.getElementById('promo-banner-important').innerHTML = d.important;
+    if (d.attention) document.getElementById('promo-banner-attention').innerHTML = d.attention;
+  } catch (err) {
+    console.log('Chargement bandeaux promos impossible, texte par défaut conservé:', err.message);
+  }
+}
+
 onAuthStateChanged(auth, () => {
   loadPromosFromFirestore();
   loadProductsFromFirestore();
+  loadPromoBanners();
 });
 </script>
 

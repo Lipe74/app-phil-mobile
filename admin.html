@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.0</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.1</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -528,6 +528,32 @@
         </div>
 
         <div class="admin-panel" id="panel-promo-list">
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title" style="font-size:14px;margin-bottom:10px;">📢 Textes d'info affichés sur le simulateur</div>
+
+            <div class="form-row">
+              <label>Bandeau bleu (haut de la section promotions)</label>
+              <div style="display:flex;gap:3px;margin:3px 0 4px;flex-wrap:wrap;">
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
+              </div>
+              <div contenteditable="true" id="promo-banner-important-input" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
+            </div>
+
+            <div class="form-row" style="margin-top:14px;">
+              <label>Bandeau jaune (bas de la section promotions)</label>
+              <div style="display:flex;gap:3px;margin:3px 0 4px;flex-wrap:wrap;">
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
+                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
+              </div>
+              <div contenteditable="true" id="promo-banner-attention-input" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
+            </div>
+
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="savePromoBanners()">💾 Enregistrer les textes</button>
+          </div>
+
           <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>📋 Promotions existantes</span>
             <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="deleteAllPromos()">🗑 Tout supprimer</button>
@@ -1346,6 +1372,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProduitsOrangeAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
+  loadPromoBannersAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -4556,6 +4583,31 @@ window.saveVideoVente = async function () {
   try {
     await setDoc(doc(db, 'settings', 'venteVideo'), { vimeoId });
     showToast('✅ Vidéo enregistrée.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+  }
+};
+
+// ===== TEXTES D'INFO PROMOTIONS (bandeaux sur wp_orange.html, settings/promoBanners) =====
+async function loadPromoBannersAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'promoBanners'));
+    const d = snap.exists() ? snap.data() : {};
+    document.getElementById('promo-banner-important-input').innerHTML = d.important ||
+      '📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.';
+    document.getElementById('promo-banner-attention-input').innerHTML = d.attention ||
+      '⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.';
+  } catch (e) {
+    console.log('Chargement bandeaux promos impossible:', e.message);
+  }
+}
+
+window.savePromoBanners = async function () {
+  const important = document.getElementById('promo-banner-important-input').innerHTML.trim();
+  const attention = document.getElementById('promo-banner-attention-input').innerHTML.trim();
+  try {
+    await setDoc(doc(db, 'settings', 'promoBanners'), { important, attention });
+    showToast('✅ Textes enregistrés.');
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
   }
