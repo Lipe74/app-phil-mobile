@@ -1315,6 +1315,7 @@ function buildGroupedPromoRows(containerId, items) {
       row.onclick = () => togglePromo(p.id);
       row.innerHTML = `
         <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+        <div style="font-size:10px;color:#999;font-family:monospace;">[DEBUG perAbo:${p.perAbo} · mobileId:${p.mobileId} · qté trouvée:${qtyMap[p.mobileId]}]</div>
         <div class="toggle-price">- ${priceFmt(p.price)}</div>
         <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
       c.appendChild(row);
