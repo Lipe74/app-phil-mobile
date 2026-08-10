@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.3</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4611,19 +4611,19 @@ const COMMISSIONS_CATEGORIES = [
 ];
 const COMMISSIONS_COLUMNS = ['BC', 'SC ou +', 'Convergence', 'Portabilité', 'SoHo-Indép.'];
 const DEFAULT_COMMISSIONS = [
-  { id: 'flybox',     label: '📡 Home Flybox',        cat: 'fixe',   rates: [25, 30, null, null, null] },
-  { id: 'internet',   label: '🌐 Internet',            cat: 'fixe',   rates: [15, 20, 15,   12,   null] },
-  { id: 'tv',         label: '📺 TV Orange',           cat: 'fixe',   rates: [10, 10, null, null, null] },
-  { id: 'child',      label: '👶 Mobile Child',        cat: 'mobile', rates: [1,  5,  null, null, null] },
-  { id: 'small',      label: '📱 Mobile Small',        cat: 'mobile', rates: [10, 15, null, null, null] },
-  { id: 'medium',     label: '📱 Mobile Medium',       cat: 'mobile', rates: [35, 40, 12,   20,   15]   },
-  { id: 'unlimited',  label: '♾️ Mobile Unlimited',     cat: 'mobile', rates: [60, 65, 12,   20,   15]   },
-  { id: 'large',      label: '📱 Mobile Large',        cat: 'mobile', rates: [50, 55, 12,   20,   15]   },
-  { id: 'eneco_elec', label: '⚡ Eneco Électricité',    cat: 'energy', rates: [20, 25, null, null, 20]   },
-  { id: 'eneco_gaz',  label: '🔥 Eneco Gaz',            cat: 'energy', rates: [20, 25, null, null, 20]   },
-  { id: 'chaudiere',  label: '🔧 Entretien chaudière',  cat: 'energy', rates: [20, 25, null, null, null] },
-  { id: 'ebilling',   label: '📧 eBilling',             cat: 'other',  rates: [5,  5,  null, null, null] },
-  { id: 'domicil',    label: '🏦 Domiciliation',        cat: 'other',  rates: [5,  5,  null, null, null] }
+  { id: 'flybox',     label: '📡 Home Flybox',        cat: 'fixe',   rates: [25, 30, null, null, null], asp: 1,   aspSoho: 0.5 },
+  { id: 'internet',   label: '🌐 Internet',            cat: 'fixe',   rates: [15, 20, 15,   12,   null], asp: 1,   aspSoho: 0.5 },
+  { id: 'tv',         label: '📺 TV Orange',           cat: 'fixe',   rates: [10, 10, null, null, null], asp: 1,   aspSoho: 0   },
+  { id: 'child',      label: '👶 Mobile Child',        cat: 'mobile', rates: [1,  5,  null, null, null], asp: 0,   aspSoho: 0   },
+  { id: 'small',      label: '📱 Mobile Small',        cat: 'mobile', rates: [10, 15, null, null, null], asp: 1,   aspSoho: 0   },
+  { id: 'medium',     label: '📱 Mobile Medium',       cat: 'mobile', rates: [35, 40, 12,   20,   15],   asp: 1,   aspSoho: 0.5 },
+  { id: 'unlimited',  label: '♾️ Mobile Unlimited',     cat: 'mobile', rates: [60, 65, 12,   20,   15],   asp: 1,   aspSoho: 0.5 },
+  { id: 'large',      label: '📱 Mobile Large',        cat: 'mobile', rates: [50, 55, 12,   20,   15],   asp: 1,   aspSoho: 0.5 },
+  { id: 'eneco_elec', label: '⚡ Eneco Électricité',    cat: 'energy', rates: [20, 25, null, null, 20],   asp: 0.5, aspSoho: 0   },
+  { id: 'eneco_gaz',  label: '🔥 Eneco Gaz',            cat: 'energy', rates: [20, 25, null, null, 20],   asp: 0.5, aspSoho: 0   },
+  { id: 'chaudiere',  label: '🔧 Entretien chaudière',  cat: 'energy', rates: [20, 25, null, null, null], asp: 0.5, aspSoho: 0   },
+  { id: 'ebilling',   label: '📧 eBilling',             cat: 'other',  rates: [5,  5,  null, null, null], asp: 0,   aspSoho: 0   },
+  { id: 'domicil',    label: '🏦 Domiciliation',        cat: 'other',  rates: [5,  5,  null, null, null], asp: 0,   aspSoho: 0   }
 ];
 
 // Aperçu avant import : montre les valeurs par défaut (celles codées en dur dans wp_rem.html /
@@ -4632,8 +4632,11 @@ const DEFAULT_COMMISSIONS = [
 window.previewImportCommissions = function () {
   const stored = window._commissionsMerged || [];
   const storedIds = new Set(stored.filter(p => !p.custom).map(p => p.id));
-  const wouldOverwrite = DEFAULT_COMMISSIONS.some(p => storedIds.has(p.id) &&
-    JSON.stringify((stored.find(s => s.id === p.id) || {}).rates) !== JSON.stringify(p.rates));
+  const wouldOverwrite = DEFAULT_COMMISSIONS.some(p => {
+    if (!storedIds.has(p.id)) return false;
+    const s = stored.find(x => x.id === p.id) || {};
+    return JSON.stringify(s.rates) !== JSON.stringify(p.rates) || s.asp !== p.asp || s.aspSoho !== p.aspSoho;
+  });
 
   const rows = COMMISSIONS_CATEGORIES.map(cat => {
     const items = DEFAULT_COMMISSIONS.filter(p => p.cat === cat.key);
@@ -4642,7 +4645,8 @@ window.previewImportCommissions = function () {
         const val = p.rates[ci];
         return `<span style="display:inline-block;min-width:70px;font-size:11px;color:${val === null ? '#ccc' : '#333'};">${colLabel}: ${val === null ? 'N/A' : val + '€'}</span>`;
       }).join(' ');
-      return `<div style="padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;"><strong>${escapeHtml(p.label)}</strong><br>${cells}</div>`;
+      const aspCells = `<span style="display:inline-block;min-width:80px;font-size:11px;color:#666;">Pts ASP: ${p.asp}</span><span style="display:inline-block;min-width:90px;font-size:11px;color:#666;">Pts ASP SoHo: ${p.aspSoho}</span>`;
+      return `<div style="padding:5px 0;border-bottom:1px solid #f5f5f5;font-size:12px;"><strong>${escapeHtml(p.label)}</strong><br>${cells}${aspCells}</div>`;
     }).join('');
     return `<div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:4px;">${cat.label}</div>${lines}</div>`;
   }).join('');
@@ -4676,7 +4680,7 @@ window.cancelImportCommissions = function () {
 window.confirmImportDefaultCommissions = async function () {
   try {
     await Promise.all(DEFAULT_COMMISSIONS.map(p =>
-      setDoc(doc(db, 'commissions', p.id), { label: p.label, cat: p.cat, rates: p.rates })
+      setDoc(doc(db, 'commissions', p.id), { label: p.label, cat: p.cat, rates: p.rates, asp: p.asp, aspSoho: p.aspSoho })
     ));
     cancelImportCommissions();
     showToast('✅ Barème importé.');
@@ -4697,17 +4701,24 @@ function loadCommissionsAdmin() {
     window._commissionsCache = Object.keys(stored);
     const defaultIds = new Set(DEFAULT_COMMISSIONS.map(d => d.id));
 
-    // Produits par défaut : montants Firestore si présents, sinon valeurs codées en dur
-    const defaults = DEFAULT_COMMISSIONS.map(def => ({
-      id: def.id, cat: def.cat, custom: false,
-      label: (stored[def.id] && stored[def.id].label) || def.label,
-      rates: (stored[def.id] && Array.isArray(stored[def.id].rates)) ? stored[def.id].rates : def.rates
-    }));
+    // Produits par défaut : montants/ASP Firestore si présents, sinon valeurs codées en dur
+    const defaults = DEFAULT_COMMISSIONS.map(def => {
+      const s = stored[def.id];
+      return {
+        id: def.id, cat: def.cat, custom: false,
+        label: (s && s.label) || def.label,
+        rates: (s && Array.isArray(s.rates)) ? s.rates : def.rates,
+        asp: (s && typeof s.asp === 'number') ? s.asp : def.asp,
+        aspSoho: (s && typeof s.aspSoho === 'number') ? s.aspSoho : def.aspSoho
+      };
+    });
     // Produits personnalisés : tout document Firestore qui n'est pas dans la liste par défaut
     const customs = Object.keys(stored).filter(id => !defaultIds.has(id)).map(id => ({
       id, cat: stored[id].cat || 'other', custom: true,
       label: stored[id].label || id,
-      rates: Array.isArray(stored[id].rates) ? stored[id].rates : [null, null, null, null, null]
+      rates: Array.isArray(stored[id].rates) ? stored[id].rates : [null, null, null, null, null],
+      asp: typeof stored[id].asp === 'number' ? stored[id].asp : 0,
+      aspSoho: typeof stored[id].aspSoho === 'number' ? stored[id].aspSoho : 0
     }));
     const merged = [...defaults, ...customs];
     window._commissionsMerged = merged;
@@ -4715,17 +4726,36 @@ function loadCommissionsAdmin() {
     container.innerHTML = COMMISSIONS_CATEGORIES.map(cat => {
       const items = merged.filter(p => p.cat === cat.key);
       const rows = items.map(p => {
+        // Chaque colonne € a désormais sa propre case à cocher (produits par défaut ET ajoutés) :
+        // décochée = N/A, cochée = montant éditable. Permet de réactiver/désactiver un bonus
+        // (ex: Convergence supprimée puis réintroduite sur un produit) sans intervention codée.
         const cells = COMMISSIONS_COLUMNS.map((colLabel, ci) => {
-          if (p.rates[ci] === null) {
-            return `<div style="flex:1;min-width:80px;"><label style="font-size:10px;color:#bbb;">${colLabel}</label><div style="padding:8px 0;color:#ccc;font-size:12px;text-align:center;border:1px solid #f0f0f0;border-radius:6px;background:#f8f8f8;">N/A</div></div>`;
-          }
-          return `<div style="flex:1;min-width:80px;"><label style="font-size:10px;">${colLabel}</label><input type="number" step="0.01" id="cm-${p.id}-r${ci}" value="${p.rates[ci]}"></div>`;
+          const checked = p.rates[ci] !== null;
+          const val = checked ? p.rates[ci] : 0;
+          return `
+            <div style="min-width:90px;">
+              <label style="font-size:10px;display:flex;align-items:center;gap:3px;">
+                <input type="checkbox" id="cm-${p.id}-c${ci}" ${checked ? 'checked' : ''} onchange="document.getElementById('cm-${p.id}-r${ci}').disabled = !this.checked;">
+                ${colLabel}
+              </label>
+              <input type="number" step="0.01" id="cm-${p.id}-r${ci}" value="${val}" ${checked ? '' : 'disabled'}>
+            </div>`;
         }).join('');
+        const aspCells = `
+          <div style="min-width:90px;">
+            <label style="font-size:10px;">Points ASP</label>
+            <input type="number" step="0.5" id="cm-${p.id}-asp" value="${p.asp}">
+          </div>
+          <div style="min-width:90px;">
+            <label style="font-size:10px;">ASP SoHo</label>
+            <input type="number" step="0.5" id="cm-${p.id}-aspsoho" value="${p.aspSoho}">
+          </div>`;
         return `
           <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
             <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${escapeHtml(p.label)} ${p.custom ? '<span style="color:#f97316;">(ajouté)</span>' : ''}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
               ${cells}
+              ${aspCells}
               ${p.custom ? `<button class="btn btn-danger" style="height:34px;" onclick="deleteCommissionProduit('${p.id}')">🗑</button>` : ''}
             </div>
           </div>
@@ -4756,8 +4786,16 @@ function loadCommissionsAdmin() {
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
               ${newColumns}
+              <div style="min-width:90px;">
+                <label style="font-size:10px;">Points ASP</label>
+                <input type="number" step="0.5" id="cm-new-${cat.key}-asp" placeholder="0" value="0">
+              </div>
+              <div style="min-width:90px;">
+                <label style="font-size:10px;">ASP SoHo</label>
+                <input type="number" step="0.5" id="cm-new-${cat.key}-aspsoho" placeholder="0" value="0">
+              </div>
             </div>
-            <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;">Coche uniquement les colonnes qui s'appliquent à ce produit ; les autres resteront "N/A".</div>
+            <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;">Coche uniquement les colonnes € qui s'appliquent à ce produit ; les autres resteront "N/A".</div>
             <button class="btn btn-secondary" onclick="addNewCommissionProduit('${cat.key}')">➕ Créer ce produit</button>
           </div>
         </div>
@@ -4771,15 +4809,43 @@ function loadCommissionsAdmin() {
 
 window.saveCommissionsCategorie = async function (categoryKey) {
   const items = (window._commissionsMerged || []).filter(p => p.cat === categoryKey);
+
+  // Détecte les colonnes actives qu'on est en train de décocher (perte de valeur) : demande
+  // confirmation avant tout enregistrement si au moins une case déjà active est décochée.
+  const losses = [];
+  const newRatesByProduct = {};
+  items.forEach(p => {
+    const rates = p.rates.map((r, ci) => {
+      const cb = document.getElementById(`cm-${p.id}-c${ci}`);
+      const checked = cb ? cb.checked : (r !== null);
+      if (!checked) {
+        if (r !== null) losses.push(`${p.label} — ${COMMISSIONS_COLUMNS[ci]}`);
+        return null;
+      }
+      const inp = document.getElementById(`cm-${p.id}-r${ci}`);
+      const v = inp ? parseFloat(inp.value) : NaN;
+      return isNaN(v) ? (r !== null ? r : 0) : v;
+    });
+    newRatesByProduct[p.id] = rates;
+  });
+
+  if (losses.length > 0) {
+    const msg = `Cette modification va désactiver ${losses.length} case(s) déjà utilisée(s) (la valeur repassera à "N/A") :\n\n${losses.join('\n')}\n\nConfirmer l'enregistrement ?`;
+    if (!confirm(msg)) return;
+  }
+
   try {
     await Promise.all(items.map(p => {
-      const rates = p.rates.map((r, ci) => {
-        if (r === null) return null;
-        const el = document.getElementById(`cm-${p.id}-r${ci}`);
-        const v = el ? parseFloat(el.value) : NaN;
-        return isNaN(v) ? r : v;
-      });
-      const data = { label: p.label, cat: p.cat, rates };
+      const aspEl = document.getElementById(`cm-${p.id}-asp`);
+      const aspSohoEl = document.getElementById(`cm-${p.id}-aspsoho`);
+      const asp = aspEl ? parseFloat(aspEl.value) : NaN;
+      const aspSoho = aspSohoEl ? parseFloat(aspSohoEl.value) : NaN;
+      const data = {
+        label: p.label, cat: p.cat,
+        rates: newRatesByProduct[p.id],
+        asp: isNaN(asp) ? (p.asp || 0) : asp,
+        aspSoho: isNaN(aspSoho) ? (p.aspSoho || 0) : aspSoho
+      };
       if (p.custom) data.custom = true;
       return setDoc(doc(db, 'commissions', p.id), data, { merge: true });
     }));
@@ -4806,11 +4872,20 @@ window.addNewCommissionProduit = async function (categoryKey) {
   }
   if (rates.every(r => r === null)) { alert('Coche au moins une colonne applicable.'); return; }
 
+  const aspEl = document.getElementById(`cm-new-${categoryKey}-asp`);
+  const aspSohoEl = document.getElementById(`cm-new-${categoryKey}-aspsoho`);
+  const asp = aspEl ? parseFloat(aspEl.value) : NaN;
+  const aspSoho = aspSohoEl ? parseFloat(aspSohoEl.value) : NaN;
+
   const slug = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const id = `custom_${categoryKey}_${slug}_${Date.now().toString(36)}`;
 
   try {
-    await setDoc(doc(db, 'commissions', id), { label, cat: categoryKey, rates, custom: true });
+    await setDoc(doc(db, 'commissions', id), {
+      label, cat: categoryKey, rates, custom: true,
+      asp: isNaN(asp) ? 0 : asp,
+      aspSoho: isNaN(aspSoho) ? 0 : aspSoho
+    });
     showToast('✅ Produit créé.');
   } catch (err) {
     alert("Erreur lors de la création: " + err.message);

@@ -539,8 +539,9 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // Charge le barème depuis Firestore (collection "commissions", éditable dans l'admin, partagée
-// avec wp_rem.html) et remplace les produits par défaut. En cas d'échec (offline, collection
-// vide), le barème codé en dur dans DEFAULT_PRODUCTS reste utilisé — aucune interruption.
+// avec wp_rem.html) et remplace les produits par défaut. Montants € ET points ASP/ASP SoHo sont
+// tous surchargeables depuis l'admin. En cas d'échec (offline, collection vide), le barème codé
+// en dur dans DEFAULT_PRODUCTS reste utilisé — aucune interruption.
 window.loadCommissionsBareme = async function () {
   try {
     const snap = await getDocs(collection(db, 'commissions'));
@@ -548,14 +549,17 @@ window.loadCommissionsBareme = async function () {
     snap.forEach(d => { stored[d.id] = d.data(); });
     const defaultIds = new Set(window.DEFAULT_PRODUCTS.map(p => p.id));
 
-    const merged = window.DEFAULT_PRODUCTS.map(def => ({
-      id: def.id,
-      cat: def.cat,
-      label: (stored[def.id] && stored[def.id].label) || def.label,
-      rates: (stored[def.id] && Array.isArray(stored[def.id].rates)) ? stored[def.id].rates : def.rates,
-      asp: def.asp,
-      aspSoho: def.aspSoho
-    }));
+    const merged = window.DEFAULT_PRODUCTS.map(def => {
+      const s = stored[def.id];
+      return {
+        id: def.id,
+        cat: def.cat,
+        label: (s && s.label) || def.label,
+        rates: (s && Array.isArray(s.rates)) ? s.rates : def.rates,
+        asp: (s && typeof s.asp === 'number') ? s.asp : def.asp,
+        aspSoho: (s && typeof s.aspSoho === 'number') ? s.aspSoho : def.aspSoho
+      };
+    });
     Object.keys(stored).filter(id => !defaultIds.has(id)).forEach(id => {
       const s = stored[id];
       merged.push({
@@ -611,9 +615,9 @@ window.refreshAspTotal = async function () {
 
 <script>
 // Barème par défaut (fallback hors-ligne / avant chargement Firestore) : rates = [BC, SC+, Convergence,
-// Portabilité, SoHo-Indép], null = bonus non applicable à ce produit. Les montants € sont surchargeables
-// depuis l'admin (collection Firestore "commissions", partagée avec wp_rem.html) — les points ASP restent
-// gérés en dur ici. window.DEFAULT_PRODUCTS est exposé pour le module Firebase (loadCommissionsBareme).
+// Portabilité, SoHo-Indép], null = bonus non applicable à ce produit. Montants € ET points ASP/ASP SoHo
+// sont surchargeables depuis l'admin (collection Firestore "commissions", partagée avec wp_rem.html).
+// window.DEFAULT_PRODUCTS est exposé pour le module Firebase (loadCommissionsBareme).
 const DEFAULT_PRODUCTS = [
   { id: "flybox",    label: "📡 Home Flybox",        cat: "fixe",   rates: [25,  30,   null, null, null], asp: 1, aspSoho: 0.5 },
   { id: "internet",  label: "🌐 Internet",            cat: "fixe",   rates: [15,  20,   15,   12,   null], asp: 1, aspSoho: 0.5 },

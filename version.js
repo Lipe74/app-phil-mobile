@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "11.9";
+  scope.APP_VERSION = "12.0";
 })();
