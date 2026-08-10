@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.6</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.7</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -411,13 +411,32 @@
 
         <div class="admin-panel" id="panel-promo-create">
           <div class="section-title">➕ Créer une promotion Orange</div>
+
+          <div class="card" style="margin-bottom:14px;background:#fff3e0;border-color:#ff9800;">
+            <div class="section-title" style="font-size:13px;margin-bottom:8px;">🟠 Période des "Offres en cours" (temporaires)</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Une seule période pour toutes les promos temporaires — s'affiche une seule fois en haut de la section sur le simulateur, au lieu d'être répétée sur chaque promo.
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+              <div style="flex:1;min-width:140px;">
+                <label>Date de début</label>
+                <input type="date" id="promo-global-date-debut">
+              </div>
+              <div style="flex:1;min-width:140px;">
+                <label>Date de fin</label>
+                <input type="date" id="promo-global-date-fin">
+              </div>
+              <button class="btn btn-primary" onclick="savePromoGlobalDate()">💾 Enregistrer la période</button>
+            </div>
+          </div>
+
           <div class="card">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
             </div>
             <div class="form-row">
               <label>Catégorie</label>
-              <select id="promo-category">
+              <select id="promo-category" onchange="onPromoCategoryChange()">
                 <option value="temporaire">🟠 Temporaire</option>
                 <option value="permanente">✅ Permanente</option>
               </select>
@@ -500,18 +519,21 @@
                 <option value="">À vie (pas de durée)</option>
               </select>
             </div>
-            <div class="form-row" style="display:flex;gap:10px;">
-              <div style="flex:1;">
+            <div class="form-row" id="promo-dates-permanente-row" style="display:none;gap:10px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:140px;">
                 <label>Date de début (optionnel)</label>
                 <input type="date" id="promo-date-debut">
               </div>
-              <div style="flex:1;">
+              <div style="flex:1;min-width:140px;">
                 <label>Date de fin (optionnel)</label>
                 <input type="date" id="promo-date-fin">
               </div>
             </div>
-            <div style="font-size:11px;color:#888;margin:-6px 0 10px;">
+            <div id="promo-dates-permanente-note" style="display:none;font-size:11px;color:#888;margin:-6px 0 10px;">
               📅 Si renseignées, les dates s'affichent automatiquement dans le simulateur — inutile de les écrire dans la description. La promo se masque toute seule après la date de fin.
+            </div>
+            <div id="promo-dates-temporaire-note" style="font-size:11px;color:#888;margin:-6px 0 10px;">
+              📅 Les promos temporaires utilisent la période commune définie en haut de page ("Offres en cours") — rien à renseigner ici.
             </div>
             <div class="form-row" id="promo-condition-row" style="display:none;">
               <div class="checkbox-row">
@@ -1362,6 +1384,7 @@ onAuthStateChanged(auth, async (user) => {
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
   loadOrangeBannersAdmin();
+  loadPromoGlobalDate();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -2769,6 +2792,13 @@ function derivePromoFamily(p) {
   return 'divers';
 }
 
+window.onPromoCategoryChange = function () {
+  const isTemp = document.getElementById('promo-category').value === 'temporaire';
+  document.getElementById('promo-dates-permanente-row').style.display = isTemp ? 'none' : 'flex';
+  document.getElementById('promo-dates-permanente-note').style.display = isTemp ? 'none' : 'block';
+  document.getElementById('promo-dates-temporaire-note').style.display = isTemp ? 'block' : 'none';
+};
+
 window.onPromoTypeChange = function () {
   const type = document.getElementById('promo-type').value;
   const isEditing = !!currentEditPromoId;
@@ -2871,6 +2901,7 @@ window.editPromo = function (docId) {
   document.getElementById('promo-condition').style.display = p.condition ? 'block' : 'none';
   document.getElementById('promo-date-debut').value = p.dateDebut || '';
   document.getElementById('promo-date-fin').value = p.dateFin || '';
+  onPromoCategoryChange();
   onPromoTypeChange();
   document.getElementById('promo-submit-btn').textContent = '💾 Enregistrer les modifications';
   document.getElementById('promo-cancel-btn').style.display = 'inline-block';
@@ -2913,8 +2944,8 @@ window.addOrUpdatePromo = async function () {
   const condition = (type !== 'unique' && document.getElementById('promo-hascondition').checked)
     ? document.getElementById('promo-condition').value.trim()
     : '';
-  const dateDebut = document.getElementById('promo-date-debut').value || null;
-  const dateFin = document.getElementById('promo-date-fin').value || null;
+  const dateDebut = category === 'temporaire' ? (window._promoGlobalDate?.dateDebut || null) : (document.getElementById('promo-date-debut').value || null);
+  const dateFin = category === 'temporaire' ? (window._promoGlobalDate?.dateFin || null) : (document.getElementById('promo-date-fin').value || null);
 
   if (!price) {
     alert('Merci de renseigner le montant de la remise.');
@@ -4672,6 +4703,38 @@ window.saveOrangeBanners = async function () {
   try {
     await setDoc(doc(db, 'settings', 'promoBanners'), data, { merge: true });
     showToast('✅ Bandeaux enregistrés.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+  }
+};
+
+// ===== PÉRIODE GLOBALE DES OFFRES EN COURS (promos temporaires, settings/promoGlobalDate) =====
+window._promoGlobalDate = { dateDebut: null, dateFin: null };
+
+async function loadPromoGlobalDate() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'promoGlobalDate'));
+    const d = snap.exists() ? snap.data() : {};
+    window._promoGlobalDate = { dateDebut: d.dateDebut || null, dateFin: d.dateFin || null };
+    document.getElementById('promo-global-date-debut').value = d.dateDebut || '';
+    document.getElementById('promo-global-date-fin').value = d.dateFin || '';
+  } catch (e) {
+    console.log('Chargement période globale promos impossible:', e.message);
+  }
+}
+
+window.savePromoGlobalDate = async function () {
+  const dateDebut = document.getElementById('promo-global-date-debut').value || null;
+  const dateFin = document.getElementById('promo-global-date-fin').value || null;
+  try {
+    await setDoc(doc(db, 'settings', 'promoGlobalDate'), { dateDebut, dateFin });
+    window._promoGlobalDate = { dateDebut, dateFin };
+
+    // Applique aussi immédiatement à toutes les promos temporaires déjà créées
+    const tempPromos = (promosCache || []).filter(p => (p.category || 'temporaire') === 'temporaire');
+    await Promise.all(tempPromos.map(p => updateDoc(doc(db, 'promosOrange', p.docId), { dateDebut, dateFin })));
+
+    showToast(`✅ Période enregistrée et appliquée à ${tempPromos.length} promo(s) temporaire(s).`);
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
   }
