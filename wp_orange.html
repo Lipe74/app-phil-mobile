@@ -163,19 +163,25 @@
       📌 FRAIS UNIQUES
     </div>
     
-<div style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;">
-ℹ️ Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.
+<div id="banner-frais-uniques" style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;">
+<span id="banner-frais-uniques-icon">ℹ️</span> <span id="banner-frais-uniques-text">Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.</span>
 </div>
 <div id="options-unique-rows"></div>
 
     <div style="margin-top:15px;margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
       📅 OPTIONS MENSUELLES
     </div>
+    <div id="banner-options-mensuelles" style="margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;">
+<span id="banner-options-mensuelles-icon">📅</span> <span id="banner-options-mensuelles-text">Options additionnelles pouvant être ajoutées à votre abonnement Internet.</span>
+</div>
     <div id="options-monthly-rows"></div>
   </div>
 
   <div class="section">
     <div class="section-title"><i class="ti ti-heart" aria-hidden="true"></i> Remises Love — automatiques</div>
+    <div id="banner-remises-love" style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;font-weight:600;">
+<span id="banner-remises-love-icon">🧡</span> <span id="banner-remises-love-text">Les remises Love sont calculées <strong>automatiquement</strong> selon les produits de votre panier (Internet + Mobile).</span>
+</div>
     <div class="love-box" id="love-detail">
       <div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>
     </div>
@@ -183,8 +189,8 @@
 
   <div class="section">
     <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> PROMOTIONS PERMANENTES</div>
-    <div style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;">
-      ✅ Promotions permanentes et réductions uniques.
+    <div id="banner-promos-permanentes" style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;">
+      <span id="banner-promos-permanentes-icon">✅</span> <span id="banner-promos-permanentes-text">Promotions permanentes et réductions uniques.</span>
     </div>
     <div id="promos-permanent-rows"></div>
   </div>
@@ -193,13 +199,13 @@
     <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 PROMOTIONS TEMPORAIRES</div>
 
     <div id="promo-banner-important" style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;">
-      📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.
-    </div>
+<span id="promo-banner-important-icon">📢</span> <span id="promo-banner-important-text">Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.</span>
+</div>
 
     <div id="promos-rows"></div>
 
     <div id="promo-banner-attention" style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
-      ⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.
+      <span id="promo-banner-attention-icon">⚠️</span> <span id="promo-banner-attention-text">Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.</span>
     </div>
   </div>
 
@@ -536,17 +542,61 @@ async function loadProductsFromFirestore() {
   }
 }
 
-// --- Bandeaux d'info promotions éditables depuis l'admin (settings/promoBanners) ---
-// Repli sur le texte codé en dur dans le HTML si rien n'est encore personnalisé.
+// --- Bandeaux d'info éditables depuis l'admin (settings/promoBanners) ---
+// Repli sur le texte/icône/couleur codés en dur dans le HTML si rien n'est encore personnalisé.
+// Un seul doc Firestore, un champ par bandeau : {key}, {key}Icon, {key}Color.
+const ORANGE_BANNER_KEYS = ['important', 'attention', 'fraisUniques', 'optionsMensuelles', 'remisesLove', 'promosPermanentes'];
+const ORANGE_BANNER_ELEMENT_IDS = {
+  important: 'promo-banner-important',
+  attention: 'promo-banner-attention',
+  fraisUniques: 'banner-frais-uniques',
+  optionsMensuelles: 'banner-options-mensuelles',
+  remisesLove: 'banner-remises-love',
+  promosPermanentes: 'banner-promos-permanentes'
+};
+
+function hexToRgbOrange(hex) {
+  hex = (hex || '').replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  const num = parseInt(hex, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+function mixColorOrange(hex, target, amount) {
+  const [r, g, b] = hexToRgbOrange(hex);
+  const [tr, tg, tb] = target;
+  const mr = Math.round(r + (tr - r) * amount);
+  const mg = Math.round(g + (tg - g) * amount);
+  const mb = Math.round(b + (tb - b) * amount);
+  return `rgb(${mr},${mg},${mb})`;
+}
+function applyOrangeBannerColor(elId, hex) {
+  if (!hex) return;
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.background = mixColorOrange(hex, [255, 255, 255], 0.90);
+  el.style.borderColor = hex;
+  el.style.color = mixColorOrange(hex, [0, 0, 0], 0.35);
+}
+
 async function loadPromoBanners() {
   try {
     const snap = await getDoc(doc(db, 'settings', 'promoBanners'));
     if (!snap.exists()) return;
     const d = snap.data();
-    if (d.important) document.getElementById('promo-banner-important').innerHTML = d.important;
-    if (d.attention) document.getElementById('promo-banner-attention').innerHTML = d.attention;
+    ORANGE_BANNER_KEYS.forEach(key => {
+      const elId = ORANGE_BANNER_ELEMENT_IDS[key];
+      if (d[key]) {
+        const textEl = document.getElementById(elId + '-text');
+        if (textEl) textEl.innerHTML = d[key];
+      }
+      if (d[key + 'Icon']) {
+        const iconEl = document.getElementById(elId + '-icon');
+        if (iconEl) iconEl.textContent = d[key + 'Icon'];
+      }
+      if (d[key + 'Color']) applyOrangeBannerColor(elId, d[key + 'Color']);
+    });
   } catch (err) {
-    console.log('Chargement bandeaux promos impossible, texte par défaut conservé:', err.message);
+    console.log('Chargement bandeaux impossible, valeurs par défaut conservées:', err.message);
   }
 }
 

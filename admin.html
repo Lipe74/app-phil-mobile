@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.2</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.3</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -228,6 +228,7 @@
             <button onclick="showAdminPanel('panel-promo-list', this)" class="menu-item" id="menu-promo-list">📋 Promotions existantes</button>
           </div>
           <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
+          <button onclick="showAdminPanel('panel-orange-banners', this)" class="menu-item" id="menu-orange-banners">🎨 Textes &amp; couleurs</button>
         </div>
 
       </div>
@@ -530,44 +531,6 @@
         </div>
 
         <div class="admin-panel" id="panel-promo-list">
-          <div class="card" style="margin-bottom:16px;">
-            <div class="section-title" style="font-size:14px;margin-bottom:10px;">📢 Textes d'info affichés sur le simulateur</div>
-
-            <div class="form-row">
-              <label>Bandeau bleu (haut de la section promotions)</label>
-              <div style="display:flex;gap:3px;margin:3px 0 4px;flex-wrap:wrap;">
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')" title="Aligner à gauche" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">⬅</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')" title="Centrer" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">↔</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')" title="Aligner à droite" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">➡</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')" title="Liste à puces" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">•</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')" title="Liste numérotée" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">1.</button>
-              </div>
-              <div contenteditable="true" id="promo-banner-important-input" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
-            </div>
-
-            <div class="form-row" style="margin-top:14px;">
-              <label>Bandeau jaune (bas de la section promotions)</label>
-              <div style="display:flex;gap:3px;margin:3px 0 4px;flex-wrap:wrap;">
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')" title="Gras" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><b>B</b></button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')" title="Italique" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><i>I</i></button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')" title="Souligné" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;"><u>U</u></button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')" title="Aligner à gauche" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">⬅</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')" title="Centrer" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">↔</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')" title="Aligner à droite" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">➡</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')" title="Justifié" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">≡</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')" title="Liste à puces" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">•</button>
-                <button type="button" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')" title="Liste numérotée" style="width:26px;height:24px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;">1.</button>
-              </div>
-              <div contenteditable="true" id="promo-banner-attention-input" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;"></div>
-            </div>
-
-            <button class="btn btn-primary" style="margin-top:10px;" onclick="savePromoBanners()">💾 Enregistrer les textes</button>
-          </div>
-
           <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>📋 Promotions existantes</span>
             <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="deleteAllPromos()">🗑 Tout supprimer</button>
@@ -587,6 +550,14 @@
             Modifie ici les noms et prix affichés dans le simulateur Orange (les identifiants techniques ne sont jamais touchés, aucun risque pour les calculs de commission). Si tu n'as encore rien importé, clique d'abord sur "Importer les produits actuels" pour pré-remplir avec les valeurs déjà en place — tu n'as ensuite qu'à ajuster ce qui change.
           </div>
           <div id="produits-orange-content"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-orange-banners">
+          <div class="section-title">🎨 Textes &amp; couleurs du simulateur Orange</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Icône, couleur et texte de chaque bandeau d'info du simulateur. La couleur choisie colore la bordure/l'icône/le texte, avec un fond clair calculé automatiquement.
+          </div>
+          <div id="orange-banners-content"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-faq">
@@ -1387,7 +1358,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProduitsOrangeAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
-  loadPromoBannersAdmin();
+  loadOrangeBannersAdmin();
   checkExpiredConsultants();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
@@ -4605,26 +4576,66 @@ window.saveVideoVente = async function () {
   }
 };
 
-// ===== TEXTES D'INFO PROMOTIONS (bandeaux sur wp_orange.html, settings/promoBanners) =====
-async function loadPromoBannersAdmin() {
+// ===== TEXTES & COULEURS DES BANDEAUX (wp_orange.html, settings/promoBanners) =====
+// Un seul doc Firestore, un champ par bandeau : {key} (texte HTML), {key}Icon, {key}Color.
+const ORANGE_BANNERS_DEFS = [
+  { key: 'important', label: 'Bandeau bleu — Promotions temporaires (haut)', icon: '📢', color: '#ff9800',
+    text: 'Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.' },
+  { key: 'attention', label: 'Bandeau jaune — Promotions temporaires (bas, ex: domiciliation)', icon: '⚠️', color: '#ffc107',
+    text: 'Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.' },
+  { key: 'fraisUniques', label: 'Bandeau — Frais uniques (activation Orange)', icon: 'ℹ️', color: '#ff8c42',
+    text: "Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée." },
+  { key: 'optionsMensuelles', label: 'Bandeau — Options mensuelles', icon: '📅', color: '#ff8c42',
+    text: 'Options additionnelles pouvant être ajoutées à votre abonnement Internet.' },
+  { key: 'remisesLove', label: 'Bandeau — Remises Love (calcul automatique)', icon: '🧡', color: '#ff6600',
+    text: 'Les remises Love sont calculées <strong>automatiquement</strong> selon les produits de votre panier (Internet + Mobile).' },
+  { key: 'promosPermanentes', label: 'Bandeau — Promotions permanentes', icon: '✅', color: '#4caf50',
+    text: 'Promotions permanentes et réductions uniques.' }
+];
+
+function renderOrangeBannersAdmin(stored) {
+  const container = document.getElementById('orange-banners-content');
+  if (!container) return;
+  container.innerHTML = ORANGE_BANNERS_DEFS.map(b => `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="section-title" style="font-size:13px;margin-bottom:10px;">${b.label}</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;">
+        <div style="width:70px;">
+          <label style="font-size:11px;">Icône</label>
+          <input type="text" id="ob-${b.key}-icon" value="${escapeHtml(stored[b.key + 'Icon'] || b.icon)}" style="text-align:center;font-size:16px;">
+        </div>
+        <div style="width:70px;">
+          <label style="font-size:11px;">Couleur</label>
+          <input type="color" id="ob-${b.key}-color" value="${stored[b.key + 'Color'] || b.color}" style="width:100%;height:36px;padding:2px;cursor:pointer;">
+        </div>
+      </div>
+      <label style="font-size:11px;">Texte</label>
+      ${richToolbarHtml()}
+      <div contenteditable="true" id="ob-${b.key}-text" style="min-height:38px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;">${stored[b.key] || b.text}</div>
+    </div>
+  `).join('') + '<button class="btn btn-primary" onclick="saveOrangeBanners()">💾 Enregistrer tous les bandeaux</button>';
+}
+
+async function loadOrangeBannersAdmin() {
   try {
     const snap = await getDoc(doc(db, 'settings', 'promoBanners'));
-    const d = snap.exists() ? snap.data() : {};
-    document.getElementById('promo-banner-important-input').innerHTML = d.important ||
-      '📢 Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.';
-    document.getElementById('promo-banner-attention-input').innerHTML = d.attention ||
-      '⚠️ Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.';
+    renderOrangeBannersAdmin(snap.exists() ? snap.data() : {});
   } catch (e) {
-    console.log('Chargement bandeaux promos impossible:', e.message);
+    console.log('Chargement bandeaux impossible:', e.message);
+    renderOrangeBannersAdmin({});
   }
 }
 
-window.savePromoBanners = async function () {
-  const important = document.getElementById('promo-banner-important-input').innerHTML.trim();
-  const attention = document.getElementById('promo-banner-attention-input').innerHTML.trim();
+window.saveOrangeBanners = async function () {
+  const data = {};
+  ORANGE_BANNERS_DEFS.forEach(b => {
+    data[b.key] = document.getElementById(`ob-${b.key}-text`).innerHTML.trim();
+    data[b.key + 'Icon'] = document.getElementById(`ob-${b.key}-icon`).value.trim();
+    data[b.key + 'Color'] = document.getElementById(`ob-${b.key}-color`).value;
+  });
   try {
-    await setDoc(doc(db, 'settings', 'promoBanners'), { important, attention });
-    showToast('✅ Textes enregistrés.');
+    await setDoc(doc(db, 'settings', 'promoBanners'), data, { merge: true });
+    showToast('✅ Bandeaux enregistrés.');
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
   }
