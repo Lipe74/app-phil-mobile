@@ -528,7 +528,7 @@ async function loadProductsFromFirestore() {
         if (d.price !== undefined) target.price = Number(d.price);
       } else {
         // Nouveau produit ajouté depuis l'admin : ajout à la liste + initialisation de sa quantité
-        target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9 };
+        target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true };
         if (d.category === 'internet') target.countsAsInternet = d.countsAsInternet !== false;
         arr.push(target);
         window.qtyMap[id] = 0;
@@ -537,7 +537,7 @@ async function loadProductsFromFirestore() {
 
     Object.entries(window.productList).forEach(([key, items]) => {
       const el = document.getElementById(key + '-rows');
-      if (el) { el.innerHTML = ''; window.buildQtyRows(key + '-rows', items); }
+      if (el) { window.buildGroupedQtyRows(key + '-rows', items); }
     });
     const uniqueEl = document.getElementById('options-unique-rows');
     const monthlyEl = document.getElementById('options-monthly-rows');
@@ -899,7 +899,7 @@ function setTVAC(tvac) {
   
 
 
-Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
+Object.entries(productList).forEach(([key, items]) => buildGroupedQtyRows(key+'-rows', items));
   buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
 buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
   buildToggleRows('promos-permanent-rows', promosPermanent);
@@ -1210,23 +1210,42 @@ function resetAll() {
   render();
 }
 
+function buildProductRow(p) {
+  const max = p.max || 1;
+  const row = document.createElement('div');
+  row.className = 'product-row';
+  row.dataset.id = p.id;
+  row.innerHTML = `
+    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}</div>
+    <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
+      <span class="qty-val" id="qty-${p.id}">0</span>
+      <button class="qty-btn" onclick="change('${p.id}',1,${max})" aria-label="Plus">+</button>
+    </div>`;
+  return row;
+}
+
 function buildQtyRows(containerId, items) {
   const c = document.getElementById(containerId);
-  items.forEach(p => {
-    const max = p.max || 1;
-    const row = document.createElement('div');
-    row.className = 'product-row';
-    row.dataset.id = p.id;
-    row.innerHTML = `
-      <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}</div>
-      <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
-      <div class="qty-ctrl">
-        <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
-        <span class="qty-val" id="qty-${p.id}">0</span>
-        <button class="qty-btn" onclick="change('${p.id}',1,${max})" aria-label="Plus">+</button>
-      </div>`;
-    c.appendChild(row);
-  });
+  items.forEach(p => c.appendChild(buildProductRow(p)));
+}
+
+// Sépare les produits "de base" des produits ajoutés depuis l'admin ("custom"), avec une ligne
+// de séparation "➕ Options" — évite de tout mélanger quand plusieurs options sont ajoutées (ex: TV).
+function buildGroupedQtyRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  const base = items.filter(p => !p.custom);
+  const options = items.filter(p => p.custom);
+  base.forEach(p => c.appendChild(buildProductRow(p)));
+  if (options.length > 0) {
+    const sep = document.createElement('div');
+    sep.style.cssText = 'border-top:2px solid #f0f0f0;margin:10px 0 8px;padding-top:10px;font-size:12px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.03em;';
+    sep.textContent = '➕ Options';
+    c.appendChild(sep);
+    options.forEach(p => c.appendChild(buildProductRow(p)));
+  }
 }
 
 function buildToggleRows(containerId, items) {
@@ -1285,7 +1304,7 @@ function buildGroupedPromoRows(containerId, items) {
   });
 }
 
-Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
+Object.entries(productList).forEach(([key, items]) => buildGroupedQtyRows(key+'-rows', items));
 buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
 buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
 buildToggleRows('promos-permanent-rows', promosPermanent);
@@ -1302,6 +1321,7 @@ window.renderOrangeApp = render;
 window.productList = productList;
 window.options = options;
 window.buildQtyRows = buildQtyRows;
+window.buildGroupedQtyRows = buildGroupedQtyRows;
 window.qtyMap = qtyMap;
 window.escapeHtmlOrange = function(str) {
   const div = document.createElement('div');
