@@ -105,7 +105,7 @@
 
     <div class="header-text" style="flex:1;">
       <div class="header-title">
-        Simulateur Orange <span style="font-size:14px;opacity:0.8;">TEST</span>
+        Simulateur Orange TEST
       </div>
 
      <div class="header-sub" style="font-size:16px;margin-top:4px;">
@@ -351,7 +351,9 @@ import {
   doc,
   getDoc,
   collection,
-  getDocs
+  getDocs,
+  query,
+  where
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -399,7 +401,7 @@ window.consultantInfo = {
   }
 
   const params = new URLSearchParams(window.location.search);
-  const consultantId = params.get('consultantId');
+  let consultantId = params.get('consultantId');
   const consultantName = params.get('consultantName');
   const consultantEmail = params.get('consultantEmail');
 
@@ -408,21 +410,43 @@ window.consultantInfo = {
     window.consultantInfo.name = consultantName || window.consultantInfo.name;
     window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
     window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+  }
 
-    // Attendre que Firebase confirme une éventuelle session déjà ouverte (même domaine que le hub) avant de lire Firestore
-    await new Promise(resolve => {
-      const unsubscribe = onAuthStateChanged(auth, () => {
-        unsubscribe();
-        resolve();
-      });
+  // Attendre que Firebase confirme une éventuelle session déjà ouverte avant de lire Firestore
+  const authUser = await new Promise(resolve => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      resolve(user);
     });
+  });
 
-    // Récupérer le téléphone + la photo de profil (Firebase Storage) depuis Firestore (pas transmis dans l'URL)
+  if (!consultantId && authUser && authUser.email) {
+    // Pas de paramètre d'URL (page ouverte directement, pas via le hub) : on retrouve
+    // le consultant via son email de connexion Firebase (même logique que wp_comparatif.html).
+    try {
+      const q = query(collection(db, 'consultants'), where('email', '==', authUser.email));
+      const qs = await getDocs(q);
+      if (!qs.empty) {
+        const d0 = qs.docs[0];
+        consultantId = d0.id;
+        window.consultantInfo.id = consultantId;
+        window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+      }
+    } catch(e) {
+      console.log('Recherche du consultant par email impossible:', e.message);
+    }
+  }
+
+  // Récupérer le téléphone + la photo de profil (Firebase Storage) depuis Firestore
+  if (consultantId) {
     try {
       const snap = await getDoc(doc(db, 'consultants', consultantId));
       if (snap.exists()) {
-        if (snap.data().phone) window.consultantInfo.phone = snap.data().phone;
-        if (snap.data().photoURL) window.consultantInfo.logoUrl = snap.data().photoURL;
+        const d = snap.data();
+        if (d.phone) window.consultantInfo.phone = d.phone;
+        if (d.photoURL) window.consultantInfo.logoUrl = d.photoURL;
+        if (d.fullName || d.name) window.consultantInfo.name = consultantName || d.fullName || d.name;
+        if (!consultantEmail && d.emailOffres) window.consultantInfo.email = d.emailOffres;
       }
     } catch(e) {
       console.log('Lecture téléphone/photo consultant impossible:', e.message);
@@ -790,18 +814,61 @@ options.forEach(p=>{
  if(q>0) produits.push(pmOffreLigne(p,q));
 });
 
-// Promotions permanentes vs temporaires affichées séparément, + remises Love automatiques
-let promosPermanentTxt=[];
-promosPermanent.forEach(p=>{
- if(togMap[p.id]) promosPermanentTxt.push(p.name.replace(/<[^>]*>/g,'')+' : '+(p.sub||''));
-});
-let promosTempTxt=[];
-promos.forEach(p=>{
- if(togMap[p.id]) promosTempTxt.push(p.name.replace(/<[^>]*>/g,'')+' : '+(p.sub||''));
-});
+// Cartes de promotions (permanentes + temporaires réunies, triées par type de badge) + remises Love automatiques
+// Le montant par carte reprend exactement la logique de calcPromos() (à garder synchronisé si celle-ci évolue).
+function pmPromoMontant(p){
+ if(p.isUnique) return p.price;
+ const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
+ if(p.mobileId==='_internet') return p.price*Math.max(1,inetCount);
+ if(p.perAbo && p.mobileId) return p.price*Math.max(1,qtyMap[p.mobileId]||0);
+ return p.price;
+}
+function pmPromoBadgeOrder(p){
+ if(p.isUnique) return 0;
+ if(p.duration===12) return 1;
+ if(p.duration===6) return 2;
+ return 3; // à vie
+}
+const r=isTVAC?1:1/TVA;
+let promoCards=[...promosPermanent,...promos]
+ .filter(p=>togMap[p.id])
+ .sort((a,b)=>pmPromoBadgeOrder(a)-pmPromoBadgeOrder(b))
+ .map(p=>{
+   const nom=p.name.replace(/<[^>]*>/g,'');
+   const montant=pmPromoMontant(p)*r;
+   const montantTxt='- '+fmt(montant)+(p.isUnique?'':'/mois');
+   return `<div style="border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+<div style="font-size:13px;font-weight:700;">${nom}</div>
+<div style="font-size:13px;font-weight:700;color:#2e7d32;white-space:nowrap;">${montantTxt}</div>
+</div>
+<div style="font-size:12px;margin-top:4px;">${p.sub||''}</div>
+</div>`;
+ });
 const loveResult=calcLoveLines();
 const loveTxt=loveResult.lines.filter(l=>l.active).map(l=>l.text+' — '+fmt(l.disc));
-const hasAnyPromo=promosPermanentTxt.length||promosTempTxt.length||loveTxt.length;
+const hasAnyPromo=promoCards.length||loveTxt.length;
+
+// Total des économies mensuelles + uniques (pour l'en-tête du bloc promotions)
+const promosCalc=calcPromos();
+const economieMensuelle=promosCalc.mensuel*r;
+const economieUnique=promosCalc.unique*r;
+
+// Prix catalogue (sans aucune promotion ni remise Love) — pour comparaison avec le prix promo
+const prodCatalog=calcProducts(), optsCatalog=calcOptionsBase();
+const homeFeeCatalog=(hasInternet() && totalMobileAbo()===0)?4:0;
+const catalogPrice=(prodCatalog+optsCatalog+homeFeeCatalog)*r;
+
+// Promos qui expirent à 6 mois / 12 mois (pour annoter les paliers de tarification)
+function pmPromoNamesByDuration(dur){
+ return [...promosPermanent,...promos]
+   .filter(p=>togMap[p.id] && !p.isUnique && p.duration===dur)
+   .map(p=>p.name.replace(/<[^>]*>/g,''));
+}
+const namesFin6=pmPromoNamesByDuration(6);
+const namesFin12=pmPromoNamesByDuration(12);
+const prom6Txt=promosCalc.promo6?fmt(promosCalc.promo6*r):null;
+const prom12Txt=promosCalc.promo12?fmt(promosCalc.promo12*r):null;
 
 const w=window.open('','_blank');
 w.document.write(`
@@ -836,19 +903,13 @@ ${produits.length?produits.map(p=>`<div style="font-size:13px;line-height:1.5;">
 
 <div class="box">
 <h3>🎁 Promotions activées</h3>
-${!hasAnyPromo?'<div style="font-size:13px;">Aucune promotion active</div>':''}
+${!hasAnyPromo?'<div style="font-size:13px;">Aucune promotion active</div>':`
+<div style="background:#e8f5e9;border:1px solid #66bb6a;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#2e7d32;">
+💶 Total économies : - ${fmt(economieMensuelle)}/mois${economieUnique?' + '+fmt(economieUnique)+' (frais uniques offerts)':''}
+</div>`}
 
-${promosPermanentTxt.length?`
-<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">🔒 Promotions permanentes</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:12px;">
-${promosPermanentTxt.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join('')}
-</div>` : ''}
-
-${promosTempTxt.length?`
-<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">⏳ Promotions temporaires</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-bottom:12px;">
-${promosTempTxt.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join('')}
-</div>` : ''}
+${promoCards.length?`
+<div style="margin-bottom:12px;">${promoCards.join('')}</div>` : ''}
 
 ${loveTxt.length?`
 <div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">🧡 Remises Love — automatiques</div>
@@ -860,9 +921,10 @@ ${loveTxt.map(t=>`<div style="font-size:13px;line-height:1.5;">${t}</div>`).join
 
 <div class="box">
 <h3>💰 Tarification</h3>
-🟢 Aujourd'hui : ${document.getElementById('s-now').textContent}<br><br>
-🟠 Après 6 mois : ${document.getElementById('s-6months').textContent}<br><br>
-🔴 Après 12 mois : ${document.getElementById('s-12months').textContent}<br><br>
+Prix catalogue (sans promotions) : ${fmt(catalogPrice)}/mois<br><br>
+🟢 Aujourd'hui : <b>${document.getElementById('s-now').textContent}</b><br>
+🟠 Après 6 mois : <b>${document.getElementById('s-6months').textContent}</b>${namesFin6.length?`<br><span style="font-size:12px;color:#856404;">↳ fin de ${namesFin6.join(', ')} (+ ${prom6Txt}/mois)</span>`:''}<br><br>
+🔴 Après 12 mois : <b>${document.getElementById('s-12months').textContent}</b>${namesFin12.length?`<br><span style="font-size:12px;color:#856404;">↳ fin de ${namesFin12.join(', ')} (+ ${prom12Txt}/mois)</span>`:''}<br><br>
 <hr>
 <b>🏁 Tarifs après les promotions : ${document.getElementById('s-total').textContent}</b>
 </div>
