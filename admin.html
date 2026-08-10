@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.4</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.6</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -427,7 +427,7 @@
               <select id="promo-type" onchange="onPromoTypeChange()">
                 <option value="mobile">📱 Remise Mobile</option>
                 <option value="internet">🌐 Remise Internet</option>
-                <option value="option">🎁 Remise Option (Netflix, Disney+, services...)</option>
+                <option value="option">🎁 Remise Option (TV, Netflix, Disney+, services...)</option>
                 <option value="unique">💶 Remise unique (frais, etc.)</option>
               </select>
             </div>
@@ -455,6 +455,9 @@
             <div class="form-row" id="promo-product-option-row" style="display:none;">
               <label>Option concernée</label>
               <select id="promo-product-option">
+                <option value="tv_deco" data-family="divers" data-label="TV Deco Sup">TV Deco Sup</option>
+                <option value="tv_light" data-family="divers" data-label="TV Light">TV Light</option>
+                <option value="tv_orange" data-family="divers" data-label="TV Orange">TV Orange</option>
                 <option value="net_ess" data-family="divers" data-label="Netflix Essentiel">Netflix Essentiel</option>
                 <option value="net_std" data-family="divers" data-label="Netflix Standard">Netflix Standard</option>
                 <option value="net_prem" data-family="divers" data-label="Netflix Premium">Netflix Premium</option>
@@ -1573,6 +1576,17 @@ function updateCrmBadge() {
   const badge = document.getElementById('crm-count-badge');
   if (badge) badge.innerHTML = total > 0 ? `<span class="count-badge">${total}</span>` : '';
 }
+
+// Collage en texte brut uniquement sur tous les champs de texte enrichi (bandeaux, descriptions, news, blog...).
+// Évite que du code caché (copié depuis un site, Word, etc.) se retrouve collé et affiché tel quel.
+// Le formatage (gras/italique/etc.) reste faisable après coup via les boutons de la barre d'outils.
+document.addEventListener('paste', function (e) {
+  const target = e.target.closest && e.target.closest('[contenteditable="true"]');
+  if (!target) return;
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
+});
 
 window.toggleMenu = function (id) {
   const el = document.getElementById(id);
