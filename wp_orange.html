@@ -289,6 +289,10 @@
 <span class="sum-label">🔴 Promotions 12 mois</span>
 <span class="sum-val" id="s-promos12">- 0,00 €</span>
 </div>
+<div class="sum-row">
+<span class="sum-label">💚 Promotions à vie</span>
+<span class="sum-val" id="s-promos-avie">- 0,00 €</span>
+</div>
 <div class="sum-row"><span class="sum-label">🎁 Promotions uniques</span><span class="sum-val" id="s-promos-unique">- 0,00 €</span></div>
     <hr class="sum-divider">
     <div class="sum-row">
@@ -460,10 +464,21 @@ async function loadPromosFromFirestore() {
         ? `<br><span style="color:#0369a1;font-weight:700;">📅 ${p.dateDebut ? 'Du ' + formatDateFrOrange(p.dateDebut) : ''}${p.dateFin ? ' au ' + formatDateFrOrange(p.dateFin) : ''}</span>`
         : '';
 
+      let durationBadge;
+      if (p.isUnique) {
+        durationBadge = '<span style="display:inline-block;background:#f3e8ff;color:#7c3aed;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">🎁 UNIQUE</span>';
+      } else if (p.duration === 6) {
+        durationBadge = '<span style="display:inline-block;background:#fff3e0;color:#e65100;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">🟠 6 MOIS</span>';
+      } else if (p.duration === 12) {
+        durationBadge = '<span style="display:inline-block;background:#ffebee;color:#c62828;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">🔴 12 MOIS</span>';
+      } else {
+        durationBadge = '<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">💚 À VIE</span>';
+      }
+
       const item = {
         id: docSnap.id,
         name: window.wrapPromoName(p.name || ''),
-        sub: (p.sub || '') + (p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 ' + window.escapeHtmlOrange(p.condition) + '</span>' : '') + dateLabel,
+        sub: durationBadge + '<br>' + (p.sub || '') + (p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 ' + window.escapeHtmlOrange(p.condition) + '</span>' : '') + dateLabel,
         price: Number(p.price) || 0,
         perAbo: !!p.perAbo,
         mobileId: p.mobileId || undefined,
@@ -1129,7 +1144,10 @@ function render() {
   const p6=document.getElementById('s-promos6');
   const p12=document.getElementById('s-promos12');
   if(p6) p6.textContent='- ' + fmt(prom6*r);
-  if(p12) p12.textContent='- ' + fmt(prom12*r); document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
+  if(p12) p12.textContent='- ' + fmt(prom12*r);
+  const pAVie=document.getElementById('s-promos-avie');
+  if(pAVie) pAVie.textContent='- ' + fmt(promAVie*r);
+  document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
   document.getElementById('s-total').textContent = fmt(total*r);
   
 
@@ -1384,7 +1402,16 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
     // Réutilise la connexion Firebase déjà initialisée plus haut dans le fichier
     // (un 2e appel à initializeApp() ici provoquait une erreur "app/duplicate-app" qui empêchait
     // ce bloc de s'exécuter, et donc désactivait complètement l'écran de connexion).
+    // IMPORTANT : ce script (classique) peut s'exécuter AVANT le module plus haut (différé par le
+    // navigateur) selon la vitesse réseau — on attend donc explicitement que window.auth existe
+    // pour éviter un crash aléatoire ("Cannot read properties of undefined (reading 'onAuthStateChanged')").
+    let authWaitTries = 0;
+    while (!window.auth && authWaitTries < 50) {
+      await new Promise(r => setTimeout(r, 50));
+      authWaitTries++;
+    }
     const auth = window.auth;
+    if (!auth) throw new Error('Connexion Firebase indisponible (délai dépassé)');
 
     const loginHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
