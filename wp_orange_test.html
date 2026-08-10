@@ -12,15 +12,26 @@
 <script src="version.js"></script>
 <script>
 // Vérifie en arrière-plan (sans bloquer l'affichage) si une version plus récente est en ligne,
-// et recharge automatiquement la page si c'est le cas — évite de rester bloqué sur une vieille version.
-(function(){
-  fetch('version.js?t='+Date.now(), {cache:'no-store'})
-    .then(r=>r.text())
-    .then(txt=>{
-      const m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
-      if(m && window.APP_VERSION && m[1]!==window.APP_VERSION) location.reload();
-    })
-    .catch(()=>{});
+// et fait un nettoyage complet + rechargement automatique si c'est le cas (silencieux, sans rien
+// demander) — même nettoyage que le bouton manuel "Actualiser l'application", pour ne jamais rester
+// bloqué sur une vieille version à cause du cache navigateur/service worker.
+(async function(){
+  try {
+    const r = await fetch('version.js?t='+Date.now(), {cache:'no-store'});
+    const txt = await r.text();
+    const m = txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    if (!(m && window.APP_VERSION && m[1] !== window.APP_VERSION)) return;
+
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    location.reload();
+  } catch (e) {}
 })();
 </script>
 <style>

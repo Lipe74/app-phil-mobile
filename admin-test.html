@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.0 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.1 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -453,7 +453,7 @@
 
             <div class="form-row" id="promo-product-mobile-row" style="display:none;">
               <label>Abonnement mobile concerné</label>
-              <select id="promo-product-mobile">
+              <select id="promo-product-mobile" onchange="autofillPromoName()">
                 <option value="mob_child" data-label="Mobile Child 5GB">Mobile Child 5GB</option>
                 <option value="mob_small" data-label="Mobile Small 12GB">Mobile Small 12GB</option>
                 <option value="mob_medium" data-label="Mobile Medium 70GB">Mobile Medium 70GB</option>
@@ -464,7 +464,7 @@
 
             <div class="form-row" id="promo-product-internet-row" style="display:none;">
               <label>Produit Internet concerné</label>
-              <select id="promo-product-internet">
+              <select id="promo-product-internet" onchange="autofillPromoName()">
                 <option value="inet_start" data-family="internet" data-label="Internet Start">Internet Start</option>
                 <option value="inet_zen" data-family="internet" data-label="Internet Zen">Internet Zen</option>
                 <option value="inet_giga" data-family="internet" data-label="Internet Giga">Internet Giga</option>
@@ -473,7 +473,7 @@
 
             <div class="form-row" id="promo-product-option-row" style="display:none;">
               <label>Option concernée</label>
-              <select id="promo-product-option">
+              <select id="promo-product-option" onchange="autofillPromoName()">
                 <option value="tv_deco" data-family="divers" data-label="TV Deco Sup">TV Deco Sup</option>
                 <option value="tv_light" data-family="divers" data-label="TV Light">TV Light</option>
                 <option value="tv_orange" data-family="divers" data-label="TV Orange">TV Orange</option>
@@ -487,8 +487,8 @@
               </select>
             </div>
 
-            <div class="form-row" id="promo-name-row" style="display:none;">
-              <label>Nom de la promo</label>
+            <div class="form-row" id="promo-name-row">
+              <label>Nom de la promo (pré-rempli selon le produit choisi, modifiable)</label>
               <input type="text" id="promo-name" placeholder="ex: 🎁 Frais d'activation offerts">
             </div>
 
@@ -2806,7 +2806,19 @@ window.onPromoTypeChange = function () {
   document.getElementById('promo-product-mobile-row').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
   document.getElementById('promo-product-internet-row').style.display = (!isEditing && type === 'internet') ? 'block' : 'none';
   document.getElementById('promo-product-option-row').style.display = (!isEditing && type === 'option') ? 'block' : 'none';
-  document.getElementById('promo-name-row').style.display = (isEditing || type === 'unique') ? 'block' : 'none';
+  if (!isEditing) autofillPromoName();
+};
+
+// Pré-remplit le nom de la promo avec le libellé du produit choisi (le champ reste modifiable ensuite)
+window.autofillPromoName = function () {
+  if (currentEditPromoId) return; // ne jamais écraser un nom déjà personnalisé en édition
+  const type = document.getElementById('promo-type').value;
+  if (type === 'unique') return;
+  const sel = type === 'mobile'
+    ? document.getElementById('promo-product-mobile')
+    : (type === 'internet' ? document.getElementById('promo-product-internet') : document.getElementById('promo-product-option'));
+  const opt = sel.selectedOptions[0];
+  if (opt) document.getElementById('promo-name').value = opt.dataset.label || opt.textContent;
 };
 
 function formatDateFr(isoDate) {
@@ -3004,7 +3016,8 @@ window.addOrUpdatePromo = async function () {
         : document.getElementById('promo-product-option'));
   const opt = sel.selectedOptions[0];
   const productId = opt.value;
-  const label = opt.dataset.label || opt.textContent;
+  const customName = document.getElementById('promo-name').value.trim();
+  const label = customName || opt.dataset.label || opt.textContent;
   const family = uiType === 'mobile' ? 'mobile' : (opt.dataset.family || 'divers');
 
   const data = {
