@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.7 — TEST</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 6.9 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -2837,6 +2837,12 @@ async function loadPromosAdmin() {
       const inFam = list.filter(p => derivePromoFamily(p) === fam);
       if (inFam.length === 0) return;
 
+      inFam.sort((a, b) => {
+        const plainA = (a.name || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
+        const plainB = (b.name || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
+        return plainA.localeCompare(plainB, 'fr');
+      });
+
       html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${label}</div>`;
 
       inFam.forEach(p => {
@@ -2961,7 +2967,7 @@ window.addOrUpdatePromo = async function () {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
       condition, dateDebut, dateFin,
-      productFamily: existing ? derivePromoFamily(existing) : (type === 'mobile' ? 'mobile' : 'divers'),
+      productFamily: type === 'mobile' ? 'mobile' : (name.toLowerCase().includes('internet') ? 'internet' : 'divers'),
       perAbo: type === 'mobile',
       isUnique: type === 'unique'
     };
