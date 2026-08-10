@@ -469,7 +469,8 @@ async function loadPromosFromFirestore() {
         mobileId: p.mobileId || undefined,
         requiresChild: !!p.requiresChild,
         duration: p.duration || undefined,
-        isUnique: !!p.isUnique
+        isUnique: !!p.isUnique,
+        family: p.productFamily || (p.perAbo ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'divers'))
       };
       if (p.category === 'permanente') fetchedPermanent.push(item);
       else fetchedTemp.push(item);
@@ -489,7 +490,7 @@ async function loadPromosFromFirestore() {
     document.getElementById('promos-rows').innerHTML = '';
     document.getElementById('promos-permanent-rows').innerHTML = '';
     window.buildToggleRows('promos-permanent-rows', window.promosPermanent);
-    window.buildToggleRows('promos-rows', window.promos);
+    window.buildGroupedPromoRows('promos-rows', window.promos);
     window.renderOrangeApp();
   } catch (err) {
     console.log('Chargement promos Firestore impossible, conservation des promos par défaut:', err.message);
@@ -902,7 +903,7 @@ Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', 
   buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
 buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
   buildToggleRows('promos-permanent-rows', promosPermanent);
-  buildToggleRows('promos-rows', promos);
+  buildGroupedPromoRows('promos-rows', promos);
   // Restaurer les quantités
   document.querySelectorAll('.qty-val').forEach(el => {
     const id = el.id.replace('qty-','');
@@ -963,14 +964,14 @@ const promosPermanent = [
 ];
 
 const promos = [
-  { id:'pr_start', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Start</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6 },
-  { id:'pr_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Zen</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6 },
-  { id:'pr_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Giga</span>', sub:'-15€/mois pendant 12 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:12 },
-  { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium", duration:6 },
-  { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true, duration:6 },
-  { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large", duration:12 },
-  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6 },
-  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12 }
+  { id:'pr_start', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Start</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6, family:'internet' },
+  { id:'pr_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Zen</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6, family:'internet' },
+  { id:'pr_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Giga</span>', sub:'-15€/mois pendant 12 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:12, family:'internet' },
+  { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium", duration:6, family:'mobile' },
+  { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true, duration:6, family:'mobile' },
+  { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large", duration:12, family:'mobile' },
+  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6, family:'divers' },
+  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12, family:'divers' }
 ];
 
 const loveRates = {
@@ -1242,11 +1243,47 @@ function buildToggleRows(containerId, items) {
   });
 }
 
+// Rendu groupé des promos temporaires (Internet / Mobile / Autres), avec séparateur entre groupes,
+// pour ne pas tout mélanger visuellement quand il y a beaucoup de promos actives en même temps.
+const PROMO_FAMILY_GROUPS = [
+  { key: 'internet', label: '🌍 Internet' },
+  { key: 'mobile', label: '📱 Mobile' },
+  { key: 'divers', label: '🎁 Autres (TV, Netflix, Disney+...)' }
+];
+function buildGroupedPromoRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  PROMO_FAMILY_GROUPS.forEach((group, idx) => {
+    const groupItems = items.filter(p => (p.family || 'divers') === group.key);
+    if (groupItems.length === 0) return;
+    if (idx > 0 && c.children.length > 0) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'border-top:2px solid #f0f0f0;margin:14px 0 10px;';
+      c.appendChild(sep);
+    }
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:12px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;';
+    header.textContent = group.label;
+    c.appendChild(header);
+    groupItems.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'toggle-row';
+      row.dataset.id = p.id;
+      row.onclick = () => togglePromo(p.id);
+      row.innerHTML = `
+        <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+        <div class="toggle-price">- ${priceFmt(p.price)}</div>
+        <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
+      c.appendChild(row);
+    });
+  });
+}
+
 Object.entries(productList).forEach(([key, items]) => buildQtyRows(key+'-rows', items));
 buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
 buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
 buildToggleRows('promos-permanent-rows', promosPermanent);
-buildToggleRows('promos-rows', promos);
+buildGroupedPromoRows('promos-rows', promos);
 render();
 
 // Exposés globalement pour permettre le rafraîchissement dynamique des promos ET produits depuis Firestore (voir module plus haut)
@@ -1254,6 +1291,7 @@ window.promos = promos;
 window.promosPermanent = promosPermanent;
 window.togMap = togMap;
 window.buildToggleRows = buildToggleRows;
+window.buildGroupedPromoRows = buildGroupedPromoRows;
 window.renderOrangeApp = render;
 window.productList = productList;
 window.options = options;
