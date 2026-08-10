@@ -158,32 +158,34 @@
     <div id="mobile-rows"></div>
   </div>
   <div class="section">
-    <div class="section-title"><i class="ti ti-brand-netflix" aria-hidden="true"></i> Netflix</div>
-    <div id="netflix-rows"></div>
-  </div>
-  <div class="section">
-    <div class="section-title">✨ Disney+</div>
-    <div id="disney-rows"></div>
-  </div>
-  <div class="section">
     <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> Options</div>
 
     <div style="margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
       📌 FRAIS UNIQUES
     </div>
-    
+
 <div id="banner-frais-uniques" style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
 <span id="banner-frais-uniques-icon" style="flex-shrink:0;line-height:1.4;">ℹ️</span> <span id="banner-frais-uniques-text" style="line-height:1.4;">Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.</span>
 </div>
 <div id="options-unique-rows"></div>
 
-    <div style="margin-top:15px;margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
-      📅 OPTIONS MENSUELLES
+    <div style="margin-top:15px;margin-bottom:10px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:9px 13px;font-size:13px;color:#1e88e5;font-weight:600;">
+      🌐 OPTION INTERNET
     </div>
-    <div id="banner-options-mensuelles" style="margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+    <div id="banner-options-mensuelles" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
 <span id="banner-options-mensuelles-icon" style="flex-shrink:0;line-height:1.4;">📅</span> <span id="banner-options-mensuelles-text" style="line-height:1.4;">Options additionnelles pouvant être ajoutées à votre abonnement Internet.</span>
 </div>
-    <div id="options-monthly-rows"></div>
+    <div id="options-internet-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#f3e5f5;border:1px solid #8e24aa;border-radius:10px;padding:9px 13px;font-size:13px;color:#8e24aa;font-weight:600;">
+      📺 OPTION TV
+    </div>
+    <div id="options-tv-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#ffebee;border:1px solid #c2185b;border-radius:10px;padding:9px 13px;font-size:13px;color:#c2185b;font-weight:600;">
+      🎬 LES OPTIONS FILMS
+    </div>
+    <div id="options-films-rows"></div>
   </div>
 
   <div class="section">
@@ -276,10 +278,11 @@
       <span id="tva-badge" style="background:rgba(255,255,255,0.25);color:white;font-weight:700;font-size:14px;padding:5px 16px;border-radius:20px;">TVAC (21%)</span>
     </div>
     <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
-    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
-    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet, TV & Acc.</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
-    <div class="sum-row"><span class="sum-label">Options mensuelles</span><span class="sum-val" id="s-options">+ 0,00 €</span></div><div class="sum-row" id="home-row" style="display:none;"><span class="sum-label">🌐 Supplément Internet Home</span><span class="sum-val" id="s-home">+ 4,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
-    <div class="sum-row"><span class="sum-label">Remises Love (à vie)</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles (sans remise)</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet (sans remise)</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📺 Total TV (sans remise)</span><span class="sum-val" id="s-tv" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">⚙️ Total Options (sans remise)</span><span class="sum-val" id="s-options" style="font-size:13px;">0,00 €</span></div><div class="sum-row" id="home-row" style="display:none;"><span class="sum-label">🌐 Supplément Internet Home</span><span class="sum-val" id="s-home">+ 4,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
+    <div class="sum-row"><span class="sum-label">Remise Orange Love mensuelle</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
     
 <div class="sum-row">
 <span class="sum-label">🟠 Promotions 6 mois</span>
@@ -550,16 +553,7 @@ async function loadProductsFromFirestore() {
       }
     });
 
-    Object.entries(window.productList).forEach(([key, items]) => {
-      const el = document.getElementById(key + '-rows');
-      if (el) { window.buildGroupedQtyRows(key + '-rows', items); }
-    });
-    const uniqueEl = document.getElementById('options-unique-rows');
-    const monthlyEl = document.getElementById('options-monthly-rows');
-    // "Raccordement" reste seul en frais unique ; "Frais d'activation" n'est jamais affiché en ligne (fee implicite) ;
-    // toute autre option (y compris les nouvelles ajoutées depuis l'admin) rejoint le bloc mensuel.
-    if (uniqueEl) { uniqueEl.innerHTML = ''; window.buildQtyRows('options-unique-rows', window.options.filter(o => o.id === 'opt_raccord')); }
-    if (monthlyEl) { monthlyEl.innerHTML = ''; window.buildQtyRows('options-monthly-rows', window.options.filter(o => !['opt_raccord', 'opt_install_m'].includes(o.id))); }
+    window.renderProductSections();
 
     window.renderOrangeApp();
   } catch (err) {
@@ -908,15 +902,14 @@ function setTVAC(tvac) {
   document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
   document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
   document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
-  ['internet-rows','tv-rows','mobile-rows','netflix-rows','disney-rows','options-unique-rows','options-monthly-rows','promos-rows','promos-permanent-rows'].forEach(id => {
-    document.getElementById(id).innerHTML = '';
+  ['internet-rows','tv-rows','mobile-rows','options-internet-rows','options-tv-rows','options-films-rows','options-unique-rows','promos-rows','promos-permanent-rows'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
   });
   
 
 
-Object.entries(productList).forEach(([key, items]) => buildGroupedQtyRows(key+'-rows', items));
-  buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
-buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
+renderProductSections();
   buildToggleRows('promos-permanent-rows', promosPermanent);
   buildGroupedPromoRows('promos-rows', promos);
   // Restaurer les quantités
@@ -1057,10 +1050,9 @@ function calcProducts() {
   Object.values(productList).flat().forEach(p => { t += p.price * (qtyMap[p.id]||0); });
   return t;
 }
-function calcOptions() {
+function calcOptionsBase() {
   let t = 0;
-  // Toute option sauf les frais uniques gérés à part (activation, raccordement) compte comme mensuelle —
-  // une nouvelle option ajoutée depuis l'admin est donc automatiquement prise en compte ici.
+  // Toute option "brute" (booster/confort/carte surf) sauf les frais uniques gérés à part.
   options.filter(o => !['opt_install_m', 'opt_raccord'].includes(o.id)).forEach(o => {
     t += o.price * (qtyMap[o.id] || 0);
   });
@@ -1111,6 +1103,27 @@ function calcMobiles() {
   return t;
 }
 
+// Internet/TV "de base" uniquement (les ajouts personnalisés depuis l'admin rejoignent Options)
+function calcInternetBase() {
+  let t = 0;
+  (productList.internet || []).filter(p => !p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+function calcTVBase() {
+  let t = 0;
+  (productList.tv || []).filter(p => !p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+// Total Options = options brutes (booster/confort/surf) + ajouts perso Internet/TV + tous les films (Netflix/Disney)
+function calcOptionsTotal() {
+  let t = calcOptionsBase();
+  (productList.internet || []).filter(p => p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.tv || []).filter(p => p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.netflix || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.disney || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+// Total Internet, TV & Acc. combiné (utilisé pour le calcul du total général, inchangé)
 function calcInternet() {
   let t = 0;
   (productList.internet || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
@@ -1121,11 +1134,11 @@ function calcInternet() {
 }
 
 function render() {
-  const prod = calcProducts(), opts = calcOptions(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel;
+  const prod = calcProducts(), opts = calcOptionsBase(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel;
   const prom6 = promosCalc.promo6 || 0;
   const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
   const promAVie = prom - prom6 - prom12; // part des remises mensuelles sans durée fixe (permanentes)
-  const mob = calcMobiles(), inet = calcInternet();
+  const mob = calcMobiles(), inetBase = calcInternetBase(), tvBase = calcTVBase(), optionsTotal = calcOptionsTotal();
   const hasInet = hasInternet();
   const mobileCount = totalMobileAbo();
   const homeFee = (hasInet && mobileCount===0) ? 4 : 0;
@@ -1134,8 +1147,9 @@ function render() {
   const r = isTVAC ? 1 : 1/TVA;
   document.getElementById('s-products').textContent = fmt(prod*r);
   document.getElementById('s-mobiles').textContent = fmt(mob*r);
-  document.getElementById('s-internet').textContent = fmt(inet*r);
-  document.getElementById('s-options').textContent = (opts >= 0 ? '+ ' : '- ') + fmt(Math.abs(opts)*r);
+  document.getElementById('s-internet').textContent = fmt(inetBase*r);
+  document.getElementById('s-tv').textContent = fmt(tvBase*r);
+  document.getElementById('s-options').textContent = fmt(optionsTotal*r);
   const hr=document.getElementById('home-row');
   if(hr){hr.style.display=homeFee?'flex':'none';}
   const sh=document.getElementById('s-home');
@@ -1197,8 +1211,9 @@ function render() {
   const offerDetails = {
     produits: fmt(prod*r),
     mobiles: fmt(mob*r),
-    internet: fmt(inet*r),
-    options: fmt(Math.abs(opts)*r),
+    internet: fmt(inetBase*r),
+    tv: fmt(tvBase*r),
+    options: fmt(optionsTotal*r),
     fraisUniques: homeFee ? fmt(homeFee*r) : '0,00 €',
     remisesLove: fmt(love*r),
     promos6mois: fmt(prom6*r),
@@ -1266,6 +1281,41 @@ function buildGroupedQtyRows(containerId, items) {
   }
 }
 
+// Rendu unique de toutes les catégories produits/options selon le nouveau découpage :
+// Internet et TV n'affichent que leurs produits "de base" ; tout ajout personnalisé (Internet/TV)
+// ainsi que Netflix/Disney+ rejoignent la section Options (3 sous-groupes : Internet / TV / Films).
+function renderProductSections() {
+  const internetItems = productList.internet || [];
+  const tvItems = productList.tv || [];
+
+  const elInternet = document.getElementById('internet-rows');
+  if (elInternet) { elInternet.innerHTML = ''; buildQtyRows('internet-rows', internetItems.filter(p => !p.custom)); }
+
+  const elTv = document.getElementById('tv-rows');
+  if (elTv) { elTv.innerHTML = ''; buildQtyRows('tv-rows', tvItems.filter(p => !p.custom)); }
+
+  const elMobile = document.getElementById('mobile-rows');
+  if (elMobile) buildGroupedQtyRows('mobile-rows', productList.mobile || []);
+
+  const elOptInternet = document.getElementById('options-internet-rows');
+  if (elOptInternet) {
+    elOptInternet.innerHTML = '';
+    buildQtyRows('options-internet-rows', [...options.filter(o => !['opt_raccord', 'opt_install_m'].includes(o.id)), ...internetItems.filter(p => p.custom)]);
+  }
+
+  const elOptTv = document.getElementById('options-tv-rows');
+  if (elOptTv) { elOptTv.innerHTML = ''; buildQtyRows('options-tv-rows', tvItems.filter(p => p.custom)); }
+
+  const elOptFilms = document.getElementById('options-films-rows');
+  if (elOptFilms) {
+    elOptFilms.innerHTML = '';
+    buildQtyRows('options-films-rows', [...(productList.netflix || []), ...(productList.disney || [])]);
+  }
+
+  const elUnique = document.getElementById('options-unique-rows');
+  if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.id === 'opt_raccord')); }
+}
+
 function buildToggleRows(containerId, items) {
   const c = document.getElementById(containerId);
   items.forEach(p => {
@@ -1322,9 +1372,7 @@ function buildGroupedPromoRows(containerId, items) {
   });
 }
 
-Object.entries(productList).forEach(([key, items]) => buildGroupedQtyRows(key+'-rows', items));
-buildQtyRows('options-unique-rows', options.filter(o=>['opt_raccord'].includes(o.id)));
-buildQtyRows('options-monthly-rows', options.filter(o=>['opt_booster','opt_confort','opt_surf'].includes(o.id)));
+renderProductSections();
 buildToggleRows('promos-permanent-rows', promosPermanent);
 buildGroupedPromoRows('promos-rows', promos);
 render();
@@ -1340,6 +1388,7 @@ window.productList = productList;
 window.options = options;
 window.buildQtyRows = buildQtyRows;
 window.buildGroupedQtyRows = buildGroupedQtyRows;
+window.renderProductSections = renderProductSections;
 window.qtyMap = qtyMap;
 window.escapeHtmlOrange = function(str) {
   const div = document.createElement('div');
