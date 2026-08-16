@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.3</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.4</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -181,6 +181,7 @@
         </div>
         <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
         <button onclick="showAdminPanel('panel-video-vente', this)" class="menu-item" id="menu-video-vente">🎥 Vidéo vente</button>
+        <button onclick="showAdminPanel('panel-video-promotion', this)" class="menu-item" id="menu-video-promotion">🎥 Vidéo promotion</button>
 
         <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
 
@@ -407,6 +408,20 @@
               <input type="text" id="video-vente-id" placeholder="1214945528">
             </div>
             <button class="btn btn-primary" onclick="saveVideoVente()">💾 Enregistrer</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-video-promotion">
+          <div class="section-title">🎥 Vidéo de promotion (phil-mobile.be/promotion.html)</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:12px;">
+              Vidéo Vimeo affichée sur la page Promotions du site. Renseigne uniquement l'ID de la vidéo (le nombre dans l'URL Vimeo, ex: pour <code>vimeo.com/1218625333</code>, l'ID est <code>1218625333</code>).
+            </div>
+            <div class="form-row">
+              <label>ID vidéo Vimeo</label>
+              <input type="text" id="video-promotion-id" placeholder="1218625333">
+            </div>
+            <button class="btn btn-primary" onclick="saveVideoPromotion()">💾 Enregistrer</button>
           </div>
         </div>
 
@@ -1394,6 +1409,7 @@ onAuthStateChanged(auth, async (user) => {
   loadCommissionsAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
+  loadVideoPromotionAdmin();
   loadOrangeBannersAdmin();
   loadPromoGlobalDate();
   checkExpiredConsultants();
@@ -4944,6 +4960,27 @@ window.saveVideoVente = async function () {
   if (!vimeoId) { alert("Merci de renseigner l'ID de la vidéo."); return; }
   try {
     await setDoc(doc(db, 'settings', 'venteVideo'), { vimeoId });
+    showToast('✅ Vidéo enregistrée.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+  }
+};
+
+// ===== VIDÉO DE PROMOTION (phil-mobile.be/promotion.html, Vimeo) =====
+async function loadVideoPromotionAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'promotionVideo'));
+    document.getElementById('video-promotion-id').value = (snap.exists() && snap.data().vimeoId) || '1218625333';
+  } catch (e) {
+    console.log('Chargement vidéo promotion impossible:', e.message);
+  }
+}
+
+window.saveVideoPromotion = async function () {
+  const vimeoId = document.getElementById('video-promotion-id').value.trim();
+  if (!vimeoId) { alert("Merci de renseigner l'ID de la vidéo."); return; }
+  try {
+    await setDoc(doc(db, 'settings', 'promotionVideo'), { vimeoId });
     showToast('✅ Vidéo enregistrée.');
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
