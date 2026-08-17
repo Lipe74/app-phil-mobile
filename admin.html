@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.4</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.5</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -1630,11 +1630,15 @@ function updateCrmBadge() {
 // Collage en texte brut uniquement sur tous les champs de texte enrichi (bandeaux, descriptions, news, blog...).
 // Évite que du code caché (copié depuis un site, Word, etc.) se retrouve collé et affiché tel quel.
 // Le formatage (gras/italique/etc.) reste faisable après coup via les boutons de la barre d'outils.
+// Filet de sécurité supplémentaire : certaines sources (éditeurs web basés sur ProseMirror, type Notion)
+// embarquent parfois par erreur des balises et attributs de suivi de sélection (ex: <p data-pm-slice="...">)
+// jusque dans le presse-papier "texte brut" lui-même — on les retire avant insertion.
 document.addEventListener('paste', function (e) {
   const target = e.target.closest && e.target.closest('[contenteditable="true"]');
   if (!target) return;
   e.preventDefault();
-  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  let text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  text = text.replace(/<\/?[^>]+>/g, '');
   document.execCommand('insertText', false, text);
 });
 
