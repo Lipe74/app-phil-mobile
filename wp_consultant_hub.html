@@ -5036,9 +5036,16 @@ function derivePromoFamilyHub(p) {
   return 'divers';
 }
 
+// Filet de sécurité : retire tout fragment ressemblant à une balise HTML qui se serait retrouvé
+// collé littéralement dans une donnée Firestore (ex: <p data-pm-slice="..."> venant d'un copier-coller
+// depuis l'admin avant le correctif du filtre anti-collage). N'affecte pas les données propres.
+function cleanPromoText(str) {
+  return (str ?? '').replace(/<\/?[^>]+>/g, '');
+}
+
 function escapeHtmlPromos(str) {
   var div = document.createElement('div');
-  div.textContent = str ?? '';
+  div.textContent = cleanPromoText(str);
   return div.innerHTML;
 }
 
