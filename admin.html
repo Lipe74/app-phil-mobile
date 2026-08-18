@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.14</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.15</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -5083,6 +5083,12 @@ window.saveRenameDocument = async function (docId) {
   try {
     await updateDoc(doc(db, 'documents', docId), { titre: trimmed, icone: icone || null });
     window._documentsEditingId = null;
+    // Corrige localement le cache pour un retour visuel immédiat (sans attendre
+    // le prochain événement onSnapshot, qui peut tarder sur un simple changement
+    // de métadonnées réseau).
+    const item = (window._documentsCache || []).find(d => d.id === docId);
+    if (item) { item.titre = trimmed; item.icone = icone || null; }
+    renderDocumentsAdmin(window._documentsCache);
     showToast('✅ Document mis à jour.');
   } catch (err) {
     alert("Erreur: " + err.message);
