@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.11</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.12</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4941,13 +4941,13 @@ function renderDocumentsAdmin(items) {
              <button class="btn btn-secondary" onclick="cancelRenameDocument()" title="Annuler">✖</button>`
           : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer / changer l'icône">✏️</button>`}
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
-        <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
-          ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
-        </select>
         <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
           ${d.url ? '🔄 Remplacer' : '📥 Importer'}
           <input type="file" accept="application/pdf" style="display:none;" onchange="uploadDocumentFile('${d.id}', this)">
         </label>
+        <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
+          ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
         <button class="btn btn-secondary" onclick="deleteDocumentFiche('${d.id}')">🗑️</button>
       </div>
     `).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
