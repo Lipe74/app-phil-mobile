@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.9</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.10</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4892,6 +4892,10 @@ function escapeHtmlDocs(str) {
   return div.innerHTML;
 }
 
+function escapeAttrDocs(str) {
+  return (str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 let documentsUnsub = null;
 window._documentsCache = [];
 
@@ -4922,8 +4926,15 @@ function renderDocumentsAdmin(items) {
           <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
           <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
         </span>
-        <span style="flex:1;min-width:160px;font-weight:600;">${escapeHtmlDocs(d.titre)}</span>
-        <button class="btn btn-secondary" onclick="renameDocumentFiche('${d.id}', '${escapeHtmlDocs(d.titre).replace(/'/g, "&#39;")}')" title="Renommer">✏️</button>
+        <span style="flex:1;min-width:160px;font-weight:600;">
+          ${window._documentsEditingId === d.id
+            ? `<input type="text" id="doc-edit-input-${d.id}" value="${escapeAttrDocs(d.titre)}" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">`
+            : escapeHtmlDocs(d.titre)}
+        </span>
+        ${window._documentsEditingId === d.id
+          ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
+             <button class="btn btn-secondary" onclick="cancelRenameDocument()" title="Annuler">✖</button>`
+          : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer">✏️</button>`}
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
         <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
           ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
@@ -5002,14 +5013,30 @@ window.moveDocumentCategorie = async function (docId, newCategorie) {
   }
 };
 
-window.renameDocumentFiche = async function (docId, currentTitre) {
-  const decoded = currentTitre.replace(/&#39;/g, "'");
-  const nouveauTitre = prompt('Nouveau titre du document :', decoded);
-  if (nouveauTitre === null) return;
-  const trimmed = nouveauTitre.trim();
+window._documentsEditingId = null;
+
+window.startRenameDocument = function (docId) {
+  window._documentsEditingId = docId;
+  renderDocumentsAdmin(window._documentsCache);
+  setTimeout(() => {
+    const inp = document.getElementById('doc-edit-input-' + docId);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 0);
+};
+
+window.cancelRenameDocument = function () {
+  window._documentsEditingId = null;
+  renderDocumentsAdmin(window._documentsCache);
+};
+
+window.saveRenameDocument = async function (docId) {
+  const inp = document.getElementById('doc-edit-input-' + docId);
+  if (!inp) return;
+  const trimmed = inp.value.trim();
   if (!trimmed) { alert('Le titre ne peut pas être vide.'); return; }
   try {
     await updateDoc(doc(db, 'documents', docId), { titre: trimmed });
+    window._documentsEditingId = null;
     showToast('✅ Document renommé.');
   } catch (err) {
     alert("Erreur: " + err.message);
