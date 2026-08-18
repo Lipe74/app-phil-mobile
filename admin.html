@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.12</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.13</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4926,10 +4926,6 @@ function renderDocumentsAdmin(items) {
     const list = items.filter(d => d.categorie === cat);
     const rows = list.length ? list.map((d, idx) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
-        <span style="display:flex;flex-direction:column;gap:1px;">
-          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
-          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
-        </span>
         <span style="flex:1;min-width:160px;font-weight:600;display:flex;align-items:center;gap:6px;">
           ${window._documentsEditingId === d.id
             ? `<input type="text" id="doc-edit-icone-${d.id}" value="${escapeAttrDocs(d.icone || '')}" placeholder="📄" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
@@ -4948,6 +4944,10 @@ function renderDocumentsAdmin(items) {
         <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
           ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
         </select>
+        <span style="display:flex;flex-direction:column;gap:1px;">
+          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
+          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
+        </span>
         <button class="btn btn-secondary" onclick="deleteDocumentFiche('${d.id}')">🗑️</button>
       </div>
     `).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
