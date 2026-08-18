@@ -150,7 +150,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Grand écran
+Build <span id="app-version-1">…</span> — Vue PDF
      </span>
     </div>
     </div>
@@ -1849,7 +1849,7 @@ async function loadHubDocuments() {
         if (!el) return;
         const list = items.filter(d => d.categorie === cat);
         el.innerHTML = list.length
-          ? list.map(d => `<button onclick="loadFrame('${d.url}',this)" class="menu-item">📄 ${escapeHtmlDocs(d.titre)}</button>`).join('')
+          ? list.map(d => `<button onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item">📄 ${escapeHtmlDocs(d.titre)}</button>`).join('')
           : '<div class="menu-item" style="opacity:.5;">Aucun document</div>';
       });
     }, (err) => {
