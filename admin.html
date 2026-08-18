@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.6</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.8</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4919,7 +4919,11 @@ function renderDocumentsAdmin(items) {
     const rows = list.length ? list.map(d => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
         <span style="flex:1;min-width:160px;font-weight:600;">${escapeHtmlDocs(d.titre)}</span>
+        <button class="btn btn-secondary" onclick="renameDocumentFiche('${d.id}', '${escapeHtmlDocs(d.titre).replace(/'/g, "&#39;")}')" title="Renommer">✏️</button>
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
+        <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
+          ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
         <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
           ${d.url ? '🔄 Remplacer' : '📥 Importer'}
           <input type="file" accept="application/pdf" style="display:none;" onchange="uploadDocumentFile('${d.id}', this)">
@@ -4980,6 +4984,29 @@ window.deleteDocumentFiche = async function (docId) {
   try {
     await deleteDoc(doc(db, 'documents', docId));
     showToast('🗑️ Document supprimé.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.moveDocumentCategorie = async function (docId, newCategorie) {
+  try {
+    await updateDoc(doc(db, 'documents', docId), { categorie: newCategorie });
+    showToast('✅ Catégorie mise à jour.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.renameDocumentFiche = async function (docId, currentTitre) {
+  const decoded = currentTitre.replace(/&#39;/g, "'");
+  const nouveauTitre = prompt('Nouveau titre du document :', decoded);
+  if (nouveauTitre === null) return;
+  const trimmed = nouveauTitre.trim();
+  if (!trimmed) { alert('Le titre ne peut pas être vide.'); return; }
+  try {
+    await updateDoc(doc(db, 'documents', docId), { titre: trimmed });
+    showToast('✅ Document renommé.');
   } catch (err) {
     alert("Erreur: " + err.message);
   }
