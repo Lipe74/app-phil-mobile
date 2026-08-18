@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.13</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.14</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -632,6 +632,28 @@
             <div class="form-row">
               <label>Icône (emoji, optionnel — 📄 par défaut)</label>
               <input type="text" id="doc-new-icone" placeholder="ex: 📘" maxlength="4" style="width:80px;">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📄')">📄</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📘')">📘</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📗')">📗</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📙')">📙</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','💶')">💶</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📊')">📊</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📺')">📺</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📡')">📡</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🌍')">🌍</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🟠')">🟠</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🔵')">🔵</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🟢')">🟢</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📁')">📁</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','⭐')">⭐</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','✅')">✅</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🎯')">🎯</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📌')">📌</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🔧')">🔧</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📱')">📱</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','💡')">💡</button>
+              </div>
             </div>
             <div class="form-row">
               <label>Catégorie *</label>
@@ -4900,6 +4922,13 @@ function escapeAttrDocs(str) {
   return (str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+const DOC_ICON_CHOICES = ['📄','📘','📗','📙','💶','📊','📺','📡','🌍','🟠','🔵','🟢','📁','⭐','✅','🎯','📌','🔧','📱','💡'];
+
+window.pickDocIcone = function (targetId, emoji) {
+  const inp = document.getElementById(targetId);
+  if (inp) { inp.value = emoji; inp.focus(); }
+};
+
 let documentsUnsub = null;
 window._documentsCache = [];
 
@@ -4928,8 +4957,15 @@ function renderDocumentsAdmin(items) {
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
         <span style="flex:1;min-width:160px;font-weight:600;display:flex;align-items:center;gap:6px;">
           ${window._documentsEditingId === d.id
-            ? `<input type="text" id="doc-edit-icone-${d.id}" value="${escapeAttrDocs(d.icone || '')}" placeholder="📄" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
-               <input type="text" id="doc-edit-input-${d.id}" value="${escapeAttrDocs(d.titre)}" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">`
+            ? `<div style="display:flex;flex-direction:column;gap:5px;width:100%;">
+                 <div style="display:flex;gap:6px;">
+                   <input type="text" id="doc-edit-icone-${d.id}" value="${escapeAttrDocs(d.icone || '')}" placeholder="📄" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
+                   <input type="text" id="doc-edit-input-${d.id}" value="${escapeAttrDocs(d.titre)}" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
+                 </div>
+                 <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                   ${DOC_ICON_CHOICES.map(e => `<button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:12px;" onclick="pickDocIcone('doc-edit-icone-${d.id}','${e}')">${e}</button>`).join('')}
+                 </div>
+               </div>`
             : `<span>${d.icone || '📄'} ${escapeHtmlDocs(d.titre)}</span>`}
         </span>
         ${window._documentsEditingId === d.id
