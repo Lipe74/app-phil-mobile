@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.10</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.11</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -628,6 +628,10 @@
             <div class="form-row">
               <label>Titre du document *</label>
               <input type="text" id="doc-new-titre" placeholder="ex: Guide Salesforce">
+            </div>
+            <div class="form-row">
+              <label>Icône (emoji, optionnel — 📄 par défaut)</label>
+              <input type="text" id="doc-new-icone" placeholder="ex: 📘" maxlength="4" style="width:80px;">
             </div>
             <div class="form-row">
               <label>Catégorie *</label>
@@ -4871,19 +4875,19 @@ const DOC_CATEGORIES = ['Phil-Mobile', 'Smart SN', 'Orange', 'Divers'];
 
 // Migration unique des PDF déjà en ligne sur le site (repo statique) vers Firebase.
 const EXISTING_DOCS_MIGRATION = [
-  { titre: 'Manuel Sales Force', categorie: 'Smart SN', fileName: 'wp_salesforce.pdf' },
-  { titre: 'Manuel My Smart SN', categorie: 'Smart SN', fileName: 'wp_mysmart.pdf' },
-  { titre: 'Les commissions', categorie: 'Smart SN', fileName: 'wp_commissions.pdf' },
-  { titre: 'Plan de commissions', categorie: 'Smart SN', fileName: 'wp_smartPlan.pdf' },
-  { titre: 'Produits Orange', categorie: 'Orange', fileName: 'wp_orangeproduits.pdf' },
-  { titre: 'Orange Décodeur', categorie: 'Orange', fileName: 'decodeur.pdf' },
-  { titre: 'Orange Modem', categorie: 'Orange', fileName: 'modem.pdf' },
-  { titre: 'Roaming', categorie: 'Orange', fileName: 'roaming.pdf' },
-  { titre: 'Chaînes Wallonie 01', categorie: 'Orange', fileName: 'wallonie01.pdf' },
-  { titre: 'Chaînes Wallonie 02', categorie: 'Orange', fileName: 'wallonie02.pdf' },
-  { titre: 'Chaînes Flandre', categorie: 'Orange', fileName: 'flandre.pdf' },
-  { titre: 'Chaînes Bruxelles 01', categorie: 'Orange', fileName: 'bruxelles01.pdf' },
-  { titre: 'Chaînes Bruxelles 02', categorie: 'Orange', fileName: 'bruxelles02.pdf' }
+  { titre: 'Manuel Sales Force', icone: '🟠', categorie: 'Smart SN', fileName: 'wp_salesforce.pdf' },
+  { titre: 'Manuel My Smart SN', icone: '📘', categorie: 'Smart SN', fileName: 'wp_mysmart.pdf' },
+  { titre: 'Les commissions', icone: '💶', categorie: 'Smart SN', fileName: 'wp_commissions.pdf' },
+  { titre: 'Plan de commissions', icone: '📊', categorie: 'Smart SN', fileName: 'wp_smartPlan.pdf' },
+  { titre: 'Produits Orange', icone: '🟠', categorie: 'Orange', fileName: 'wp_orangeproduits.pdf' },
+  { titre: 'Orange Décodeur', icone: '📺', categorie: 'Orange', fileName: 'decodeur.pdf' },
+  { titre: 'Orange Modem', icone: '📡', categorie: 'Orange', fileName: 'modem.pdf' },
+  { titre: 'Roaming', icone: '🌍', categorie: 'Orange', fileName: 'roaming.pdf' },
+  { titre: 'Chaînes Wallonie 01', icone: '📺', categorie: 'Orange', fileName: 'wallonie01.pdf' },
+  { titre: 'Chaînes Wallonie 02', icone: '📺', categorie: 'Orange', fileName: 'wallonie02.pdf' },
+  { titre: 'Chaînes Flandre', icone: '📺', categorie: 'Orange', fileName: 'flandre.pdf' },
+  { titre: 'Chaînes Bruxelles 01', icone: '📺', categorie: 'Orange', fileName: 'bruxelles01.pdf' },
+  { titre: 'Chaînes Bruxelles 02', icone: '📺', categorie: 'Orange', fileName: 'bruxelles02.pdf' }
 ];
 
 function escapeHtmlDocs(str) {
@@ -4926,15 +4930,16 @@ function renderDocumentsAdmin(items) {
           <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
           <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
         </span>
-        <span style="flex:1;min-width:160px;font-weight:600;">
+        <span style="flex:1;min-width:160px;font-weight:600;display:flex;align-items:center;gap:6px;">
           ${window._documentsEditingId === d.id
-            ? `<input type="text" id="doc-edit-input-${d.id}" value="${escapeAttrDocs(d.titre)}" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">`
-            : escapeHtmlDocs(d.titre)}
+            ? `<input type="text" id="doc-edit-icone-${d.id}" value="${escapeAttrDocs(d.icone || '')}" placeholder="📄" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
+               <input type="text" id="doc-edit-input-${d.id}" value="${escapeAttrDocs(d.titre)}" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">`
+            : `<span>${d.icone || '📄'} ${escapeHtmlDocs(d.titre)}</span>`}
         </span>
         ${window._documentsEditingId === d.id
           ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
              <button class="btn btn-secondary" onclick="cancelRenameDocument()" title="Annuler">✖</button>`
-          : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer">✏️</button>`}
+          : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer / changer l'icône">✏️</button>`}
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
         <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
           ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
@@ -4958,15 +4963,18 @@ function renderDocumentsAdmin(items) {
 window.addDocumentFiche = async function () {
   const titreInput = document.getElementById('doc-new-titre');
   const titre = titreInput.value.trim();
+  const iconeInput = document.getElementById('doc-new-icone');
+  const icone = iconeInput.value.trim();
   const categorie = document.getElementById('doc-new-categorie').value;
   if (!titre) { alert('Titre requis.'); return; }
   try {
     const ordre = window._documentsCache.filter(d => d.categorie === categorie).length;
     await addDoc(collection(db, 'documents'), {
-      titre, categorie, url: null, storagePath: null, fileName: null,
+      titre, icone: icone || null, categorie, url: null, storagePath: null, fileName: null,
       ordre, dateAjout: new Date().toISOString()
     });
     titreInput.value = '';
+    iconeInput.value = '';
     showToast('✅ Fiche document créée.');
   } catch (err) {
     alert("Erreur: " + err.message);
@@ -5031,13 +5039,15 @@ window.cancelRenameDocument = function () {
 
 window.saveRenameDocument = async function (docId) {
   const inp = document.getElementById('doc-edit-input-' + docId);
+  const iconeInp = document.getElementById('doc-edit-icone-' + docId);
   if (!inp) return;
   const trimmed = inp.value.trim();
   if (!trimmed) { alert('Le titre ne peut pas être vide.'); return; }
+  const icone = iconeInp ? iconeInp.value.trim() : '';
   try {
-    await updateDoc(doc(db, 'documents', docId), { titre: trimmed });
+    await updateDoc(doc(db, 'documents', docId), { titre: trimmed, icone: icone || null });
     window._documentsEditingId = null;
-    showToast('✅ Document renommé.');
+    showToast('✅ Document mis à jour.');
   } catch (err) {
     alert("Erreur: " + err.message);
   }
@@ -5088,7 +5098,7 @@ window.importExistingDocuments = async function () {
       await window.uploadBytes(sRef, blob, { contentType: 'application/pdf' });
       const url = await window.getDownloadURL(sRef);
       await setDoc(newDocRef, {
-        titre: item.titre, categorie: item.categorie, url, storagePath: path,
+        titre: item.titre, icone: item.icone || null, categorie: item.categorie, url, storagePath: path,
         fileName: item.fileName, ordre: i, dateAjout: new Date().toISOString()
       });
       line.textContent = `✅ ${item.titre}`;

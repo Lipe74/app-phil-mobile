@@ -150,7 +150,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Vue PDF
+Build <span id="app-version-1">…</span> — Icônes docs
      </span>
     </div>
     </div>
@@ -602,28 +602,28 @@ Build <span id="app-version-1">…</span> — Vue PDF
 <!-- DOCUMENTS (chargés dynamiquement depuis Firestore, collection "documents") -->
 
 <button onclick="toggleMenu('docsPhilMobile')" class="menu-item group-toggle">
-🟢 Phil-Mobile
+🟢 Docs Phil-Mobile
 </button>
 <div id="docsPhilMobile" class="submenu">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
 <button onclick="toggleMenu('docsSmartSN')" class="menu-item group-toggle">
-🔵 Smart SN
+🔵 Docs Smart SN
 </button>
 <div id="docsSmartSN" class="submenu">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
 <button onclick="toggleMenu('docsOrange')" class="menu-item group-toggle">
-🟠 Orange
+🟠 Docs Orange
 </button>
 <div id="docsOrange" class="submenu">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
 <button onclick="toggleMenu('docsDivers')" class="menu-item group-toggle">
-📁 Divers
+📁 Docs Divers
 </button>
 <div id="docsDivers" class="submenu">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
@@ -1849,7 +1849,7 @@ async function loadHubDocuments() {
         if (!el) return;
         const list = items.filter(d => d.categorie === cat);
         el.innerHTML = list.length
-          ? list.map(d => `<button onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item">📄 ${escapeHtmlDocs(d.titre)}</button>`).join('')
+          ? list.map(d => `<button onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" style="display:flex;align-items:flex-start;gap:6px;"><span>${d.icone || '📄'}</span><span style="flex:1;">${escapeHtmlDocs(d.titre)}</span></button>`).join('')
           : '<div class="menu-item" style="opacity:.5;">Aucun document</div>';
       });
     }, (err) => {
