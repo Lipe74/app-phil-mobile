@@ -1,7 +1,7 @@
 // IMPORTANT : importScripts('version.js') a été retiré — il empêchait l'installation PWA sur Android
 // (Chrome Android est strict : un échec d'importScripts bloque toute la PWA, contrairement à Chrome desktop).
 // Le CACHE_NAME doit donc être synchronisé MANUELLEMENT avec version.js à chaque changement de version.
-const CACHE_NAME = 'phil-mobile-Build 12.0';
+const CACHE_NAME = 'phil-mobile-Build 12.1';
 const ASSETS = [
   '/',
     '/wp_consultant_hub.html',
@@ -10,12 +10,9 @@ const ASSETS = [
   '/wp_comparatif.html',
   '/wp_eneco.html',
 
-  // PDF
-  '/documents/wp_salesforce.pdf',
-  '/documents/wp_mysmart.pdf',
-  '/documents/wp_commissions.pdf',
-  '/documents/wp_smartPlan.pdf',
-  '/documents/wp_orangeproduits.pdf',
+  // Note: les PDF (manuels/commissions/Orange) sont désormais gérés via Firebase
+  // Storage (collection Firestore "documents", admin > Gestion des documents) —
+  // ils ne sont plus des fichiers statiques du repo, retirés du precache PWA.
 
   // Images
   'https://app.phil-mobile.be/images/logo.png',

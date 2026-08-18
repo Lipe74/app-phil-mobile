@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.5</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.6</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -232,6 +232,10 @@
           <button onclick="showAdminPanel('panel-orange-banners', this)" class="menu-item" id="menu-orange-banners">🎨 Textes &amp; couleurs</button>
           <button onclick="showAdminPanel('panel-commissions', this)" class="menu-item" id="menu-commissions">💰 Gestion des commissions</button>
         </div>
+
+        <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
+
+        <button onclick="showAdminPanel('panel-documents', this)" class="menu-item" id="menu-documents">📄 Gestion des documents</button>
 
       </div>
 
@@ -608,6 +612,36 @@
           </div>
           <div id="commissions-import-preview" style="display:none;margin-bottom:16px;"></div>
           <div id="commissions-content"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-documents">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span>📄 Gestion des documents</span>
+            <button class="btn btn-secondary" onclick="importExistingDocuments()">📥 Importer les documents existants</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Documents (PDF) consultables depuis le Hub, classés par catégorie. Ils s'affichent en visionneuse intégrée dans l'app — pas de bouton téléchargement proposé au consultant. "Importer les documents existants" récupère en une fois les PDF actuellement en ligne sur le site vers Firebase (à faire une seule fois ; les documents déjà importés sont ignorés automatiquement).
+          </div>
+          <div id="documents-import-progress" style="display:none;margin-bottom:16px;font-size:12px;background:#fafafa;border:1px solid #eee;border-radius:8px;padding:10px 12px;"></div>
+
+          <div class="card">
+            <div class="form-row">
+              <label>Titre du document *</label>
+              <input type="text" id="doc-new-titre" placeholder="ex: Guide Salesforce">
+            </div>
+            <div class="form-row">
+              <label>Catégorie *</label>
+              <select id="doc-new-categorie">
+                <option value="Phil-Mobile">Phil-Mobile</option>
+                <option value="Smart SN">Smart SN</option>
+                <option value="Orange">Orange</option>
+                <option value="Divers">Divers</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="addDocumentFiche()">➕ Ajouter une fiche document</button>
+          </div>
+
+          <div id="documents-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-faq">
@@ -1407,6 +1441,7 @@ onAuthStateChanged(auth, async (user) => {
   loadWebLeadsAdmin();
   loadProduitsOrangeAdmin();
   loadCommissionsAdmin();
+  loadDocumentsAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
   loadVideoPromotionAdmin();
@@ -4826,6 +4861,166 @@ function loadCommissionsAdmin() {
     console.log('Chargement commissions impossible:', err.message);
   });
 }
+
+// ===== GESTION DES DOCUMENTS =====
+// Firestore : collection "documents" : { titre, categorie, url, storagePath, fileName, ordre, dateAjout }
+// Storage : chemin documents/{categorie}/{docId}_{fileName}
+// Une fiche peut exister sans fichier (url:null) — le bouton affiché passe alors de
+// "Remplacer" à "Importer" selon la présence ou non d'un fichier déjà associé.
+const DOC_CATEGORIES = ['Phil-Mobile', 'Smart SN', 'Orange', 'Divers'];
+
+// Migration unique des PDF déjà en ligne sur le site (repo statique) vers Firebase.
+const EXISTING_DOCS_MIGRATION = [
+  { titre: 'Manuel Sales Force', categorie: 'Smart SN', fileName: 'wp_salesforce.pdf' },
+  { titre: 'Manuel My Smart SN', categorie: 'Smart SN', fileName: 'wp_mysmart.pdf' },
+  { titre: 'Les commissions', categorie: 'Smart SN', fileName: 'wp_commissions.pdf' },
+  { titre: 'Plan de commissions', categorie: 'Smart SN', fileName: 'wp_smartPlan.pdf' },
+  { titre: 'Produits Orange', categorie: 'Orange', fileName: 'wp_orangeproduits.pdf' },
+  { titre: 'Orange Décodeur', categorie: 'Orange', fileName: 'decodeur.pdf' },
+  { titre: 'Orange Modem', categorie: 'Orange', fileName: 'modem.pdf' },
+  { titre: 'Roaming', categorie: 'Orange', fileName: 'roaming.pdf' },
+  { titre: 'Chaînes Wallonie 01', categorie: 'Orange', fileName: 'wallonie01.pdf' },
+  { titre: 'Chaînes Wallonie 02', categorie: 'Orange', fileName: 'wallonie02.pdf' },
+  { titre: 'Chaînes Flandre', categorie: 'Orange', fileName: 'flandre.pdf' },
+  { titre: 'Chaînes Bruxelles 01', categorie: 'Orange', fileName: 'bruxelles01.pdf' },
+  { titre: 'Chaînes Bruxelles 02', categorie: 'Orange', fileName: 'bruxelles02.pdf' }
+];
+
+function escapeHtmlDocs(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+let documentsUnsub = null;
+window._documentsCache = [];
+
+function loadDocumentsAdmin() {
+  const container = document.getElementById('documents-content');
+  if (!container) return;
+  if (documentsUnsub) { try { documentsUnsub(); } catch (e) {} documentsUnsub = null; }
+  documentsUnsub = onSnapshot(collection(db, 'documents'), (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    window._documentsCache = items;
+    renderDocumentsAdmin(items);
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement documents impossible:', err.message);
+  });
+}
+
+function renderDocumentsAdmin(items) {
+  const container = document.getElementById('documents-content');
+  if (!container) return;
+  container.innerHTML = DOC_CATEGORIES.map(cat => {
+    const list = items.filter(d => d.categorie === cat);
+    const rows = list.length ? list.map(d => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+        <span style="flex:1;min-width:160px;font-weight:600;">${escapeHtmlDocs(d.titre)}</span>
+        <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
+        <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
+          ${d.url ? '🔄 Remplacer' : '📥 Importer'}
+          <input type="file" accept="application/pdf" style="display:none;" onchange="uploadDocumentFile('${d.id}', this)">
+        </label>
+        <button class="btn btn-secondary" onclick="deleteDocumentFiche('${d.id}')">🗑️</button>
+      </div>
+    `).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
+    return `
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:700;color:#f97316;font-size:13px;margin-bottom:6px;">${cat}</div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+}
+
+window.addDocumentFiche = async function () {
+  const titreInput = document.getElementById('doc-new-titre');
+  const titre = titreInput.value.trim();
+  const categorie = document.getElementById('doc-new-categorie').value;
+  if (!titre) { alert('Titre requis.'); return; }
+  try {
+    const ordre = window._documentsCache.filter(d => d.categorie === categorie).length;
+    await addDoc(collection(db, 'documents'), {
+      titre, categorie, url: null, storagePath: null, fileName: null,
+      ordre, dateAjout: new Date().toISOString()
+    });
+    titreInput.value = '';
+    showToast('✅ Fiche document créée.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.uploadDocumentFile = async function (docId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const existing = (window._documentsCache || []).find(d => d.id === docId);
+  if (!existing) { input.value = ''; return; }
+  try {
+    const path = `documents/${existing.categorie}/${docId}_${file.name}`;
+    const sRef = window.storageRef(window.storage, path);
+    await window.uploadBytes(sRef, file, { contentType: file.type || 'application/pdf' });
+    const url = await window.getDownloadURL(sRef);
+    await updateDoc(doc(db, 'documents', docId), {
+      url, storagePath: path, fileName: file.name, dateAjout: new Date().toISOString()
+    });
+    showToast('✅ Document importé.');
+  } catch (err) {
+    alert("Erreur lors de l'import: " + err.message);
+  } finally {
+    input.value = '';
+  }
+};
+
+window.deleteDocumentFiche = async function (docId) {
+  if (!confirm('Supprimer définitivement cette fiche document ?')) return;
+  try {
+    await deleteDoc(doc(db, 'documents', docId));
+    showToast('🗑️ Document supprimé.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.importExistingDocuments = async function () {
+  if (!confirm(`Récupérer les ${EXISTING_DOCS_MIGRATION.length} documents déjà en ligne vers Firebase ? (à faire une seule fois, les documents déjà importés seront ignorés)`)) return;
+  const progress = document.getElementById('documents-import-progress');
+  progress.style.display = 'block';
+  progress.innerHTML = '';
+  const existingFileNames = new Set((window._documentsCache || []).map(d => d.fileName).filter(Boolean));
+  let i = 0;
+  for (const item of EXISTING_DOCS_MIGRATION) {
+    i++;
+    const line = document.createElement('div');
+    line.textContent = `⏳ ${item.titre}...`;
+    progress.appendChild(line);
+    if (existingFileNames.has(item.fileName)) {
+      line.textContent = `↪️ ${item.titre} — déjà importé, ignoré.`;
+      continue;
+    }
+    try {
+      const res = await fetch(`https://app.phil-mobile.be/documents/${item.fileName}`);
+      if (!res.ok) throw new Error('fichier introuvable sur le site');
+      const blob = await res.blob();
+      const newDocRef = doc(collection(db, 'documents'));
+      const path = `documents/${item.categorie}/${newDocRef.id}_${item.fileName}`;
+      const sRef = window.storageRef(window.storage, path);
+      await window.uploadBytes(sRef, blob, { contentType: 'application/pdf' });
+      const url = await window.getDownloadURL(sRef);
+      await setDoc(newDocRef, {
+        titre: item.titre, categorie: item.categorie, url, storagePath: path,
+        fileName: item.fileName, ordre: i, dateAjout: new Date().toISOString()
+      });
+      line.textContent = `✅ ${item.titre}`;
+    } catch (err) {
+      line.textContent = `❌ ${item.titre} — ${err.message}`;
+    }
+  }
+  showToast('Import terminé.');
+};
 
 window.saveCommissionsCategorie = async function (categoryKey) {
   const items = (window._commissionsMerged || []).filter(p => p.cat === categoryKey);

@@ -150,7 +150,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Version Stable
+Build <span id="app-version-1">…</span> — Documents
      </span>
     </div>
     </div>
@@ -599,67 +599,34 @@ Build <span id="app-version-1">…</span> — Version Stable
   </button>
 
 </div>          
-<!-- DOCUMENTS -->
+<!-- DOCUMENTS (chargés dynamiquement depuis Firestore, collection "documents") -->
 
-<button onclick="toggleMenu('docsManuels')" class="menu-item group-toggle">
-📚 Manuels
+<button onclick="toggleMenu('docsPhilMobile')" class="menu-item group-toggle">
+🟢 Phil-Mobile
 </button>
-
-<div id="docsManuels" class="submenu">
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_salesforce.pdf',this)" class="menu-item">
-    🟠 Manuel Sales Force
-  </button>
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_mysmart.pdf',this)" class="menu-item">
-    📘 Manuel My Smart SN
-  </button>
-
+<div id="docsPhilMobile" class="submenu">
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
-<button onclick="toggleMenu('docsCommissions')" class="menu-item group-toggle">
-💰 Commissions
+<button onclick="toggleMenu('docsSmartSN')" class="menu-item group-toggle">
+🔵 Smart SN
 </button>
-
-<div id="docsCommissions" class="submenu">
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_commissions.pdf',this)" class="menu-item">
-    💶 Les commissions
-  </button>
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_smartPlan.pdf',this)" class="menu-item">
-    📊 Plan de commissions
-  </button>
-
+<div id="docsSmartSN" class="submenu">
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
 <button onclick="toggleMenu('docsOrange')" class="menu-item group-toggle">
 🟠 Orange
 </button>
-
 <div id="docsOrange" class="submenu">
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
+</div>
 
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wp_orangeproduits.pdf',this)" class="menu-item">
-    🟠 Produits Orange
-  </button>
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/decodeur.pdf',this)" class="menu-item">
-    📺 Orange Décodeur
-  </button>
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/modem.pdf',this)" class="menu-item">
-    📡 Orange Modem
-  </button>
-
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/roaming.pdf',this)" class="menu-item">
-    🌍 Roaming
-  </button>
-  <button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie01.pdf',this)" class="menu-item">📺 Chaînes Wallonie 01</button>
-<button onclick="loadFrame('https://app.phil-mobile.be/documents/wallonie02.pdf',this)" class="menu-item">📺 Chaînes Wallonie 02</button>
-<button onclick="loadFrame('https://app.phil-mobile.be/documents/flandre.pdf',this)" class="menu-item">📺 Chaînes Flandre</button>
-<button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles01.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 01</button>
-<button onclick="loadFrame('https://app.phil-mobile.be/documents/bruxelles02.pdf',this)" class="menu-item">📺 Chaînes Bruxelles 02</button>
-
+<button onclick="toggleMenu('docsDivers')" class="menu-item group-toggle">
+📁 Divers
+</button>
+<div id="docsDivers" class="submenu">
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
           <!-- SCRIPTS -->
@@ -1840,6 +1807,59 @@ function showExpirationBanner(info) {
     document.body.insertBefore(banner, document.body.firstChild);
   }
 }
+
+// ===== DOCUMENTS (menu Phil-Mobile / Smart SN / Orange / Divers) =====
+// Firestore : collection "documents" : { titre, categorie, url, storagePath, fileName, ordre }
+// Gérés depuis admin.html > Gestion des documents. Seuls les documents avec un fichier
+// déjà importé (url renseignée) s'affichent dans le menu.
+function escapeHtmlDocs(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+async function loadHubDocuments() {
+  try {
+    let tries = 0;
+    while ((!window.db || !window.onSnapshot || !window.collection) && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.onSnapshot) throw new Error('Firestore non disponible');
+
+    const catMap = {
+      'Phil-Mobile': 'docsPhilMobile',
+      'Smart SN': 'docsSmartSN',
+      'Orange': 'docsOrange',
+      'Divers': 'docsDivers'
+    };
+
+    if (window._hubDocumentsUnsub) { try { window._hubDocumentsUnsub(); } catch (e) {} }
+
+    window._hubDocumentsUnsub = window.onSnapshot(window.collection(window.db, 'documents'), (snap) => {
+      const items = [];
+      snap.forEach(docSnap => {
+        const d = docSnap.data();
+        if (d.url) items.push({ id: docSnap.id, ...d });
+      });
+      items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+
+      Object.keys(catMap).forEach(cat => {
+        const el = document.getElementById(catMap[cat]);
+        if (!el) return;
+        const list = items.filter(d => d.categorie === cat);
+        el.innerHTML = list.length
+          ? list.map(d => `<button onclick="loadFrame('${d.url}',this)" class="menu-item">📄 ${escapeHtmlDocs(d.titre)}</button>`).join('')
+          : '<div class="menu-item" style="opacity:.5;">Aucun document</div>';
+      });
+    }, (err) => {
+      console.log('Chargement documents impossible:', err.message);
+    });
+  } catch (err) {
+    console.log('loadHubDocuments error:', err.message);
+  }
+}
+window.loadHubDocuments = loadHubDocuments;
 
 async function loadPMUsers() {
   try {
@@ -5505,6 +5525,7 @@ onAuthStateChanged(auth, async (user) => {
   window._expirationInfo = expirationCheck;
   showExpirationBanner(expirationCheck);
   loadNews();
+  loadHubDocuments();
 
 });
 
@@ -5554,6 +5575,7 @@ window.firebaseLogin = async function(){
     window._expirationInfo = expirationCheck;
     showExpirationBanner(expirationCheck);
     loadNews();
+    loadHubDocuments();
 
   }catch(err){
     document.getElementById('rem-error').style.display='block';
