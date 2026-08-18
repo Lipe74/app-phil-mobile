@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.8</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.9</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -4916,8 +4916,12 @@ function renderDocumentsAdmin(items) {
   if (!container) return;
   container.innerHTML = DOC_CATEGORIES.map(cat => {
     const list = items.filter(d => d.categorie === cat);
-    const rows = list.length ? list.map(d => `
+    const rows = list.length ? list.map((d, idx) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+        <span style="display:flex;flex-direction:column;gap:1px;">
+          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
+          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
+        </span>
         <span style="flex:1;min-width:160px;font-weight:600;">${escapeHtmlDocs(d.titre)}</span>
         <button class="btn btn-secondary" onclick="renameDocumentFiche('${d.id}', '${escapeHtmlDocs(d.titre).replace(/'/g, "&#39;")}')" title="Renommer">✏️</button>
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
@@ -5007,6 +5011,25 @@ window.renameDocumentFiche = async function (docId, currentTitre) {
   try {
     await updateDoc(doc(db, 'documents', docId), { titre: trimmed });
     showToast('✅ Document renommé.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.moveDocumentOrdre = async function (docId, direction) {
+  const item = (window._documentsCache || []).find(d => d.id === docId);
+  if (!item) return;
+  const siblings = (window._documentsCache || [])
+    .filter(d => d.categorie === item.categorie)
+    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  const idx = siblings.findIndex(d => d.id === docId);
+  const swapIdx = idx + direction;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return;
+  // Échange les deux positions puis renumérote tout le groupe (0,1,2...) — fiable même
+  // si les valeurs "ordre" existantes avaient des doublons (ex: import initial).
+  [siblings[idx], siblings[swapIdx]] = [siblings[swapIdx], siblings[idx]];
+  try {
+    await Promise.all(siblings.map((d, i) => updateDoc(doc(db, 'documents', d.id), { ordre: i })));
   } catch (err) {
     alert("Erreur: " + err.message);
   }
