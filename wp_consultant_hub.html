@@ -486,6 +486,8 @@ Build <span id="app-version-1">…</span> — Icônes docs
 
           <button onclick="showChatOnline(this)" class="menu-item" id="menu-chatonline">🗨️ Chat online<span id="chatonline-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">0</span></button>
 
+          <button onclick="showTeamsMeeting()" class="menu-item" id="menu-teams-meeting">📹 Réunion Teams</button>
+
 <!-- AGENDA, FORMATIONS & NEWS -->
 <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
@@ -5525,6 +5527,7 @@ onAuthStateChanged(auth, async (user) => {
   window._expirationInfo = expirationCheck;
   showExpirationBanner(expirationCheck);
   loadNews();
+  loadTeamsLink();
   loadHubDocuments();
 
 });
@@ -5575,6 +5578,7 @@ window.firebaseLogin = async function(){
     window._expirationInfo = expirationCheck;
     showExpirationBanner(expirationCheck);
     loadNews();
+    loadTeamsLink();
     loadHubDocuments();
 
   }catch(err){
@@ -5683,6 +5687,33 @@ document.addEventListener('click', function(e){
     menu.style.display = 'none';
   }
 });
+// --- Réunion Teams (visio récurrente, section Communication) ---
+let pmTeamsLink = null;
+
+async function loadTeamsLink() {
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDoc) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (window.db && window.getDoc) {
+      const snap = await window.getDoc(window.doc(window.db, 'settings', 'communication'));
+      if (snap.exists()) pmTeamsLink = snap.data().teamsLink || null;
+    }
+  } catch (e) {
+    console.log('Lecture lien Teams impossible:', e.message);
+  }
+}
+
+window.showTeamsMeeting = function () {
+  if (pmTeamsLink) {
+    window.open(pmTeamsLink, '_blank', 'noopener');
+  } else {
+    alert('Aucune réunion Teams n\'est configurée pour le moment.');
+  }
+};
+
 async function loadNews() {
 
   try {

@@ -160,7 +160,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.15</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.16</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -190,6 +190,7 @@
           <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
           <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
           <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
+          <button onclick="showAdminPanel('panel-teams-link', this)" class="menu-item" id="menu-teams-link">📹 Réunion Teams</button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
           <div id="botFaqMenu" class="submenu">
             <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
@@ -743,6 +744,20 @@
         <div class="admin-panel" id="panel-messages">
           <div class="section-title">💬 Messages</div>
           <div id="messages-admin-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-teams-link">
+          <div class="section-title">📹 Réunion Teams</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Lien de la réunion Teams récurrente (visio d'équipe). Affiché aux consultants dans le hub, section Communication.
+            </div>
+            <div class="form-row">
+              <label>Lien de la réunion</label>
+              <input type="url" id="teams-link" placeholder="https://teams.microsoft.com/meet/...">
+            </div>
+            <button class="btn btn-primary" onclick="saveTeamsLink()">Enregistrer le lien</button>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-bandeau">
@@ -1450,6 +1465,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
   loadNewsAdmin();
+  loadTeamsLinkAdmin();
   loadAgendaAdmin();
   onAgendaCategoryChange();
   loadProspects();
@@ -1766,6 +1782,34 @@ window.saveNews = async function () {
   try {
     await setDoc(doc(db, 'news', 'current'), { active, title, type });
     showToast('✅ Annonce enregistrée.');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// --- Lien de la réunion Teams (visio récurrente, section Communication du hub) ---
+async function loadTeamsLinkAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'communication'));
+    if (snap.exists()) {
+      document.getElementById('teams-link').value = snap.data().teamsLink || '';
+    }
+  } catch (err) {
+    console.log('Pas encore de lien Teams enregistré:', err.message);
+  }
+}
+
+window.saveTeamsLink = async function () {
+  const teamsLink = document.getElementById('teams-link').value.trim();
+
+  if (teamsLink && !/^https:\/\/teams\.microsoft\.com\//i.test(teamsLink)) {
+    alert('Merci de coller un lien Teams valide (https://teams.microsoft.com/...).');
+    return;
+  }
+
+  try {
+    await setDoc(doc(db, 'settings', 'communication'), { teamsLink }, { merge: true });
+    showToast('✅ Lien Teams enregistré.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
