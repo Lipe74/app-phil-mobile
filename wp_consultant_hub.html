@@ -1023,6 +1023,19 @@ Build <span id="app-version-1">…</span> — Icônes docs
                 <button onclick="crmDeleteAll('clients')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Supprimer tout</button>
               </div>
             </div>
+            <details style="margin-bottom:10px;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;">
+              <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:12px;">📋 Coller une liste</summary>
+              <div style="font-size:11px;color:#888;margin:8px 0;">
+                Une fiche par bloc, séparés par une ligne <code>===</code>. Champs : <code>NOM:</code> (obligatoire), <code>TEL:</code>, <code>EMAIL:</code>, <code>PRODUIT:</code> (Orange ou Eneco), <code>OPERATEUR:</code> (opérateur actuel).
+              </div>
+              <textarea id="crm-paste-clients" rows="6" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="NOM: Dupont Marie
+TEL: 0470123456
+EMAIL: marie@example.com
+PRODUIT: Orange
+OPERATEUR: Proximus
+==="></textarea>
+              <button onclick="bulkImportCrmPaste('clients')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer la liste</button>
+            </details>
             <input id="crm-cl-search" type="text" placeholder="🔍 Rechercher..." oninput="filterCrmList('clients')" style="width:100%;padding:8px 12px;border:1px solid #f97316;border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
             <div id="crm-cl-list" style="font-size:13px;color:#666;">Chargement...</div>
           </div>
@@ -1039,6 +1052,18 @@ Build <span id="app-version-1">…</span> — Icônes docs
                 <button onclick="openCrmModal('consultantsCrm',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
               </div>
             </div>
+            <details style="margin-bottom:10px;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;">
+              <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:12px;">📋 Coller une liste</summary>
+              <div style="font-size:11px;color:#888;margin:8px 0;">
+                Une fiche par bloc, séparés par une ligne <code>===</code>. Champs : <code>NOM:</code> (obligatoire), <code>TEL:</code>, <code>EMAIL:</code>, <code>STATUT:</code> (indépendant, salarié, ou laisser vide).
+              </div>
+              <textarea id="crm-paste-consultants" rows="6" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="NOM: Dupont Marie
+TEL: 0470123456
+EMAIL: marie@example.com
+STATUT: independant
+==="></textarea>
+              <button onclick="bulkImportCrmPaste('consultantsCrm')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer la liste</button>
+            </details>
             <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
           </div>
 
@@ -5180,6 +5205,8 @@ function crmRenderCard(item, col) {
   if (item.numSmart) h += '<div style="font-size:12px;color:#555;font-weight:700;">N° Smart: ' + crmEsc(item.numSmart) + '</div>';
   if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Produits Orange: ' + crmEsc(item.orange) + '</div>';
   if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Produits Eneco: ' + crmEsc(item.eneco) + '</div>';
+  if (item.operateurActuel) h += '<div style="font-size:12px;color:#555;">Opérateur actuel: ' + crmEsc(item.operateurActuel) + '</div>';
+  if (item.statutPro) h += '<div style="font-size:12px;color:#555;">Statut: ' + crmEsc(item.statutPro === 'independant' ? 'Indépendant' : (item.statutPro === 'salarie' ? 'Salarié' : item.statutPro)) + '</div>';
   h += '</div>';
   return h;
 }
@@ -5298,10 +5325,12 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-numorange-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numeneco-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numsmart-row').style.display = isC ? 'none' : '';
-  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  document.getElementById('crm-operateur-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-statutpro-row').style.display = isC ? '' : 'none';
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
   }
   document.getElementById('modal-crm').style.display = 'flex';
 };
@@ -5314,8 +5343,8 @@ window.saveCrmModal = function() {
   var isC = col === 'consultantsCrm';
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:g('tel'), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
-  if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.numSmart=g('numSmart'); }
-  if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; }
+  if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.numSmart=g('numSmart'); data.operateurActuel=g('operateurActuel'); }
+  if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   var p;
   if (docId) {
@@ -5345,7 +5374,7 @@ window.importCrmCsv = function(input, col) {
       s = s.replace(/[^a-z]/g,'');
       return s;
     });
-    var map = { prenom:'prenom', nom:'nom', telephone:'tel', tel:'tel', email:'email', adresse:'adresse', cp:'cp', codepostal:'cp', ville:'ville', societe:'societe', tva:'tva', reference:'reference', orange:'orange', eneco:'eneco', numorange:'numOrange', clientorange:'numOrange', numeneco:'numEneco', contrateneco:'numEneco', numsmart:'numSmart', contratsmart:'numSmart' };
+    var map = { prenom:'prenom', nom:'nom', telephone:'tel', tel:'tel', email:'email', adresse:'adresse', cp:'cp', codepostal:'cp', ville:'ville', societe:'societe', tva:'tva', reference:'reference', orange:'orange', eneco:'eneco', numorange:'numOrange', clientorange:'numOrange', numeneco:'numEneco', contrateneco:'numEneco', numsmart:'numSmart', contratsmart:'numSmart', operateur:'operateurActuel', operateuractuel:'operateurActuel', statut:'statutPro', statutpro:'statutPro' };
     var promises = [];
     for (var i=1; i<lines.length; i++) {
       var vals = lines[i].split(sep);
@@ -5357,6 +5386,68 @@ window.importCrmCsv = function(input, col) {
     Promise.all(promises).then(function(){ alert(promises.length+' importe(s) !'); input.value=''; if(col==='clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err){ alert('Erreur: '+err.message); });
   };
   reader.readAsText(file,'UTF-8');
+};
+
+// Import par collage (comme le fichier CSV, mais collé directement) : un bloc par fiche, séparés par une ligne "===".
+window.bulkImportCrmPaste = function(col) {
+  var isC = col === 'consultantsCrm';
+  var taId = isC ? 'crm-paste-consultants' : 'crm-paste-clients';
+  var ta = document.getElementById(taId);
+  var raw = (ta ? ta.value : '').trim();
+  if (!raw) { alert('Le champ est vide.'); return; }
+
+  var blocks = raw.split(/\n\s*===\s*\n?/).map(function(b){ return b.trim(); }).filter(Boolean);
+  var valid = [];
+  var errors = [];
+
+  blocks.forEach(function(block, idx) {
+    var nomMatch = block.match(/^NOM\s*:\s*(.+)$/mi);
+    var telMatch = block.match(/^TEL\s*:\s*(.+)$/mi);
+    var emailMatch = block.match(/^EMAIL\s*:\s*(.+)$/mi);
+    var nom = nomMatch ? nomMatch[1].trim() : '';
+    if (!nom) { errors.push('Bloc ' + (idx + 1) + ' : NOM manquant'); return; }
+
+    var data = {
+      consultantId: window.pmCurrentUser.id,
+      nom: nom,
+      tel: telMatch ? telMatch[1].trim() : '',
+      email: emailMatch ? emailMatch[1].trim() : '',
+      etat: 'actif',
+      createdAt: new Date().toISOString()
+    };
+
+    if (!isC) {
+      var prodMatch = block.match(/^PRODUIT\s*:\s*(.+)$/mi);
+      var prod = prodMatch ? prodMatch[1].trim() : '';
+      if (/orange/i.test(prod)) data.orange = prod;
+      else if (/eneco/i.test(prod)) data.eneco = prod;
+      var opMatch = block.match(/^OPERATEUR\s*:\s*(.+)$/mi);
+      if (opMatch) data.operateurActuel = opMatch[1].trim();
+    } else {
+      var statMatch = block.match(/^STATUT\s*:\s*(.+)$/mi);
+      if (statMatch) {
+        var s = statMatch[1].trim().toLowerCase();
+        if (/independ/i.test(s)) data.statutPro = 'independant';
+        else if (/salari/i.test(s)) data.statutPro = 'salarie';
+      }
+    }
+
+    valid.push(data);
+  });
+
+  var msg = valid.length + ' fiche(s) prête(s) à être importée(s).';
+  if (errors.length > 0) msg += '\n\n⚠️ ' + errors.length + ' bloc(s) ignoré(s) :\n' + errors.join('\n');
+  msg += '\n\nContinuer l\'import ?';
+
+  if (valid.length === 0) { alert(msg); return; }
+  if (!confirm(msg)) return;
+
+  var promises = valid.map(function(d) { return window.addDoc(window.collection(window.db, col), d); });
+  Promise.all(promises).then(function() {
+    alert(promises.length + ' importé(s) !');
+    if (ta) ta.value = '';
+    if (col === 'clients') crmLoadClients(); else crmLoadConsultants();
+  }).catch(function(err) { alert('Erreur: ' + err.message); });
 };
 window.crmDeleteAll = function(col) {
   if (!confirm('Supprimer TOUS les clients ? Cette action est irreversible.')) return;
@@ -5895,6 +5986,18 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
       <div id="crm-eneco-row" style="grid-column:span 2;display:none;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Eneco (produits)</div>
         <input id="crm-eneco" placeholder="Électricité, Gaz..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-operateur-row" style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur actuel</div>
+        <input id="crm-operateurActuel" placeholder="Proximus, Voo, Telenet..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-statutpro-row" style="grid-column:span 2;display:none;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Statut</div>
+        <select id="crm-statutPro" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+          <option value="">-- Non renseigné --</option>
+          <option value="independant">Indépendant</option>
+          <option value="salarie">Salarié</option>
+        </select>
       </div>
       <div id="crm-numorange-row">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Orange</div>
