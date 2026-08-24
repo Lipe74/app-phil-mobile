@@ -66,6 +66,9 @@
 .pm-fav-heart:hover{ transform:scale(1.15); }
 #pm-favoris-list .menu-item{ text-align:left; }
 
+#ctr-import-pdf-btn:disabled{ opacity:.6;cursor:default; }
+@keyframes ctr-import-spin{ to{ transform:rotate(360deg); } }
+
 .menu-item:hover { background:#fff3e8; }
 .active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
 @media(max-width:600px){
@@ -545,7 +548,7 @@ Build <span id="app-version-1">…</span> — Icônes docs
 📊 Mon CRM
 </button>
 <div id="crmMenu" class="submenu">
-  <button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">
+  <button onclick="showCrmPanel('panel-contrats')" class="menu-item" id="btn-contrats">
     📋 Gestion des contrats
   </button>
   <button onclick="showProspPanel('clients')" class="menu-item" id="btn-prosp-clients">
@@ -1048,6 +1051,84 @@ Build <span id="app-version-1">…</span> — Icônes docs
               </div>
             </div>
 
+          </div>
+
+          <!-- Panel Mes Contrats -->
+          <div id="panel-contrats" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📋 Mes Contrats</h2>
+
+            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <div>
+                <div style="font-size:28px;font-weight:700;" id="ctr-asp-total-display">0</div>
+                <div style="font-size:12px;opacity:.9;">ASP total (de départ + contrats)</div>
+              </div>
+              <div style="text-align:right;font-size:12px;opacity:.9;" id="ctr-asp-breakdown">Départ: 0 · Contrats: 0</div>
+            </div>
+
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+              <button onclick="ctrShowTab('new')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📋 Nouveau</button>
+              <button onclick="ctrShowTab('history')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📚 Historique</button>
+              <button onclick="ctrShowTab('stats')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📊 Statistiques</button>
+            </div>
+
+            <div id="ctr-tab-new">
+              <div id="ctr-prospect-link-banner" style="display:none;background:#fff3e8;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;margin-bottom:14px;">
+                🔗 Ce contrat sera lié au prospect <b id="ctr-prospect-link-name"></b> — il passera automatiquement en "Converti" une fois le contrat enregistré.
+              </div>
+
+              <input type="file" id="ctr-import-pdf-input" accept="application/pdf" style="display:none;" onchange="ctrHandleImportPdf(this.files[0])">
+              <button type="button" id="ctr-import-pdf-btn" onclick="document.getElementById('ctr-import-pdf-input').click()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;">
+                <span class="ctr-import-spinner" id="ctr-import-spinner" style="display:none;width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:ctr-import-spin .7s linear infinite;"></span>
+                <span id="ctr-import-pdf-btn-label">📥 Importer un contrat (PDF)</span>
+              </button>
+              <div id="ctr-import-status" style="display:none;font-size:12px;border-radius:10px;padding:9px 12px;margin:-8px 0 16px;"></div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du client</div><input id="ctr-nom" placeholder="Jean Dupont" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Société</div><input id="ctr-societe" placeholder="Dupont Consulting SRL" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div><input id="ctr-tel" placeholder="0475 24 02 05" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div><input id="ctr-tva" placeholder="BE0123456789" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div><input id="ctr-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville ou adresse</div><input id="ctr-adresse" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Orange</div><input id="ctr-clientOrange" placeholder="1.9763217" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat Eneco</div><input id="ctr-contratEneco" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div style="grid-column:span 2;"><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat My Smart</div><input id="ctr-contratSmart" placeholder="0000282697" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date du contrat</div><input type="date" id="ctr-dateContrat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">État du contrat</div>
+                  <select id="ctr-etatContrat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <option value="Encodé">📝 Encodé</option>
+                    <option value="Activé">✅ Activé</option>
+                    <option value="En attente">⏳ En attente</option>
+                    <option value="Annulé">❌ Annulé</option>
+                    <option value="Refusé">🚫 Refusé</option>
+                  </select>
+                </div>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#555;font-size:13px;margin:12px 0 4px;cursor:pointer;">
+                <input type="checkbox" id="ctr-ancien" style="width:auto;margin:0;">
+                🕰️ Ancien contrat (déjà comptabilisé — ne pas ajouter à mon ASP)
+              </label>
+
+              <div style="background:#fff3e8;color:#9a3412;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;margin:8px 0 14px;">
+                Statut actuel : <b id="ctr-statut-label">—</b> · Total contrat : <b><span id="ctr-asp-preview">0</span> ASP</b> · <b><span id="ctr-eur-preview">0,00 €</span></b>
+              </div>
+
+              <h3 style="color:#f97316;font-size:14px;margin:0 0 8px;">📱 Produits</h3>
+              <div id="ctr-products"></div>
+
+              <button onclick="ctrSaveContract()" id="ctr-save-btn" style="margin-top:14px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">💾 Enregistrer le contrat</button>
+            </div>
+
+            <div id="ctr-tab-history" style="display:none;">
+              <input id="ctr-search" type="text" placeholder="🔍 Rechercher un client, société, TVA..." oninput="ctrSearchContracts()" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:12px;">
+              <div id="ctr-history-list" style="font-size:13px;color:#666;">Chargement...</div>
+            </div>
+
+            <div id="ctr-tab-stats" style="display:none;">
+              <div id="ctr-stats-content"></div>
+            </div>
           </div>
 
           <!-- Panel News -->
@@ -5561,6 +5642,7 @@ window.showCrmPanel = function(panelId) {
   document.body.classList.add('mobile-panel-open');
   if (panelId === 'panel-crm-clients') crmLoadClients();
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
+  if (panelId === 'panel-contrats' && typeof ctrInit === 'function') ctrInit();
 };
 
 // ===== Promotions (lecture seule, synchronisée avec admin.html) =====
@@ -5781,7 +5863,7 @@ window.crmImportContract = function(docId) {
   if (!item) return;
   var nom = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
   var adresse = [item.adresse, item.cp, item.ville].filter(Boolean).join(' ');
-  var params = new URLSearchParams({
+  window.ctrOpenNew({
     nom: nom,
     tel: item.tel || '',
     email: item.email || '',
@@ -5792,26 +5874,6 @@ window.crmImportContract = function(docId) {
     contratEneco: item.numEneco || '',
     contratSmart: item.numSmart || ''
   });
-  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
-};
-
-window.crmImportContract = function(docId) {
-  var item = (_crmClData || []).find(function(x){ return x._id === docId; });
-  if (!item) return;
-  var nom = ((item.prenom || '') + ' ' + (item.nom || '')).trim();
-  var adresse = [item.adresse, item.cp, item.ville].filter(Boolean).join(' ');
-  var params = new URLSearchParams({
-    nom: nom,
-    tel: item.tel || '',
-    email: item.email || '',
-    societe: item.societe || '',
-    tva: item.tva || '',
-    adresse: adresse,
-    clientOrange: item.numOrange || '',
-    contratEneco: item.numEneco || '',
-    contratSmart: item.numSmart || ''
-  });
-  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
 };
 
 window.crmToggle = function(col, docId, desactiver) {
@@ -6262,8 +6324,7 @@ window.pclMigrateConverted = async function () {
 window.pclConvertToClient = function (docId) {
   var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
   if (!p) return;
-  var params = new URLSearchParams({ prospectId: p.docId, nom: p.nom || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: p.ville || '' });
-  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
+  window.ctrOpenNew({ prospectId: p.docId, nom: p.nom || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: p.ville || '' });
 };
 
 window.pclDeleteProspect = async function (docId) {
@@ -6779,6 +6840,684 @@ window.pcoBulkImportPaste = async function () {
 };
 // ===== FIN PROSPECTS =====
 
+// ===== MES CONTRATS — fusionné depuis wp_contrats.html (version simplifiée : sans import PDF/IA) =====
+// Réutilise l'authentification et le Firestore déjà initialisés par le hub (window.db, window.pmCurrentUser...) —
+// aucune connexion Firebase Auth séparée n'est nécessaire ici, contrairement à l'ancien wp_contrats.html.
+const CTR_DEFAULT_PRODUCTS = [
+  { id: "flybox",    label: "📡 Home Flybox",        cat: "fixe",   rates: [25,  30,   null, null, null], asp: 1, aspSoho: 0.5 },
+  { id: "internet",  label: "🌐 Internet",            cat: "fixe",   rates: [15,  20,   15,   12,   null], asp: 1, aspSoho: 0.5 },
+  { id: "tv",        label: "📺 TV Orange",           cat: "fixe",   rates: [10,  10,   null, null, null], asp: 1, aspSoho: 0 },
+  { id: "child",     label: "👶 Mobile Child",        cat: "mobile", rates: [1,   5,    null, null, null], asp: 0, aspSoho: 0 },
+  { id: "small",     label: "📱 Mobile Small",        cat: "mobile", rates: [10,  15,   null, null, null], asp: 1, aspSoho: 0 },
+  { id: "medium",    label: "📱 Mobile Medium",       cat: "mobile", rates: [35,  40,   12,   20,   15],   asp: 1, aspSoho: 0.5 },
+  { id: "unlimited", label: "♾️ Mobile Unlimited",     cat: "mobile", rates: [60,  65,   12,   20,   15],   asp: 1, aspSoho: 0.5 },
+  { id: "large",     label: "📱 Mobile Large",        cat: "mobile", rates: [50,  55,   12,   20,   15],   asp: 1, aspSoho: 0.5 },
+  { id: "eneco_elec",label: "⚡ Eneco Électricité",    cat: "energy", rates: [20,  25,   null, null, 20],   asp: 0.5, aspSoho: 0 },
+  { id: "eneco_gaz", label: "🔥 Eneco Gaz",            cat: "energy", rates: [20,  25,   null, null, 20],   asp: 0.5, aspSoho: 0 },
+  { id: "chaudiere", label: "🔧 Entretien chaudière",  cat: "energy", rates: [20,  25,   null, null, null], asp: 0.5, aspSoho: 0 },
+  { id: "ebilling",  label: "📧 eBilling",             cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 },
+  { id: "domicil",   label: "🏦 Domiciliation",        cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 }
+];
+var ctrProducts = CTR_DEFAULT_PRODUCTS;
+var ctrUnits = {};
+CTR_DEFAULT_PRODUCTS.forEach(function (p) { ctrUnits[p.id] = []; });
+var ctrConsultantDocId = null;
+var ctrAspInit = 0;
+window._ctrStatut = 'BC';
+window._ctrProspectId = null;
+window._ctrEditingId = null;
+window._ctrAllContracts = [];
+window._ctrProductsBuilt = false;
+
+function ctrGetTarifIndex() { return (window._ctrStatut && window._ctrStatut !== 'BC') ? 1 : 0; }
+
+function ctrCalcUnitEUR(product, unit) {
+  var tarifIdx = ctrGetTarifIndex();
+  var total = product.rates[tarifIdx] || 0;
+  if (unit.convergence && product.rates[2] !== null) total += product.rates[2];
+  if (unit.portabilite && product.rates[3] !== null) total += product.rates[3];
+  if (unit.sohoIndep && product.rates[4] !== null) total += product.rates[4];
+  return total;
+}
+
+function ctrHasInternet() { return ctrUnits['internet'] && ctrUnits['internet'].length > 0; }
+
+window.ctrAddUnit = function (productId) {
+  ctrUnits[productId].push({ convergence: false, portabilite: false, sohoIndep: false });
+  ctrRenderProductBlock(productId);
+  window.ctrUpdateContractPreview();
+};
+window.ctrRemoveUnit = function (productId, index) {
+  ctrUnits[productId].splice(index, 1);
+  ctrRenderProductBlock(productId);
+  window.ctrUpdateContractPreview();
+};
+window.ctrToggleUnitFlag = function (productId, index, flag) {
+  ctrUnits[productId][index][flag] = !ctrUnits[productId][index][flag];
+  ctrRenderProductBlock(productId);
+  window.ctrUpdateContractPreview();
+};
+
+function ctrRenderProductBlock(productId) {
+  var product = ctrProducts.find(function (p) { return p.id === productId; });
+  var blockBody = document.getElementById('ctr-block-body-' + productId);
+  if (!blockBody || !product) return;
+
+  var list = ctrUnits[productId];
+  if (!list || list.length === 0) {
+    blockBody.innerHTML = '<div style="font-size:11px;color:#aaa;">Aucune unité ajoutée.</div>';
+    return;
+  }
+
+  var convergenceOK = product.rates[2] !== null && ctrHasInternet();
+  var portabiliteOK = product.rates[3] !== null;
+  var sohoOK = product.rates[4] !== null;
+
+  var html = '';
+  list.forEach(function (unit, i) {
+    var eur = ctrCalcUnitEUR(product, unit);
+    html += '<div style="background:#fff;border:1px solid #ffe2cc;border-radius:10px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;font-size:12px;">'
+      + '<span style="font-weight:700;color:#f97316;min-width:60px;">#' + (i + 1) + '</span>';
+    if (convergenceOK) html += '<label style="display:flex;align-items:center;gap:4px;width:auto;cursor:pointer;font-weight:600;color:#555;"><input type="checkbox" ' + (unit.convergence ? 'checked' : '') + ' onchange="ctrToggleUnitFlag(\'' + productId + '\',' + i + ',\'convergence\')" style="width:auto;"> Convergence (+' + product.rates[2] + '€)</label>';
+    if (portabiliteOK) html += '<label style="display:flex;align-items:center;gap:4px;width:auto;cursor:pointer;font-weight:600;color:#555;"><input type="checkbox" ' + (unit.portabilite ? 'checked' : '') + ' onchange="ctrToggleUnitFlag(\'' + productId + '\',' + i + ',\'portabilite\')" style="width:auto;"> Portabilité (+' + product.rates[3] + '€)</label>';
+    if (sohoOK) html += '<label style="display:flex;align-items:center;gap:4px;width:auto;cursor:pointer;font-weight:600;color:#555;"><input type="checkbox" ' + (unit.sohoIndep ? 'checked' : '') + ' onchange="ctrToggleUnitFlag(\'' + productId + '\',' + i + ',\'sohoIndep\')" style="width:auto;"> SoHo-Indép. (+' + product.rates[4] + '€)</label>';
+    html += '<span style="margin-left:auto;font-weight:700;color:#f97316;font-family:monospace;">' + eur.toFixed(2) + ' €</span>'
+      + '<button onclick="ctrRemoveUnit(\'' + productId + '\',' + i + ')" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;">🗑</button>'
+      + '</div>';
+  });
+
+  blockBody.innerHTML = html;
+}
+
+function ctrBuildProductsUI() {
+  var container = document.getElementById('ctr-products');
+  if (!container) return;
+  container.innerHTML = '';
+  ctrProducts.forEach(function (p) {
+    var div = document.createElement('div');
+    div.style.cssText = 'border:1px solid #ffd1b8;border-radius:14px;padding:12px 14px;margin-bottom:10px;background:#fffaf7;';
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;font-weight:700;color:#f97316;margin-bottom:8px;">'
+      + '<span>' + p.label + '</span>'
+      + '<button onclick="ctrAddUnit(\'' + p.id + '\')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Ajouter</button>'
+      + '</div><div id="ctr-block-body-' + p.id + '"></div>';
+    container.appendChild(div);
+    ctrRenderProductBlock(p.id);
+  });
+}
+
+window.ctrUpdateContractPreview = function () {
+  var totalEur = 0, totalAsp = 0;
+  ctrProducts.forEach(function (p) {
+    (ctrUnits[p.id] || []).forEach(function (unit) {
+      totalEur += ctrCalcUnitEUR(p, unit);
+      totalAsp += p.asp + (unit.sohoIndep ? p.aspSoho : 0);
+    });
+  });
+  ctrProducts.forEach(function (p) { ctrRenderProductBlock(p.id); });
+  var aspEl = document.getElementById('ctr-asp-preview');
+  var eurEl = document.getElementById('ctr-eur-preview');
+  if (aspEl) aspEl.textContent = Math.round(totalAsp * 10) / 10;
+  if (eurEl) eurEl.textContent = totalEur.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+};
+
+// Charge le barème depuis Firestore (collection "commissions", éditable dans admin.html, partagée avec
+// wp_rem.html). En cas d'échec, CTR_DEFAULT_PRODUCTS reste utilisé — aucune interruption.
+async function ctrLoadCommissionsBareme() {
+  try {
+    var snap = await window.getDocs(window.collection(window.db, 'commissions'));
+    var stored = {};
+    snap.forEach(function (d) { stored[d.id] = d.data(); });
+    var defaultIds = {};
+    CTR_DEFAULT_PRODUCTS.forEach(function (p) { defaultIds[p.id] = true; });
+
+    var merged = CTR_DEFAULT_PRODUCTS.map(function (def) {
+      var s = stored[def.id];
+      return {
+        id: def.id, cat: def.cat,
+        label: (s && s.label) || def.label,
+        rates: (s && Array.isArray(s.rates)) ? s.rates : def.rates,
+        asp: (s && typeof s.asp === 'number') ? s.asp : def.asp,
+        aspSoho: (s && typeof s.aspSoho === 'number') ? s.aspSoho : def.aspSoho
+      };
+    });
+    Object.keys(stored).filter(function (id) { return !defaultIds[id]; }).forEach(function (id) {
+      var s = stored[id];
+      merged.push({
+        id: id, label: s.label || id, cat: s.cat || 'other',
+        rates: Array.isArray(s.rates) ? s.rates : [null, null, null, null, null],
+        asp: typeof s.asp === 'number' ? s.asp : 0,
+        aspSoho: typeof s.aspSoho === 'number' ? s.aspSoho : 0
+      });
+    });
+
+    var keptUnits = {};
+    merged.forEach(function (p) { keptUnits[p.id] = ctrUnits[p.id] || []; });
+    ctrProducts = merged;
+    ctrUnits = keptUnits;
+    ctrBuildProductsUI();
+    window.ctrUpdateContractPreview();
+  } catch (e) {
+    console.log('Chargement barème commissions impossible (fallback valeurs par défaut):', e.message);
+  }
+}
+
+// Retrouve le document Firestore du consultant connecté (collection "consultants") pour lire son
+// ASP de départ et pouvoir y réécrire aspFromContracts (utilisé par le tableau de bord du hub).
+async function ctrLoadConsultantDoc() {
+  try {
+    var snap = await window.getDocs(window.collection(window.db, 'consultants'));
+    var found = null, foundId = null;
+    snap.forEach(function (d) {
+      var c = d.data();
+      if ((c.id || d.id) === window.pmCurrentUser.id) { found = c; foundId = d.id; }
+    });
+    ctrConsultantDocId = foundId;
+    ctrAspInit = found ? (found.aspInit || 0) : 0;
+    var aspTotal = ctrAspInit + (found ? (found.aspFromContracts || 0) : 0);
+    window._ctrStatut = aspTotal >= 70 ? 'SC' : 'BC';
+    var lbl = document.getElementById('ctr-statut-label');
+    if (lbl) lbl.textContent = window._ctrStatut === 'SC' ? 'SC ou +' : 'BC';
+  } catch (e) { console.log('ctrLoadConsultantDoc error:', e.message); }
+}
+
+// Recalcule le total ASP (départ + somme des contrats actifs) et le réécrit sur le profil consultant.
+window.ctrRefreshAspTotal = async function () {
+  if (!window.pmCurrentUser) return;
+  try {
+    var snap = await window.getDocs(window.query(
+      window.collection(window.db, 'contrats'),
+      window.where('consultantId', '==', window.pmCurrentUser.id)
+    ));
+    var aspFromContracts = 0;
+    snap.forEach(function (d) {
+      var c = d.data();
+      if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé') return;
+      if (c.ancien) return;
+      aspFromContracts += c.aspTotal || 0;
+    });
+    var total = ctrAspInit + aspFromContracts;
+    var totalEl = document.getElementById('ctr-asp-total-display');
+    var breakEl = document.getElementById('ctr-asp-breakdown');
+    if (totalEl) totalEl.textContent = Math.round(total * 10) / 10;
+    if (breakEl) breakEl.textContent = 'Départ: ' + ctrAspInit + ' · Contrats: ' + (Math.round(aspFromContracts * 10) / 10);
+
+    if (ctrConsultantDocId) {
+      try {
+        await window.updateDoc(window.doc(window.db, 'consultants', ctrConsultantDocId), {
+          aspFromContracts: Math.round(aspFromContracts * 10) / 10
+        });
+      } catch (err) { console.log('Mise à jour aspFromContracts impossible:', err.message); }
+    }
+  } catch (e) { console.log('ctrRefreshAspTotal error:', e.message); }
+};
+
+window.ctrShowTab = function (id) {
+  ['new', 'history', 'stats'].forEach(function (t) {
+    var el = document.getElementById('ctr-tab-' + t);
+    if (el) el.style.display = (t === id) ? 'block' : 'none';
+  });
+  if (id === 'history') ctrRenderHistory();
+  if (id === 'stats') ctrRenderStats();
+};
+
+// Point d'entrée : appelé par showCrmPanel() à chaque ouverture du panneau "Mes Contrats".
+window.ctrInit = async function () {
+  if (!document.getElementById('ctr-dateContrat').value) {
+    document.getElementById('ctr-dateContrat').value = new Date().toISOString().slice(0, 10);
+  }
+  if (!window._ctrProductsBuilt) {
+    ctrBuildProductsUI();
+    window.ctrUpdateContractPreview();
+    window._ctrProductsBuilt = true;
+  }
+  await ctrLoadConsultantDoc();
+  await window.ctrRefreshAspTotal();
+  ctrLoadCommissionsBareme();
+};
+
+// Ouvre le panneau "Mes Contrats" avec le formulaire pré-rempli, depuis Gestion Clients ("Importer")
+// ou Prospects Clients ("Créer le contrat"). Remplace l'ancien passage par URL (?nom=...&tel=...).
+window.ctrOpenNew = function (prefill) {
+  window.showCrmPanel('panel-contrats');
+  window._ctrEditingId = null;
+  window._ctrProspectId = (prefill && prefill.prospectId) || null;
+  var map = { nom: 'ctr-nom', tel: 'ctr-tel', email: 'ctr-email', societe: 'ctr-societe', tva: 'ctr-tva', adresse: 'ctr-adresse', clientOrange: 'ctr-clientOrange', contratEneco: 'ctr-contratEneco', contratSmart: 'ctr-contratSmart' };
+  Object.keys(map).forEach(function (k) {
+    var el = document.getElementById(map[k]);
+    if (el) el.value = (prefill && prefill[k]) || '';
+  });
+  var banner = document.getElementById('ctr-prospect-link-banner');
+  var nameEl = document.getElementById('ctr-prospect-link-name');
+  if (banner && nameEl) {
+    if (window._ctrProspectId) { nameEl.textContent = (prefill && prefill.nom) || 'ce prospect'; banner.style.display = 'block'; }
+    else banner.style.display = 'none';
+  }
+  window.ctrShowTab('new');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.ctrSaveContract = async function () {
+  var nom = document.getElementById('ctr-nom').value.trim();
+  if (!nom) { alert('Merci de renseigner au moins le nom du client.'); return; }
+
+  var aspTotal = 0, eurTotal = 0;
+  var produitsDetail = {};
+  ctrProducts.forEach(function (p) {
+    if (!ctrUnits[p.id] || ctrUnits[p.id].length === 0) return;
+    produitsDetail[p.id] = ctrUnits[p.id].map(function (u) { return Object.assign({}, u); });
+    ctrUnits[p.id].forEach(function (unit) {
+      eurTotal += ctrCalcUnitEUR(p, unit);
+      aspTotal += p.asp + (unit.sohoIndep ? p.aspSoho : 0);
+    });
+  });
+  if (Object.keys(produitsDetail).length === 0) { alert("Merci d'ajouter au moins un produit au contrat."); return; }
+
+  var ancien = document.getElementById('ctr-ancien').checked;
+  var data = {
+    consultantId: window.pmCurrentUser.id,
+    consultantStatutAuMoment: window._ctrStatut || 'BC',
+    date: new Date().toISOString(),
+    nom: nom,
+    societe: document.getElementById('ctr-societe').value.trim(),
+    tel: document.getElementById('ctr-tel').value.trim(),
+    tva: document.getElementById('ctr-tva').value.trim(),
+    clientOrange: document.getElementById('ctr-clientOrange').value.trim(),
+    contratEneco: document.getElementById('ctr-contratEneco').value.trim(),
+    contratSmart: document.getElementById('ctr-contratSmart').value.trim(),
+    email: document.getElementById('ctr-email').value.trim(),
+    adresse: document.getElementById('ctr-adresse').value.trim(),
+    dateContrat: document.getElementById('ctr-dateContrat').value,
+    etatContrat: document.getElementById('ctr-etatContrat').value,
+    produitsDetail: produitsDetail,
+    aspTotal: Math.round(aspTotal * 10) / 10,
+    eurTotal: Math.round(eurTotal * 100) / 100,
+    prospectId: window._ctrProspectId || null,
+    ancien: ancien
+  };
+
+  var editingId = window._ctrEditingId;
+  try {
+    var refId;
+    if (editingId) {
+      await window.updateDoc(window.doc(window.db, 'contrats', editingId), data);
+      refId = editingId;
+      pcToast('✅ Contrat mis à jour (' + data.aspTotal + ' ASP · ' + data.eurTotal.toFixed(2) + ' €)');
+    } else {
+      var ref = await window.addDoc(window.collection(window.db, 'contrats'), data);
+      refId = ref.id;
+      pcToast(ancien ? '✅ Ancien contrat enregistré (non compté dans l\'ASP)' : '✅ Contrat enregistré (+' + data.aspTotal + ' ASP · ' + data.eurTotal.toFixed(2) + ' €)');
+    }
+
+    await ctrSyncContractToClients(data, refId);
+
+    if (window._ctrProspectId) {
+      try {
+        await window.updateDoc(window.doc(window.db, 'prospectsClients', window._ctrProspectId), {
+          statut: 'Converti', contractId: refId, dateMaj: new Date().toISOString()
+        });
+      } catch (err) { console.log("Mise à jour du prospect d'origine impossible:", err.message); }
+      window._ctrProspectId = null;
+      var banner = document.getElementById('ctr-prospect-link-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    ['ctr-nom', 'ctr-societe', 'ctr-tel', 'ctr-tva', 'ctr-clientOrange', 'ctr-contratEneco', 'ctr-contratSmart', 'ctr-email', 'ctr-adresse'].forEach(function (id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('ctr-ancien').checked = false;
+    ctrProducts.forEach(function (p) { ctrUnits[p.id] = []; });
+    ctrBuildProductsUI();
+    window.ctrUpdateContractPreview();
+
+    if (editingId) {
+      window._ctrEditingId = null;
+      var btn = document.getElementById('ctr-save-btn');
+      if (btn) btn.textContent = '💾 Enregistrer le contrat';
+      window.ctrShowTab('history');
+    }
+
+    await window.ctrRefreshAspTotal();
+  } catch (err) { alert('Erreur lors de l\'enregistrement: ' + err.message); }
+};
+
+window.ctrEditContract = function (docId) {
+  var c = (window._ctrAllContracts || []).find(function (x) { return x.docId === docId; });
+  if (!c) return;
+  window._ctrEditingId = docId;
+
+  document.getElementById('ctr-nom').value = c.nom || '';
+  document.getElementById('ctr-societe').value = c.societe || '';
+  document.getElementById('ctr-tel').value = c.tel || '';
+  document.getElementById('ctr-tva').value = c.tva || '';
+  document.getElementById('ctr-clientOrange').value = c.clientOrange || '';
+  document.getElementById('ctr-contratEneco').value = c.contratEneco || '';
+  document.getElementById('ctr-contratSmart').value = c.contratSmart || '';
+  document.getElementById('ctr-email').value = c.email || '';
+  document.getElementById('ctr-adresse').value = c.adresse || '';
+  document.getElementById('ctr-dateContrat').value = c.dateContrat || '';
+  document.getElementById('ctr-etatContrat').value = c.etatContrat || 'Encodé';
+  document.getElementById('ctr-ancien').checked = !!c.ancien;
+
+  ctrProducts.forEach(function (p) { ctrUnits[p.id] = []; });
+  Object.keys(c.produitsDetail || {}).forEach(function (pid) {
+    if (ctrUnits[pid]) ctrUnits[pid] = (c.produitsDetail[pid] || []).map(function (u) { return Object.assign({}, u); });
+  });
+  ctrBuildProductsUI();
+  window.ctrUpdateContractPreview();
+
+  var btn = document.getElementById('ctr-save-btn');
+  if (btn) btn.textContent = '💾 Mettre à jour le contrat';
+
+  window.ctrShowTab('new');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Fait apparaître ce client dans "Gestion Clients" (collection "clients"), même logique que la
+// migration automatique des prospects convertis. Évite les doublons par téléphone.
+async function ctrSyncContractToClients(contractData, contractId) {
+  try {
+    var nom = (contractData.nom || '').trim();
+    if (!nom) return;
+    var nameParts = nom.split(' ');
+    var clientData = {
+      consultantId: contractData.consultantId,
+      prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
+      nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
+      tel: contractData.tel || '', email: contractData.email || '',
+      ville: contractData.adresse || '', adresse: contractData.adresse || '', cp: '',
+      societe: contractData.societe || '', tva: contractData.tva || '',
+      orange: contractData.clientOrange || '', eneco: contractData.contratEneco || '',
+      contratSmart: contractData.contratSmart || '', reference: '', etat: 'actif',
+      sourceProspectId: contractData.prospectId || null, sourceContractId: contractId,
+      createdAt: new Date().toISOString()
+    };
+    if (clientData.tel) {
+      var existing = await window.getDocs(window.query(
+        window.collection(window.db, 'clients'),
+        window.where('tel', '==', clientData.tel),
+        window.where('consultantId', '==', contractData.consultantId)
+      ));
+      if (!existing.empty) return;
+    }
+    await window.addDoc(window.collection(window.db, 'clients'), clientData);
+  } catch (err) { console.log('Synchro Gestion Clients impossible:', err.message); }
+}
+
+async function ctrLoadContracts() {
+  var snap = await window.getDocs(window.query(
+    window.collection(window.db, 'contrats'),
+    window.where('consultantId', '==', window.pmCurrentUser.id)
+  ));
+  var list = [];
+  snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
+  list.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  window._ctrAllContracts = list;
+  return list;
+}
+
+async function ctrRenderHistory() {
+  var container = document.getElementById('ctr-history-list');
+  if (container) container.innerHTML = 'Chargement...';
+  var data = await ctrLoadContracts();
+  var html = '';
+
+  if (data.length > 0) {
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'
+      + '<button type="button" onclick="ctrHistoryToggleAll(true)" style="background:#fff;border:1px solid #ffb680;color:#f97316;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">☑️ Tout sélectionner</button>'
+      + '<button type="button" onclick="ctrHistoryToggleAll(false)" style="background:#fff;border:1px solid #ddd;color:#555;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;">⬜ Tout désélectionner</button>'
+      + '<button type="button" onclick="ctrBulkActivateSelected()" style="background:#2E7D32;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">✅ Activer la sélection</button>'
+      + '</div>';
+  }
+
+  data.forEach(function (c) {
+    html += '<div class="card" style="background:#fafafa;border-radius:10px;padding:10px;margin:8px 0;font-size:13px;">'
+      + '<label style="cursor:pointer;"><input type="checkbox" class="ctr-hist-select" value="' + c.docId + '" style="width:auto;margin-right:6px;">'
+      + '<b>👤 ' + pcEsc(c.nom || 'Sans nom') + '</b></label>'
+      + ' <span class="asp-badge" style="display:inline-block;background:#fff3e8;color:#f97316;border:1px solid #ffb680;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:4px;">+' + (Math.round((c.aspTotal || 0) * 10) / 10) + ' ASP</span>'
+      + ' <span class="asp-badge" style="display:inline-block;background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:4px;">' + (c.eurTotal || 0).toFixed(2) + ' €</span>'
+      + (c.ancien ? ' <span class="asp-badge" style="display:inline-block;background:#eee;color:#666;border:1px solid #ddd;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:4px;">🕰️ Ancien (hors ASP)</span>' : '')
+      + '<br>🏢 ' + pcEsc(c.societe || '-') + '<br>'
+      + '📅 ' + (c.dateContrat ? new Date(c.dateContrat).toLocaleDateString() : new Date(c.date).toLocaleDateString()) + '<br>'
+      + '📊 <select onchange="ctrChangeStatus(\'' + c.docId + '\', this.value)" style="width:auto;display:inline-block;margin:4px 0;padding:4px 8px;font-size:12px;border:1px solid #ddd;border-radius:7px;">'
+      + '<option value="Encodé"' + (c.etatContrat === 'Encodé' ? ' selected' : '') + '>📝 Encodé</option>'
+      + '<option value="Activé"' + (c.etatContrat === 'Activé' ? ' selected' : '') + '>✅ Activé</option>'
+      + '<option value="En attente"' + (c.etatContrat === 'En attente' ? ' selected' : '') + '>⏳ En attente</option>'
+      + '<option value="Annulé"' + (c.etatContrat === 'Annulé' ? ' selected' : '') + '>❌ Annulé</option>'
+      + '<option value="Refusé"' + (c.etatContrat === 'Refusé' ? ' selected' : '') + '>🚫 Refusé</option>'
+      + '</select> · Statut au moment : ' + pcEsc(c.consultantStatutAuMoment || 'BC') + '<br><br>'
+      + '<button onclick="ctrViewContract(\'' + c.docId + '\')" style="padding:6px 12px;border:1px solid #ddd;border-radius:7px;background:#fff;font-size:12px;cursor:pointer;">👁 Voir</button> '
+      + '<button onclick="ctrEditContract(\'' + c.docId + '\')" style="padding:6px 12px;border:1px solid #ffb680;border-radius:7px;background:#fff3e8;color:#f97316;font-size:12px;cursor:pointer;">✏️ Modifier</button> '
+      + '<button onclick="ctrDeleteContract(\'' + c.docId + '\')" style="padding:6px 12px;border:1px solid #f5b7b1;border-radius:7px;background:#fde2e1;color:#c0392b;font-size:12px;cursor:pointer;">🗑 Supprimer</button>'
+      + '</div>';
+  });
+
+  if (container) container.innerHTML = html || 'Aucun contrat';
+}
+
+window.ctrHistoryToggleAll = function (checked) {
+  document.querySelectorAll('.ctr-hist-select').forEach(function (cb) { cb.checked = checked; });
+};
+
+window.ctrBulkActivateSelected = async function () {
+  var ids = Array.from(document.querySelectorAll('.ctr-hist-select:checked')).map(function (cb) { return cb.value; });
+  if (ids.length === 0) { alert('Sélectionne au moins un contrat.'); return; }
+  if (!confirm('Passer ' + ids.length + ' contrat(s) sélectionné(s) en statut "Activé" ?')) return;
+  var done = 0;
+  for (var i = 0; i < ids.length; i++) {
+    try { await window.updateDoc(window.doc(window.db, 'contrats', ids[i]), { etatContrat: 'Activé' }); done++; }
+    catch (err) { console.log('Activation en masse - échec sur', ids[i], err.message); }
+  }
+  pcToast('✅ ' + done + '/' + ids.length + ' contrat(s) activé(s).');
+  ctrRenderHistory();
+  await window.ctrRefreshAspTotal();
+};
+
+window.ctrViewContract = function (docId) {
+  var c = (window._ctrAllContracts || []).find(function (x) { return x.docId === docId; });
+  if (!c) return;
+  var produitsTxt = Object.keys(c.produitsDetail || {}).map(function (pid) {
+    var product = ctrProducts.find(function (p) { return p.id === pid; });
+    var label = product ? product.label : pid;
+    var list = c.produitsDetail[pid];
+    return label + ': ' + list.length + ' unité(s)';
+  }).join('\n');
+  alert(
+    'Client: ' + c.nom + '\nSociété: ' + (c.societe || '-') + '\nTél: ' + (c.tel || '-') + '\nEmail: ' + (c.email || '-') + '\n'
+    + 'TVA: ' + (c.tva || '-') + '\nN° Client Orange: ' + (c.clientOrange || '-') + '\nN° Contrat Eneco: ' + (c.contratEneco || '-') + '\nN° Contrat My Smart: ' + (c.contratSmart || '-') + '\n'
+    + 'État: ' + c.etatContrat + '\nStatut au moment: ' + (c.consultantStatutAuMoment || 'BC') + '\n'
+    + 'ASP: ' + c.aspTotal + ' · Montant: ' + (c.eurTotal || 0).toFixed(2) + '€' + (c.ancien ? ' (ancien, hors total)' : '') + '\n\nProduits:\n' + (produitsTxt || 'Aucun')
+  );
+};
+
+window.ctrChangeStatus = async function (docId, newStatus) {
+  try {
+    await window.updateDoc(window.doc(window.db, 'contrats', docId), { etatContrat: newStatus });
+    pcToast('Statut mis à jour : ' + newStatus);
+    ctrRenderHistory();
+    await window.ctrRefreshAspTotal();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.ctrDeleteContract = async function (docId) {
+  var c = (window._ctrAllContracts || []).find(function (x) { return x.docId === docId; });
+  var label = c ? '"' + c.nom + '" du ' + (c.dateContrat || '') : 'ce contrat';
+  if (!confirm('Supprimer définitivement ' + label + ' ?\n\nCette action est irréversible.')) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, 'contrats', docId));
+    pcToast('🗑 Contrat supprimé.');
+    ctrRenderHistory();
+    await window.ctrRefreshAspTotal();
+  } catch (err) { alert('Erreur lors de la suppression: ' + err.message); }
+};
+
+async function ctrRenderStats() {
+  var container = document.getElementById('ctr-stats-content');
+  if (container) container.innerHTML = 'Chargement...';
+  var data = await ctrLoadContracts();
+  var totals = {};
+  ctrProducts.forEach(function (p) { totals[p.id] = 0; });
+  var totalASP = 0, totalEUR = 0;
+  data.forEach(function (c) {
+    if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé') return;
+    Object.keys(c.produitsDetail || {}).forEach(function (pid) {
+      totals[pid] = (totals[pid] || 0) + c.produitsDetail[pid].length;
+    });
+    if (c.ancien) return;
+    totalASP += c.aspTotal || 0;
+    totalEUR += c.eurTotal || 0;
+  });
+  var html = '<div style="background:#fafafa;border-radius:10px;padding:10px;margin:8px 0;font-size:13px;"><b>Contrats actifs :</b> ' + data.filter(function (c) { return c.etatContrat !== 'Annulé' && c.etatContrat !== 'Refusé'; }).length + '</div>';
+  html += '<div style="background:#fafafa;border-radius:10px;padding:10px;margin:8px 0;font-size:13px;"><b>ASP généré par les contrats :</b> ' + (Math.round(totalASP * 10) / 10) + '</div>';
+  html += '<div style="background:#fafafa;border-radius:10px;padding:10px;margin:8px 0;font-size:13px;"><b>Montant total généré :</b> ' + totalEUR.toFixed(2) + ' €</div>';
+  ctrProducts.forEach(function (p) { if (totals[p.id] > 0) html += '<div style="background:#fafafa;border-radius:10px;padding:10px;margin:8px 0;font-size:13px;">' + p.label + ' : ' + totals[p.id] + '</div>'; });
+  if (container) container.innerHTML = html;
+}
+
+window.ctrSearchContracts = function () {
+  var term = (document.getElementById('ctr-search').value || '').toLowerCase();
+  document.querySelectorAll('#ctr-history-list .card').forEach(function (card) {
+    var txt = card.textContent.toLowerCase();
+    card.style.display = txt.includes(term) ? 'block' : 'none';
+  });
+};
+
+// --- Import automatique d'un contrat (PDF envoyé à Gemini -> pré-remplissage du formulaire) ---
+// Import fichier unique uniquement (l'import en masse de wp_contrats.html n'est pas repris ici).
+
+function ctrSetImportStatus(type, msg) {
+  var el = document.getElementById('ctr-import-status');
+  if (!el) return;
+  if (!type) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? '#e8f9ee' : '#fdeaea';
+  el.style.color = type === 'ok' ? '#1a7a3c' : '#b42323';
+  el.textContent = msg || '';
+}
+
+function ctrSetImportLoading(loading, label) {
+  var btn = document.getElementById('ctr-import-pdf-btn');
+  var lbl = document.getElementById('ctr-import-pdf-btn-label');
+  var spin = document.getElementById('ctr-import-spinner');
+  if (!btn || !lbl) return;
+  btn.disabled = loading;
+  if (spin) spin.style.display = loading ? 'inline-block' : 'none';
+  lbl.textContent = label || (loading ? 'Analyse du contrat en cours…' : '📥 Importer un contrat (PDF)');
+}
+
+function ctrFileToBase64(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () { resolve(String(reader.result).split(',')[1] || ''); };
+    reader.onerror = function () { reject(new Error("Impossible de lire ce fichier.")); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function ctrBuildImportPrompt(fileName) {
+  var catalog = ctrProducts.map(function (p) {
+    return '- ' + p.id + ' : ' + p.label.replace(/[^\w\séèêàçûôî]/gi, '').trim();
+  }).join('\n');
+  return `Tu es un assistant d'extraction de données pour des contrats de télécom et d'énergie belges (Orange, Eneco, VOO, Proximus, Base, ou autres).
+
+Le nom du fichier PDF fourni est : "` + (fileName || '') + `"
+
+Le PDF joint est un contrat. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
+
+{
+  "fournisseur": "Orange" | "Eneco" | "VOO" | "Proximus" | "Base" | "Autre",
+  "client": { "nom": "", "societe": "", "tel": "", "tva": "", "email": "", "adresse": "", "clientOrange": "", "contratEneco": "", "contratSmart": "" },
+  "produits": [ { "id": "", "quantite": 1, "convergence": false, "portabilite": false, "sohoIndep": false } ]
+}
+
+Règles :
+- Chaîne vide "" si une info n'est pas trouvée dans le PDF (jamais null, jamais d'invention).
+- "id" dans "produits" doit être une des valeurs EXACTES de cette liste, choisie selon ce que décrit le contrat :
+` + catalog + `
+- Ignore tout produit du contrat qui ne correspond à aucun id de cette liste plutôt que d'inventer un id.
+- "quantite" = nombre de lignes/unités identiques de ce produit (1 si non précisé).
+- "portabilite" = true si le contrat mentionne un transfert de numéro depuis un autre opérateur.
+- "convergence" = true si le contrat mentionne une offre convergente (fixe + mobile groupés).
+- "sohoIndep" = true si le client est identifié comme indépendant / SoHo / professionnel.
+- "tva" au format belge si possible (ex: BE0123456789).
+- "nom" (dans "client") doit TOUJOURS être formaté "Prénom Nom" (prénom en premier). De nombreux documents belges affichent le nom de famille en premier ou en MAJUSCULES (ex: "PIERRET Lindsay") — dans ce cas, inverse l'ordre pour renvoyer "Lindsay Pierret". Ne mets jamais le nom de famille en majuscules dans la réponse.
+- "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
+- "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
+- "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS dans le CONTENU du contrat (PDF) — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF. En revanche, le NOM DU FICHIER suit souvent le format "Fournisseur_XXXXXXXXXX.pdf" (ex: "Orange_0000138335.pdf" ou "Eneco_0000139314.pdf"), où la partie numérique après le tiret bas est le numéro My Smart. Si le nom de fichier fourni ci-dessus correspond à ce format, extrais cette partie numérique comme "contratSmart". Sinon, laisse ce champ vide ("").
+- N'ajoute AUCUN champ en dehors de ce schéma.`;
+}
+
+async function ctrExtractContractFromFile(file) {
+  if (!window.geminiImportModel) {
+    throw new Error("Le service d'import n'est pas encore configuré.");
+  }
+  var base64 = await ctrFileToBase64(file);
+  var result = await window.geminiImportModel.generateContent([
+    { inlineData: { mimeType: 'application/pdf', data: base64 } },
+    { text: ctrBuildImportPrompt(file.name) }
+  ]);
+  var raw = result.response.text();
+  try {
+    var jsonMatch = raw.match(/\{[\s\S]*\}/);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+  } catch (err) {
+    throw new Error("Réponse IA illisible pour ce fichier.");
+  }
+}
+
+function ctrApplyImportedContract(data) {
+  if (!data) return;
+  var client = data.client || {};
+  var fieldMap = {
+    'ctr-nom': client.nom, 'ctr-societe': client.societe, 'ctr-tel': client.tel,
+    'ctr-tva': client.tva, 'ctr-clientOrange': client.clientOrange, 'ctr-contratEneco': client.contratEneco,
+    'ctr-contratSmart': client.contratSmart, 'ctr-email': client.email, 'ctr-adresse': client.adresse
+  };
+  Object.keys(fieldMap).forEach(function (id) {
+    var val = fieldMap[id];
+    var el = document.getElementById(id);
+    if (el && val && !el.value.trim()) el.value = val;
+  });
+
+  var validIds = ctrProducts.map(function (p) { return p.id; });
+  (data.produits || []).forEach(function (p) {
+    if (validIds.indexOf(p.id) === -1) return;
+    var qty = Math.max(1, parseInt(p.quantite, 10) || 1);
+    for (var i = 0; i < qty; i++) {
+      ctrUnits[p.id].push({
+        convergence: !!p.convergence,
+        portabilite: !!p.portabilite,
+        sohoIndep: !!p.sohoIndep
+      });
+    }
+  });
+
+  ctrBuildProductsUI();
+  window.ctrUpdateContractPreview();
+}
+
+window.ctrHandleImportPdf = async function (file) {
+  if (!file) return;
+  var input = document.getElementById('ctr-import-pdf-input');
+  try {
+    ctrSetImportStatus(null);
+    ctrSetImportLoading(true, '🤖 Analyse IA en cours…');
+
+    var data = await ctrExtractContractFromFile(file);
+    ctrApplyImportedContract(data);
+
+    var fournisseur = data.fournisseur || 'Fournisseur inconnu';
+    var nbProduits = (data.produits || []).reduce(function (s, p) { return s + (p.quantite || 1); }, 0);
+    ctrSetImportStatus('ok', '✅ Contrat ' + fournisseur + ' importé — ' + nbProduits + ' produit(s) ajouté(s). Vérifie les champs avant d\'enregistrer.');
+  } catch (err) {
+    console.error(err);
+    ctrSetImportStatus('err', '❌ ' + (err.message || "Échec de l'import automatique. Tu peux encoder le contrat manuellement."));
+  } finally {
+    ctrSetImportLoading(false);
+    if (input) input.value = '';
+  }
+};
+// ===== FIN MES CONTRATS =====
+
 </script>
 
 <script>
@@ -6852,6 +7591,17 @@ import {
   getDownloadURL
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js";
+import {
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-ai.js";
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -6863,6 +7613,23 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// App Check + Firebase AI Logic (Gemini) — utilisés pour l'import automatique de contrat (PDF -> pré-remplissage).
+// Réutilise l'instance "app" existante (pas de second initializeApp) pour éviter tout conflit Firebase.
+try {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider("6LfMXVYtAAAAAJgXbh8X_e9Bgfx5ZBTkdA9gT0Rx"),
+    isTokenAutoRefreshEnabled: true
+  });
+  const ai = getAI(app, { backend: new GoogleAIBackend() });
+  window.geminiImportModel = getGenerativeModel(ai, {
+    model: "gemini-3.5-flash",
+    generationConfig: { responseMimeType: "application/json", temperature: 0 }
+  });
+} catch (e) {
+  console.warn("Firebase AI Logic (import contrat PDF) indisponible :", e);
+}
+
 const auth = getAuth(app);
 window.db = getFirestore(app);
 window.storage = getStorage(app);
