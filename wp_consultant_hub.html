@@ -519,10 +519,10 @@ Build <span id="app-version-1">…</span> — Icônes docs
     👥 Gestion Prospects
   </button>
   <div id="crmProspectsMenu" class="submenu">
-    <button onclick="showProspPanel('clients')" class="menu-item">
+    <button onclick="showProspPanel('clients')" class="menu-item" id="btn-prosp-clients">
       &nbsp;&nbsp;&nbsp;Clients
     </button>
-    <button onclick="showProspPanel('consultants')" class="menu-item">
+    <button onclick="showProspPanel('consultants')" class="menu-item" id="btn-prosp-consultants">
       &nbsp;&nbsp;&nbsp;Consultants
     </button>
   </div>
@@ -5745,6 +5745,13 @@ function pcFindColumn(headers, candidates) {
 }
 
 window.showProspPanel = function (type) {
+  document.querySelectorAll('.menu-item').forEach(function (b) { b.classList.remove('active-item'); });
+  var btn = document.getElementById(type === 'clients' ? 'btn-prosp-clients' : 'btn-prosp-consultants');
+  if (btn) btn.classList.add('active-item');
+  var welcomeEl = document.getElementById('welcome-panel');
+  if (welcomeEl) welcomeEl.style.display = 'none';
+  var iframeEl = document.getElementById('iframe-panel');
+  if (iframeEl) iframeEl.style.display = 'none';
   document.querySelectorAll('.script-panel').forEach(function (p) { p.style.display = 'none'; });
   var panelId = type === 'clients' ? 'panel-prosp-clients' : 'panel-prosp-consultants';
   var el = document.getElementById(panelId);
