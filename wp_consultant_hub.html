@@ -45,6 +45,17 @@
   text-align:left;
 }
 
+.pm-sec-toggle{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  background:none;border:none;cursor:pointer;padding:0;
+  font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;
+  letter-spacing:.08em;margin:10px 0 4px;font-family:Arial,sans-serif;
+}
+.pm-sec-toggle:first-child{ margin-top:0; }
+.pm-sec-toggle .pm-sec-arrow{ font-size:10px;transition:transform .15s; }
+.pm-sec-body{ display:none; }
+.pm-sec-body.open{ display:block; }
+
 .menu-item:hover { background:#fff3e8; }
 .active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
 @media(max-width:600px){
@@ -461,7 +472,8 @@ Build <span id="app-version-1">…</span> — Icônes docs
         <!-- COLONNE GAUCHE : menu -->
         <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
 
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;padding-left:4px;">🏠 Accueil</div>
+          <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
+          <div id="sec-accueil" class="pm-sec-body">
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
           <button onclick="toggleMenu('monProfilMenu')" class="menu-item group-toggle">
@@ -470,8 +482,10 @@ Build <span id="app-version-1">…</span> — Icônes docs
 <div id="monProfilMenu" class="submenu">
           <button onclick="showMonProfil(this)" class="menu-item" id="menu-monprofil">✏️ Modifier mes informations</button>
 </div>
+          </div>
 
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📞 Communication</div>
+          <button class="pm-sec-toggle" onclick="toggleSection('sec-communication')"><span>📞 Communication</span><span class="pm-sec-arrow" id="arrow-sec-communication">▸</span></button>
+          <div id="sec-communication" class="pm-sec-body">
 
           <button onclick="toggleMenu('contactsMenu')" class="menu-item group-toggle">
 📞 Contacts
@@ -488,9 +502,11 @@ Build <span id="app-version-1">…</span> — Icônes docs
           <button onclick="showChatOnline(this)" class="menu-item" id="menu-chatonline">🗨️ Chat online<span id="chatonline-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">0</span></button>
 
           <button onclick="showTeamsMeeting()" class="menu-item" id="menu-teams-meeting">📹 Réunion Teams</button>
+          </div>
 
 <!-- AGENDA, FORMATIONS & NEWS -->
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📅 Agenda, Formations &amp; News</div>
+<button class="pm-sec-toggle" onclick="toggleSection('sec-agenda')"><span>📅 Agenda, Formations &amp; News</span><span class="pm-sec-arrow" id="arrow-sec-agenda">▸</span></button>
+<div id="sec-agenda" class="pm-sec-body">
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
 <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News et Blog Smart SN</button>
@@ -504,9 +520,11 @@ Build <span id="app-version-1">…</span> — Icônes docs
   <button onclick="showConcours(this,'smart')" class="menu-item" id="menu-concours-smart">🔵 Smart SN</button>
   <button onclick="showConcours(this,'phil')" class="menu-item" id="menu-concours-phil">🟢 Phil-Mobile</button>
 </div>
+</div>
 
 <!-- MES OUTILS -->
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">🧰 Mes Outils</div>
+<button class="pm-sec-toggle" onclick="toggleSection('sec-outils')"><span>🧰 Mes Outils</span><span class="pm-sec-arrow" id="arrow-sec-outils">▸</span></button>
+<div id="sec-outils" class="pm-sec-body">
 
 <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">
 📊 Mon CRM
@@ -515,17 +533,12 @@ Build <span id="app-version-1">…</span> — Icônes docs
   <button onclick="openSimulator('https://app.phil-mobile.be/wp_contrats.html')" class="menu-item">
     📋 Gestion des contrats
   </button>
-  <button onclick="toggleMenu('crmProspectsMenu')" class="menu-item group-toggle">
-    👥 Gestion Prospects
+  <button onclick="showProspPanel('clients')" class="menu-item" id="btn-prosp-clients">
+    🎯 Prospects Clients
   </button>
-  <div id="crmProspectsMenu" class="submenu">
-    <button onclick="showProspPanel('clients')" class="menu-item" id="btn-prosp-clients">
-      &nbsp;&nbsp;&nbsp;Clients
-    </button>
-    <button onclick="showProspPanel('consultants')" class="menu-item" id="btn-prosp-consultants">
-      &nbsp;&nbsp;&nbsp;Consultants
-    </button>
-  </div>
+  <button onclick="showProspPanel('consultants')" class="menu-item" id="btn-prosp-consultants">
+    🚀 Prospects Consultants
+  </button>
   <button onclick="showCrmPanel('panel-crm-clients')" class="menu-item" id="btn-crm-clients">
     🧑 Gestion Clients
   </button>
@@ -561,11 +574,11 @@ Build <span id="app-version-1">…</span> — Icônes docs
 <button onclick="showPromotions(this)" class="menu-item" id="menu-promotions">
 🎁 Promotions
 </button>
+</div>
 
 <!-- RESSOURCES -->
-<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">
-📚 Ressources
-</div>
+<button class="pm-sec-toggle" onclick="toggleSection('sec-ressources')"><span>📚 Ressources</span><span class="pm-sec-arrow" id="arrow-sec-ressources">▸</span></button>
+<div id="sec-ressources" class="pm-sec-body">
 
 <button onclick="toggleMenu('linksMenu')" class="menu-item group-toggle">
 🌐 Liens importants
@@ -601,7 +614,7 @@ Build <span id="app-version-1">…</span> — Icônes docs
     🌐 Phil-Mobile
   </button>
 
-</div>          
+</div>
 <!-- DOCUMENTS (chargés dynamiquement depuis Firestore, collection "documents") -->
 
 <button onclick="toggleMenu('docsPhilMobile')" class="menu-item group-toggle">
@@ -625,15 +638,24 @@ Build <span id="app-version-1">…</span> — Icônes docs
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 
+<button onclick="toggleMenu('docsEneco')" class="menu-item group-toggle">
+⚡ Docs Eneco
+</button>
+<div id="docsEneco" class="submenu">
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
+</div>
+
 <button onclick="toggleMenu('docsDivers')" class="menu-item group-toggle">
 📁 Docs Divers
 </button>
 <div id="docsDivers" class="submenu">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
+</div>
 
           <!-- SCRIPTS -->
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">📜 Scripts</div>
+          <button class="pm-sec-toggle" onclick="toggleSection('sec-scripts')"><span>📜 Scripts</span><span class="pm-sec-arrow" id="arrow-sec-scripts">▸</span></button>
+          <div id="sec-scripts" class="pm-sec-body">
 
 <button onclick="toggleMenu('scriptsOrange')" class="menu-item group-toggle">
 🟠 Orange
@@ -664,11 +686,14 @@ Build <span id="app-version-1">…</span> — Icônes docs
           <button onclick="showScript('sc-recr-prospect')" class="menu-item">❄️ Prospects</button>
           <button onclick="showScript('sc-recr-amis')" class="menu-item">👥 Connaissances</button>
 </div>
+          </div>
 
           <!-- ADMINISTRATION : masqué par défaut, affiché au login uniquement pour les comptes isAdmin -->
           <div id="admin-menu-section" style="display:none;">
-            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">⚙️ Administration</div>
+            <button class="pm-sec-toggle" onclick="toggleSection('sec-admin')"><span>⚙️ Administration</span><span class="pm-sec-arrow" id="arrow-sec-admin">▸</span></button>
+            <div id="sec-admin" class="pm-sec-body">
             <button onclick="loadFrame('admin.html', this)" class="menu-item">🧰 Admin Phil-Mobile</button>
+            </div>
           </div>
         </div>
 
@@ -1088,63 +1113,70 @@ STATUT: independant
               <button onclick="pclShowTab('import')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import</button>
             </div>
 
-            <div id="pcl-tab-nouveau">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <input id="pcl-nom" placeholder="👤 Nom du prospect">
-                <input id="pcl-tel" placeholder="📞 Téléphone">
-                <input id="pcl-email" placeholder="📧 E-mail" style="grid-column:span 2;">
-                <select id="pcl-type" onchange="pclToggleSociete()">
-                  <option value="Particulier">👤 Particulier</option>
-                  <option value="Société">🏢 Société</option>
-                </select>
-                <input id="pcl-ville" placeholder="📍 Ville">
-                <div id="pcl-societe-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
-                  <input id="pcl-societe" placeholder="🏢 Nom de la société">
-                  <input id="pcl-tva" placeholder="💳 Numéro TVA">
+            <!-- Modale : ajouter / modifier un prospect client (uniformisé avec Gestion Clients) -->
+            <div id="modal-pcl-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+              <div style="background:#fff;border-radius:16px;padding:22px;max-width:560px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
+                <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 14px;font-size:15px;">🆕 Nouveau prospect</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <input id="pcl-nom" placeholder="👤 Nom du prospect">
+                  <input id="pcl-tel" placeholder="📞 Téléphone">
+                  <input id="pcl-email" placeholder="📧 E-mail" style="grid-column:span 2;">
+                  <select id="pcl-type" onchange="pclToggleSociete()">
+                    <option value="Particulier">👤 Particulier</option>
+                    <option value="Société">🏢 Société</option>
+                  </select>
+                  <input id="pcl-ville" placeholder="📍 Ville">
+                  <div id="pcl-societe-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
+                    <input id="pcl-societe" placeholder="🏢 Nom de la société">
+                    <input id="pcl-tva" placeholder="💳 Numéro TVA">
+                  </div>
+                  <select id="pcl-op-mobile">
+                    <option value="">📱 Opérateur Mobile actuel...</option>
+                    <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
+                    <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
+                    <option>Odido</option><option>Youfone</option><option>Simyo</option><option>Autre</option>
+                  </select>
+                  <input id="pcl-num-mobile" placeholder="📱 N° client Mobile">
+                  <select id="pcl-op-internet">
+                    <option value="">🌐 Opérateur Internet actuel...</option>
+                    <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
+                    <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
+                  </select>
+                  <input id="pcl-num-internet" placeholder="🌐 N° client Internet">
+                  <input id="pcl-easyswitch" placeholder="🔄 N° EasySwitch">
+                  <div>
+                    <label style="font-size:11px;color:#888;font-weight:700;">📅 Fin de contrat</label>
+                    <input type="date" id="pcl-date-fin-contrat">
+                  </div>
+                  <select id="pcl-source">
+                    <option value="Orange">🟠 Orange</option>
+                    <option value="Eneco">⚡ Eneco</option>
+                    <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
+                    <option value="Consultants">🎯 Consultants</option>
+                    <option value="Autre">✨ Autre</option>
+                  </select>
+                  <select id="pcl-provenance" onchange="pclToggleReference()">
+                    <option value="">🧭 Provenance...</option>
+                    <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
+                    <option value="Référence client existant">⭐ Référence client existant</option>
+                    <option value="Internet/Réseaux sociaux">🌐 Internet/Réseaux sociaux</option>
+                    <option value="Terrain">🚶 Terrain</option>
+                    <option value="Autre">✨ Autre</option>
+                  </select>
+                  <div id="pcl-reference-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
+                    <input id="pcl-ref-nom" placeholder="⭐ Nom du client référent">
+                    <input id="pcl-ref-tel" placeholder="📞 Tél. du référent">
+                  </div>
                 </div>
-                <select id="pcl-op-mobile">
-                  <option value="">📱 Opérateur Mobile actuel...</option>
-                  <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
-                  <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
-                  <option>Odido</option><option>Youfone</option><option>Simyo</option><option>Autre</option>
-                </select>
-                <input id="pcl-num-mobile" placeholder="📱 N° client Mobile">
-                <select id="pcl-op-internet">
-                  <option value="">🌐 Opérateur Internet actuel...</option>
-                  <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
-                  <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
-                </select>
-                <input id="pcl-num-internet" placeholder="🌐 N° client Internet">
-                <input id="pcl-easyswitch" placeholder="🔄 N° EasySwitch">
-                <div>
-                  <label style="font-size:11px;color:#888;font-weight:700;">📅 Fin de contrat</label>
-                  <input type="date" id="pcl-date-fin-contrat">
-                </div>
-                <select id="pcl-source">
-                  <option value="Orange">🟠 Orange</option>
-                  <option value="Eneco">⚡ Eneco</option>
-                  <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
-                  <option value="Consultants">🎯 Consultants</option>
-                  <option value="Autre">✨ Autre</option>
-                </select>
-                <select id="pcl-provenance" onchange="pclToggleReference()">
-                  <option value="">🧭 Provenance...</option>
-                  <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
-                  <option value="Référence client existant">⭐ Référence client existant</option>
-                  <option value="Internet/Réseaux sociaux">🌐 Internet/Réseaux sociaux</option>
-                  <option value="Terrain">🚶 Terrain</option>
-                  <option value="Autre">✨ Autre</option>
-                </select>
-                <div id="pcl-reference-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
-                  <input id="pcl-ref-nom" placeholder="⭐ Nom du client référent">
-                  <input id="pcl-ref-tel" placeholder="📞 Tél. du référent">
+                <textarea id="pcl-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                  <button onclick="pclCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
+                  <button onclick="pclSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
                 </div>
               </div>
-              <textarea id="pcl-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
-              <button onclick="pclSaveProspect()" style="margin-top:10px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer le prospect</button>
             </div>
 
-            <div id="pcl-tab-liste" style="display:none;">
+            <div id="pcl-tab-liste">
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
                 <select id="pcl-filter-statut" onchange="pclFilterList()" style="width:auto;padding:7px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                   <option value="">Tous les statuts</option>
@@ -1247,39 +1279,46 @@ OPERATEUR: Proximus
               <button onclick="pcoShowTab('import')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import</button>
             </div>
 
-            <div id="pco-tab-nouveau">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <input id="pco-nom" placeholder="👤 Nom du prospect">
-                <input id="pco-tel" placeholder="📞 Téléphone">
-                <input id="pco-email" placeholder="📧 E-mail" style="grid-column:span 2;">
-                <input id="pco-tva" placeholder="💳 Numéro TVA (ex : BE0123456789)" style="grid-column:span 2;">
-                <select id="pco-source">
-                  <option value="Facebook">📘 Facebook</option>
-                  <option value="WhatsApp">💬 WhatsApp</option>
-                  <option value="Recommandation">🤝 Recommandation</option>
-                  <option value="Terrain">🚶 Terrain</option>
-                  <option value="Site Web">🌐 Site Web</option>
-                  <option value="Autre">✨ Autre</option>
-                </select>
-                <select id="pco-statut-pro">
-                  <option value="Indépendant">💼 Indépendant</option>
-                  <option value="Société">🏢 Société</option>
-                  <option value="Employé">👔 Employé</option>
-                  <option value="Étudiant">🎓 Étudiant</option>
-                  <option value="Sans activité">📄 Sans activité</option>
-                </select>
-                <select id="pco-presentation" style="grid-column:span 2;">
-                  <option value="Non présentée">🎯 Non présentée</option>
-                  <option value="Terrain">🤝 Présentée sur le terrain</option>
-                  <option value="Zoom">💻 Présentée en Zoom</option>
-                  <option value="Bureau">🏢 Présentée au bureau</option>
-                </select>
+            <!-- Modale : ajouter / modifier un prospect consultant (uniformisé avec Gestion Consultants) -->
+            <div id="modal-pco-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+              <div style="background:#fff;border-radius:16px;padding:22px;max-width:560px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
+                <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 14px;font-size:15px;">🆕 Nouveau prospect</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <input id="pco-nom" placeholder="👤 Nom du prospect">
+                  <input id="pco-tel" placeholder="📞 Téléphone">
+                  <input id="pco-email" placeholder="📧 E-mail" style="grid-column:span 2;">
+                  <input id="pco-tva" placeholder="💳 Numéro TVA (ex : BE0123456789)" style="grid-column:span 2;">
+                  <select id="pco-source">
+                    <option value="Facebook">📘 Facebook</option>
+                    <option value="WhatsApp">💬 WhatsApp</option>
+                    <option value="Recommandation">🤝 Recommandation</option>
+                    <option value="Terrain">🚶 Terrain</option>
+                    <option value="Site Web">🌐 Site Web</option>
+                    <option value="Autre">✨ Autre</option>
+                  </select>
+                  <select id="pco-statut-pro">
+                    <option value="Indépendant">💼 Indépendant</option>
+                    <option value="Société">🏢 Société</option>
+                    <option value="Employé">👔 Employé</option>
+                    <option value="Étudiant">🎓 Étudiant</option>
+                    <option value="Sans activité">📄 Sans activité</option>
+                  </select>
+                  <select id="pco-presentation" style="grid-column:span 2;">
+                    <option value="Non présentée">🎯 Non présentée</option>
+                    <option value="Terrain">🤝 Présentée sur le terrain</option>
+                    <option value="Zoom">💻 Présentée en Zoom</option>
+                    <option value="Bureau">🏢 Présentée au bureau</option>
+                  </select>
+                </div>
+                <textarea id="pco-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                  <button onclick="pcoCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
+                  <button onclick="pcoSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+                </div>
               </div>
-              <textarea id="pco-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
-              <button onclick="pcoSaveProspect()" style="margin-top:10px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer le prospect</button>
             </div>
 
-            <div id="pco-tab-liste" style="display:none;">
+            <div id="pco-tab-liste">
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
                 <select id="pco-filter-statut" onchange="pcoFilterList()" style="width:auto;padding:7px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                   <option value="">Tous les statuts</option>
@@ -2110,6 +2149,7 @@ async function loadHubDocuments() {
       'Phil-Mobile': 'docsPhilMobile',
       'Smart SN': 'docsSmartSN',
       'Orange': 'docsOrange',
+      'Eneco': 'docsEneco',
       'Divers': 'docsDivers'
     };
 
@@ -2250,6 +2290,40 @@ function toggleMenu(id){
     .getElementById(id)
     .classList
     .toggle('open');
+}
+
+// Sections repliables du menu de gauche (Accueil, Communication, Agenda, Mes Outils, Ressources, Scripts, Administration).
+// État mémorisé par section dans localStorage, sinon valeur par défaut (PM_SECTION_DEFAULTS).
+var PM_SECTION_DEFAULTS = {
+  'sec-accueil': true,
+  'sec-communication': false,
+  'sec-agenda': false,
+  'sec-outils': false,
+  'sec-ressources': false,
+  'sec-scripts': false,
+  'sec-admin': false
+};
+
+window.toggleSection = function (id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var isOpen = el.classList.toggle('open');
+  var arrow = document.getElementById('arrow-' + id);
+  if (arrow) arrow.textContent = isOpen ? '▾' : '▸';
+  try { localStorage.setItem('pmSec_' + id, isOpen ? '1' : '0'); } catch (e) {}
+};
+
+function initSections() {
+  Object.keys(PM_SECTION_DEFAULTS).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var stored = null;
+    try { stored = localStorage.getItem('pmSec_' + id); } catch (e) {}
+    var open = stored !== null ? stored === '1' : PM_SECTION_DEFAULTS[id];
+    el.classList.toggle('open', open);
+    var arrow = document.getElementById('arrow-' + id);
+    if (arrow) arrow.textContent = open ? '▾' : '▸';
+  });
 }
 
 function toggleFormation(id){
@@ -4217,6 +4291,7 @@ function doUnlock(user) {
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
     document.getElementById('top-header').style.display = 'flex';
+    initSections();
     //document.getElementById('pm-logout').style.display = 'block';
 
   // Icône du header : photo personnelle du consultant si disponible, sinon logo Phil-Mobile
@@ -5767,7 +5842,7 @@ window._pclData = [];
 var pclEditId = null;
 
 window.pclShowTab = function (id) {
-  ['nouveau', 'liste', 'agenda', 'relation', 'import'].forEach(function (t) {
+  ['liste', 'agenda', 'relation', 'import'].forEach(function (t) {
     var el = document.getElementById('pcl-tab-' + t);
     if (el) el.style.display = (t === id) ? 'block' : 'none';
   });
@@ -5775,6 +5850,12 @@ window.pclShowTab = function (id) {
   if (id === 'agenda') pclRenderAgenda();
   if (id === 'relation') pclRenderRelation();
 };
+
+window.pclOpenModal = function (title) {
+  document.getElementById('pcl-modal-title').textContent = title;
+  document.getElementById('modal-pcl-edit').style.display = 'flex';
+};
+window.pclCloseModal = function () { document.getElementById('modal-pcl-edit').style.display = 'none'; };
 
 window.pclToggleSociete = function () {
   var isSoc = document.getElementById('pcl-type').value === 'Société';
@@ -5798,7 +5879,7 @@ function pclResetForm() {
   window.pclToggleReference();
 }
 
-window.pclStartNew = function () { pclEditId = null; pclResetForm(); window.pclShowTab('nouveau'); };
+window.pclStartNew = function () { pclEditId = null; pclResetForm(); window.pclOpenModal('🆕 Nouveau prospect'); };
 
 window.pclEditProspect = function (id) {
   var p = (window._pclData || []).find(function (x) { return x.docId === id; });
@@ -5824,7 +5905,7 @@ window.pclEditProspect = function (id) {
   window.pclToggleSociete();
   window.pclToggleReference();
   pclEditId = id;
-  window.pclShowTab('nouveau');
+  window.pclOpenModal('✏️ Modifier le prospect');
 };
 
 window.pclSaveProspect = async function () {
@@ -5862,7 +5943,8 @@ window.pclSaveProspect = async function () {
     pcToast('✅ Prospect enregistré.');
     pclEditId = null;
     pclResetForm();
-    pclLoadList();
+    window.pclCloseModal();
+    window.pclShowTab('liste');
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
@@ -6231,12 +6313,18 @@ window._pcoData = [];
 var pcoEditId = null;
 
 window.pcoShowTab = function (id) {
-  ['nouveau', 'liste', 'import'].forEach(function (t) {
+  ['liste', 'import'].forEach(function (t) {
     var el = document.getElementById('pco-tab-' + t);
     if (el) el.style.display = (t === id) ? 'block' : 'none';
   });
   if (id === 'liste') pcoLoadList();
 };
+
+window.pcoOpenModal = function (title) {
+  document.getElementById('pco-modal-title').textContent = title;
+  document.getElementById('modal-pco-edit').style.display = 'flex';
+};
+window.pcoCloseModal = function () { document.getElementById('modal-pco-edit').style.display = 'none'; };
 
 function pcoResetForm() {
   ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
@@ -6245,7 +6333,7 @@ function pcoResetForm() {
   document.getElementById('pco-presentation').value = 'Non présentée';
 }
 
-window.pcoStartNew = function () { pcoEditId = null; pcoResetForm(); window.pcoShowTab('nouveau'); };
+window.pcoStartNew = function () { pcoEditId = null; pcoResetForm(); window.pcoOpenModal('🆕 Nouveau prospect'); };
 
 window.pcoEditProspect = function (id) {
   var p = (window._pcoData || []).find(function (x) { return x.docId === id; });
@@ -6259,12 +6347,13 @@ window.pcoEditProspect = function (id) {
   document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
   document.getElementById('pco-commentaire').value = p.commentaire || '';
   pcoEditId = id;
-  window.pcoShowTab('nouveau');
+  window.pcoOpenModal('✏️ Modifier le prospect');
 };
 
 window.pcoSaveProspect = async function () {
   var nom = document.getElementById('pco-nom').value.trim();
   if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
+  var existing = pcoEditId ? (window._pcoData || []).find(function (x) { return x.docId === pcoEditId; }) : null;
   var now = new Date().toISOString();
   var data = {
     consultantId: window.pmCurrentUser.id, nom: nom,
@@ -6275,7 +6364,9 @@ window.pcoSaveProspect = async function () {
     statutPro: document.getElementById('pco-statut-pro').value,
     presentation: document.getElementById('pco-presentation').value,
     commentaire: document.getElementById('pco-commentaire').value.trim(),
-    statut: 'Nouveau', dateCreation: now, dateMaj: now
+    statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
+    dateCreation: existing ? (existing.dateCreation || now) : now,
+    dateMaj: now
   };
   try {
     if (pcoEditId) await window.updateDoc(window.doc(window.db, 'prospectsConsultants', pcoEditId), data);
@@ -6283,7 +6374,8 @@ window.pcoSaveProspect = async function () {
     pcToast('✅ Prospect enregistré.');
     pcoEditId = null;
     pcoResetForm();
-    pcoLoadList();
+    window.pcoCloseModal();
+    window.pcoShowTab('liste');
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
