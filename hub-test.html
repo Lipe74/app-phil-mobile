@@ -7413,11 +7413,13 @@ function ctrFileToBase64(file) {
   });
 }
 
-function ctrBuildImportPrompt() {
+function ctrBuildImportPrompt(fileName) {
   var catalog = ctrProducts.map(function (p) {
     return '- ' + p.id + ' : ' + p.label.replace(/[^\w\séèêàçûôî]/gi, '').trim();
   }).join('\n');
   return `Tu es un assistant d'extraction de données pour des contrats de télécom et d'énergie belges (Orange, Eneco, VOO, Proximus, Base, ou autres).
+
+Le nom du fichier PDF fourni est : "` + (fileName || '') + `"
 
 Le PDF joint est un contrat. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
 
@@ -7440,7 +7442,7 @@ Règles :
 - "nom" (dans "client") doit TOUJOURS être formaté "Prénom Nom" (prénom en premier). De nombreux documents belges affichent le nom de famille en premier ou en MAJUSCULES (ex: "PIERRET Lindsay") — dans ce cas, inverse l'ordre pour renvoyer "Lindsay Pierret". Ne mets jamais le nom de famille en majuscules dans la réponse.
 - "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
 - "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
-- "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS sur un contrat Orange/Eneco/autre fournisseur. Laisse ce champ TOUJOURS vide ("") — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF.
+- "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS dans le CONTENU du contrat (PDF) — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF. En revanche, le NOM DU FICHIER suit souvent le format "Fournisseur_XXXXXXXXXX.pdf" (ex: "Orange_0000138335.pdf" ou "Eneco_0000139314.pdf"), où la partie numérique après le tiret bas est le numéro My Smart. Si le nom de fichier fourni ci-dessus correspond à ce format, extrais cette partie numérique comme "contratSmart". Sinon, laisse ce champ vide ("").
 - N'ajoute AUCUN champ en dehors de ce schéma.`;
 }
 
@@ -7451,7 +7453,7 @@ async function ctrExtractContractFromFile(file) {
   var base64 = await ctrFileToBase64(file);
   var result = await window.geminiImportModel.generateContent([
     { inlineData: { mimeType: 'application/pdf', data: base64 } },
-    { text: ctrBuildImportPrompt() }
+    { text: ctrBuildImportPrompt(file.name) }
   ]);
   var raw = result.response.text();
   try {
