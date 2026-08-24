@@ -10,6 +10,7 @@
 
 <meta name="theme-color" content="#f97316">
 <script src="version.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // Vérifie en arrière-plan (sans bloquer l'affichage) si une version plus récente est en ligne,
 // et recharge automatiquement la page si c'est le cas — évite de rester bloqué sur une vieille version.
@@ -518,10 +519,10 @@ Build <span id="app-version-1">…</span> — Icônes docs
     👥 Gestion Prospects
   </button>
   <div id="crmProspectsMenu" class="submenu">
-    <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects.html')" class="menu-item">
+    <button onclick="showProspPanel('clients')" class="menu-item">
       &nbsp;&nbsp;&nbsp;Clients
     </button>
-    <button onclick="openSimulator('https://app.phil-mobile.be/wp_prospects_consultant.html')" class="menu-item">
+    <button onclick="showProspPanel('consultants')" class="menu-item">
       &nbsp;&nbsp;&nbsp;Consultants
     </button>
   </div>
@@ -1065,6 +1066,255 @@ STATUT: independant
               <button onclick="bulkImportCrmPaste('consultantsCrm')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer la liste</button>
             </details>
             <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
+          </div>
+
+          <!-- Panel Prospects Clients -->
+          <div id="panel-prosp-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🎯 Prospects Clients</h2>
+
+            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;">
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
+            </div>
+
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+              <button onclick="pclStartNew()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">🆕 Nouveau</button>
+              <button onclick="pclShowTab('liste')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📋 Liste</button>
+              <button onclick="pclShowTab('agenda')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📅 Agenda</button>
+              <button onclick="pclShowTab('relation')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">🤝 Relation</button>
+              <button onclick="pclShowTab('import')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import</button>
+            </div>
+
+            <div id="pcl-tab-nouveau">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <input id="pcl-nom" placeholder="👤 Nom du prospect">
+                <input id="pcl-tel" placeholder="📞 Téléphone">
+                <input id="pcl-email" placeholder="📧 E-mail" style="grid-column:span 2;">
+                <select id="pcl-type" onchange="pclToggleSociete()">
+                  <option value="Particulier">👤 Particulier</option>
+                  <option value="Société">🏢 Société</option>
+                </select>
+                <input id="pcl-ville" placeholder="📍 Ville">
+                <div id="pcl-societe-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
+                  <input id="pcl-societe" placeholder="🏢 Nom de la société">
+                  <input id="pcl-tva" placeholder="💳 Numéro TVA">
+                </div>
+                <select id="pcl-op-mobile">
+                  <option value="">📱 Opérateur Mobile actuel...</option>
+                  <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
+                  <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
+                  <option>Odido</option><option>Youfone</option><option>Simyo</option><option>Autre</option>
+                </select>
+                <input id="pcl-num-mobile" placeholder="📱 N° client Mobile">
+                <select id="pcl-op-internet">
+                  <option value="">🌐 Opérateur Internet actuel...</option>
+                  <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
+                  <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
+                </select>
+                <input id="pcl-num-internet" placeholder="🌐 N° client Internet">
+                <input id="pcl-easyswitch" placeholder="🔄 N° EasySwitch">
+                <div>
+                  <label style="font-size:11px;color:#888;font-weight:700;">📅 Fin de contrat</label>
+                  <input type="date" id="pcl-date-fin-contrat">
+                </div>
+                <select id="pcl-source">
+                  <option value="Orange">🟠 Orange</option>
+                  <option value="Eneco">⚡ Eneco</option>
+                  <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
+                  <option value="Consultants">🎯 Consultants</option>
+                  <option value="Autre">✨ Autre</option>
+                </select>
+                <select id="pcl-provenance" onchange="pclToggleReference()">
+                  <option value="">🧭 Provenance...</option>
+                  <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
+                  <option value="Référence client existant">⭐ Référence client existant</option>
+                  <option value="Internet/Réseaux sociaux">🌐 Internet/Réseaux sociaux</option>
+                  <option value="Terrain">🚶 Terrain</option>
+                  <option value="Autre">✨ Autre</option>
+                </select>
+                <div id="pcl-reference-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
+                  <input id="pcl-ref-nom" placeholder="⭐ Nom du client référent">
+                  <input id="pcl-ref-tel" placeholder="📞 Tél. du référent">
+                </div>
+              </div>
+              <textarea id="pcl-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
+              <button onclick="pclSaveProspect()" style="margin-top:10px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer le prospect</button>
+            </div>
+
+            <div id="pcl-tab-liste" style="display:none;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                <select id="pcl-filter-statut" onchange="pclFilterList()" style="width:auto;padding:7px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
+                  <option value="">Tous les statuts</option>
+                  <option value="Nouveau">🆕 Nouveau</option>
+                  <option value="Contacté">📞 Contacté</option>
+                  <option value="Converti">✅ Converti</option>
+                  <option value="Perdu">❌ Perdu</option>
+                </select>
+                <input id="pcl-search" type="text" placeholder="🔍 Rechercher..." oninput="pclFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
+                <button onclick="pclMigrateConverted()" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">✅ Migrer convertis</button>
+                <button onclick="pclDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
+              </div>
+              <div id="pcl-list" style="font-size:13px;color:#666;">Chargement...</div>
+            </div>
+
+            <div id="pcl-tab-agenda" style="display:none;">
+              <div id="pcl-agenda-list"></div>
+            </div>
+
+            <div id="pcl-tab-relation" style="display:none;">
+              <div id="pcl-relation-list"></div>
+            </div>
+
+            <div id="pcl-tab-import" style="display:none;">
+              <div style="border:2px dashed #ffb680;border-radius:12px;padding:16px;text-align:center;background:#fffaf7;margin-bottom:14px;">
+                <div style="font-size:12px;color:#666;">Fichier <b>.xlsx</b> ou <b>.csv</b> avec en-têtes Nom, Téléphone, Email, Source, Commentaire (ordre libre).</div>
+                <input type="file" id="pcl-import-file" accept=".xlsx,.xls,.csv" style="margin-top:10px;">
+                <br>
+                <button onclick="pclParseImportFile()" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📖 Lire le fichier</button>
+              </div>
+              <div id="pcl-import-preview"></div>
+
+              <details style="margin-top:14px;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;">
+                <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:12px;">📋 Coller une liste</summary>
+                <div style="font-size:11px;color:#888;margin:8px 0;">
+                  Une fiche par bloc, séparés par une ligne <code>===</code>. Champs : <code>NOM:</code> (obligatoire), <code>TEL:</code>, <code>EMAIL:</code>, <code>PRODUIT:</code> (Orange ou Eneco), <code>OPERATEUR:</code> (opérateur mobile actuel).
+                </div>
+                <textarea id="pcl-paste" rows="6" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="NOM: Dupont Marie
+TEL: 0470123456
+EMAIL: marie@example.com
+PRODUIT: Orange
+OPERATEUR: Proximus
+==="></textarea>
+                <button onclick="pclBulkImportPaste()" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer la liste</button>
+              </details>
+            </div>
+          </div>
+
+          <!-- Modale : logger un contact (Prospects Clients) -->
+          <div id="modal-prosp-contact" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:16px;padding:22px;max-width:420px;width:90%;max-height:85vh;overflow-y:auto;">
+              <h3 style="color:#f97316;margin:0 0 6px;font-size:15px;">📞 Logger un contact</h3>
+              <div id="pcl-cm-name" style="font-size:12px;color:#666;margin-bottom:12px;"></div>
+              <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Type d'action</div>
+              <select id="pcl-cm-type" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;">
+                <option value="Appel">📞 Appel</option>
+                <option value="Email">📧 Email</option>
+                <option value="SMS">💬 SMS</option>
+                <option value="Rendez-vous">🤝 Rendez-vous</option>
+                <option value="Autre">✨ Autre</option>
+              </select>
+              <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Résultat</div>
+              <select id="pcl-cm-resultat" onchange="pclOnContactResultChange()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;">
+                <option value="Pas de réponse">📵 Pas de réponse</option>
+                <option value="Intéressé">👍 Intéressé</option>
+                <option value="Pas intéressé">👎 Pas intéressé</option>
+                <option value="À rappeler">🔁 À rappeler</option>
+                <option value="RDV fixé">📅 RDV fixé</option>
+                <option value="Vente conclue">✅ Vente conclue</option>
+                <option value="Autre">✨ Autre</option>
+              </select>
+              <div id="pcl-cm-date-row" style="display:none;">
+                <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prochaine échéance</div>
+                <input type="datetime-local" id="pcl-cm-next-date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-bottom:8px;">
+              </div>
+              <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Note</div>
+              <textarea id="pcl-cm-note" rows="3" placeholder="Détails de l'échange..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
+              <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                <button onclick="pclCloseContactModal()" style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
+                <button onclick="pclSubmitContactLog()" style="padding:8px 16px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel Prospects Consultants -->
+          <div id="panel-prosp-consultants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🚀 Prospects Consultants</h2>
+
+            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;">
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
+            </div>
+
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+              <button onclick="pcoStartNew()" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">🆕 Nouveau</button>
+              <button onclick="pcoShowTab('liste')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📋 Liste</button>
+              <button onclick="pcoShowTab('import')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📥 Import</button>
+            </div>
+
+            <div id="pco-tab-nouveau">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <input id="pco-nom" placeholder="👤 Nom du prospect">
+                <input id="pco-tel" placeholder="📞 Téléphone">
+                <input id="pco-email" placeholder="📧 E-mail" style="grid-column:span 2;">
+                <select id="pco-source">
+                  <option value="Facebook">📘 Facebook</option>
+                  <option value="WhatsApp">💬 WhatsApp</option>
+                  <option value="Recommandation">🤝 Recommandation</option>
+                  <option value="Terrain">🚶 Terrain</option>
+                  <option value="Site Web">🌐 Site Web</option>
+                  <option value="Autre">✨ Autre</option>
+                </select>
+                <select id="pco-statut-pro">
+                  <option value="Indépendant">💼 Indépendant</option>
+                  <option value="Société">🏢 Société</option>
+                  <option value="Employé">👔 Employé</option>
+                  <option value="Étudiant">🎓 Étudiant</option>
+                  <option value="Sans activité">📄 Sans activité</option>
+                </select>
+                <select id="pco-presentation" style="grid-column:span 2;">
+                  <option value="Non présentée">🎯 Non présentée</option>
+                  <option value="Terrain">🤝 Présentée sur le terrain</option>
+                  <option value="Zoom">💻 Présentée en Zoom</option>
+                  <option value="Bureau">🏢 Présentée au bureau</option>
+                </select>
+              </div>
+              <textarea id="pco-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
+              <button onclick="pcoSaveProspect()" style="margin-top:10px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer le prospect</button>
+            </div>
+
+            <div id="pco-tab-liste" style="display:none;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                <select id="pco-filter-statut" onchange="pcoFilterList()" style="width:auto;padding:7px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
+                  <option value="">Tous les statuts</option>
+                  <option value="Nouveau">🆕 Nouveau</option>
+                  <option value="Contacté">📞 Contacté</option>
+                  <option value="Converti">✅ Converti</option>
+                  <option value="Perdu">❌ Perdu</option>
+                </select>
+                <input id="pco-search" type="text" placeholder="🔍 Rechercher..." oninput="pcoFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
+                <button onclick="pcoDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
+              </div>
+              <div id="pco-list" style="font-size:13px;color:#666;">Chargement...</div>
+            </div>
+
+            <div id="pco-tab-import" style="display:none;">
+              <div style="border:2px dashed #ffb680;border-radius:12px;padding:16px;text-align:center;background:#fffaf7;margin-bottom:14px;">
+                <div style="font-size:12px;color:#666;">Fichier <b>.xlsx</b> ou <b>.csv</b> avec en-têtes Nom, Téléphone, Email, Source, Commentaire (ordre libre).</div>
+                <input type="file" id="pco-import-file" accept=".xlsx,.xls,.csv" style="margin-top:10px;">
+                <br>
+                <button onclick="pcoParseImportFile()" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📖 Lire le fichier</button>
+              </div>
+              <div id="pco-import-preview"></div>
+
+              <details style="margin-top:14px;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;">
+                <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:12px;">📋 Coller une liste</summary>
+                <div style="font-size:11px;color:#888;margin:8px 0;">
+                  Une fiche par bloc, séparés par une ligne <code>===</code>. Champs : <code>NOM:</code> (obligatoire), <code>TEL:</code>, <code>EMAIL:</code>, <code>STATUT:</code> (indépendant, salarié, ou laisser vide).
+                </div>
+                <textarea id="pco-paste" rows="6" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="NOM: Dupont Marie
+TEL: 0470123456
+EMAIL: marie@example.com
+STATUT: independant
+==="></textarea>
+                <button onclick="pcoBulkImportPaste()" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer la liste</button>
+              </details>
+            </div>
           </div>
 
           <!-- Panel Promotions -->
@@ -5463,6 +5713,785 @@ window.crmDeleteAll = function(col) {
 };
 // ===== FIN CRM =====
 
+// ===== PROSPECTS (Clients + Consultants) — fusionnés depuis wp_prospects.html / wp_prospects_consultant.html =====
+function pcEsc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function pcToast(msg) {
+  var t = document.getElementById('prosp-toast');
+  if (!t) { console.log(msg); return; }
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._prospToastTimer);
+  window._prospToastTimer = setTimeout(function () { t.style.display = 'none'; }, 3000);
+}
+
+function pclStatusStyle(s) {
+  var map = {
+    'Nouveau': 'background:#e8f0fe;color:#1a73e8;',
+    'Contacté': 'background:#fff3e8;color:#f97316;',
+    'Converti': 'background:#E8F5E9;color:#2E7D32;',
+    'Perdu': 'background:#f1f1f1;color:#757575;'
+  };
+  return map[s] || map['Nouveau'];
+}
+
+function pcFindColumn(headers, candidates) {
+  var lower = headers.map(function (h) { return (h || '').toString().toLowerCase().trim(); });
+  for (var i = 0; i < candidates.length; i++) {
+    var idx = lower.findIndex(function (h) { return h.indexOf(candidates[i]) >= 0; });
+    if (idx !== -1) return headers[idx];
+  }
+  return null;
+}
+
+window.showProspPanel = function (type) {
+  document.querySelectorAll('.script-panel').forEach(function (p) { p.style.display = 'none'; });
+  var panelId = type === 'clients' ? 'panel-prosp-clients' : 'panel-prosp-consultants';
+  var el = document.getElementById(panelId);
+  if (el) el.style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  if (type === 'clients') pclLoadList(); else pcoLoadList();
+};
+
+// --- Prospects Clients ---
+window._pclData = [];
+var pclEditId = null;
+
+window.pclShowTab = function (id) {
+  ['nouveau', 'liste', 'agenda', 'relation', 'import'].forEach(function (t) {
+    var el = document.getElementById('pcl-tab-' + t);
+    if (el) el.style.display = (t === id) ? 'block' : 'none';
+  });
+  if (id === 'liste') pclLoadList();
+  if (id === 'agenda') pclRenderAgenda();
+  if (id === 'relation') pclRenderRelation();
+};
+
+window.pclToggleSociete = function () {
+  var isSoc = document.getElementById('pcl-type').value === 'Société';
+  document.getElementById('pcl-societe-row').style.display = isSoc ? 'grid' : 'none';
+};
+window.pclToggleReference = function () {
+  var isRef = document.getElementById('pcl-provenance').value === 'Référence client existant';
+  document.getElementById('pcl-reference-row').style.display = isRef ? 'grid' : 'none';
+};
+
+function pclResetForm() {
+  ['pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('pcl-source').value = 'Orange';
+  document.getElementById('pcl-provenance').value = '';
+  document.getElementById('pcl-op-mobile').value = '';
+  document.getElementById('pcl-op-internet').value = '';
+  document.getElementById('pcl-type').value = 'Particulier';
+  window.pclToggleSociete();
+  window.pclToggleReference();
+}
+
+window.pclStartNew = function () { pclEditId = null; pclResetForm(); window.pclShowTab('nouveau'); };
+
+window.pclEditProspect = function (id) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === id; });
+  if (!p) return;
+  document.getElementById('pcl-nom').value = p.nom || '';
+  document.getElementById('pcl-tel').value = p.tel || '';
+  document.getElementById('pcl-email').value = p.email || '';
+  document.getElementById('pcl-ville').value = p.ville || '';
+  document.getElementById('pcl-source').value = p.source || 'Orange';
+  document.getElementById('pcl-provenance').value = p.provenance || '';
+  document.getElementById('pcl-commentaire').value = p.commentaire || '';
+  document.getElementById('pcl-type').value = p.type || 'Particulier';
+  document.getElementById('pcl-societe').value = p.societe || '';
+  document.getElementById('pcl-tva').value = p.tva || '';
+  document.getElementById('pcl-ref-nom').value = p.referenceNom || '';
+  document.getElementById('pcl-ref-tel').value = p.referenceTel || '';
+  document.getElementById('pcl-op-mobile').value = p.opMobile || '';
+  document.getElementById('pcl-num-mobile').value = p.numMobile || '';
+  document.getElementById('pcl-op-internet').value = p.opInternet || '';
+  document.getElementById('pcl-num-internet').value = p.numInternet || '';
+  document.getElementById('pcl-easyswitch').value = p.easySwitch || '';
+  document.getElementById('pcl-date-fin-contrat').value = p.dateFinContrat || '';
+  window.pclToggleSociete();
+  window.pclToggleReference();
+  pclEditId = id;
+  window.pclShowTab('nouveau');
+};
+
+window.pclSaveProspect = async function () {
+  var nom = document.getElementById('pcl-nom').value.trim();
+  if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
+  var existing = pclEditId ? (window._pclData || []).find(function (x) { return x.docId === pclEditId; }) : null;
+  var now = new Date().toISOString();
+  var data = {
+    consultantId: window.pmCurrentUser.id,
+    nom: nom,
+    tel: document.getElementById('pcl-tel').value.trim(),
+    email: document.getElementById('pcl-email').value.trim(),
+    type: document.getElementById('pcl-type').value,
+    societe: document.getElementById('pcl-societe').value.trim(),
+    tva: document.getElementById('pcl-tva').value.trim(),
+    ville: document.getElementById('pcl-ville').value.trim(),
+    opMobile: document.getElementById('pcl-op-mobile').value,
+    numMobile: document.getElementById('pcl-num-mobile').value.trim(),
+    opInternet: document.getElementById('pcl-op-internet').value,
+    numInternet: document.getElementById('pcl-num-internet').value.trim(),
+    easySwitch: document.getElementById('pcl-easyswitch').value.trim(),
+    dateFinContrat: document.getElementById('pcl-date-fin-contrat').value,
+    source: document.getElementById('pcl-source').value,
+    provenance: document.getElementById('pcl-provenance').value,
+    referenceNom: document.getElementById('pcl-ref-nom').value.trim(),
+    referenceTel: document.getElementById('pcl-ref-tel').value.trim(),
+    commentaire: document.getElementById('pcl-commentaire').value.trim(),
+    statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
+    dateCreation: existing ? (existing.dateCreation || now) : now,
+    dateMaj: now
+  };
+  try {
+    if (pclEditId) await window.updateDoc(window.doc(window.db, 'prospectsClients', pclEditId), data);
+    else await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
+    pcToast('✅ Prospect enregistré.');
+    pclEditId = null;
+    pclResetForm();
+    pclLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+function pclLoadList() {
+  var el = document.getElementById('pcl-list');
+  if (el) el.innerHTML = 'Chargement...';
+  crmReady(async function () {
+    try {
+      var snap = await window.getDocs(window.query(window.collection(window.db, 'prospectsClients'), window.where('consultantId', '==', window.pmCurrentUser.id)));
+      var list = [];
+      snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
+      list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
+      window._pclData = list;
+      pclUpdateStats(list);
+      pclRenderList(list);
+    } catch (err) {
+      if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>';
+    }
+  });
+}
+
+function pclUpdateStats(list) {
+  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0 };
+  list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
+  var totalEl = document.getElementById('pcl-stat-total'); if (totalEl) totalEl.textContent = list.length;
+  Object.keys(counts).forEach(function (k) { var el = document.getElementById('pcl-stat-' + k); if (el) el.textContent = counts[k]; });
+}
+
+function pclCleanTel(tel) { return (tel || '').replace(/[\s.\-()]+/g, ''); }
+
+function pclQuickActions(p) {
+  var tel = pclCleanTel(p.tel);
+  var buttons = [];
+  if (tel) {
+    buttons.push('<a href="tel:' + tel + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#1a1a1a;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📞</a>');
+    buttons.push('<a href="sms:' + tel + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#0d6efd;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">💬</a>');
+    buttons.push('<a href="https://wa.me/' + tel.replace(/^\+/, '') + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">🟢</a>');
+  }
+  if (p.email) buttons.push('<a href="mailto:' + pcEsc(p.email) + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#f97316;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📧</a>');
+  return buttons.length ? '<div style="display:flex;gap:5px;margin:5px 0;">' + buttons.join('') + '</div>' : '';
+}
+
+function pclContactSummary(p) {
+  var contacts = p.contacts || [];
+  if (!contacts.length) return '<span style="color:#9ca3af;">📞 Aucun contact</span>';
+  var last = contacts[contacts.length - 1];
+  var html = '📞 ' + contacts.length + ' action(s) · Dernière : ' + pcEsc(last.type || 'Contact') + ' (' + pcEsc(last.resultat || '-') + ')';
+  if (last.nextActionDate) {
+    var nd = new Date(last.nextActionDate);
+    var isPast = nd < new Date();
+    html += '<br><span style="font-weight:700;color:' + (isPast ? '#c0392b' : '#f97316') + ';">📅 ' + (isPast ? '⚠️ En retard — ' : '') + 'Prochaine échéance : ' + nd.toLocaleDateString() + '</span>';
+  }
+  return html;
+}
+
+function pclRenderList(list) {
+  var el = document.getElementById('pcl-list');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div style="color:#999;">Aucun prospect pour le moment.</div>'; return; }
+  var term = (document.getElementById('pcl-search').value || '').toLowerCase();
+  var statutFilter = document.getElementById('pcl-filter-statut').value;
+  var filtered = list.filter(function (p) {
+    var txt = ((p.nom || '') + (p.tel || '') + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
+    return (!term || txt.indexOf(term) >= 0) && (!statutFilter || p.statut === statutFilter);
+  });
+  el.innerHTML = filtered.map(function (p) {
+    var contratBtn = p.contractId
+      ? '<span style="padding:5px 10px;font-size:11px;font-weight:700;color:#2E7D32;">🧾 Contrat créé</span>'
+      : '<button onclick="pclConvertToClient(\'' + p.docId + '\')" style="background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Créer le contrat</button>';
+    return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
+      + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
+      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>'
+      + pclQuickActions(p)
+      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcEsc(p.tel) + '</div>' : '')
+      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
+      + (p.ville ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.ville) + '</div>' : '')
+      + (p.type === 'Société' ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc(p.societe || '-') + '</div>' : '')
+      + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcEsc(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(p.numMobile) : '') + '</div>' : '')
+      + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcEsc(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(p.numInternet) : '') + '</div>' : '')
+      + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
+      + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
+      + '<select onchange="pclChangeStatus(\'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
+      + ['Nouveau', 'Contacté', 'Converti', 'Perdu'].map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
+      + '</select>'
+      + '<button onclick="pclEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
+      + '<button onclick="pclOpenContactModal(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff3e8;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">📞 Log</button>'
+      + contratBtn
+      + '<button onclick="pclDeleteProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f5b7b1;border-radius:6px;background:#fde2e1;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+window.pclFilterList = function () { pclRenderList(window._pclData || []); };
+
+window.pclChangeStatus = async function (docId, newStatus) {
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), { statut: newStatus, dateMaj: new Date().toISOString() });
+    pcToast('Statut mis à jour : ' + newStatus);
+    if (newStatus === 'Converti') await pclMigrateOne(docId);
+    pclLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+async function pclMigrateOne(docId) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  if (!p) return;
+  try {
+    var nameParts = (p.nom || '').trim().split(' ');
+    var clientData = {
+      consultantId: p.consultantId || window.pmCurrentUser.id,
+      prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
+      nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
+      tel: p.tel || '', email: p.email || '', ville: p.ville || '',
+      adresse: p.adresse || p.ville || '', cp: p.cp || '',
+      societe: p.societe || '', tva: p.tva || '', reference: '',
+      etat: 'actif', sourceProspectId: docId, createdAt: new Date().toISOString()
+    };
+    if (p.tel) {
+      var existing = await window.getDocs(window.query(window.collection(window.db, 'clients'), window.where('tel', '==', p.tel), window.where('consultantId', '==', window.pmCurrentUser.id)));
+      if (!existing.empty) { pcToast('Client déjà existant dans Gestion Clients (même tél).'); return; }
+    }
+    await window.addDoc(window.collection(window.db, 'clients'), clientData);
+    pcToast('✅ Client ajouté dans Gestion Clients !');
+  } catch (err) { console.log('Migration clients:', err.message); }
+}
+
+window.pclMigrateConverted = async function () {
+  var list = (window._pclData || []).filter(function (p) { return p.statut === 'Converti'; });
+  if (!list.length) { pcToast('Aucun prospect converti à migrer.'); return; }
+  if (!confirm('Migrer ' + list.length + ' prospect(s) converti(s) vers Gestion Clients ? Les doublons (même tél) seront ignorés.')) return;
+  for (var i = 0; i < list.length; i++) { await pclMigrateOne(list[i].docId); }
+  pclLoadList();
+};
+
+window.pclConvertToClient = function (docId) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  if (!p) return;
+  var params = new URLSearchParams({ prospectId: p.docId, nom: p.nom || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: p.ville || '' });
+  window.openSimulator('https://app.phil-mobile.be/wp_contrats.html?' + params.toString());
+};
+
+window.pclDeleteProspect = async function (docId) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  if (!confirm('Supprimer définitivement ' + (p ? '"' + p.nom + '"' : 'ce prospect') + ' ?')) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, 'prospectsClients', docId));
+    pcToast('🗑 Prospect supprimé.');
+    pclLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.pclDeleteAll = async function () {
+  var list = window._pclData || [];
+  if (!list.length) { alert('Aucun prospect à supprimer.'); return; }
+  var conf = prompt('⚠️ Supprimer DÉFINITIVEMENT tes ' + list.length + ' prospect(s) ? Tape SUPPRIMER pour confirmer :');
+  if (conf !== 'SUPPRIMER') { if (conf !== null) alert('Suppression annulée.'); return; }
+  for (var i = 0; i < list.length; i++) {
+    try { await window.deleteDoc(window.doc(window.db, 'prospectsClients', list[i].docId)); } catch (e) {}
+  }
+  pcToast('🗑 Prospects supprimés.');
+  pclLoadList();
+};
+
+function pclRenderAgenda() {
+  var list = window._pclData || [];
+  var actions = [], upcoming = [];
+  var now = new Date();
+  list.forEach(function (p) {
+    (p.contacts || []).forEach(function (c, idx) {
+      actions.push(Object.assign({}, c, { prospectName: p.nom }));
+      var isLast = idx === (p.contacts || []).length - 1;
+      if (isLast && c.nextActionDate) upcoming.push({ date: c.nextActionDate, prospectName: p.nom, resultat: c.resultat });
+    });
+  });
+  upcoming.sort(function (a, b) { return new Date(a.date) - new Date(b.date); });
+  actions.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  var html = '<div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:8px;">📅 À venir</div>';
+  if (!upcoming.length) html += '<div style="color:#9ca3af;margin-bottom:16px;">Aucun rappel/RDV programmé.</div>';
+  else html += upcoming.map(function (e) {
+    var nd = new Date(e.date); var isPast = nd < now;
+    return '<div style="border-left:4px solid ' + (isPast ? '#c0392b' : '#f97316') + ';background:#fafafa;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px;">'
+      + '<b>' + (isPast ? '⚠️ En retard — ' : '') + nd.toLocaleDateString() + ' à ' + nd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</b><br>👤 ' + pcEsc(e.prospectName) + ' · ' + pcEsc(e.resultat || '') + '</div>';
+  }).join('') + '<div style="margin-bottom:16px;"></div>';
+  html += '<div style="font-size:13px;font-weight:700;color:#666;margin-bottom:8px;">🕘 Historique</div>';
+  if (!actions.length) html += '<div style="color:#9ca3af;">Aucun contact loggé pour le moment.</div>';
+  else html += actions.map(function (e) {
+    return '<div style="background:#fafafa;border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px;">'
+      + '<b>' + pcEsc(e.type || 'Contact') + ' · ' + new Date(e.date).toLocaleDateString() + '</b><br>👤 ' + pcEsc(e.prospectName) + ' · 🏷 ' + pcEsc(e.resultat || '-')
+      + (e.note ? '<br>📝 ' + pcEsc(e.note) : '') + '</div>';
+  }).join('');
+  document.getElementById('pcl-agenda-list').innerHTML = html;
+}
+
+function pclRenderRelation() {
+  var list = window._pclData || [];
+  var referred = list.filter(function (p) { return p.provenance === 'Référence client existant' && p.referenceNom; });
+  var groups = {};
+  referred.forEach(function (p) {
+    var key = p.referenceNom.trim().toLowerCase();
+    if (!groups[key]) groups[key] = { nom: p.referenceNom.trim(), tel: p.referenceTel || '', prospects: [] };
+    groups[key].prospects.push(p);
+  });
+  var arr = Object.values(groups).sort(function (a, b) { return b.prospects.length - a.prospects.length; });
+  var el = document.getElementById('pcl-relation-list');
+  if (!arr.length) { el.innerHTML = '<div style="color:#9ca3af;">Aucune référence enregistrée pour le moment.</div>'; return; }
+  el.innerHTML = arr.map(function (g) {
+    var converti = g.prospects.filter(function (p) { return p.statut === 'Converti'; }).length;
+    return '<div style="background:#fafafa;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;">'
+      + '<b>⭐ ' + pcEsc(g.nom) + '</b>' + (g.tel ? ' · 📞 ' + pcEsc(g.tel) : '') + '<br>'
+      + '<span style="color:#666;">' + g.prospects.length + ' prospect(s) apporté(s) · ' + converti + ' converti(s)</span>'
+      + '</div>';
+  }).join('');
+}
+
+var pclModalProspectId = null;
+window.pclOpenContactModal = function (docId) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  if (!p) return;
+  pclModalProspectId = docId;
+  document.getElementById('pcl-cm-name').textContent = 'Pour : ' + p.nom;
+  document.getElementById('pcl-cm-type').value = 'Appel';
+  document.getElementById('pcl-cm-resultat').value = 'Pas de réponse';
+  document.getElementById('pcl-cm-next-date').value = '';
+  document.getElementById('pcl-cm-note').value = '';
+  window.pclOnContactResultChange();
+  document.getElementById('modal-prosp-contact').style.display = 'flex';
+};
+window.pclCloseContactModal = function () {
+  document.getElementById('modal-prosp-contact').style.display = 'none';
+  pclModalProspectId = null;
+};
+window.pclOnContactResultChange = function () {
+  var val = document.getElementById('pcl-cm-resultat').value;
+  var showDate = (val === 'À rappeler' || val === 'RDV fixé');
+  document.getElementById('pcl-cm-date-row').style.display = showDate ? 'block' : 'none';
+};
+window.pclSubmitContactLog = async function () {
+  if (!pclModalProspectId) return;
+  var type = document.getElementById('pcl-cm-type').value;
+  var resultat = document.getElementById('pcl-cm-resultat').value;
+  var nextDateVal = document.getElementById('pcl-cm-next-date').value;
+  var note = document.getElementById('pcl-cm-note').value.trim();
+  var entry = { date: new Date().toISOString(), type: type, resultat: resultat, note: note };
+  if ((resultat === 'À rappeler' || resultat === 'RDV fixé') && nextDateVal) entry.nextActionDate = new Date(nextDateVal).toISOString();
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsClients', pclModalProspectId), { contacts: window.arrayUnion(entry) });
+    pcToast('📞 Contact enregistré.');
+    window.pclCloseContactModal();
+    pclLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.pclParseImportFile = function () {
+  var fileInput = document.getElementById('pcl-import-file');
+  var file = fileInput.files[0];
+  if (!file) { alert('Merci de choisir un fichier .xlsx ou .csv.'); return; }
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, { type: 'array' });
+      var rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' });
+      if (!rows.length) { document.getElementById('pcl-import-preview').innerHTML = '<div style="font-size:12px;color:#666;">Fichier vide.</div>'; return; }
+      var headers = Object.keys(rows[0]);
+      var colNom = pcFindColumn(headers, ['nom']);
+      var colTel = pcFindColumn(headers, ['tel', 'téléphone', 'telephone', 'gsm']);
+      var colEmail = pcFindColumn(headers, ['email', 'mail']);
+      var colSource = pcFindColumn(headers, ['source']);
+      var colCommentaire = pcFindColumn(headers, ['comment', 'note']);
+      if (!colNom) { document.getElementById('pcl-import-preview').innerHTML = '<div style="font-size:12px;color:#c0392b;">⚠️ Aucune colonne "Nom" trouvée.</div>'; return; }
+      var normalized = rows.map(function (r) {
+        return {
+          nom: (r[colNom] || '').toString().trim(),
+          tel: colTel ? (r[colTel] || '').toString().trim() : '',
+          email: colEmail ? (r[colEmail] || '').toString().trim() : '',
+          source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
+          commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
+        };
+      }).filter(function (r) { return r.nom; });
+      window._pclImportRows = normalized;
+      pclRenderImportPreview(normalized);
+    } catch (err) {
+      document.getElementById('pcl-import-preview').innerHTML = '<div style="font-size:12px;color:#c0392b;">❌ ' + pcEsc(err.message) + '</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+function pclRenderImportPreview(rows) {
+  var html = '<div style="font-size:12px;color:#666;margin-bottom:8px;">' + rows.length + ' ligne(s) détectée(s) :</div>';
+  html += '<div style="max-height:240px;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><tr><th></th><th style="text-align:left;">Nom</th><th style="text-align:left;">Tél</th><th style="text-align:left;">Email</th></tr>';
+  rows.slice(0, 50).forEach(function (r, i) {
+    html += '<tr><td><input type="checkbox" class="pcl-import-check" data-idx="' + i + '" checked></td><td>' + pcEsc(r.nom) + '</td><td>' + pcEsc(r.tel) + '</td><td>' + pcEsc(r.email) + '</td></tr>';
+  });
+  html += '</table></div>';
+  html += '<button onclick="pclConfirmImport()" style="margin-top:10px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer</button>';
+  document.getElementById('pcl-import-preview').innerHTML = html;
+}
+
+window.pclConfirmImport = async function () {
+  var excluded = new Set();
+  document.querySelectorAll('.pcl-import-check').forEach(function (c) { if (!c.checked) excluded.add(parseInt(c.dataset.idx, 10)); });
+  var toImport = (window._pclImportRows || []).filter(function (row, idx) { return !excluded.has(idx); });
+  if (!toImport.length) { alert('Aucune ligne à importer.'); return; }
+  var done = 0;
+  for (var i = 0; i < toImport.length; i++) {
+    var row = toImport[i];
+    var now = new Date().toISOString();
+    try {
+      await window.addDoc(window.collection(window.db, 'prospectsClients'), {
+        consultantId: window.pmCurrentUser.id, nom: row.nom, tel: row.tel, email: row.email,
+        source: row.source || 'Autre', commentaire: row.commentaire, statut: 'Nouveau', dateCreation: now, dateMaj: now
+      });
+      done++;
+    } catch (err) { console.warn('Erreur import ligne', row, err.message); }
+  }
+  pcToast(done + ' prospect(s) importé(s).');
+  document.getElementById('pcl-import-preview').innerHTML = '';
+  document.getElementById('pcl-import-file').value = '';
+  window._pclImportRows = [];
+  window.pclShowTab('liste');
+};
+
+window.pclBulkImportPaste = async function () {
+  var ta = document.getElementById('pcl-paste');
+  var raw = (ta ? ta.value : '').trim();
+  if (!raw) { alert('Le champ est vide.'); return; }
+  var blocks = raw.split(/\n\s*===\s*\n?/).map(function (b) { return b.trim(); }).filter(Boolean);
+  var valid = [], errors = [];
+  blocks.forEach(function (block, idx) {
+    var nomMatch = block.match(/^NOM\s*:\s*(.+)$/mi);
+    var telMatch = block.match(/^TEL\s*:\s*(.+)$/mi);
+    var emailMatch = block.match(/^EMAIL\s*:\s*(.+)$/mi);
+    var prodMatch = block.match(/^PRODUIT\s*:\s*(.+)$/mi);
+    var opMatch = block.match(/^OPERATEUR\s*:\s*(.+)$/mi);
+    var nom = nomMatch ? nomMatch[1].trim() : '';
+    if (!nom) { errors.push('Bloc ' + (idx + 1) + ' : NOM manquant'); return; }
+    var now = new Date().toISOString();
+    var data = {
+      consultantId: window.pmCurrentUser.id, nom: nom,
+      tel: telMatch ? telMatch[1].trim() : '', email: emailMatch ? emailMatch[1].trim() : '',
+      source: 'Autre', statut: 'Nouveau', dateCreation: now, dateMaj: now
+    };
+    var prod = prodMatch ? prodMatch[1].trim() : '';
+    if (/orange/i.test(prod)) data.source = 'Orange';
+    else if (/eneco/i.test(prod)) data.source = 'Eneco';
+    if (opMatch) data.opMobile = opMatch[1].trim();
+    valid.push(data);
+  });
+  var msg = valid.length + ' fiche(s) prête(s) à être importée(s).';
+  if (errors.length) msg += '\n\n⚠️ ' + errors.length + ' bloc(s) ignoré(s) :\n' + errors.join('\n');
+  msg += '\n\nContinuer ?';
+  if (!valid.length) { alert(msg); return; }
+  if (!confirm(msg)) return;
+  for (var i = 0; i < valid.length; i++) {
+    try { await window.addDoc(window.collection(window.db, 'prospectsClients'), valid[i]); } catch (e) {}
+  }
+  pcToast(valid.length + ' prospect(s) importé(s).');
+  if (ta) ta.value = '';
+  window.pclShowTab('liste');
+};
+
+// --- Prospects Consultants ---
+window._pcoData = [];
+var pcoEditId = null;
+
+window.pcoShowTab = function (id) {
+  ['nouveau', 'liste', 'import'].forEach(function (t) {
+    var el = document.getElementById('pco-tab-' + t);
+    if (el) el.style.display = (t === id) ? 'block' : 'none';
+  });
+  if (id === 'liste') pcoLoadList();
+};
+
+function pcoResetForm() {
+  ['pco-nom', 'pco-tel', 'pco-email', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('pco-source').value = 'Facebook';
+  document.getElementById('pco-statut-pro').value = 'Indépendant';
+  document.getElementById('pco-presentation').value = 'Non présentée';
+}
+
+window.pcoStartNew = function () { pcoEditId = null; pcoResetForm(); window.pcoShowTab('nouveau'); };
+
+window.pcoEditProspect = function (id) {
+  var p = (window._pcoData || []).find(function (x) { return x.docId === id; });
+  if (!p) return;
+  document.getElementById('pco-nom').value = p.nom || '';
+  document.getElementById('pco-tel').value = p.tel || '';
+  document.getElementById('pco-email').value = p.email || '';
+  document.getElementById('pco-source').value = p.source || 'Facebook';
+  document.getElementById('pco-statut-pro').value = p.statutPro || 'Indépendant';
+  document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
+  document.getElementById('pco-commentaire').value = p.commentaire || '';
+  pcoEditId = id;
+  window.pcoShowTab('nouveau');
+};
+
+window.pcoSaveProspect = async function () {
+  var nom = document.getElementById('pco-nom').value.trim();
+  if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
+  var now = new Date().toISOString();
+  var data = {
+    consultantId: window.pmCurrentUser.id, nom: nom,
+    tel: document.getElementById('pco-tel').value.trim(),
+    email: document.getElementById('pco-email').value.trim(),
+    source: document.getElementById('pco-source').value,
+    statutPro: document.getElementById('pco-statut-pro').value,
+    presentation: document.getElementById('pco-presentation').value,
+    commentaire: document.getElementById('pco-commentaire').value.trim(),
+    statut: 'Nouveau', dateCreation: now, dateMaj: now
+  };
+  try {
+    if (pcoEditId) await window.updateDoc(window.doc(window.db, 'prospectsConsultants', pcoEditId), data);
+    else await window.addDoc(window.collection(window.db, 'prospectsConsultants'), data);
+    pcToast('✅ Prospect enregistré.');
+    pcoEditId = null;
+    pcoResetForm();
+    pcoLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+function pcoLoadList() {
+  var el = document.getElementById('pco-list');
+  if (el) el.innerHTML = 'Chargement...';
+  crmReady(async function () {
+    try {
+      var snap = await window.getDocs(window.query(window.collection(window.db, 'prospectsConsultants'), window.where('consultantId', '==', window.pmCurrentUser.id)));
+      var list = [];
+      snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
+      list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
+      window._pcoData = list;
+      pcoUpdateStats(list);
+      pcoRenderList(list);
+    } catch (err) {
+      if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>';
+    }
+  });
+}
+
+function pcoUpdateStats(list) {
+  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0 };
+  list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
+  var totalEl = document.getElementById('pco-stat-total'); if (totalEl) totalEl.textContent = list.length;
+  Object.keys(counts).forEach(function (k) { var el = document.getElementById('pco-stat-' + k); if (el) el.textContent = counts[k]; });
+}
+
+function pcoRenderList(list) {
+  var el = document.getElementById('pco-list');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div style="color:#999;">Aucun prospect pour le moment.</div>'; return; }
+  var term = (document.getElementById('pco-search').value || '').toLowerCase();
+  var statutFilter = document.getElementById('pco-filter-statut').value;
+  var filtered = list.filter(function (p) {
+    var txt = ((p.nom || '') + (p.tel || '') + (p.email || '')).toLowerCase();
+    return (!term || txt.indexOf(term) >= 0) && (!statutFilter || p.statut === statutFilter);
+  });
+  el.innerHTML = filtered.map(function (p) {
+    return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
+      + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
+      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>'
+      + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:4px;">📞 ' + pcEsc(p.tel) + '</div>' : '')
+      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
+      + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(p.source || '-') + '</div>'
+      + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(p.statutPro) + '</div>' : '')
+      + (p.presentation && p.presentation !== 'Non présentée' ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.presentation) + '</div>' : '')
+      + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
+      + '<select onchange="pcoChangeStatus(\'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
+      + ['Nouveau', 'Contacté', 'Converti', 'Perdu'].map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
+      + '</select>'
+      + '<button onclick="pcoEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
+      + '<button onclick="pcoDeleteProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f5b7b1;border-radius:6px;background:#fde2e1;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+window.pcoFilterList = function () { pcoRenderList(window._pcoData || []); };
+
+window.pcoChangeStatus = async function (docId, newStatus) {
+  try {
+    await window.updateDoc(window.doc(window.db, 'prospectsConsultants', docId), { statut: newStatus, dateMaj: new Date().toISOString() });
+    pcToast('Statut mis à jour : ' + newStatus);
+    if (newStatus === 'Converti') await pcoMigrateOne(docId);
+    pcoLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+async function pcoMigrateOne(docId) {
+  var p = (window._pcoData || []).find(function (x) { return x.docId === docId; });
+  if (!p) return;
+  try {
+    var nameParts = (p.nom || '').trim().split(' ');
+    var sp = (p.statutPro || '').toLowerCase();
+    await window.addDoc(window.collection(window.db, 'consultantsCrm'), {
+      consultantId: p.consultantId || window.pmCurrentUser.id,
+      prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
+      nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
+      tel: p.tel || '', email: p.email || '', ville: '', adresse: '', cp: '', societe: '', tva: '',
+      dateDemarrage: '', etat: 'actif',
+      statutPro: sp.indexOf('ind') >= 0 ? 'independant' : (sp.indexOf('sal') >= 0 || sp.indexOf('employ') >= 0 ? 'salarie' : ''),
+      sourceProspectId: docId, createdAt: new Date().toISOString()
+    });
+    pcToast('✅ Consultant migré dans Gestion Consultants !');
+  } catch (err) { console.log('Migration consultantsCrm:', err.message); }
+}
+
+window.pcoDeleteProspect = async function (docId) {
+  var p = (window._pcoData || []).find(function (x) { return x.docId === docId; });
+  if (!confirm('Supprimer définitivement ' + (p ? '"' + p.nom + '"' : 'ce prospect') + ' ?')) return;
+  try {
+    await window.deleteDoc(window.doc(window.db, 'prospectsConsultants', docId));
+    pcToast('🗑 Prospect supprimé.');
+    pcoLoadList();
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.pcoDeleteAll = async function () {
+  var list = window._pcoData || [];
+  if (!list.length) { alert('Aucun prospect à supprimer.'); return; }
+  var conf = prompt('⚠️ Supprimer DÉFINITIVEMENT tes ' + list.length + ' prospect(s) ? Tape SUPPRIMER pour confirmer :');
+  if (conf !== 'SUPPRIMER') { if (conf !== null) alert('Suppression annulée.'); return; }
+  for (var i = 0; i < list.length; i++) {
+    try { await window.deleteDoc(window.doc(window.db, 'prospectsConsultants', list[i].docId)); } catch (e) {}
+  }
+  pcToast('🗑 Prospects supprimés.');
+  pcoLoadList();
+};
+
+window.pcoParseImportFile = function () {
+  var fileInput = document.getElementById('pco-import-file');
+  var file = fileInput.files[0];
+  if (!file) { alert('Merci de choisir un fichier .xlsx ou .csv.'); return; }
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var data = new Uint8Array(e.target.result);
+      var workbook = XLSX.read(data, { type: 'array' });
+      var rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' });
+      if (!rows.length) { document.getElementById('pco-import-preview').innerHTML = '<div style="font-size:12px;color:#666;">Fichier vide.</div>'; return; }
+      var headers = Object.keys(rows[0]);
+      var colNom = pcFindColumn(headers, ['nom']);
+      var colTel = pcFindColumn(headers, ['tel', 'téléphone', 'telephone', 'gsm']);
+      var colEmail = pcFindColumn(headers, ['email', 'mail']);
+      var colSource = pcFindColumn(headers, ['source']);
+      var colCommentaire = pcFindColumn(headers, ['comment', 'note']);
+      if (!colNom) { document.getElementById('pco-import-preview').innerHTML = '<div style="font-size:12px;color:#c0392b;">⚠️ Aucune colonne "Nom" trouvée.</div>'; return; }
+      var normalized = rows.map(function (r) {
+        return {
+          nom: (r[colNom] || '').toString().trim(), tel: colTel ? (r[colTel] || '').toString().trim() : '',
+          email: colEmail ? (r[colEmail] || '').toString().trim() : '', source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
+          commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
+        };
+      }).filter(function (r) { return r.nom; });
+      window._pcoImportRows = normalized;
+      pcoRenderImportPreview(normalized);
+    } catch (err) {
+      document.getElementById('pco-import-preview').innerHTML = '<div style="font-size:12px;color:#c0392b;">❌ ' + pcEsc(err.message) + '</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+function pcoRenderImportPreview(rows) {
+  var html = '<div style="font-size:12px;color:#666;margin-bottom:8px;">' + rows.length + ' ligne(s) détectée(s) :</div>';
+  html += '<div style="max-height:240px;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><tr><th></th><th style="text-align:left;">Nom</th><th style="text-align:left;">Tél</th><th style="text-align:left;">Email</th></tr>';
+  rows.slice(0, 50).forEach(function (r, i) {
+    html += '<tr><td><input type="checkbox" class="pco-import-check" data-idx="' + i + '" checked></td><td>' + pcEsc(r.nom) + '</td><td>' + pcEsc(r.tel) + '</td><td>' + pcEsc(r.email) + '</td></tr>';
+  });
+  html += '</table></div>';
+  html += '<button onclick="pcoConfirmImport()" style="margin-top:10px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer</button>';
+  document.getElementById('pco-import-preview').innerHTML = html;
+}
+
+window.pcoConfirmImport = async function () {
+  var excluded = new Set();
+  document.querySelectorAll('.pco-import-check').forEach(function (c) { if (!c.checked) excluded.add(parseInt(c.dataset.idx, 10)); });
+  var toImport = (window._pcoImportRows || []).filter(function (row, idx) { return !excluded.has(idx); });
+  if (!toImport.length) { alert('Aucune ligne à importer.'); return; }
+  var done = 0;
+  for (var i = 0; i < toImport.length; i++) {
+    var row = toImport[i];
+    var now = new Date().toISOString();
+    try {
+      await window.addDoc(window.collection(window.db, 'prospectsConsultants'), {
+        consultantId: window.pmCurrentUser.id, nom: row.nom, tel: row.tel, email: row.email,
+        source: row.source || 'Autre', commentaire: row.commentaire, statut: 'Nouveau', dateCreation: now, dateMaj: now
+      });
+      done++;
+    } catch (err) { console.warn('Erreur import ligne', row, err.message); }
+  }
+  pcToast(done + ' prospect(s) importé(s).');
+  document.getElementById('pco-import-preview').innerHTML = '';
+  document.getElementById('pco-import-file').value = '';
+  window._pcoImportRows = [];
+  window.pcoShowTab('liste');
+};
+
+window.pcoBulkImportPaste = async function () {
+  var ta = document.getElementById('pco-paste');
+  var raw = (ta ? ta.value : '').trim();
+  if (!raw) { alert('Le champ est vide.'); return; }
+  var blocks = raw.split(/\n\s*===\s*\n?/).map(function (b) { return b.trim(); }).filter(Boolean);
+  var valid = [], errors = [];
+  blocks.forEach(function (block, idx) {
+    var nomMatch = block.match(/^NOM\s*:\s*(.+)$/mi);
+    var telMatch = block.match(/^TEL\s*:\s*(.+)$/mi);
+    var emailMatch = block.match(/^EMAIL\s*:\s*(.+)$/mi);
+    var statMatch = block.match(/^STATUT\s*:\s*(.+)$/mi);
+    var nom = nomMatch ? nomMatch[1].trim() : '';
+    if (!nom) { errors.push('Bloc ' + (idx + 1) + ' : NOM manquant'); return; }
+    var now = new Date().toISOString();
+    var data = {
+      consultantId: window.pmCurrentUser.id, nom: nom,
+      tel: telMatch ? telMatch[1].trim() : '', email: emailMatch ? emailMatch[1].trim() : '',
+      source: 'Autre', statut: 'Nouveau', dateCreation: now, dateMaj: now
+    };
+    if (statMatch) {
+      var s = statMatch[1].trim().toLowerCase();
+      if (/independ/i.test(s)) data.statutPro = 'Indépendant';
+      else if (/salari/i.test(s)) data.statutPro = 'Employé';
+    }
+    valid.push(data);
+  });
+  var msg = valid.length + ' fiche(s) prête(s) à être importée(s).';
+  if (errors.length) msg += '\n\n⚠️ ' + errors.length + ' bloc(s) ignoré(s) :\n' + errors.join('\n');
+  msg += '\n\nContinuer ?';
+  if (!valid.length) { alert(msg); return; }
+  if (!confirm(msg)) return;
+  for (var i = 0; i < valid.length; i++) {
+    try { await window.addDoc(window.collection(window.db, 'prospectsConsultants'), valid[i]); } catch (e) {}
+  }
+  pcToast(valid.length + ' prospect(s) importé(s).');
+  if (ta) ta.value = '';
+  window.pcoShowTab('liste');
+};
+// ===== FIN PROSPECTS =====
+
 </script>
 
 <script>
@@ -6018,6 +7047,8 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
     </div>
   </div>
 </div>
+
+<div id="prosp-toast" style="display:none;position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:4000;"></div>
 
 </body>
 </html>
