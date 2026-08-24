@@ -1252,6 +1252,7 @@ OPERATEUR: Proximus
                 <input id="pco-nom" placeholder="👤 Nom du prospect">
                 <input id="pco-tel" placeholder="📞 Téléphone">
                 <input id="pco-email" placeholder="📧 E-mail" style="grid-column:span 2;">
+                <input id="pco-tva" placeholder="💳 Numéro TVA (ex : BE0123456789)" style="grid-column:span 2;">
                 <select id="pco-source">
                   <option value="Facebook">📘 Facebook</option>
                   <option value="WhatsApp">💬 WhatsApp</option>
@@ -1305,11 +1306,12 @@ OPERATEUR: Proximus
               <details style="margin-top:14px;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;">
                 <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:12px;">📋 Coller une liste</summary>
                 <div style="font-size:11px;color:#888;margin:8px 0;">
-                  Une fiche par bloc, séparés par une ligne <code>===</code>. Champs : <code>NOM:</code> (obligatoire), <code>TEL:</code>, <code>EMAIL:</code>, <code>STATUT:</code> (indépendant, salarié, ou laisser vide).
+                  Une fiche par bloc, séparés par une ligne <code>===</code>. Champs : <code>NOM:</code> (obligatoire), <code>TEL:</code>, <code>EMAIL:</code>, <code>TVA:</code>, <code>STATUT:</code> (indépendant, salarié, ou laisser vide).
                 </div>
                 <textarea id="pco-paste" rows="6" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="NOM: Dupont Marie
 TEL: 0470123456
 EMAIL: marie@example.com
+TVA: BE0123456789
 STATUT: independant
 ==="></textarea>
                 <button onclick="pcoBulkImportPaste()" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">📥 Importer la liste</button>
@@ -6237,7 +6239,7 @@ window.pcoShowTab = function (id) {
 };
 
 function pcoResetForm() {
-  ['pco-nom', 'pco-tel', 'pco-email', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pco-source').value = 'Facebook';
   document.getElementById('pco-statut-pro').value = 'Indépendant';
   document.getElementById('pco-presentation').value = 'Non présentée';
@@ -6251,6 +6253,7 @@ window.pcoEditProspect = function (id) {
   document.getElementById('pco-nom').value = p.nom || '';
   document.getElementById('pco-tel').value = p.tel || '';
   document.getElementById('pco-email').value = p.email || '';
+  document.getElementById('pco-tva').value = p.tva || '';
   document.getElementById('pco-source').value = p.source || 'Facebook';
   document.getElementById('pco-statut-pro').value = p.statutPro || 'Indépendant';
   document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
@@ -6267,6 +6270,7 @@ window.pcoSaveProspect = async function () {
     consultantId: window.pmCurrentUser.id, nom: nom,
     tel: document.getElementById('pco-tel').value.trim(),
     email: document.getElementById('pco-email').value.trim(),
+    tva: document.getElementById('pco-tva').value.trim(),
     source: document.getElementById('pco-source').value,
     statutPro: document.getElementById('pco-statut-pro').value,
     presentation: document.getElementById('pco-presentation').value,
@@ -6324,6 +6328,7 @@ function pcoRenderList(list) {
       + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>'
       + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:4px;">📞 ' + pcEsc(p.tel) + '</div>' : '')
       + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
+      + (p.tva ? '<div style="font-size:12px;color:#555;">💳 ' + pcEsc(p.tva) + '</div>' : '')
       + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(p.source || '-') + '</div>'
       + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(p.statutPro) + '</div>' : '')
       + (p.presentation && p.presentation !== 'Non présentée' ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.presentation) + '</div>' : '')
@@ -6359,7 +6364,7 @@ async function pcoMigrateOne(docId) {
       consultantId: p.consultantId || window.pmCurrentUser.id,
       prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
       nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
-      tel: p.tel || '', email: p.email || '', ville: '', adresse: '', cp: '', societe: '', tva: '',
+      tel: p.tel || '', email: p.email || '', ville: '', adresse: '', cp: '', societe: '', tva: p.tva || '',
       dateDemarrage: '', etat: 'actif',
       statutPro: sp.indexOf('ind') >= 0 ? 'independant' : (sp.indexOf('sal') >= 0 || sp.indexOf('employ') >= 0 ? 'salarie' : ''),
       sourceProspectId: docId, createdAt: new Date().toISOString()
@@ -6405,13 +6410,15 @@ window.pcoParseImportFile = function () {
       var colNom = pcFindColumn(headers, ['nom']);
       var colTel = pcFindColumn(headers, ['tel', 'téléphone', 'telephone', 'gsm']);
       var colEmail = pcFindColumn(headers, ['email', 'mail']);
+      var colTva = pcFindColumn(headers, ['tva', 'vat']);
       var colSource = pcFindColumn(headers, ['source']);
       var colCommentaire = pcFindColumn(headers, ['comment', 'note']);
       if (!colNom) { document.getElementById('pco-import-preview').innerHTML = '<div style="font-size:12px;color:#c0392b;">⚠️ Aucune colonne "Nom" trouvée.</div>'; return; }
       var normalized = rows.map(function (r) {
         return {
           nom: (r[colNom] || '').toString().trim(), tel: colTel ? (r[colTel] || '').toString().trim() : '',
-          email: colEmail ? (r[colEmail] || '').toString().trim() : '', source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
+          email: colEmail ? (r[colEmail] || '').toString().trim() : '', tva: colTva ? (r[colTva] || '').toString().trim() : '',
+          source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
           commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
         };
       }).filter(function (r) { return r.nom; });
@@ -6446,7 +6453,7 @@ window.pcoConfirmImport = async function () {
     var now = new Date().toISOString();
     try {
       await window.addDoc(window.collection(window.db, 'prospectsConsultants'), {
-        consultantId: window.pmCurrentUser.id, nom: row.nom, tel: row.tel, email: row.email,
+        consultantId: window.pmCurrentUser.id, nom: row.nom, tel: row.tel, email: row.email, tva: row.tva || '',
         source: row.source || 'Autre', commentaire: row.commentaire, statut: 'Nouveau', dateCreation: now, dateMaj: now
       });
       done++;
@@ -6469,6 +6476,7 @@ window.pcoBulkImportPaste = async function () {
     var nomMatch = block.match(/^NOM\s*:\s*(.+)$/mi);
     var telMatch = block.match(/^TEL\s*:\s*(.+)$/mi);
     var emailMatch = block.match(/^EMAIL\s*:\s*(.+)$/mi);
+    var tvaMatch = block.match(/^TVA\s*:\s*(.+)$/mi);
     var statMatch = block.match(/^STATUT\s*:\s*(.+)$/mi);
     var nom = nomMatch ? nomMatch[1].trim() : '';
     if (!nom) { errors.push('Bloc ' + (idx + 1) + ' : NOM manquant'); return; }
@@ -6476,6 +6484,7 @@ window.pcoBulkImportPaste = async function () {
     var data = {
       consultantId: window.pmCurrentUser.id, nom: nom,
       tel: telMatch ? telMatch[1].trim() : '', email: emailMatch ? emailMatch[1].trim() : '',
+      tva: tvaMatch ? tvaMatch[1].trim() : '',
       source: 'Autre', statut: 'Nouveau', dateCreation: now, dateMaj: now
     };
     if (statMatch) {
