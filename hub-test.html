@@ -66,6 +66,9 @@
 .pm-fav-heart:hover{ transform:scale(1.15); }
 #pm-favoris-list .menu-item{ text-align:left; }
 
+#ctr-import-pdf-btn:disabled{ opacity:.6;cursor:default; }
+@keyframes ctr-import-spin{ to{ transform:rotate(360deg); } }
+
 .menu-item:hover { background:#fff3e8; }
 .active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
 @media(max-width:600px){
@@ -1072,6 +1075,13 @@ Build <span id="app-version-1">…</span> — Icônes docs
               <div id="ctr-prospect-link-banner" style="display:none;background:#fff3e8;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;margin-bottom:14px;">
                 🔗 Ce contrat sera lié au prospect <b id="ctr-prospect-link-name"></b> — il passera automatiquement en "Converti" une fois le contrat enregistré.
               </div>
+
+              <input type="file" id="ctr-import-pdf-input" accept="application/pdf" style="display:none;" onchange="ctrHandleImportPdf(this.files[0])">
+              <button type="button" id="ctr-import-pdf-btn" onclick="document.getElementById('ctr-import-pdf-input').click()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;">
+                <span class="ctr-import-spinner" id="ctr-import-spinner" style="display:none;width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:ctr-import-spin .7s linear infinite;"></span>
+                <span id="ctr-import-pdf-btn-label">📥 Importer un contrat (PDF)</span>
+              </button>
+              <div id="ctr-import-status" style="display:none;font-size:12px;border-radius:10px;padding:9px 12px;margin:-8px 0 16px;"></div>
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du client</div><input id="ctr-nom" placeholder="Jean Dupont" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
@@ -5249,7 +5259,7 @@ window.pmExportPDF=function(){
   const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
   const aspTotal=mc.reduce((s,c)=>s+(c.asp||0),0);
   const byAgent=pmCountBy(mc,'agent');
-  let html=`<html><head><meta charset="utf-8"><title>Phil-Mobile ${PM_MONTHS[pmCurMonth]} ${pmCurYear}</title>
+  let html=`<html><head><meta charset="utf-8"><title>Outils Phil-Mobile (TEST — Mes Contrats)</title>
   <style>body{font-family:Arial,sans-serif;padding:32px;color:#1a1a2e;max-width:600px;margin:auto;}
   h1{font-size:20px;color:#0D2580;margin-bottom:4px;}.sub{font-size:13px;color:#666;margin-bottom:20px;}
   .totals{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}.tot{background:#fef9f5;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;}
@@ -7370,6 +7380,140 @@ window.ctrSearchContracts = function () {
     card.style.display = txt.includes(term) ? 'block' : 'none';
   });
 };
+
+// --- Import automatique d'un contrat (PDF envoyé à Gemini -> pré-remplissage du formulaire) ---
+// Import fichier unique uniquement (l'import en masse de wp_contrats.html n'est pas repris ici).
+
+function ctrSetImportStatus(type, msg) {
+  var el = document.getElementById('ctr-import-status');
+  if (!el) return;
+  if (!type) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? '#e8f9ee' : '#fdeaea';
+  el.style.color = type === 'ok' ? '#1a7a3c' : '#b42323';
+  el.textContent = msg || '';
+}
+
+function ctrSetImportLoading(loading, label) {
+  var btn = document.getElementById('ctr-import-pdf-btn');
+  var lbl = document.getElementById('ctr-import-pdf-btn-label');
+  var spin = document.getElementById('ctr-import-spinner');
+  if (!btn || !lbl) return;
+  btn.disabled = loading;
+  if (spin) spin.style.display = loading ? 'inline-block' : 'none';
+  lbl.textContent = label || (loading ? 'Analyse du contrat en cours…' : '📥 Importer un contrat (PDF)');
+}
+
+function ctrFileToBase64(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () { resolve(String(reader.result).split(',')[1] || ''); };
+    reader.onerror = function () { reject(new Error("Impossible de lire ce fichier.")); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function ctrBuildImportPrompt() {
+  var catalog = ctrProducts.map(function (p) {
+    return '- ' + p.id + ' : ' + p.label.replace(/[^\w\séèêàçûôî]/gi, '').trim();
+  }).join('\n');
+  return `Tu es un assistant d'extraction de données pour des contrats de télécom et d'énergie belges (Orange, Eneco, VOO, Proximus, Base, ou autres).
+
+Le PDF joint est un contrat. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
+
+{
+  "fournisseur": "Orange" | "Eneco" | "VOO" | "Proximus" | "Base" | "Autre",
+  "client": { "nom": "", "societe": "", "tel": "", "tva": "", "email": "", "adresse": "", "clientOrange": "", "contratEneco": "", "contratSmart": "" },
+  "produits": [ { "id": "", "quantite": 1, "convergence": false, "portabilite": false, "sohoIndep": false } ]
+}
+
+Règles :
+- Chaîne vide "" si une info n'est pas trouvée dans le PDF (jamais null, jamais d'invention).
+- "id" dans "produits" doit être une des valeurs EXACTES de cette liste, choisie selon ce que décrit le contrat :
+` + catalog + `
+- Ignore tout produit du contrat qui ne correspond à aucun id de cette liste plutôt que d'inventer un id.
+- "quantite" = nombre de lignes/unités identiques de ce produit (1 si non précisé).
+- "portabilite" = true si le contrat mentionne un transfert de numéro depuis un autre opérateur.
+- "convergence" = true si le contrat mentionne une offre convergente (fixe + mobile groupés).
+- "sohoIndep" = true si le client est identifié comme indépendant / SoHo / professionnel.
+- "tva" au format belge si possible (ex: BE0123456789).
+- "nom" (dans "client") doit TOUJOURS être formaté "Prénom Nom" (prénom en premier). De nombreux documents belges affichent le nom de famille en premier ou en MAJUSCULES (ex: "PIERRET Lindsay") — dans ce cas, inverse l'ordre pour renvoyer "Lindsay Pierret". Ne mets jamais le nom de famille en majuscules dans la réponse.
+- "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
+- "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
+- "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS sur un contrat Orange/Eneco/autre fournisseur. Laisse ce champ TOUJOURS vide ("") — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF.
+- N'ajoute AUCUN champ en dehors de ce schéma.`;
+}
+
+async function ctrExtractContractFromFile(file) {
+  if (!window.geminiImportModel) {
+    throw new Error("Le service d'import n'est pas encore configuré.");
+  }
+  var base64 = await ctrFileToBase64(file);
+  var result = await window.geminiImportModel.generateContent([
+    { inlineData: { mimeType: 'application/pdf', data: base64 } },
+    { text: ctrBuildImportPrompt() }
+  ]);
+  var raw = result.response.text();
+  try {
+    var jsonMatch = raw.match(/\{[\s\S]*\}/);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+  } catch (err) {
+    throw new Error("Réponse IA illisible pour ce fichier.");
+  }
+}
+
+function ctrApplyImportedContract(data) {
+  if (!data) return;
+  var client = data.client || {};
+  var fieldMap = {
+    'ctr-nom': client.nom, 'ctr-societe': client.societe, 'ctr-tel': client.tel,
+    'ctr-tva': client.tva, 'ctr-clientOrange': client.clientOrange, 'ctr-contratEneco': client.contratEneco,
+    'ctr-contratSmart': client.contratSmart, 'ctr-email': client.email, 'ctr-adresse': client.adresse
+  };
+  Object.keys(fieldMap).forEach(function (id) {
+    var val = fieldMap[id];
+    var el = document.getElementById(id);
+    if (el && val && !el.value.trim()) el.value = val;
+  });
+
+  var validIds = ctrProducts.map(function (p) { return p.id; });
+  (data.produits || []).forEach(function (p) {
+    if (validIds.indexOf(p.id) === -1) return;
+    var qty = Math.max(1, parseInt(p.quantite, 10) || 1);
+    for (var i = 0; i < qty; i++) {
+      ctrUnits[p.id].push({
+        convergence: !!p.convergence,
+        portabilite: !!p.portabilite,
+        sohoIndep: !!p.sohoIndep
+      });
+    }
+  });
+
+  ctrBuildProductsUI();
+  window.ctrUpdateContractPreview();
+}
+
+window.ctrHandleImportPdf = async function (file) {
+  if (!file) return;
+  var input = document.getElementById('ctr-import-pdf-input');
+  try {
+    ctrSetImportStatus(null);
+    ctrSetImportLoading(true, '🤖 Analyse IA en cours…');
+
+    var data = await ctrExtractContractFromFile(file);
+    ctrApplyImportedContract(data);
+
+    var fournisseur = data.fournisseur || 'Fournisseur inconnu';
+    var nbProduits = (data.produits || []).reduce(function (s, p) { return s + (p.quantite || 1); }, 0);
+    ctrSetImportStatus('ok', '✅ Contrat ' + fournisseur + ' importé — ' + nbProduits + ' produit(s) ajouté(s). Vérifie les champs avant d\'enregistrer.');
+  } catch (err) {
+    console.error(err);
+    ctrSetImportStatus('err', '❌ ' + (err.message || "Échec de l'import automatique. Tu peux encoder le contrat manuellement."));
+  } finally {
+    ctrSetImportLoading(false);
+    if (input) input.value = '';
+  }
+};
 // ===== FIN MES CONTRATS =====
 
 </script>
@@ -7445,6 +7589,17 @@ import {
   getDownloadURL
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js";
+import {
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-ai.js";
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
   authDomain: "phil-mobile.firebaseapp.com",
@@ -7456,6 +7611,23 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// App Check + Firebase AI Logic (Gemini) — utilisés pour l'import automatique de contrat (PDF -> pré-remplissage).
+// Réutilise l'instance "app" existante (pas de second initializeApp) pour éviter tout conflit Firebase.
+try {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider("6LfMXVYtAAAAAJgXbh8X_e9Bgfx5ZBTkdA9gT0Rx"),
+    isTokenAutoRefreshEnabled: true
+  });
+  const ai = getAI(app, { backend: new GoogleAIBackend() });
+  window.geminiImportModel = getGenerativeModel(ai, {
+    model: "gemini-3.5-flash",
+    generationConfig: { responseMimeType: "application/json", temperature: 0 }
+  });
+} catch (e) {
+  console.warn("Firebase AI Logic (import contrat PDF) indisponible :", e);
+}
+
 const auth = getAuth(app);
 window.db = getFirestore(app);
 window.storage = getStorage(app);
