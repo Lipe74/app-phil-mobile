@@ -1115,61 +1115,112 @@ STATUT: independant
 
             <!-- Modale : ajouter / modifier un prospect client (uniformisé avec Gestion Clients) -->
             <div id="modal-pcl-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
-              <div style="background:#fff;border-radius:16px;padding:22px;max-width:560px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
-                <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 14px;font-size:15px;">🆕 Nouveau prospect</h3>
+              <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
+                <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <input id="pcl-nom" placeholder="👤 Nom du prospect">
-                  <input id="pcl-tel" placeholder="📞 Téléphone">
-                  <input id="pcl-email" placeholder="📧 E-mail" style="grid-column:span 2;">
-                  <select id="pcl-type" onchange="pclToggleSociete()">
-                    <option value="Particulier">👤 Particulier</option>
-                    <option value="Société">🏢 Société</option>
-                  </select>
-                  <input id="pcl-ville" placeholder="📍 Ville">
-                  <div id="pcl-societe-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
-                    <input id="pcl-societe" placeholder="🏢 Nom de la société">
-                    <input id="pcl-tva" placeholder="💳 Numéro TVA">
-                  </div>
-                  <select id="pcl-op-mobile">
-                    <option value="">📱 Opérateur Mobile actuel...</option>
-                    <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
-                    <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
-                    <option>Odido</option><option>Youfone</option><option>Simyo</option><option>Autre</option>
-                  </select>
-                  <input id="pcl-num-mobile" placeholder="📱 N° client Mobile">
-                  <select id="pcl-op-internet">
-                    <option value="">🌐 Opérateur Internet actuel...</option>
-                    <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
-                    <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
-                  </select>
-                  <input id="pcl-num-internet" placeholder="🌐 N° client Internet">
-                  <input id="pcl-easyswitch" placeholder="🔄 N° EasySwitch">
                   <div>
-                    <label style="font-size:11px;color:#888;font-weight:700;">📅 Fin de contrat</label>
-                    <input type="date" id="pcl-date-fin-contrat">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
+                    <input id="pcl-nom" placeholder="Nom du prospect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
-                  <select id="pcl-source">
-                    <option value="Orange">🟠 Orange</option>
-                    <option value="Eneco">⚡ Eneco</option>
-                    <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
-                    <option value="Consultants">🎯 Consultants</option>
-                    <option value="Autre">✨ Autre</option>
-                  </select>
-                  <select id="pcl-provenance" onchange="pclToggleReference()">
-                    <option value="">🧭 Provenance...</option>
-                    <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
-                    <option value="Référence client existant">⭐ Référence client existant</option>
-                    <option value="Internet/Réseaux sociaux">🌐 Internet/Réseaux sociaux</option>
-                    <option value="Terrain">🚶 Terrain</option>
-                    <option value="Autre">✨ Autre</option>
-                  </select>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
+                    <input id="pcl-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
+                    <input id="pcl-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Type</div>
+                    <select id="pcl-type" onchange="pclToggleSociete()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="Particulier">👤 Particulier</option>
+                      <option value="Société">🏢 Société</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville</div>
+                    <input id="pcl-ville" placeholder="Liège" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div id="pcl-societe-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Société</div>
+                      <input id="pcl-societe" placeholder="Société SRL" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    </div>
+                    <div>
+                      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
+                      <input id="pcl-tva" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    </div>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Mobile actuel</div>
+                    <select id="pcl-op-mobile" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="">-- Non renseigné --</option>
+                      <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
+                      <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
+                      <option>Odido</option><option>Youfone</option><option>Simyo</option><option>Autre</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° client Mobile</div>
+                    <input id="pcl-num-mobile" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Internet actuel</div>
+                    <select id="pcl-op-internet" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="">-- Non renseigné --</option>
+                      <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
+                      <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° client Internet</div>
+                    <input id="pcl-num-internet" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° EasySwitch</div>
+                    <input id="pcl-easyswitch" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Fin de contrat</div>
+                    <input type="date" id="pcl-date-fin-contrat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
+                    <select id="pcl-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="Orange">🟠 Orange</option>
+                      <option value="Eneco">⚡ Eneco</option>
+                      <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
+                      <option value="Consultants">🎯 Consultants</option>
+                      <option value="Autre">✨ Autre</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Provenance</div>
+                    <select id="pcl-provenance" onchange="pclToggleReference()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="">-- Non renseigné --</option>
+                      <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
+                      <option value="Référence client existant">⭐ Référence client existant</option>
+                      <option value="Internet/Réseaux sociaux">🌐 Internet/Réseaux sociaux</option>
+                      <option value="Terrain">🚶 Terrain</option>
+                      <option value="Autre">✨ Autre</option>
+                    </select>
+                  </div>
                   <div id="pcl-reference-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
-                    <input id="pcl-ref-nom" placeholder="⭐ Nom du client référent">
-                    <input id="pcl-ref-tel" placeholder="📞 Tél. du référent">
+                    <div>
+                      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du client référent</div>
+                      <input id="pcl-ref-nom" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    </div>
+                    <div>
+                      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Tél. du référent</div>
+                      <input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    </div>
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
+                    <textarea id="pcl-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
                   </div>
                 </div>
-                <textarea id="pcl-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
                   <button onclick="pclCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
                   <button onclick="pclSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
                 </div>
@@ -1281,36 +1332,60 @@ OPERATEUR: Proximus
 
             <!-- Modale : ajouter / modifier un prospect consultant (uniformisé avec Gestion Consultants) -->
             <div id="modal-pco-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
-              <div style="background:#fff;border-radius:16px;padding:22px;max-width:560px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
-                <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 14px;font-size:15px;">🆕 Nouveau prospect</h3>
+              <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
+                <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <input id="pco-nom" placeholder="👤 Nom du prospect">
-                  <input id="pco-tel" placeholder="📞 Téléphone">
-                  <input id="pco-email" placeholder="📧 E-mail" style="grid-column:span 2;">
-                  <input id="pco-tva" placeholder="💳 Numéro TVA (ex : BE0123456789)" style="grid-column:span 2;">
-                  <select id="pco-source">
-                    <option value="Facebook">📘 Facebook</option>
-                    <option value="WhatsApp">💬 WhatsApp</option>
-                    <option value="Recommandation">🤝 Recommandation</option>
-                    <option value="Terrain">🚶 Terrain</option>
-                    <option value="Site Web">🌐 Site Web</option>
-                    <option value="Autre">✨ Autre</option>
-                  </select>
-                  <select id="pco-statut-pro">
-                    <option value="Indépendant">💼 Indépendant</option>
-                    <option value="Société">🏢 Société</option>
-                    <option value="Employé">👔 Employé</option>
-                    <option value="Étudiant">🎓 Étudiant</option>
-                    <option value="Sans activité">📄 Sans activité</option>
-                  </select>
-                  <select id="pco-presentation" style="grid-column:span 2;">
-                    <option value="Non présentée">🎯 Non présentée</option>
-                    <option value="Terrain">🤝 Présentée sur le terrain</option>
-                    <option value="Zoom">💻 Présentée en Zoom</option>
-                    <option value="Bureau">🏢 Présentée au bureau</option>
-                  </select>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
+                    <input id="pco-nom" placeholder="Nom du prospect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
+                    <input id="pco-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
+                    <input id="pco-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
+                    <input id="pco-tva" placeholder="BE0123456789" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
+                    <select id="pco-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="Facebook">📘 Facebook</option>
+                      <option value="WhatsApp">💬 WhatsApp</option>
+                      <option value="Recommandation">🤝 Recommandation</option>
+                      <option value="Terrain">🚶 Terrain</option>
+                      <option value="Site Web">🌐 Site Web</option>
+                      <option value="Autre">✨ Autre</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Statut</div>
+                    <select id="pco-statut-pro" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="Indépendant">💼 Indépendant</option>
+                      <option value="Société">🏢 Société</option>
+                      <option value="Employé">👔 Employé</option>
+                      <option value="Étudiant">🎓 Étudiant</option>
+                      <option value="Sans activité">📄 Sans activité</option>
+                    </select>
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Présentation</div>
+                    <select id="pco-presentation" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="Non présentée">🎯 Non présentée</option>
+                      <option value="Terrain">🤝 Présentée sur le terrain</option>
+                      <option value="Zoom">💻 Présentée en Zoom</option>
+                      <option value="Bureau">🏢 Présentée au bureau</option>
+                    </select>
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
+                    <textarea id="pco-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
+                  </div>
                 </div>
-                <textarea id="pco-commentaire" rows="3" placeholder="📝 Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:10px;"></textarea>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
                   <button onclick="pcoCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
                   <button onclick="pcoSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
