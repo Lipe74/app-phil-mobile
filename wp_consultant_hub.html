@@ -602,36 +602,9 @@ Build <span id="app-version-1">…</span> — Icônes docs
 🌐 Liens importants
 </button>
 
+<!-- LIENS (chargés dynamiquement depuis Firestore, collection "liens") -->
 <div id="linksMenu" class="submenu">
-
-  <button onclick="window.open('https://smartservicesnetwork.my.site.com/','_blank')" class="menu-item">
-    🏛️ My Smart
-  </button>
-
-  <button onclick="window.open('https://smartsn.showpad.biz/webapp2/home','_blank')" class="menu-item">
-    📱 Showpad
-  </button>
-
-  <button onclick="window.open('https://obe.my.site.com','_blank')" class="menu-item">
-    ☁️ Sales Force
-  </button>
-
-  <button onclick="window.open('https://www.crdc.be/','_blank')" class="menu-item">
-    📄 CRB (1399)
-  </button>
-
-  <button onclick="window.open('https://eneco.be/fr/','_blank')" class="menu-item">
-    ⚡ Eneco
-  </button>
-
-  <button onclick="window.open('https://www.orange.be/fr/options-et-services/internet/internet-boost/internet-boost-giga','_blank')" class="menu-item">
-    🟠 Éligibilité Fibre
-  </button>
-
-  <button onclick="window.open('https://phil-mobile.be/','_blank')" class="menu-item">
-    🌐 Phil-Mobile
-  </button>
-
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 <!-- DOCUMENTS (chargés dynamiquement depuis Firestore, collection "documents") -->
 
@@ -2351,6 +2324,41 @@ async function loadHubDocuments() {
   }
 }
 window.loadHubDocuments = loadHubDocuments;
+
+// ===== LIENS (menu "Liens importants") =====
+// Firestore : collection "liens" : { titre, url, icone, ordre }. Gérés depuis admin.html > Gestion des liens.
+async function loadHubLinks() {
+  try {
+    let tries = 0;
+    while ((!window.db || !window.onSnapshot || !window.collection) && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.onSnapshot) throw new Error('Firestore non disponible');
+
+    if (window._hubLinksUnsub) { try { window._hubLinksUnsub(); } catch (e) {} }
+
+    window._hubLinksUnsub = window.onSnapshot(window.collection(window.db, 'liens'), (snap) => {
+      const el = document.getElementById('linksMenu');
+      if (!el) return;
+      const items = [];
+      snap.forEach(docSnap => items.push({ id: docSnap.id, ...docSnap.data() }));
+      items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      el.innerHTML = items.length
+        ? items.map(l => `<button onclick="window.open('${escapeAttrLinks(l.url)}','_blank')" class="menu-item">${l.icone || '🌐'} ${escapeHtmlDocs(l.titre)}</button>`).join('')
+        : '<div class="menu-item" style="opacity:.5;">Aucun lien</div>';
+      if (typeof initFavorites === 'function') initFavorites();
+    }, (err) => {
+      console.log('Chargement liens impossible:', err.message);
+    });
+  } catch (err) {
+    console.log('loadHubLinks error:', err.message);
+  }
+}
+function escapeAttrLinks(str) {
+  return (str ?? '').replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+window.loadHubLinks = loadHubLinks;
 
 async function loadPMUsers() {
   try {
@@ -7703,6 +7711,7 @@ onAuthStateChanged(auth, async (user) => {
   loadNews();
   loadTeamsLink();
   loadHubDocuments();
+  loadHubLinks();
 
 });
 
@@ -7754,6 +7763,7 @@ window.firebaseLogin = async function(){
     loadNews();
     loadTeamsLink();
     loadHubDocuments();
+    loadHubLinks();
 
   }catch(err){
     document.getElementById('rem-error').style.display='block';

@@ -238,6 +238,8 @@
 
         <button onclick="showAdminPanel('panel-documents', this)" class="menu-item" id="menu-documents">📄 Gestion des documents</button>
 
+        <button onclick="showAdminPanel('panel-liens', this)" class="menu-item" id="menu-liens">🌐 Gestion des liens</button>
+
       </div>
 
       <!-- CONTENU : un panneau affiché à la fois -->
@@ -670,6 +672,47 @@
           </div>
 
           <div id="documents-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-liens">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span>🌐 Gestion des liens</span>
+            <button class="btn btn-secondary" onclick="importExistingLiens()">📥 Importer les liens existants</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Liens affichés dans le Hub, menu "🌐 Liens importants". "Importer les liens existants" récupère en une fois les 7 liens actuellement en dur dans le hub (à faire une seule fois ; ignoré automatiquement si déjà fait).
+          </div>
+
+          <div class="card">
+            <div class="form-row">
+              <label>Titre du lien *</label>
+              <input type="text" id="lien-new-titre" placeholder="ex: My Smart">
+            </div>
+            <div class="form-row">
+              <label>URL *</label>
+              <input type="text" id="lien-new-url" placeholder="ex: https://...">
+            </div>
+            <div class="form-row">
+              <label>Icône (emoji, optionnel — 🌐 par défaut)</label>
+              <input type="text" id="lien-new-icone" placeholder="ex: 🏛️" maxlength="4" style="width:80px;">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🌐')">🌐</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🏛️')">🏛️</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','📱')">📱</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','☁️')">☁️</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','📄')">📄</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','⚡')">⚡</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🟠')">🟠</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🔵')">🔵</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🟢')">🟢</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','⭐')">⭐</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🔧')">🔧</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="addLienFiche()">➕ Ajouter un lien</button>
+          </div>
+
+          <div id="liens-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-faq">
@@ -1485,6 +1528,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProduitsOrangeAdmin();
   loadCommissionsAdmin();
   loadDocumentsAdmin();
+  loadLiensAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
   loadVideoPromotionAdmin();
@@ -5194,6 +5238,171 @@ window.importExistingDocuments = async function () {
     }
   }
   showToast('Import terminé.');
+};
+
+// ===== LIENS (menu Hub "Liens importants") =====
+// Firestore : collection "liens" : { titre, url, icone, ordre, dateAjout }.
+const EXISTING_LIENS_MIGRATION = [
+  { titre: 'My Smart', icone: '🏛️', url: 'https://smartservicesnetwork.my.site.com/' },
+  { titre: 'Showpad', icone: '📱', url: 'https://smartsn.showpad.biz/webapp2/home' },
+  { titre: 'Sales Force', icone: '☁️', url: 'https://obe.my.site.com' },
+  { titre: 'CRB (1399)', icone: '📄', url: 'https://www.crdc.be/' },
+  { titre: 'Eneco', icone: '⚡', url: 'https://eneco.be/fr/' },
+  { titre: 'Éligibilité Fibre', icone: '🟠', url: 'https://www.orange.be/fr/options-et-services/internet/internet-boost/internet-boost-giga' },
+  { titre: 'Phil-Mobile', icone: '🌐', url: 'https://phil-mobile.be/' }
+];
+
+let liensUnsub = null;
+window._liensCache = [];
+
+function loadLiensAdmin() {
+  const container = document.getElementById('liens-content');
+  if (!container) return;
+  if (liensUnsub) { try { liensUnsub(); } catch (e) {} liensUnsub = null; }
+  liensUnsub = onSnapshot(collection(db, 'liens'), (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    window._liensCache = items;
+    renderLiensAdmin(items);
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement liens impossible:', err.message);
+  });
+}
+
+function renderLiensAdmin(items) {
+  const container = document.getElementById('liens-content');
+  if (!container) return;
+  if (!items.length) { container.innerHTML = '<div class="empty">Aucun lien</div>'; return; }
+  container.innerHTML = items.map((l, idx) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+      <span style="flex:1;min-width:220px;font-weight:600;display:flex;align-items:center;gap:6px;">
+        ${window._liensEditingId === l.id
+          ? `<div style="display:flex;flex-direction:column;gap:5px;width:100%;">
+               <div style="display:flex;gap:6px;">
+                 <input type="text" id="lien-edit-icone-${l.id}" value="${escapeAttrDocs(l.icone || '')}" placeholder="🌐" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
+                 <input type="text" id="lien-edit-titre-${l.id}" value="${escapeAttrDocs(l.titre)}" placeholder="Titre" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
+               </div>
+               <input type="text" id="lien-edit-url-${l.id}" value="${escapeAttrDocs(l.url)}" placeholder="URL" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
+             </div>`
+          : `<span>${l.icone || '🌐'} ${escapeHtmlDocs(l.titre)}</span><span style="font-size:11px;color:#888;font-weight:400;">${escapeHtmlDocs(l.url)}</span>`}
+      </span>
+      ${window._liensEditingId === l.id
+        ? `<button class="btn btn-primary" onclick="saveRenameLien('${l.id}')" title="Valider">✅</button>
+           <button class="btn btn-secondary" onclick="cancelRenameLien()" title="Annuler">✖</button>`
+        : `<button class="btn btn-secondary" onclick="startRenameLien('${l.id}')" title="Modifier">✏️</button>`}
+      <span style="display:flex;flex-direction:column;gap:1px;">
+        <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveLienOrdre('${l.id}', -1)" title="Monter">▲</button>
+        <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === items.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveLienOrdre('${l.id}', 1)" title="Descendre">▼</button>
+      </span>
+      <button class="btn btn-secondary" onclick="deleteLienFiche('${l.id}')">🗑️</button>
+    </div>
+  `).join('');
+}
+
+window.addLienFiche = async function () {
+  const titreInput = document.getElementById('lien-new-titre');
+  const urlInput = document.getElementById('lien-new-url');
+  const iconeInput = document.getElementById('lien-new-icone');
+  const titre = titreInput.value.trim();
+  const url = urlInput.value.trim();
+  const icone = iconeInput.value.trim();
+  if (!titre) { alert('Titre requis.'); return; }
+  if (!url) { alert('URL requise.'); return; }
+  try {
+    const ordre = window._liensCache.length;
+    await addDoc(collection(db, 'liens'), {
+      titre, url, icone: icone || null, ordre, dateAjout: new Date().toISOString()
+    });
+    titreInput.value = '';
+    urlInput.value = '';
+    iconeInput.value = '';
+    showToast('✅ Lien ajouté.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.deleteLienFiche = async function (lienId) {
+  if (!confirm('Supprimer définitivement ce lien ?')) return;
+  try {
+    await deleteDoc(doc(db, 'liens', lienId));
+    showToast('🗑️ Lien supprimé.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window._liensEditingId = null;
+
+window.startRenameLien = function (lienId) {
+  window._liensEditingId = lienId;
+  renderLiensAdmin(window._liensCache);
+  setTimeout(() => {
+    const inp = document.getElementById('lien-edit-titre-' + lienId);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 0);
+};
+
+window.cancelRenameLien = function () {
+  window._liensEditingId = null;
+  renderLiensAdmin(window._liensCache);
+};
+
+window.saveRenameLien = async function (lienId) {
+  const titreInp = document.getElementById('lien-edit-titre-' + lienId);
+  const urlInp = document.getElementById('lien-edit-url-' + lienId);
+  const iconeInp = document.getElementById('lien-edit-icone-' + lienId);
+  if (!titreInp || !urlInp) return;
+  const titre = titreInp.value.trim();
+  const url = urlInp.value.trim();
+  if (!titre) { alert('Le titre ne peut pas être vide.'); return; }
+  if (!url) { alert("L'URL ne peut pas être vide."); return; }
+  const icone = iconeInp ? iconeInp.value.trim() : '';
+  try {
+    await updateDoc(doc(db, 'liens', lienId), { titre, url, icone: icone || null });
+    window._liensEditingId = null;
+    const item = (window._liensCache || []).find(l => l.id === lienId);
+    if (item) { item.titre = titre; item.url = url; item.icone = icone || null; }
+    renderLiensAdmin(window._liensCache);
+    showToast('✅ Lien mis à jour.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.moveLienOrdre = async function (lienId, direction) {
+  const siblings = (window._liensCache || []).slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  const idx = siblings.findIndex(l => l.id === lienId);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= siblings.length) return;
+  [siblings[idx], siblings[swapIdx]] = [siblings[swapIdx], siblings[idx]];
+  try {
+    await Promise.all(siblings.map((l, i) => updateDoc(doc(db, 'liens', l.id), { ordre: i })));
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.importExistingLiens = async function () {
+  if (!confirm(`Récupérer les ${EXISTING_LIENS_MIGRATION.length} liens déjà en dur dans le hub ? (à faire une seule fois, les liens déjà importés — même titre — seront ignorés)`)) return;
+  const existingTitres = new Set((window._liensCache || []).map(l => l.titre));
+  let ordreStart = window._liensCache.length;
+  let i = 0, added = 0, skipped = 0;
+  for (const item of EXISTING_LIENS_MIGRATION) {
+    if (existingTitres.has(item.titre)) { skipped++; continue; }
+    try {
+      await addDoc(collection(db, 'liens'), {
+        titre: item.titre, url: item.url, icone: item.icone || null,
+        ordre: ordreStart + i, dateAjout: new Date().toISOString()
+      });
+      added++; i++;
+    } catch (err) {
+      console.log('Erreur import lien', item.titre, err.message);
+    }
+  }
+  showToast(`Import terminé : ${added} ajouté(s), ${skipped} déjà présent(s).`);
 };
 
 window.saveCommissionsCategorie = async function (categoryKey) {
