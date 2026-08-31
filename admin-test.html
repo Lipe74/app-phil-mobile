@@ -144,12 +144,69 @@
     position: fixed; bottom: 20px; right: 20px; background: #1a1a1a; color: #fff;
     padding: 12px 18px; border-radius: 8px; font-size: 13px; display: none; z-index: 2000;
   }
+
+  /* ===== SECTION COLLAPSIBLE Phil-Mobile (Web) ===== */
+  .section-toggle-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase;
+    letter-spacing: .08em; margin: 0 0 4px; padding: 5px 6px;
+    cursor: pointer; user-select: none; border-radius: 6px; width: 100%;
+    background: none; border: none; font-family: Arial, sans-serif;
+    transition: background .15s;
+  }
+  .section-toggle-btn:hover { background: #fff3e8; }
+  .section-arrow { font-size: 9px; transition: transform .2s; margin-left: 4px; flex-shrink: 0; }
+  .section-arrow.closed { transform: rotate(-90deg); }
+  .section-collapsible.collapsed { display: none; }
+
+  /* ===== FAVORIS ===== */
+  .fav-section-label {
+    font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase;
+    letter-spacing: .08em; margin: 0 0 4px; padding-left: 4px;
+  }
+  .fav-empty {
+    font-size: 11px; color: #bbb; padding: 5px 8px; font-style: italic; text-align: center;
+  }
+  .fav-item {
+    display: flex; align-items: center; gap: 4px; margin-bottom: 6px;
+    position: relative; transition: opacity .15s;
+  }
+  .fav-item.drag-over { opacity: 0.35; border-top: 2px solid #f97316; }
+  .fav-handle {
+    color: #d1d5db; font-size: 14px; cursor: grab; user-select: none;
+    flex-shrink: 0; padding: 0 2px; line-height: 1; letter-spacing: -2px;
+  }
+  .fav-btn {
+    flex: 1; text-align: left; padding: 8px 28px 8px 10px;
+    background: #fff8f0; border: 1px solid #f97316; border-radius: 8px;
+    color: #c2410c; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: Arial, sans-serif; transition: all .15s; min-width: 0;
+  }
+  .fav-btn:hover { background: #fff3e8; }
+  .fav-btn.active-item { background: #f97316 !important; color: #fff !important; border-color: #f97316 !important; }
+  .fav-remove {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; cursor: pointer; background: none; border: none;
+    color: #f97316; opacity: 0; transition: opacity .15s; padding: 2px 3px; line-height: 1;
+  }
+  .fav-item:hover .fav-remove { opacity: 1; }
+
+  /* Étoile sur chaque menu item favoritable */
+  .menu-star-wrap { position: relative; display: flex; align-items: center; }
+  .menu-star-wrap > .menu-item { flex: 1; padding-right: 26px; }
+  .menu-star {
+    position: absolute; right: 6px; font-size: 13px; cursor: pointer;
+    background: none; border: none; color: #f97316; opacity: 0;
+    transition: opacity .15s; padding: 2px 3px; line-height: 1; flex-shrink: 0;
+  }
+  .menu-star-wrap:hover .menu-star,
+  .menu-star.starred { opacity: 1; }
 </style>
 </head>
 <body>
 
 <div id="login-screen">
-  <h2 style="color:#f97316;">🔐 Admin Phil-Mobile TEST</h2>
+  <h2 style="color:#f97316;">🔐 Admin Phil-Mobile</h2>
   <div id="login-error">Identifiants incorrects ou accès non autorisé.</div>
   <input type="email" id="login-email" placeholder="Email" autocomplete="email">
   <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter') adminLogin();">
@@ -160,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile TEST</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.5</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.16 — TEST</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -172,24 +229,35 @@
       <!-- MENU (style hub) -->
       <div class="admin-menu">
 
-        <div class="menu-label">🌐 Phil-Mobile (Web)</div>
-        <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
-        <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Demandes du site web <span id="web-leads-count-badge"></span></button>
-        <div id="demandesMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire) <span id="web-leads-count-vente"></span></button>
-          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement <span id="web-leads-count-recrutement"></span></button>
-        </div>
-        <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
-        <button onclick="showAdminPanel('panel-video-vente', this)" class="menu-item" id="menu-video-vente">🎥 Vidéo vente</button>
-        <button onclick="showAdminPanel('panel-video-promotion', this)" class="menu-item" id="menu-video-promotion">🎥 Vidéo promotion</button>
+        <!-- FAVORIS -->
+        <div id="fav-section"></div>
 
-        <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
+        <!-- PHIL-MOBILE (WEB) — section collapsible -->
+        <button class="section-toggle-btn" id="web-section-toggle" onclick="toggleWebSection()">
+          <span>🌐 Phil-Mobile (Web)</span>
+          <span class="section-arrow" id="web-section-arrow">▼</span>
+        </button>
+        <div id="web-section-content" class="section-collapsible">
+          <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
+          <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Demandes du site web <span id="web-leads-count-badge"></span></button>
+          <div id="demandesMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire) <span id="web-leads-count-vente"></span></button>
+            <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement <span id="web-leads-count-recrutement"></span></button>
+          </div>
+          <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
+          <button onclick="showAdminPanel('panel-video-vente', this)" class="menu-item" id="menu-video-vente">🎥 Vidéo vente</button>
+          <button onclick="showAdminPanel('panel-video-promotion', this)" class="menu-item" id="menu-video-promotion">🎥 Vidéo promotion</button>
+        </div>
+
+        <!-- APPLICATION PHIL-MOBILE -->
+        <div class="menu-label" style="margin-top:14px;">📱 Application Phil-Mobile</div>
 
         <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">📋 CRM <span id="crm-count-badge"></span></button>
         <div id="crmMenu" class="submenu">
           <button onclick="showAdminPanel('panel-app-info', this)" class="menu-item" id="menu-app-info">🖼️ Infos de l'application</button>
           <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
           <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
+          <button onclick="showAdminPanel('panel-teams-link', this)" class="menu-item" id="menu-teams-link">📹 Réunion Teams</button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
           <div id="botFaqMenu" class="submenu">
             <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
@@ -232,6 +300,12 @@
           <button onclick="showAdminPanel('panel-orange-banners', this)" class="menu-item" id="menu-orange-banners">🎨 Textes &amp; couleurs</button>
           <button onclick="showAdminPanel('panel-commissions', this)" class="menu-item" id="menu-commissions">💰 Gestion des commissions</button>
         </div>
+
+        <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
+
+        <button onclick="showAdminPanel('panel-documents', this)" class="menu-item" id="menu-documents">📄 Gestion des documents</button>
+
+        <button onclick="showAdminPanel('panel-liens', this)" class="menu-item" id="menu-liens">🌐 Gestion des liens</button>
 
       </div>
 
@@ -610,6 +684,104 @@
           <div id="commissions-content"><div class="empty">Chargement...</div></div>
         </div>
 
+        <div class="admin-panel" id="panel-documents">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span>📄 Gestion des documents</span>
+            <button class="btn btn-secondary" onclick="importExistingDocuments()">📥 Importer les documents existants</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Documents (PDF) consultables depuis le Hub, classés par catégorie. Ils s'affichent en visionneuse intégrée dans l'app — pas de bouton téléchargement proposé au consultant. "Importer les documents existants" récupère en une fois les PDF actuellement en ligne sur le site vers Firebase (à faire une seule fois ; les documents déjà importés sont ignorés automatiquement).
+          </div>
+          <div id="documents-import-progress" style="display:none;margin-bottom:16px;font-size:12px;background:#fafafa;border:1px solid #eee;border-radius:8px;padding:10px 12px;"></div>
+
+          <div class="card">
+            <div class="form-row">
+              <label>Titre du document *</label>
+              <input type="text" id="doc-new-titre" placeholder="ex: Guide Salesforce">
+            </div>
+            <div class="form-row">
+              <label>Icône (emoji, optionnel — 📄 par défaut)</label>
+              <input type="text" id="doc-new-icone" placeholder="ex: 📘" maxlength="4" style="width:80px;">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📄')">📄</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📘')">📘</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📗')">📗</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📙')">📙</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','💶')">💶</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📊')">📊</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📺')">📺</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📡')">📡</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🌍')">🌍</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🟠')">🟠</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🔵')">🔵</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🟢')">🟢</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📁')">📁</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','⭐')">⭐</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','✅')">✅</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🎯')">🎯</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📌')">📌</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','🔧')">🔧</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📱')">📱</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','💡')">💡</button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Catégorie *</label>
+              <select id="doc-new-categorie">
+                <option value="Phil-Mobile">Phil-Mobile</option>
+                <option value="Smart SN">Smart SN</option>
+                <option value="Orange">Orange</option>
+                <option value="Eneco">Eneco</option>
+                <option value="Divers">Divers</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="addDocumentFiche()">➕ Ajouter une fiche document</button>
+          </div>
+
+          <div id="documents-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-liens">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span>🌐 Gestion des liens</span>
+            <button class="btn btn-secondary" onclick="importExistingLiens()">📥 Importer les liens existants</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Liens affichés dans le Hub, menu "🌐 Liens importants". "Importer les liens existants" récupère en une fois les 7 liens actuellement en dur dans le hub (à faire une seule fois ; ignoré automatiquement si déjà fait).
+          </div>
+
+          <div class="card">
+            <div class="form-row">
+              <label>Titre du lien *</label>
+              <input type="text" id="lien-new-titre" placeholder="ex: My Smart">
+            </div>
+            <div class="form-row">
+              <label>URL *</label>
+              <input type="text" id="lien-new-url" placeholder="ex: https://...">
+            </div>
+            <div class="form-row">
+              <label>Icône (emoji, optionnel — 🌐 par défaut)</label>
+              <input type="text" id="lien-new-icone" placeholder="ex: 🏛️" maxlength="4" style="width:80px;">
+              <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🌐')">🌐</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🏛️')">🏛️</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','📱')">📱</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','☁️')">☁️</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','📄')">📄</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','⚡')">⚡</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🟠')">🟠</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🔵')">🔵</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🟢')">🟢</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','⭐')">⭐</button>
+                <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('lien-new-icone','🔧')">🔧</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="addLienFiche()">➕ Ajouter un lien</button>
+          </div>
+
+          <div id="liens-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
+        </div>
+
         <div class="admin-panel" id="panel-faq">
           <div class="section-title">🤖 FAQ du bot (Chat online)</div>
           <div style="font-size:11px;color:#888;margin-bottom:10px;">
@@ -683,6 +855,20 @@
         <div class="admin-panel" id="panel-messages">
           <div class="section-title">💬 Messages</div>
           <div id="messages-admin-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-teams-link">
+          <div class="section-title">📹 Réunion Teams</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Lien de la réunion Teams récurrente (visio d'équipe). Affiché aux consultants dans le hub, section Communication.
+            </div>
+            <div class="form-row">
+              <label>Lien de la réunion</label>
+              <input type="url" id="teams-link" placeholder="https://teams.microsoft.com/meet/...">
+            </div>
+            <button class="btn btn-primary" onclick="saveTeamsLink()">Enregistrer le lien</button>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-bandeau">
@@ -1390,6 +1576,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
   loadNewsAdmin();
+  loadTeamsLinkAdmin();
   loadAgendaAdmin();
   onAgendaCategoryChange();
   loadProspects();
@@ -1407,12 +1594,15 @@ onAuthStateChanged(auth, async (user) => {
   loadWebLeadsAdmin();
   loadProduitsOrangeAdmin();
   loadCommissionsAdmin();
+  loadDocumentsAdmin();
+  loadLiensAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
   loadVideoPromotionAdmin();
   loadOrangeBannersAdmin();
   loadPromoGlobalDate();
   checkExpiredConsultants();
+  initFavoritesSystem();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
 });
@@ -1600,6 +1790,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
+  document.querySelectorAll('.fav-btn').forEach(b => b.classList.remove('active-item'));
   if (btn) {
     btn.classList.add('active-item');
     // Plein écran mobile uniquement sur clic dans le menu (btn présent).
@@ -1705,6 +1896,34 @@ window.saveNews = async function () {
   try {
     await setDoc(doc(db, 'news', 'current'), { active, title, type });
     showToast('✅ Annonce enregistrée.');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// --- Lien de la réunion Teams (visio récurrente, section Communication du hub) ---
+async function loadTeamsLinkAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'communication'));
+    if (snap.exists()) {
+      document.getElementById('teams-link').value = snap.data().teamsLink || '';
+    }
+  } catch (err) {
+    console.log('Pas encore de lien Teams enregistré:', err.message);
+  }
+}
+
+window.saveTeamsLink = async function () {
+  const teamsLink = document.getElementById('teams-link').value.trim();
+
+  if (teamsLink && !/^https:\/\/teams\.microsoft\.com\//i.test(teamsLink)) {
+    alert('Merci de coller un lien Teams valide (https://teams.microsoft.com/...).');
+    return;
+  }
+
+  try {
+    await setDoc(doc(db, 'settings', 'communication'), { teamsLink }, { merge: true });
+    showToast('✅ Lien Teams enregistré.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
@@ -4827,6 +5046,434 @@ function loadCommissionsAdmin() {
   });
 }
 
+// ===== GESTION DES DOCUMENTS =====
+// Firestore : collection "documents" : { titre, categorie, url, storagePath, fileName, ordre, dateAjout }
+// Storage : chemin documents/{categorie}/{docId}_{fileName}
+// Une fiche peut exister sans fichier (url:null) — le bouton affiché passe alors de
+// "Remplacer" à "Importer" selon la présence ou non d'un fichier déjà associé.
+const DOC_CATEGORIES = ['Phil-Mobile', 'Smart SN', 'Orange', 'Eneco', 'Divers'];
+
+// Migration unique des PDF déjà en ligne sur le site (repo statique) vers Firebase.
+const EXISTING_DOCS_MIGRATION = [
+  { titre: 'Manuel Sales Force', icone: '🟠', categorie: 'Smart SN', fileName: 'wp_salesforce.pdf' },
+  { titre: 'Manuel My Smart SN', icone: '📘', categorie: 'Smart SN', fileName: 'wp_mysmart.pdf' },
+  { titre: 'Les commissions', icone: '💶', categorie: 'Smart SN', fileName: 'wp_commissions.pdf' },
+  { titre: 'Plan de commissions', icone: '📊', categorie: 'Smart SN', fileName: 'wp_smartPlan.pdf' },
+  { titre: 'Produits Orange', icone: '🟠', categorie: 'Orange', fileName: 'wp_orangeproduits.pdf' },
+  { titre: 'Orange Décodeur', icone: '📺', categorie: 'Orange', fileName: 'decodeur.pdf' },
+  { titre: 'Orange Modem', icone: '📡', categorie: 'Orange', fileName: 'modem.pdf' },
+  { titre: 'Roaming', icone: '🌍', categorie: 'Orange', fileName: 'roaming.pdf' },
+  { titre: 'Chaînes Wallonie 01', icone: '📺', categorie: 'Orange', fileName: 'wallonie01.pdf' },
+  { titre: 'Chaînes Wallonie 02', icone: '📺', categorie: 'Orange', fileName: 'wallonie02.pdf' },
+  { titre: 'Chaînes Flandre', icone: '📺', categorie: 'Orange', fileName: 'flandre.pdf' },
+  { titre: 'Chaînes Bruxelles 01', icone: '📺', categorie: 'Orange', fileName: 'bruxelles01.pdf' },
+  { titre: 'Chaînes Bruxelles 02', icone: '📺', categorie: 'Orange', fileName: 'bruxelles02.pdf' }
+];
+
+function escapeHtmlDocs(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+function escapeAttrDocs(str) {
+  return (str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+const DOC_ICON_CHOICES = ['📄','📘','📗','📙','💶','📊','📺','📡','🌍','🟠','🔵','🟢','📁','⭐','✅','🎯','📌','🔧','📱','💡'];
+
+window.pickDocIcone = function (targetId, emoji) {
+  const inp = document.getElementById(targetId);
+  if (inp) { inp.value = emoji; inp.focus(); }
+};
+
+let documentsUnsub = null;
+window._documentsCache = [];
+
+function loadDocumentsAdmin() {
+  const container = document.getElementById('documents-content');
+  if (!container) return;
+  if (documentsUnsub) { try { documentsUnsub(); } catch (e) {} documentsUnsub = null; }
+  documentsUnsub = onSnapshot(collection(db, 'documents'), (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    window._documentsCache = items;
+    renderDocumentsAdmin(items);
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement documents impossible:', err.message);
+  });
+}
+
+function renderDocumentsAdmin(items) {
+  const container = document.getElementById('documents-content');
+  if (!container) return;
+  container.innerHTML = DOC_CATEGORIES.map(cat => {
+    const list = items.filter(d => d.categorie === cat);
+    const rows = list.length ? list.map((d, idx) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+        <span style="flex:1;min-width:160px;font-weight:600;display:flex;align-items:center;gap:6px;">
+          ${window._documentsEditingId === d.id
+            ? `<div style="display:flex;flex-direction:column;gap:5px;width:100%;">
+                 <div style="display:flex;gap:6px;">
+                   <input type="text" id="doc-edit-icone-${d.id}" value="${escapeAttrDocs(d.icone || '')}" placeholder="📄" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
+                   <input type="text" id="doc-edit-input-${d.id}" value="${escapeAttrDocs(d.titre)}" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameDocument('${d.id}')} if(event.key==='Escape'){cancelRenameDocument()}">
+                 </div>
+                 <div style="display:flex;flex-wrap:wrap;gap:3px;">
+                   ${DOC_ICON_CHOICES.map(e => `<button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:12px;" onclick="pickDocIcone('doc-edit-icone-${d.id}','${e}')">${e}</button>`).join('')}
+                 </div>
+               </div>`
+            : `<span>${d.icone || '📄'} ${escapeHtmlDocs(d.titre)}</span>`}
+        </span>
+        ${window._documentsEditingId === d.id
+          ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
+             <button class="btn btn-secondary" onclick="cancelRenameDocument()" title="Annuler">✖</button>`
+          : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer / changer l'icône">✏️</button>`}
+        <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
+        <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
+          ${d.url ? '🔄 Remplacer' : '📥 Importer'}
+          <input type="file" accept="application/pdf" style="display:none;" onchange="uploadDocumentFile('${d.id}', this)">
+        </label>
+        <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
+          ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
+        </select>
+        <span style="display:flex;flex-direction:column;gap:1px;">
+          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
+          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
+        </span>
+        <button class="btn btn-secondary" onclick="deleteDocumentFiche('${d.id}')">🗑️</button>
+      </div>
+    `).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
+    return `
+      <div style="margin-bottom:18px;">
+        <div style="font-weight:700;color:#f97316;font-size:13px;margin-bottom:6px;">${cat}</div>
+        ${rows}
+      </div>
+    `;
+  }).join('');
+}
+
+window.addDocumentFiche = async function () {
+  const titreInput = document.getElementById('doc-new-titre');
+  const titre = titreInput.value.trim();
+  const iconeInput = document.getElementById('doc-new-icone');
+  const icone = iconeInput.value.trim();
+  const categorie = document.getElementById('doc-new-categorie').value;
+  if (!titre) { alert('Titre requis.'); return; }
+  try {
+    const ordre = window._documentsCache.filter(d => d.categorie === categorie).length;
+    await addDoc(collection(db, 'documents'), {
+      titre, icone: icone || null, categorie, url: null, storagePath: null, fileName: null,
+      ordre, dateAjout: new Date().toISOString()
+    });
+    titreInput.value = '';
+    iconeInput.value = '';
+    showToast('✅ Fiche document créée.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.uploadDocumentFile = async function (docId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const existing = (window._documentsCache || []).find(d => d.id === docId);
+  if (!existing) { input.value = ''; return; }
+  try {
+    const path = `documents/${existing.categorie}/${docId}_${file.name}`;
+    const sRef = window.storageRef(window.storage, path);
+    await window.uploadBytes(sRef, file, { contentType: file.type || 'application/pdf' });
+    const url = await window.getDownloadURL(sRef);
+    await updateDoc(doc(db, 'documents', docId), {
+      url, storagePath: path, fileName: file.name, dateAjout: new Date().toISOString()
+    });
+    showToast('✅ Document importé.');
+  } catch (err) {
+    alert("Erreur lors de l'import: " + err.message);
+  } finally {
+    input.value = '';
+  }
+};
+
+window.deleteDocumentFiche = async function (docId) {
+  if (!confirm('Supprimer définitivement cette fiche document ?')) return;
+  try {
+    await deleteDoc(doc(db, 'documents', docId));
+    showToast('🗑️ Document supprimé.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.moveDocumentCategorie = async function (docId, newCategorie) {
+  try {
+    await updateDoc(doc(db, 'documents', docId), { categorie: newCategorie });
+    showToast('✅ Catégorie mise à jour.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window._documentsEditingId = null;
+
+window.startRenameDocument = function (docId) {
+  window._documentsEditingId = docId;
+  renderDocumentsAdmin(window._documentsCache);
+  setTimeout(() => {
+    const inp = document.getElementById('doc-edit-input-' + docId);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 0);
+};
+
+window.cancelRenameDocument = function () {
+  window._documentsEditingId = null;
+  renderDocumentsAdmin(window._documentsCache);
+};
+
+window.saveRenameDocument = async function (docId) {
+  const inp = document.getElementById('doc-edit-input-' + docId);
+  const iconeInp = document.getElementById('doc-edit-icone-' + docId);
+  if (!inp) return;
+  const trimmed = inp.value.trim();
+  if (!trimmed) { alert('Le titre ne peut pas être vide.'); return; }
+  const icone = iconeInp ? iconeInp.value.trim() : '';
+  try {
+    await updateDoc(doc(db, 'documents', docId), { titre: trimmed, icone: icone || null });
+    window._documentsEditingId = null;
+    // Corrige localement le cache pour un retour visuel immédiat (sans attendre
+    // le prochain événement onSnapshot, qui peut tarder sur un simple changement
+    // de métadonnées réseau).
+    const item = (window._documentsCache || []).find(d => d.id === docId);
+    if (item) { item.titre = trimmed; item.icone = icone || null; }
+    renderDocumentsAdmin(window._documentsCache);
+    showToast('✅ Document mis à jour.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.moveDocumentOrdre = async function (docId, direction) {
+  const item = (window._documentsCache || []).find(d => d.id === docId);
+  if (!item) return;
+  const siblings = (window._documentsCache || [])
+    .filter(d => d.categorie === item.categorie)
+    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  const idx = siblings.findIndex(d => d.id === docId);
+  const swapIdx = idx + direction;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return;
+  // Échange les deux positions puis renumérote tout le groupe (0,1,2...) — fiable même
+  // si les valeurs "ordre" existantes avaient des doublons (ex: import initial).
+  [siblings[idx], siblings[swapIdx]] = [siblings[swapIdx], siblings[idx]];
+  try {
+    await Promise.all(siblings.map((d, i) => updateDoc(doc(db, 'documents', d.id), { ordre: i })));
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.importExistingDocuments = async function () {
+  if (!confirm(`Récupérer les ${EXISTING_DOCS_MIGRATION.length} documents déjà en ligne vers Firebase ? (à faire une seule fois, les documents déjà importés seront ignorés)`)) return;
+  const progress = document.getElementById('documents-import-progress');
+  progress.style.display = 'block';
+  progress.innerHTML = '';
+  const existingFileNames = new Set((window._documentsCache || []).map(d => d.fileName).filter(Boolean));
+  let i = 0;
+  for (const item of EXISTING_DOCS_MIGRATION) {
+    i++;
+    const line = document.createElement('div');
+    line.textContent = `⏳ ${item.titre}...`;
+    progress.appendChild(line);
+    if (existingFileNames.has(item.fileName)) {
+      line.textContent = `↪️ ${item.titre} — déjà importé, ignoré.`;
+      continue;
+    }
+    try {
+      const res = await fetch(`https://app.phil-mobile.be/documents/${item.fileName}`);
+      if (!res.ok) throw new Error('fichier introuvable sur le site');
+      const blob = await res.blob();
+      const newDocRef = doc(collection(db, 'documents'));
+      const path = `documents/${item.categorie}/${newDocRef.id}_${item.fileName}`;
+      const sRef = window.storageRef(window.storage, path);
+      await window.uploadBytes(sRef, blob, { contentType: 'application/pdf' });
+      const url = await window.getDownloadURL(sRef);
+      await setDoc(newDocRef, {
+        titre: item.titre, icone: item.icone || null, categorie: item.categorie, url, storagePath: path,
+        fileName: item.fileName, ordre: i, dateAjout: new Date().toISOString()
+      });
+      line.textContent = `✅ ${item.titre}`;
+    } catch (err) {
+      line.textContent = `❌ ${item.titre} — ${err.message}`;
+    }
+  }
+  showToast('Import terminé.');
+};
+
+// ===== LIENS (menu Hub "Liens importants") =====
+// Firestore : collection "liens" : { titre, url, icone, ordre, dateAjout }.
+const EXISTING_LIENS_MIGRATION = [
+  { titre: 'My Smart', icone: '🏛️', url: 'https://smartservicesnetwork.my.site.com/' },
+  { titre: 'Showpad', icone: '📱', url: 'https://smartsn.showpad.biz/webapp2/home' },
+  { titre: 'Sales Force', icone: '☁️', url: 'https://obe.my.site.com' },
+  { titre: 'CRB (1399)', icone: '📄', url: 'https://www.crdc.be/' },
+  { titre: 'Eneco', icone: '⚡', url: 'https://eneco.be/fr/' },
+  { titre: 'Éligibilité Fibre', icone: '🟠', url: 'https://www.orange.be/fr/options-et-services/internet/internet-boost/internet-boost-giga' },
+  { titre: 'Phil-Mobile', icone: '🌐', url: 'https://phil-mobile.be/' }
+];
+
+let liensUnsub = null;
+window._liensCache = [];
+
+function loadLiensAdmin() {
+  const container = document.getElementById('liens-content');
+  if (!container) return;
+  if (liensUnsub) { try { liensUnsub(); } catch (e) {} liensUnsub = null; }
+  liensUnsub = onSnapshot(collection(db, 'liens'), (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    window._liensCache = items;
+    renderLiensAdmin(items);
+  }, (err) => {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement liens impossible:', err.message);
+  });
+}
+
+function renderLiensAdmin(items) {
+  const container = document.getElementById('liens-content');
+  if (!container) return;
+  if (!items.length) { container.innerHTML = '<div class="empty">Aucun lien</div>'; return; }
+  container.innerHTML = items.map((l, idx) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+      <span style="flex:1;min-width:220px;font-weight:600;display:flex;align-items:center;gap:6px;">
+        ${window._liensEditingId === l.id
+          ? `<div style="display:flex;flex-direction:column;gap:5px;width:100%;">
+               <div style="display:flex;gap:6px;">
+                 <input type="text" id="lien-edit-icone-${l.id}" value="${escapeAttrDocs(l.icone || '')}" placeholder="🌐" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
+                 <input type="text" id="lien-edit-titre-${l.id}" value="${escapeAttrDocs(l.titre)}" placeholder="Titre" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
+               </div>
+               <input type="text" id="lien-edit-url-${l.id}" value="${escapeAttrDocs(l.url)}" placeholder="URL" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
+             </div>`
+          : `<span>${l.icone || '🌐'} ${escapeHtmlDocs(l.titre)}</span><span style="font-size:11px;color:#888;font-weight:400;">${escapeHtmlDocs(l.url)}</span>`}
+      </span>
+      ${window._liensEditingId === l.id
+        ? `<button class="btn btn-primary" onclick="saveRenameLien('${l.id}')" title="Valider">✅</button>
+           <button class="btn btn-secondary" onclick="cancelRenameLien()" title="Annuler">✖</button>`
+        : `<button class="btn btn-secondary" onclick="startRenameLien('${l.id}')" title="Modifier">✏️</button>`}
+      <span style="display:flex;flex-direction:column;gap:1px;">
+        <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveLienOrdre('${l.id}', -1)" title="Monter">▲</button>
+        <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === items.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveLienOrdre('${l.id}', 1)" title="Descendre">▼</button>
+      </span>
+      <button class="btn btn-secondary" onclick="deleteLienFiche('${l.id}')">🗑️</button>
+    </div>
+  `).join('');
+}
+
+window.addLienFiche = async function () {
+  const titreInput = document.getElementById('lien-new-titre');
+  const urlInput = document.getElementById('lien-new-url');
+  const iconeInput = document.getElementById('lien-new-icone');
+  const titre = titreInput.value.trim();
+  const url = urlInput.value.trim();
+  const icone = iconeInput.value.trim();
+  if (!titre) { alert('Titre requis.'); return; }
+  if (!url) { alert('URL requise.'); return; }
+  try {
+    const ordre = window._liensCache.length;
+    await addDoc(collection(db, 'liens'), {
+      titre, url, icone: icone || null, ordre, dateAjout: new Date().toISOString()
+    });
+    titreInput.value = '';
+    urlInput.value = '';
+    iconeInput.value = '';
+    showToast('✅ Lien ajouté.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.deleteLienFiche = async function (lienId) {
+  if (!confirm('Supprimer définitivement ce lien ?')) return;
+  try {
+    await deleteDoc(doc(db, 'liens', lienId));
+    showToast('🗑️ Lien supprimé.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window._liensEditingId = null;
+
+window.startRenameLien = function (lienId) {
+  window._liensEditingId = lienId;
+  renderLiensAdmin(window._liensCache);
+  setTimeout(() => {
+    const inp = document.getElementById('lien-edit-titre-' + lienId);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 0);
+};
+
+window.cancelRenameLien = function () {
+  window._liensEditingId = null;
+  renderLiensAdmin(window._liensCache);
+};
+
+window.saveRenameLien = async function (lienId) {
+  const titreInp = document.getElementById('lien-edit-titre-' + lienId);
+  const urlInp = document.getElementById('lien-edit-url-' + lienId);
+  const iconeInp = document.getElementById('lien-edit-icone-' + lienId);
+  if (!titreInp || !urlInp) return;
+  const titre = titreInp.value.trim();
+  const url = urlInp.value.trim();
+  if (!titre) { alert('Le titre ne peut pas être vide.'); return; }
+  if (!url) { alert("L'URL ne peut pas être vide."); return; }
+  const icone = iconeInp ? iconeInp.value.trim() : '';
+  try {
+    await updateDoc(doc(db, 'liens', lienId), { titre, url, icone: icone || null });
+    window._liensEditingId = null;
+    const item = (window._liensCache || []).find(l => l.id === lienId);
+    if (item) { item.titre = titre; item.url = url; item.icone = icone || null; }
+    renderLiensAdmin(window._liensCache);
+    showToast('✅ Lien mis à jour.');
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.moveLienOrdre = async function (lienId, direction) {
+  const siblings = (window._liensCache || []).slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  const idx = siblings.findIndex(l => l.id === lienId);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= siblings.length) return;
+  [siblings[idx], siblings[swapIdx]] = [siblings[swapIdx], siblings[idx]];
+  try {
+    await Promise.all(siblings.map((l, i) => updateDoc(doc(db, 'liens', l.id), { ordre: i })));
+  } catch (err) {
+    alert("Erreur: " + err.message);
+  }
+};
+
+window.importExistingLiens = async function () {
+  if (!confirm(`Récupérer les ${EXISTING_LIENS_MIGRATION.length} liens déjà en dur dans le hub ? (à faire une seule fois, les liens déjà importés — même titre — seront ignorés)`)) return;
+  const existingTitres = new Set((window._liensCache || []).map(l => l.titre));
+  let ordreStart = window._liensCache.length;
+  let i = 0, added = 0, skipped = 0;
+  for (const item of EXISTING_LIENS_MIGRATION) {
+    if (existingTitres.has(item.titre)) { skipped++; continue; }
+    try {
+      await addDoc(collection(db, 'liens'), {
+        titre: item.titre, url: item.url, icone: item.icone || null,
+        ordre: ordreStart + i, dateAjout: new Date().toISOString()
+      });
+      added++; i++;
+    } catch (err) {
+      console.log('Erreur import lien', item.titre, err.message);
+    }
+  }
+  showToast(`Import terminé : ${added} ajouté(s), ${skipped} déjà présent(s).`);
+};
+
 window.saveCommissionsCategorie = async function (categoryKey) {
   const items = (window._commissionsMerged || []).filter(p => p.cat === categoryKey);
 
@@ -5077,6 +5724,206 @@ window.saveOrangeBanners = async function () {
     alert("Erreur lors de l'enregistrement: " + err.message);
   }
 };
+
+// ===== SECTION PHIL-MOBILE (WEB) COLLAPSIBLE =====
+window.toggleWebSection = function () {
+  const content = document.getElementById('web-section-content');
+  const arrow   = document.getElementById('web-section-arrow');
+  if (!content) return;
+  const isOpen = !content.classList.contains('collapsed');
+  content.classList.toggle('collapsed', isOpen);
+  if (arrow) arrow.classList.toggle('closed', isOpen);
+  try { localStorage.setItem('adminWebSectionOpen', isOpen ? '0' : '1'); } catch (e) {}
+};
+
+function restoreWebSection() {
+  try {
+    if (localStorage.getItem('adminWebSectionOpen') === '0') {
+      const content = document.getElementById('web-section-content');
+      const arrow   = document.getElementById('web-section-arrow');
+      if (content) content.classList.add('collapsed');
+      if (arrow)   arrow.classList.add('closed');
+    }
+  } catch (e) {}
+}
+
+// ===== SYSTÈME DE FAVORIS =====
+// Table des items favorisables : id bouton → panelId + libellé affiché dans les favoris
+const FAV_ITEMS = {
+  'menu-avis-web':             { label: '⭐ Avis clients',                  panelId: 'panel-avis-web' },
+  'menu-demandes-vente':       { label: '💼 Demandes — Vente',             panelId: 'panel-web-leads', extra: "filterWebLeads('client')" },
+  'menu-demandes-recrutement': { label: '🚀 Demandes — Recrutement',       panelId: 'panel-web-leads', extra: "filterWebLeads('consultant')" },
+  'menu-video-recrutement':    { label: '🎥 Vidéo recrutement',            panelId: 'panel-video-recrutement' },
+  'menu-video-vente':          { label: '🎥 Vidéo vente',                  panelId: 'panel-video-vente' },
+  'menu-video-promotion':      { label: '🎥 Vidéo promotion',              panelId: 'panel-video-promotion' },
+  'menu-app-info':             { label: '🖼️ Infos application',             panelId: 'panel-app-info' },
+  'menu-feedback':             { label: '🐞 Bugs & Suggestions',           panelId: 'panel-feedback' },
+  'menu-messages':             { label: '💬 Messages',                     panelId: 'panel-messages' },
+  'menu-teams-link':           { label: '📹 Réunion Teams',                panelId: 'panel-teams-link' },
+  'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },
+  'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
+  'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },
+  'menu-prospects':            { label: '🆕 Demandes d\'accès',             panelId: 'panel-prospects' },
+  'menu-consultants':          { label: '👥 Gestion des consultants',       panelId: 'panel-consultants' },
+  'menu-agenda-create':        { label: '➕ Créer un événement',           panelId: 'panel-agenda-create' },
+  'menu-agenda-list':          { label: '📅 Tous les événements',          panelId: 'panel-agenda-list' },
+  'menu-blogsmart-create':     { label: '➕ Blog — Créer/Importer',        panelId: 'panel-blogsmart-create' },
+  'menu-blogsmart-list':       { label: '📋 Blog — Articles publiés',       panelId: 'panel-blogsmart-list' },
+  'menu-bandeau':              { label: '📢 Message bandeau',              panelId: 'panel-bandeau' },
+  'menu-news-create':          { label: '➕ Créer une news',               panelId: 'panel-news-create' },
+  'menu-news-list':            { label: '📋 News publiées',                 panelId: 'panel-news-list' },
+  'menu-concours':             { label: '🏆 Concours',                     panelId: 'panel-concours' },
+  'menu-promo-create':         { label: '➕ Créer une promo',              panelId: 'panel-promo-create' },
+  'menu-promo-list':           { label: '📋 Promotions existantes',         panelId: 'panel-promo-list' },
+  'menu-produits-orange':      { label: '📦 Produits & tarifs',             panelId: 'panel-produits-orange' },
+  'menu-orange-banners':       { label: '🎨 Textes & couleurs',            panelId: 'panel-orange-banners' },
+  'menu-commissions':          { label: '💰 Commissions',                  panelId: 'panel-commissions' },
+  'menu-documents':            { label: '📄 Gestion des documents',         panelId: 'panel-documents' },
+  'menu-liens':                { label: '🌐 Gestion des liens',            panelId: 'panel-liens' },
+};
+
+let favIds = [];          // ordre des favoris (IDs boutons)
+let dragSrcId = null;     // drag & drop
+let favStarsReady = false;// guard contre double init
+
+function loadFavs() {
+  try { favIds = JSON.parse(localStorage.getItem('adminFavorites') || '[]'); } catch (e) { favIds = []; }
+  // Nettoyer les IDs inconnus (suppression future d'items)
+  favIds = favIds.filter(id => FAV_ITEMS[id]);
+}
+
+function saveFavs() {
+  try { localStorage.setItem('adminFavorites', JSON.stringify(favIds)); } catch (e) {}
+}
+
+window.toggleFav = function (btnId) {
+  const idx = favIds.indexOf(btnId);
+  if (idx === -1) { favIds.push(btnId); } else { favIds.splice(idx, 1); }
+  saveFavs();
+  renderFavs();
+  updateFavStars();
+};
+
+function updateFavStars() {
+  document.querySelectorAll('.menu-star[data-for]').forEach(star => {
+    const isFav = favIds.includes(star.dataset.for);
+    star.textContent = isFav ? '★' : '☆';
+    star.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+    star.classList.toggle('starred', isFav);
+  });
+}
+
+function renderFavs() {
+  const section = document.getElementById('fav-section');
+  if (!section) return;
+
+  if (favIds.length === 0) {
+    section.innerHTML = `
+      <div class="fav-section-label">⭐ Favoris</div>
+      <div class="fav-empty">Cliquez sur ☆ pour épingler un menu</div>
+      <div style="border-top:1px solid #e5e5e5;margin:10px 4px 10px;"></div>`;
+    return;
+  }
+
+  let html = '<div class="fav-section-label">⭐ Favoris</div>';
+  favIds.forEach(id => {
+    const item = FAV_ITEMS[id];
+    if (!item) return;
+    html += `<div class="fav-item" draggable="true" data-id="${id}">
+      <span class="fav-handle" title="Déplacer">⠿⠿</span>
+      <button class="fav-btn" id="fav-btn-${id}" onclick="activateFav('${id}', this)">${item.label}</button>
+      <button class="fav-remove" title="Retirer" onclick="toggleFav('${id}')">✕</button>
+    </div>`;
+  });
+  html += '<div style="border-top:1px solid #e5e5e5;margin:10px 4px 10px;"></div>';
+  section.innerHTML = html;
+
+  // Drag & drop HTML5
+  section.querySelectorAll('.fav-item').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragSrcId = el.dataset.id;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => { el.style.opacity = '0.4'; }, 0);
+    });
+    el.addEventListener('dragend', () => {
+      el.style.opacity = '';
+      section.querySelectorAll('.fav-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      section.querySelectorAll('.fav-item').forEach(i => i.classList.remove('drag-over'));
+      if (el.dataset.id !== dragSrcId) el.classList.add('drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrcId || dragSrcId === el.dataset.id) return;
+      const srcIdx = favIds.indexOf(dragSrcId);
+      const dstIdx = favIds.indexOf(el.dataset.id);
+      if (srcIdx === -1 || dstIdx === -1) return;
+      favIds.splice(srcIdx, 1);
+      favIds.splice(dstIdx, 0, dragSrcId);
+      dragSrcId = null;
+      saveFavs();
+      renderFavs();
+    });
+  });
+}
+
+// Clic sur un favori : ouvre le panel + appel extra si besoin
+window.activateFav = function (btnId, btn) {
+  const item = FAV_ITEMS[btnId];
+  if (!item) return;
+  showAdminPanel(item.panelId, btn);
+  if (item.extra) {
+    try { // eslint-disable-next-line no-new-func
+      new Function(item.extra)();
+    } catch (e) { console.warn('activateFav extra:', e); }
+  }
+};
+
+// Ajoute les boutons ☆ sur chaque item favoritable du menu
+function initFavStars() {
+  if (favStarsReady) return;
+  favStarsReady = true;
+
+  Object.keys(FAV_ITEMS).forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (!btn || btn.parentNode.classList.contains('menu-star-wrap')) return;
+
+    // Wrapper flex
+    const wrap = document.createElement('div');
+    wrap.className = 'menu-star-wrap';
+    // Préserver la margin-top du contexte submenu
+    const computedMargin = btn.style.marginTop;
+    if (computedMargin) { wrap.style.marginTop = computedMargin; btn.style.marginTop = ''; }
+    btn.parentNode.insertBefore(wrap, btn);
+    wrap.appendChild(btn);
+
+    // Bouton étoile
+    const star = document.createElement('button');
+    star.type = 'button';
+    star.className = 'menu-star';
+    star.dataset.for = btnId;
+    star.addEventListener('click', e => { e.stopPropagation(); toggleFav(btnId); });
+    wrap.appendChild(star);
+  });
+
+  // Appliquer la margin-top sur les wrappers dans les submenus
+  document.querySelectorAll('.submenu .menu-star-wrap').forEach(w => {
+    if (!w.style.marginTop) w.style.marginTop = '6px';
+  });
+
+  updateFavStars();
+}
+
+// Point d'entrée appelé après authentification
+function initFavoritesSystem() {
+  loadFavs();
+  restoreWebSection();
+  renderFavs();
+  initFavStars();
+}
 
 // ===== PÉRIODE GLOBALE DES OFFRES EN COURS (promos temporaires, settings/promoGlobalDate) =====
 window._promoGlobalDate = { dateDebut: null, dateFin: null };

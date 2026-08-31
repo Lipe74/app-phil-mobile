@@ -144,6 +144,63 @@
     position: fixed; bottom: 20px; right: 20px; background: #1a1a1a; color: #fff;
     padding: 12px 18px; border-radius: 8px; font-size: 13px; display: none; z-index: 2000;
   }
+
+  /* ===== SECTION COLLAPSIBLE Phil-Mobile (Web) ===== */
+  .section-toggle-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase;
+    letter-spacing: .08em; margin: 0 0 4px; padding: 5px 6px;
+    cursor: pointer; user-select: none; border-radius: 6px; width: 100%;
+    background: none; border: none; font-family: Arial, sans-serif;
+    transition: background .15s;
+  }
+  .section-toggle-btn:hover { background: #fff3e8; }
+  .section-arrow { font-size: 9px; transition: transform .2s; margin-left: 4px; flex-shrink: 0; }
+  .section-arrow.closed { transform: rotate(-90deg); }
+  .section-collapsible.collapsed { display: none; }
+
+  /* ===== FAVORIS ===== */
+  .fav-section-label {
+    font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase;
+    letter-spacing: .08em; margin: 0 0 4px; padding-left: 4px;
+  }
+  .fav-empty {
+    font-size: 11px; color: #bbb; padding: 5px 8px; font-style: italic; text-align: center;
+  }
+  .fav-item {
+    display: flex; align-items: center; gap: 4px; margin-bottom: 6px;
+    position: relative; transition: opacity .15s;
+  }
+  .fav-item.drag-over { opacity: 0.35; border-top: 2px solid #f97316; }
+  .fav-handle {
+    color: #d1d5db; font-size: 14px; cursor: grab; user-select: none;
+    flex-shrink: 0; padding: 0 2px; line-height: 1; letter-spacing: -2px;
+  }
+  .fav-btn {
+    flex: 1; text-align: left; padding: 8px 28px 8px 10px;
+    background: #fff8f0; border: 1px solid #f97316; border-radius: 8px;
+    color: #c2410c; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: Arial, sans-serif; transition: all .15s; min-width: 0;
+  }
+  .fav-btn:hover { background: #fff3e8; }
+  .fav-btn.active-item { background: #f97316 !important; color: #fff !important; border-color: #f97316 !important; }
+  .fav-remove {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: 12px; cursor: pointer; background: none; border: none;
+    color: #f97316; opacity: 0; transition: opacity .15s; padding: 2px 3px; line-height: 1;
+  }
+  .fav-item:hover .fav-remove { opacity: 1; }
+
+  /* Étoile sur chaque menu item favoritable */
+  .menu-star-wrap { position: relative; display: flex; align-items: center; }
+  .menu-star-wrap > .menu-item { flex: 1; padding-right: 26px; }
+  .menu-star {
+    position: absolute; right: 6px; font-size: 13px; cursor: pointer;
+    background: none; border: none; color: #f97316; opacity: 0;
+    transition: opacity .15s; padding: 2px 3px; line-height: 1; flex-shrink: 0;
+  }
+  .menu-star-wrap:hover .menu-star,
+  .menu-star.starred { opacity: 1; }
 </style>
 </head>
 <body>
@@ -172,18 +229,28 @@
       <!-- MENU (style hub) -->
       <div class="admin-menu">
 
-        <div class="menu-label">🌐 Phil-Mobile (Web)</div>
-        <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
-        <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Demandes du site web <span id="web-leads-count-badge"></span></button>
-        <div id="demandesMenu" class="submenu">
-          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire) <span id="web-leads-count-vente"></span></button>
-          <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement <span id="web-leads-count-recrutement"></span></button>
-        </div>
-        <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
-        <button onclick="showAdminPanel('panel-video-vente', this)" class="menu-item" id="menu-video-vente">🎥 Vidéo vente</button>
-        <button onclick="showAdminPanel('panel-video-promotion', this)" class="menu-item" id="menu-video-promotion">🎥 Vidéo promotion</button>
+        <!-- FAVORIS -->
+        <div id="fav-section"></div>
 
-        <div style="border-top:1px solid #e5e5e5; margin:14px 4px;"></div>
+        <!-- PHIL-MOBILE (WEB) — section collapsible -->
+        <button class="section-toggle-btn" id="web-section-toggle" onclick="toggleWebSection()">
+          <span>🌐 Phil-Mobile (Web)</span>
+          <span class="section-arrow" id="web-section-arrow">▼</span>
+        </button>
+        <div id="web-section-content" class="section-collapsible">
+          <button onclick="showAdminPanel('panel-avis-web', this)" class="menu-item" id="menu-avis-web">⭐ Avis clients</button>
+          <button onclick="toggleMenu('demandesMenu')" class="menu-item group-toggle">📋 Demandes du site web <span id="web-leads-count-badge"></span></button>
+          <div id="demandesMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('client');" class="menu-item" id="menu-demandes-vente">💼 Vente (analyse tarifaire) <span id="web-leads-count-vente"></span></button>
+            <button onclick="showAdminPanel('panel-web-leads', this); filterWebLeads('consultant');" class="menu-item" id="menu-demandes-recrutement">🚀 Recrutement <span id="web-leads-count-recrutement"></span></button>
+          </div>
+          <button onclick="showAdminPanel('panel-video-recrutement', this)" class="menu-item" id="menu-video-recrutement">🎥 Vidéo recrutement</button>
+          <button onclick="showAdminPanel('panel-video-vente', this)" class="menu-item" id="menu-video-vente">🎥 Vidéo vente</button>
+          <button onclick="showAdminPanel('panel-video-promotion', this)" class="menu-item" id="menu-video-promotion">🎥 Vidéo promotion</button>
+        </div>
+
+        <!-- APPLICATION PHIL-MOBILE -->
+        <div class="menu-label" style="margin-top:14px;">📱 Application Phil-Mobile</div>
 
         <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">📋 CRM <span id="crm-count-badge"></span></button>
         <div id="crmMenu" class="submenu">
@@ -1535,6 +1602,7 @@ onAuthStateChanged(auth, async (user) => {
   loadOrangeBannersAdmin();
   loadPromoGlobalDate();
   checkExpiredConsultants();
+  initFavoritesSystem();
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
 });
@@ -1722,6 +1790,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
+  document.querySelectorAll('.fav-btn').forEach(b => b.classList.remove('active-item'));
   if (btn) {
     btn.classList.add('active-item');
     // Plein écran mobile uniquement sur clic dans le menu (btn présent).
@@ -5655,6 +5724,206 @@ window.saveOrangeBanners = async function () {
     alert("Erreur lors de l'enregistrement: " + err.message);
   }
 };
+
+// ===== SECTION PHIL-MOBILE (WEB) COLLAPSIBLE =====
+window.toggleWebSection = function () {
+  const content = document.getElementById('web-section-content');
+  const arrow   = document.getElementById('web-section-arrow');
+  if (!content) return;
+  const isOpen = !content.classList.contains('collapsed');
+  content.classList.toggle('collapsed', isOpen);
+  if (arrow) arrow.classList.toggle('closed', isOpen);
+  try { localStorage.setItem('adminWebSectionOpen', isOpen ? '0' : '1'); } catch (e) {}
+};
+
+function restoreWebSection() {
+  try {
+    if (localStorage.getItem('adminWebSectionOpen') === '0') {
+      const content = document.getElementById('web-section-content');
+      const arrow   = document.getElementById('web-section-arrow');
+      if (content) content.classList.add('collapsed');
+      if (arrow)   arrow.classList.add('closed');
+    }
+  } catch (e) {}
+}
+
+// ===== SYSTÈME DE FAVORIS =====
+// Table des items favorisables : id bouton → panelId + libellé affiché dans les favoris
+const FAV_ITEMS = {
+  'menu-avis-web':             { label: '⭐ Avis clients',                  panelId: 'panel-avis-web' },
+  'menu-demandes-vente':       { label: '💼 Demandes — Vente',             panelId: 'panel-web-leads', extra: "filterWebLeads('client')" },
+  'menu-demandes-recrutement': { label: '🚀 Demandes — Recrutement',       panelId: 'panel-web-leads', extra: "filterWebLeads('consultant')" },
+  'menu-video-recrutement':    { label: '🎥 Vidéo recrutement',            panelId: 'panel-video-recrutement' },
+  'menu-video-vente':          { label: '🎥 Vidéo vente',                  panelId: 'panel-video-vente' },
+  'menu-video-promotion':      { label: '🎥 Vidéo promotion',              panelId: 'panel-video-promotion' },
+  'menu-app-info':             { label: '🖼️ Infos application',             panelId: 'panel-app-info' },
+  'menu-feedback':             { label: '🐞 Bugs & Suggestions',           panelId: 'panel-feedback' },
+  'menu-messages':             { label: '💬 Messages',                     panelId: 'panel-messages' },
+  'menu-teams-link':           { label: '📹 Réunion Teams',                panelId: 'panel-teams-link' },
+  'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },
+  'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
+  'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },
+  'menu-prospects':            { label: '🆕 Demandes d\'accès',             panelId: 'panel-prospects' },
+  'menu-consultants':          { label: '👥 Gestion des consultants',       panelId: 'panel-consultants' },
+  'menu-agenda-create':        { label: '➕ Créer un événement',           panelId: 'panel-agenda-create' },
+  'menu-agenda-list':          { label: '📅 Tous les événements',          panelId: 'panel-agenda-list' },
+  'menu-blogsmart-create':     { label: '➕ Blog — Créer/Importer',        panelId: 'panel-blogsmart-create' },
+  'menu-blogsmart-list':       { label: '📋 Blog — Articles publiés',       panelId: 'panel-blogsmart-list' },
+  'menu-bandeau':              { label: '📢 Message bandeau',              panelId: 'panel-bandeau' },
+  'menu-news-create':          { label: '➕ Créer une news',               panelId: 'panel-news-create' },
+  'menu-news-list':            { label: '📋 News publiées',                 panelId: 'panel-news-list' },
+  'menu-concours':             { label: '🏆 Concours',                     panelId: 'panel-concours' },
+  'menu-promo-create':         { label: '➕ Créer une promo',              panelId: 'panel-promo-create' },
+  'menu-promo-list':           { label: '📋 Promotions existantes',         panelId: 'panel-promo-list' },
+  'menu-produits-orange':      { label: '📦 Produits & tarifs',             panelId: 'panel-produits-orange' },
+  'menu-orange-banners':       { label: '🎨 Textes & couleurs',            panelId: 'panel-orange-banners' },
+  'menu-commissions':          { label: '💰 Commissions',                  panelId: 'panel-commissions' },
+  'menu-documents':            { label: '📄 Gestion des documents',         panelId: 'panel-documents' },
+  'menu-liens':                { label: '🌐 Gestion des liens',            panelId: 'panel-liens' },
+};
+
+let favIds = [];          // ordre des favoris (IDs boutons)
+let dragSrcId = null;     // drag & drop
+let favStarsReady = false;// guard contre double init
+
+function loadFavs() {
+  try { favIds = JSON.parse(localStorage.getItem('adminFavorites') || '[]'); } catch (e) { favIds = []; }
+  // Nettoyer les IDs inconnus (suppression future d'items)
+  favIds = favIds.filter(id => FAV_ITEMS[id]);
+}
+
+function saveFavs() {
+  try { localStorage.setItem('adminFavorites', JSON.stringify(favIds)); } catch (e) {}
+}
+
+window.toggleFav = function (btnId) {
+  const idx = favIds.indexOf(btnId);
+  if (idx === -1) { favIds.push(btnId); } else { favIds.splice(idx, 1); }
+  saveFavs();
+  renderFavs();
+  updateFavStars();
+};
+
+function updateFavStars() {
+  document.querySelectorAll('.menu-star[data-for]').forEach(star => {
+    const isFav = favIds.includes(star.dataset.for);
+    star.textContent = isFav ? '★' : '☆';
+    star.title = isFav ? 'Retirer des favoris' : 'Ajouter aux favoris';
+    star.classList.toggle('starred', isFav);
+  });
+}
+
+function renderFavs() {
+  const section = document.getElementById('fav-section');
+  if (!section) return;
+
+  if (favIds.length === 0) {
+    section.innerHTML = `
+      <div class="fav-section-label">⭐ Favoris</div>
+      <div class="fav-empty">Cliquez sur ☆ pour épingler un menu</div>
+      <div style="border-top:1px solid #e5e5e5;margin:10px 4px 10px;"></div>`;
+    return;
+  }
+
+  let html = '<div class="fav-section-label">⭐ Favoris</div>';
+  favIds.forEach(id => {
+    const item = FAV_ITEMS[id];
+    if (!item) return;
+    html += `<div class="fav-item" draggable="true" data-id="${id}">
+      <span class="fav-handle" title="Déplacer">⠿⠿</span>
+      <button class="fav-btn" id="fav-btn-${id}" onclick="activateFav('${id}', this)">${item.label}</button>
+      <button class="fav-remove" title="Retirer" onclick="toggleFav('${id}')">✕</button>
+    </div>`;
+  });
+  html += '<div style="border-top:1px solid #e5e5e5;margin:10px 4px 10px;"></div>';
+  section.innerHTML = html;
+
+  // Drag & drop HTML5
+  section.querySelectorAll('.fav-item').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragSrcId = el.dataset.id;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => { el.style.opacity = '0.4'; }, 0);
+    });
+    el.addEventListener('dragend', () => {
+      el.style.opacity = '';
+      section.querySelectorAll('.fav-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      section.querySelectorAll('.fav-item').forEach(i => i.classList.remove('drag-over'));
+      if (el.dataset.id !== dragSrcId) el.classList.add('drag-over');
+    });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrcId || dragSrcId === el.dataset.id) return;
+      const srcIdx = favIds.indexOf(dragSrcId);
+      const dstIdx = favIds.indexOf(el.dataset.id);
+      if (srcIdx === -1 || dstIdx === -1) return;
+      favIds.splice(srcIdx, 1);
+      favIds.splice(dstIdx, 0, dragSrcId);
+      dragSrcId = null;
+      saveFavs();
+      renderFavs();
+    });
+  });
+}
+
+// Clic sur un favori : ouvre le panel + appel extra si besoin
+window.activateFav = function (btnId, btn) {
+  const item = FAV_ITEMS[btnId];
+  if (!item) return;
+  showAdminPanel(item.panelId, btn);
+  if (item.extra) {
+    try { // eslint-disable-next-line no-new-func
+      new Function(item.extra)();
+    } catch (e) { console.warn('activateFav extra:', e); }
+  }
+};
+
+// Ajoute les boutons ☆ sur chaque item favoritable du menu
+function initFavStars() {
+  if (favStarsReady) return;
+  favStarsReady = true;
+
+  Object.keys(FAV_ITEMS).forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (!btn || btn.parentNode.classList.contains('menu-star-wrap')) return;
+
+    // Wrapper flex
+    const wrap = document.createElement('div');
+    wrap.className = 'menu-star-wrap';
+    // Préserver la margin-top du contexte submenu
+    const computedMargin = btn.style.marginTop;
+    if (computedMargin) { wrap.style.marginTop = computedMargin; btn.style.marginTop = ''; }
+    btn.parentNode.insertBefore(wrap, btn);
+    wrap.appendChild(btn);
+
+    // Bouton étoile
+    const star = document.createElement('button');
+    star.type = 'button';
+    star.className = 'menu-star';
+    star.dataset.for = btnId;
+    star.addEventListener('click', e => { e.stopPropagation(); toggleFav(btnId); });
+    wrap.appendChild(star);
+  });
+
+  // Appliquer la margin-top sur les wrappers dans les submenus
+  document.querySelectorAll('.submenu .menu-star-wrap').forEach(w => {
+    if (!w.style.marginTop) w.style.marginTop = '6px';
+  });
+
+  updateFavStars();
+}
+
+// Point d'entrée appelé après authentification
+function initFavoritesSystem() {
+  loadFavs();
+  restoreWebSection();
+  renderFavs();
+  initFavStars();
+}
 
 // ===== PÉRIODE GLOBALE DES OFFRES EN COURS (promos temporaires, settings/promoGlobalDate) =====
 window._promoGlobalDate = { dateDebut: null, dateFin: null };
