@@ -191,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Mon Profil
+Build <span id="app-version-1">…</span> — Favoris cloud
      </span>
     </div>
     </div>
@@ -2531,14 +2531,42 @@ function pmFavKey(btn) {
   return 'oc:' + oc.replace(/\s+/g, ' ').trim();
 }
 
-function pmLoadFavorites() {
+// Charge les favoris depuis Firestore (source de vérité cross-device),
+// avec fallback localStorage si Firestore est indisponible.
+async function pmLoadFavorites() {
+  if (pmCurrentUser && window.db && window.getDoc && window.doc) {
+    try {
+      var snap = await window.getDoc(window.doc(window.db, 'consultants', pmCurrentUser.id));
+      if (snap.exists()) {
+        var data = snap.data();
+        if (Array.isArray(data.favoriMenu)) {
+          pmFavorites = data.favoriMenu;
+          try { localStorage.setItem('pmFavorites', JSON.stringify(pmFavorites)); } catch (e) {}
+          return;
+        }
+      }
+    } catch (e) {
+      console.log('Lecture favoris Firestore impossible:', e.message);
+    }
+  }
+  // Fallback : localStorage (hors-ligne ou premier chargement sans Firestore)
   try {
     var raw = localStorage.getItem('pmFavorites');
     pmFavorites = raw ? JSON.parse(raw) : [];
   } catch (e) { pmFavorites = []; }
 }
+
+// Sauvegarde dans Firestore (cross-device) + localStorage (cache offline immédiat).
 function pmSaveFavorites() {
   try { localStorage.setItem('pmFavorites', JSON.stringify(pmFavorites)); } catch (e) {}
+  if (pmCurrentUser && window.db && window.updateDoc && window.doc) {
+    window.updateDoc(
+      window.doc(window.db, 'consultants', pmCurrentUser.id),
+      { favoriMenu: pmFavorites }
+    ).catch(function (e) {
+      console.log('Sauvegarde favoris Firestore impossible:', e.message);
+    });
+  }
 }
 
 window.pmToggleFavorite = function (heartEl, key) {
@@ -2633,8 +2661,8 @@ function pmRenderFavoritesList() {
   });
 }
 
-function initFavorites() {
-  if (!window._pmFavLoaded) { pmLoadFavorites(); window._pmFavLoaded = true; }
+async function initFavorites() {
+  if (!window._pmFavLoaded) { await pmLoadFavorites(); window._pmFavLoaded = true; }
   var container = document.getElementById('pm-left-menu');
   if (!container) return;
   var buttons = container.querySelectorAll('.menu-item');
