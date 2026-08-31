@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Outils Phil-Mobile (TEST — Mes Contrats)</title>
+<title>Outils Phil-Mobile TEST</title>
 <link rel="icon" type="image/png" href="images/logo.png">
 <link rel="apple-touch-icon" href="images/logo.png">
   <link rel="manifest" href="/manifest.json">
@@ -65,6 +65,22 @@
 }
 .pm-fav-heart:hover{ transform:scale(1.15); }
 #pm-favoris-list .menu-item{ text-align:left; }
+/* Favoris drag & drop */
+.pm-fav-item{
+  display:flex;align-items:center;gap:4px;margin-bottom:6px;
+  position:relative;transition:opacity .15s;
+}
+.pm-fav-item.drag-over{ opacity:.35;border-top:2px solid #f97316; }
+.pm-fav-drag-handle{
+  color:#d1d5db;font-size:13px;cursor:grab;user-select:none;
+  flex-shrink:0;padding:0 2px;line-height:1;letter-spacing:-2px;
+}
+.pm-fav-remove{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  font-size:11px;cursor:pointer;color:#f97316;opacity:0;
+  transition:opacity .15s;padding:2px 3px;line-height:1;user-select:none;
+}
+.pm-fav-item:hover .pm-fav-remove{ opacity:1; }
 
 #ctr-import-pdf-btn:disabled{ opacity:.6;cursor:default; }
 @keyframes ctr-import-spin{ to{ transform:rotate(360deg); } }
@@ -175,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Icônes docs
+Build <span id="app-version-1">…</span> — Favoris &amp; Simulateurs
      </span>
     </div>
     </div>
@@ -573,17 +589,13 @@ Build <span id="app-version-1">…</span> — Icônes docs
 
 <div id="simMenu" class="submenu">
 
-<button onclick="openSimulator('https://app.phil-mobile.be/wp_rem.html')" class="menu-item">    💰 Calculateur de commissions
-  </button>
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_rem.html', this)" class="menu-item" id="menu-sim-rem">💰 Calculateur de commissions</button>
 
-<button onclick="openSimulator('https://app.phil-mobile.be/wp_orange.html')" class="menu-item">    🟠 Simulateur Orange
-  </button>
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_orange.html', this)" class="menu-item" id="menu-sim-orange">🟠 Simulateur Orange</button>
 
-<button onclick="openSimulator('https://app.phil-mobile.be/wp_comparatif.html')" class="menu-item">    📊 Comparatif Orange
-  </button>
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_comparatif.html', this)" class="menu-item" id="menu-sim-comparatif">📊 Comparatif Orange</button>
 
-<button onclick="openSimulator('https://app.phil-mobile.be/wp_eneco.html')" class="menu-item">    ⚡ Simulateur Eneco
-  </button>
+<button onclick="openSimulator('https://app.phil-mobile.be/wp_eneco.html', this)" class="menu-item" id="menu-sim-eneco">⚡ Simulateur Eneco</button>
 
 
 
@@ -602,36 +614,9 @@ Build <span id="app-version-1">…</span> — Icônes docs
 🌐 Liens importants
 </button>
 
+<!-- LIENS (chargés dynamiquement depuis Firestore, collection "liens") -->
 <div id="linksMenu" class="submenu">
-
-  <button onclick="window.open('https://smartservicesnetwork.my.site.com/','_blank')" class="menu-item">
-    🏛️ My Smart
-  </button>
-
-  <button onclick="window.open('https://smartsn.showpad.biz/webapp2/home','_blank')" class="menu-item">
-    📱 Showpad
-  </button>
-
-  <button onclick="window.open('https://obe.my.site.com','_blank')" class="menu-item">
-    ☁️ Sales Force
-  </button>
-
-  <button onclick="window.open('https://www.crdc.be/','_blank')" class="menu-item">
-    📄 CRB (1399)
-  </button>
-
-  <button onclick="window.open('https://eneco.be/fr/','_blank')" class="menu-item">
-    ⚡ Eneco
-  </button>
-
-  <button onclick="window.open('https://www.orange.be/fr/options-et-services/internet/internet-boost/internet-boost-giga','_blank')" class="menu-item">
-    🟠 Éligibilité Fibre
-  </button>
-
-  <button onclick="window.open('https://phil-mobile.be/','_blank')" class="menu-item">
-    🌐 Phil-Mobile
-  </button>
-
+  <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 <!-- DOCUMENTS (chargés dynamiquement depuis Firestore, collection "documents") -->
 
@@ -2352,6 +2337,41 @@ async function loadHubDocuments() {
 }
 window.loadHubDocuments = loadHubDocuments;
 
+// ===== LIENS (menu "Liens importants") =====
+// Firestore : collection "liens" : { titre, url, icone, ordre }. Gérés depuis admin.html > Gestion des liens.
+async function loadHubLinks() {
+  try {
+    let tries = 0;
+    while ((!window.db || !window.onSnapshot || !window.collection) && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.onSnapshot) throw new Error('Firestore non disponible');
+
+    if (window._hubLinksUnsub) { try { window._hubLinksUnsub(); } catch (e) {} }
+
+    window._hubLinksUnsub = window.onSnapshot(window.collection(window.db, 'liens'), (snap) => {
+      const el = document.getElementById('linksMenu');
+      if (!el) return;
+      const items = [];
+      snap.forEach(docSnap => items.push({ id: docSnap.id, ...docSnap.data() }));
+      items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      el.innerHTML = items.length
+        ? items.map(l => `<button onclick="window.open('${escapeAttrLinks(l.url)}','_blank')" class="menu-item">${l.icone || '🌐'} ${escapeHtmlDocs(l.titre)}</button>`).join('')
+        : '<div class="menu-item" style="opacity:.5;">Aucun lien</div>';
+      if (typeof initFavorites === 'function') initFavorites();
+    }, (err) => {
+      console.log('Chargement liens impossible:', err.message);
+    });
+  } catch (err) {
+    console.log('loadHubLinks error:', err.message);
+  }
+}
+function escapeAttrLinks(str) {
+  return (str ?? '').replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+window.loadHubLinks = loadHubLinks;
+
 async function loadPMUsers() {
   try {
     // Attendre que le module Firebase ait exposé window.db / window.getDocs (chargement parallèle)
@@ -2534,19 +2554,84 @@ window.pmToggleFavorite = function (heartEl, key) {
 function pmRenderFavoritesList() {
   var list = document.getElementById('pm-favoris-list');
   if (!list) return;
+
   if (!pmFavorites.length) {
-    list.innerHTML = '<div class="menu-item" style="opacity:.55;cursor:default;">Clique sur 🤍 à côté d\'un bouton pour l\'ajouter ici</div>';
+    list.innerHTML = '<div class="menu-item" style="opacity:.55;cursor:default;font-size:12px;">Clique sur 🤍 pour épingler un menu ici</div>';
     return;
   }
+
   list.innerHTML = '';
+  var pmDragSrcKey = null;
+
   pmFavorites.forEach(function (key) {
     var orig = pmFavMap[key];
     if (!orig) return;
-    var b = document.createElement('button');
-    b.className = 'menu-item';
-    b.textContent = orig.textContent.trim();
-    b.onclick = function () { orig.click(); };
-    list.appendChild(b);
+
+    var item = document.createElement('div');
+    item.className = 'pm-fav-item';
+    item.draggable = true;
+    item.dataset.key = key;
+
+    var handle = document.createElement('span');
+    handle.className = 'pm-fav-drag-handle';
+    handle.textContent = '⠿⠿';
+    handle.title = 'Déplacer';
+
+    var btn = document.createElement('button');
+    btn.className = 'menu-item';
+    btn.style.flex = '1';
+    btn.style.paddingRight = '22px';
+    btn.textContent = orig.textContent.trim();
+    btn.onclick = function () { orig.click(); };
+
+    var remove = document.createElement('span');
+    remove.className = 'pm-fav-remove';
+    remove.textContent = '✕';
+    remove.title = 'Retirer des favoris';
+    remove.onclick = function (e) {
+      e.stopPropagation();
+      var idx = pmFavorites.indexOf(key);
+      if (idx !== -1) pmFavorites.splice(idx, 1);
+      // Remettre le cœur à vide sur le bouton d'origine
+      var row = orig.closest ? orig.closest('.pm-fav-row') : orig.parentNode;
+      if (row) { var h = row.querySelector('.pm-fav-heart'); if (h) h.textContent = '🤍'; }
+      pmSaveFavorites();
+      pmRenderFavoritesList();
+    };
+
+    item.appendChild(handle);
+    item.appendChild(btn);
+    item.appendChild(remove);
+    list.appendChild(item);
+
+    // Drag & drop HTML5
+    item.addEventListener('dragstart', function (e) {
+      pmDragSrcKey = item.dataset.key;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function () { item.style.opacity = '0.4'; }, 0);
+    });
+    item.addEventListener('dragend', function () {
+      item.style.opacity = '';
+      list.querySelectorAll('.pm-fav-item').forEach(function (i) { i.classList.remove('drag-over'); });
+    });
+    item.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.pm-fav-item').forEach(function (i) { i.classList.remove('drag-over'); });
+      if (item.dataset.key !== pmDragSrcKey) item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (!pmDragSrcKey || pmDragSrcKey === item.dataset.key) return;
+      var srcIdx = pmFavorites.indexOf(pmDragSrcKey);
+      var dstIdx = pmFavorites.indexOf(item.dataset.key);
+      if (srcIdx === -1 || dstIdx === -1) return;
+      pmFavorites.splice(srcIdx, 1);
+      pmFavorites.splice(dstIdx, 0, pmDragSrcKey);
+      pmDragSrcKey = null;
+      pmSaveFavorites();
+      pmRenderFavoritesList();
+    });
   });
 }
 
@@ -5259,7 +5344,7 @@ window.pmExportPDF=function(){
   const totalE=PM_ALL_E.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
   const aspTotal=mc.reduce((s,c)=>s+(c.asp||0),0);
   const byAgent=pmCountBy(mc,'agent');
-  let html=`<html><head><meta charset="utf-8"><title>Outils Phil-Mobile (TEST — Mes Contrats)</title>
+  let html=`<html><head><meta charset="utf-8"><title>Phil-Mobile ${PM_MONTHS[pmCurMonth]} ${pmCurYear}</title>
   <style>body{font-family:Arial,sans-serif;padding:32px;color:#1a1a2e;max-width:600px;margin:auto;}
   h1{font-size:20px;color:#0D2580;margin-bottom:4px;}.sub{font-size:13px;color:#666;margin-bottom:20px;}
   .totals{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}.tot{background:#fef9f5;border-radius:8px;padding:10px 16px;text-align:center;min-width:80px;}
@@ -7703,6 +7788,7 @@ onAuthStateChanged(auth, async (user) => {
   loadNews();
   loadTeamsLink();
   loadHubDocuments();
+  loadHubLinks();
 
 });
 
@@ -7754,6 +7840,7 @@ window.firebaseLogin = async function(){
     loadNews();
     loadTeamsLink();
     loadHubDocuments();
+    loadHubLinks();
 
   }catch(err){
     document.getElementById('rem-error').style.display='block';
@@ -7786,8 +7873,8 @@ window.firebaseResetPassword = async function(){
   }
 }
 
-window.openSimulator = function(url){
-
+window.openSimulator = function(url, btn) {
+  // Ajouter les paramètres consultant à l'URL
   if (pmCurrentUser) {
     const params = new URLSearchParams({
       consultantId: pmCurrentUser.id || '',
@@ -7797,10 +7884,15 @@ window.openSimulator = function(url){
     url += (url.includes('?') ? '&' : '?') + params.toString();
   }
 
+  // Desktop (>600px) : ouvre dans la colonne droite comme les autres panels
+  if (window.innerWidth > 600 && btn) {
+    loadFrame(url, btn);
+    return;
+  }
+
+  // Mobile : plein écran via simModal (comportement original conservé)
   document.getElementById('simFrame').src = url;
-
   document.getElementById('simModal').style.display = 'block';
-
 };
 
 window.closeSimulator = function(){
