@@ -5786,14 +5786,35 @@ let favIds = [];          // ordre des favoris (IDs boutons)
 let dragSrcId = null;     // drag & drop
 let favStarsReady = false;// guard contre double init
 
-function loadFavs() {
+// Charge les favoris depuis Firestore (cross-device), fallback localStorage.
+async function loadFavs() {
+  if (adminOwnId && db) {
+    try {
+      const snap = await getDoc(doc(db, 'consultants', adminOwnId));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (Array.isArray(data.favoriMenuAdmin)) {
+          favIds = data.favoriMenuAdmin.filter(id => FAV_ITEMS[id]);
+          try { localStorage.setItem('adminFavorites', JSON.stringify(favIds)); } catch (e) {}
+          return;
+        }
+      }
+    } catch (e) {
+      console.log('Lecture favoris admin Firestore impossible:', e.message);
+    }
+  }
+  // Fallback : localStorage
   try { favIds = JSON.parse(localStorage.getItem('adminFavorites') || '[]'); } catch (e) { favIds = []; }
-  // Nettoyer les IDs inconnus (suppression future d'items)
   favIds = favIds.filter(id => FAV_ITEMS[id]);
 }
 
+// Sauvegarde Firestore (cross-device) + localStorage (cache offline immédiat).
 function saveFavs() {
   try { localStorage.setItem('adminFavorites', JSON.stringify(favIds)); } catch (e) {}
+  if (adminOwnId && db) {
+    updateDoc(doc(db, 'consultants', adminOwnId), { favoriMenuAdmin: favIds })
+      .catch(e => console.log('Sauvegarde favoris admin Firestore impossible:', e.message));
+  }
 }
 
 window.toggleFav = function (btnId) {
@@ -5918,8 +5939,8 @@ function initFavStars() {
 }
 
 // Point d'entrée appelé après authentification
-function initFavoritesSystem() {
-  loadFavs();
+async function initFavoritesSystem() {
+  await loadFavs();
   restoreWebSection();
   renderFavs();
   initFavStars();
