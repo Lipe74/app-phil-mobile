@@ -191,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Favoris &amp; Simulateurs
+Build <span id="app-version-1">…</span> — Mon Profil
      </span>
     </div>
     </div>
@@ -505,13 +505,6 @@ Build <span id="app-version-1">…</span> — Favoris &amp; Simulateurs
           <div id="sec-accueil" class="pm-sec-body">
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
-          <button onclick="toggleMenu('monProfilMenu')" class="menu-item group-toggle">
-👤 Mon Profil
-</button>
-<div id="monProfilMenu" class="submenu">
-          <button onclick="showMonProfil(this)" class="menu-item" id="menu-monprofil">✏️ Modifier mes informations</button>
-</div>
-
           <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">❤️ Favoris</div>
           <div id="pm-favoris-list">
             <div class="menu-item" style="opacity:.55;cursor:default;">Clique sur ♡ à côté d'un bouton pour l'ajouter ici</div>
@@ -559,6 +552,11 @@ Build <span id="app-version-1">…</span> — Favoris &amp; Simulateurs
 <!-- MES OUTILS -->
 <button class="pm-sec-toggle" onclick="toggleSection('sec-outils')"><span>🧰 Mes Outils</span><span class="pm-sec-arrow" id="arrow-sec-outils">▸</span></button>
 <div id="sec-outils" class="pm-sec-body">
+
+<button onclick="toggleMenu('monProfilMenu')" class="menu-item group-toggle">👤 Mon Profil</button>
+<div id="monProfilMenu" class="submenu">
+  <button onclick="showMonProfil(this)" class="menu-item" id="menu-monprofil">✏️ Modifier mes informations</button>
+</div>
 
 <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">
 📊 Mon CRM
