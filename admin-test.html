@@ -4069,8 +4069,6 @@ window.openEditModal = function (docId) {
   document.getElementById('e-expirationdate').value = c.expirationDate
     ? new Date(c.expirationDate).toLocaleDateString('fr-FR').split('/').join('/')
     : '';
-  document.getElementById('e-istest').checked = !!c.isTestAccount;
-  document.getElementById('e-isteams').checked = !!c.isTeamsAccount;
   const derivedType = c.accountType || (c.isTestAccount ? 'test2j' : c.isTeamsAccount ? 'philmobile' : 'standard');
   document.getElementById('e-accounttype').value = derivedType;
   // Rétrocompatibilité : les anciens consultants avec un paidAmount > 0 sont considérés payés
@@ -4095,9 +4093,9 @@ window.confirmEdit = async function () {
   const pqsValidated = document.getElementById('e-pqs').checked;
   const fastSCValidated = document.getElementById('e-fastsc').checked;
   const fastECValidated = document.getElementById('e-fastec').checked;
-  const isTestAccount = document.getElementById('e-istest').checked;
-  const isTeamsAccount = document.getElementById('e-isteams').checked;
   const accountType = document.getElementById('e-accounttype').value;
+  const isTestAccount = accountType === 'test2j';
+  const isTeamsAccount = accountType === 'philmobile';
   const payStatus = document.getElementById('e-paystatus').value;
   const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
   const upline = document.getElementById('e-upline').value.trim();
