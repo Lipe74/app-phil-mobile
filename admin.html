@@ -1250,16 +1250,26 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <select id="f-paystatus">
         <option value="none" selected>⚪ Non payé</option>
         <option value="paid">✅ Payé</option>
-        <option value="offered">🎁 Offert</option>
+        <option value="promo30">🏷️ Promo 30 jours</option>
+        <option value="parrainage">🤝 Licence offerte (parrainage)</option>
       </select>
     </div>
-    <div class="checkbox-row"><input type="checkbox" id="f-isadmin"> Administrateur</div>
-    <div class="checkbox-row"><input type="checkbox" id="f-istest" onchange="onTestAccountToggle()"> Compte de test (durée limitée)</div>
-    <div class="checkbox-row"><input type="checkbox" id="f-isteams" onchange="onTeamsAccountToggle()"> Compte Teams (30 jours offerts)</div>
+    <div class="checkbox-row"><input type="checkbox" id="f-isadmin"> Administrateur (accès admin · sans date de fin)</div>
+    <div class="form-row">
+      <label>Type de compte</label>
+      <select id="f-accounttype" onchange="onAccountTypeChange('f')">
+        <option value="standard">👤 Consultant standard</option>
+        <option value="test2j">🧪 Test 2 jours — désactivation auto</option>
+        <option value="newbc30">🆕 Nouveau BC — 30 jours — désactivation auto</option>
+        <option value="philmobile">🤝 Phil-Mobile — n'expire jamais</option>
+      </select>
+    </div>
     <div class="form-row" id="f-duration-row">
       <label id="f-duration-label">Durée de l'accès</label>
       <select id="f-duration" onchange="document.getElementById('f-customdate').style.display = this.value === 'custom' ? 'block' : 'none';">
+        <option value="2">2 jours (test)</option>
         <option value="3">3 jours (essai)</option>
+        <option value="30">30 jours</option>
         <option value="365" selected>12 mois (abonnement)</option>
         <option value="none">♾️ Indéfini</option>
         <option value="custom">Date personnalisée…</option>
@@ -1369,11 +1379,20 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <select id="e-paystatus">
         <option value="none">⚪ Non payé</option>
         <option value="paid">✅ Payé</option>
-        <option value="offered">🎁 Offert</option>
+        <option value="offered">🎁 Offert (ancien)</option>
+        <option value="promo30">🏷️ Promo 30 jours</option>
+        <option value="parrainage">🤝 Licence offerte (parrainage)</option>
       </select>
     </div>
-    <div class="checkbox-row"><input type="checkbox" id="e-istest"> Compte de test (durée limitée)</div>
-    <div class="checkbox-row"><input type="checkbox" id="e-isteams"> Compte Teams (30 jours offerts)</div>
+    <div class="form-row">
+      <label>Type de compte</label>
+      <select id="e-accounttype">
+        <option value="standard">👤 Consultant standard</option>
+        <option value="test2j">🧪 Test 2 jours — désactivation auto</option>
+        <option value="newbc30">🆕 Nouveau BC — 30 jours — désactivation auto</option>
+        <option value="philmobile">🤝 Phil-Mobile — n'expire jamais</option>
+      </select>
+    </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmEdit()">Enregistrer les modifications</button>
@@ -3735,8 +3754,7 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-aspinit').value = p?.asp || 0;
   document.getElementById('f-paystatus').value = 'none';
   document.getElementById('f-isadmin').checked = false;
-  document.getElementById('f-istest').checked = false;
-  document.getElementById('f-isteams').checked = false;
+  document.getElementById('f-accounttype').value = 'standard';
   // Durée présélectionnée selon le type d'essai demandé (modifiable avant validation)
   document.getElementById('f-duration').value =
     p?.accessType === 'demo'  ? '3'  :
@@ -3762,8 +3780,7 @@ window.openCreateModal = function () {
   document.getElementById('f-aspinit').value = 0;
   document.getElementById('f-paystatus').value = 'none';
   document.getElementById('f-isadmin').checked = false;
-  document.getElementById('f-istest').checked = false;
-  document.getElementById('f-isteams').checked = false;
+  document.getElementById('f-accounttype').value = 'standard';
   document.getElementById('f-duration').value = '365';
   document.getElementById('f-duration').disabled = false;
   document.getElementById('f-duration-label').textContent = "Durée de l'accès";
@@ -3775,26 +3792,33 @@ window.openCreateModal = function () {
   document.getElementById('activate-modal').classList.add('open');
 };
 
-window.onTestAccountToggle = function () {
-  const isTest = document.getElementById('f-istest').checked;
-  if (isTest) {
-    document.getElementById('f-duration').value = '3';
-  } else {
-    document.getElementById('f-duration').value = '365';
-  }
-};
-
-window.onTeamsAccountToggle = function () {
-  const isTeams = document.getElementById('f-isteams').checked;
-  const durationSel = document.getElementById('f-duration');
-  const durationLabel = document.getElementById('f-duration-label');
-  if (isTeams) {
-    durationSel.disabled = true;
-    durationLabel.textContent = "Durée de l'accès : 30 jours offerts (Compte Teams)";
-    document.getElementById('f-customdate').style.display = 'none';
-  } else {
-    durationSel.disabled = false;
-    durationLabel.textContent = "Durée de l'accès";
+window.onAccountTypeChange = function (prefix) {
+  const type = document.getElementById(prefix + '-accounttype').value;
+  const durationSel   = document.getElementById(prefix + '-duration');
+  const durationLabel = document.getElementById(prefix + '-duration-label');
+  const customDate    = document.getElementById(prefix + '-customdate');
+  if (!durationSel) return;
+  durationSel.disabled = false;
+  if (customDate) customDate.style.display = 'none';
+  switch (type) {
+    case 'test2j':
+      durationSel.value = '2';
+      durationSel.disabled = true;
+      if (durationLabel) durationLabel.textContent = "Durée de l'accès : 2 jours (test)";
+      break;
+    case 'newbc30':
+      durationSel.value = '30';
+      durationSel.disabled = true;
+      if (durationLabel) durationLabel.textContent = "Durée de l'accès : 30 jours (nouveau BC)";
+      break;
+    case 'philmobile':
+      durationSel.value = 'none';
+      durationSel.disabled = true;
+      if (durationLabel) durationLabel.textContent = "Durée de l'accès : Indéfinie (Phil-Mobile)";
+      break;
+    default:
+      durationSel.value = '365';
+      if (durationLabel) durationLabel.textContent = "Durée de l'accès";
   }
 };
 
@@ -3814,8 +3838,9 @@ window.confirmActivate = async function () {
   const payStatus = document.getElementById('f-paystatus').value;
   const paidDate = payStatus === 'paid' ? new Date().toLocaleDateString('fr-FR') : '';
   const isAdmin = document.getElementById('f-isadmin').checked;
-  const isTestAccount = document.getElementById('f-istest').checked;
-  const isTeamsAccount = document.getElementById('f-isteams').checked;
+  const accountType = document.getElementById('f-accounttype').value;
+  const isTestAccount = accountType === 'test2j';
+  const isTeamsAccount = accountType === 'philmobile';
   const duration = document.getElementById('f-duration').value;
   const upline = document.getElementById('f-upline').value.trim();
   const uplineId = document.getElementById('f-uplineid').value.trim();
@@ -3833,8 +3858,11 @@ window.confirmActivate = async function () {
   }
 
   let expirationDate = null;
-  if (isTeamsAccount) {
-    // Compte Teams : 30 jours offerts, prioritaire sur le choix de durée
+  if (accountType === 'philmobile') {
+    // Phil-Mobile : n'expire jamais
+    expirationDate = null;
+  } else if (accountType === 'newbc30') {
+    // Nouveau BC : 30 jours fixes
     expirationDate = new Date(Date.now() + 30 * 86400000).toISOString();
   } else if (duration === 'none') {
     // Indéfini : pas d'expiration
@@ -3868,7 +3896,7 @@ window.confirmActivate = async function () {
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
       pqsValidated: false, fastSCValidated: false, fastECValidated: false,
       payStatus, paidDate,
-      expirationDate, isTestAccount, isTeamsAccount
+      expirationDate, isTestAccount, isTeamsAccount, accountType
     });
 
   } catch (err) {
@@ -3923,7 +3951,8 @@ function renderExpirationBadge(c) {
   const expDate = new Date(c.expirationDate);
   const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
   const dateStr = expDate.toLocaleDateString('fr-FR');
-  const testTag = c.isTestAccount ? '🧪 Test · ' : '';
+  const typeMap = { test2j: '🧪 Test · ', newbc30: '🆕 New BC · ', philmobile: '🤝 Phil-Mobile · ' };
+  const testTag = typeMap[c.accountType] || (c.isTestAccount ? '🧪 Test · ' : '');
 
   if (daysLeft < 0) {
     return `<div class="meta" style="color:#c0392b;font-weight:700;">⛔ ${testTag}Expiré le ${dateStr}</div>`;
@@ -3956,7 +3985,9 @@ async function loadConsultants() {
           <strong>${escapeHtml(c.fullName || c.name || '')}</strong>
           <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
           ${c.isAdmin ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">Admin</span>' : ''}
-          ${c.isTeamsAccount ? '<span class="badge" style="background:#e0f2fe;color:#0369a1;">👥 Teams</span>' : ''}
+          ${c.accountType === 'philmobile' || c.isTeamsAccount ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🤝 Phil-Mobile</span>' : ''}
+          ${c.accountType === 'newbc30' ? '<span class="badge" style="background:#f0fdf4;color:#16a34a;">🆕 New BC</span>' : ''}
+          ${(c.accountType === 'test2j' || c.isTestAccount) && c.accountType !== 'philmobile' && c.accountType !== 'newbc30' ? '<span class="badge" style="background:#fef9c3;color:#854d0e;">🧪 Test</span>' : ''}
           <div class="meta">${escapeHtml(c.email || '')} · ${c.phone ? '📞 ' + escapeHtml(c.phone) : '<span style="color:#c0392b;">📞 Tél. manquant</span>'} · ID: ${escapeHtml(c.id || c.docId)}</div>
           <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP actuel: ${escapeHtml(String(c.aspInit ?? 0))}</div>
           <div class="meta">
@@ -3968,6 +3999,8 @@ async function loadConsultants() {
             const st = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
             if (st === 'paid') return `<div class="meta">✅ Payé${c.paidDate ? ' le ' + escapeHtml(c.paidDate) : ''}</div>`;
             if (st === 'offered') return '<div class="meta">🎁 Offert</div>';
+            if (st === 'promo30') return '<div class="meta">🏷️ Promo 30 jours</div>';
+            if (st === 'parrainage') return '<div class="meta">🤝 Licence offerte (parrainage)</div>';
             return '<div class="meta" style="color:#c0392b;">⚪ Non payé</div>';
           })()}
           ${renderExpirationBadge(c)}
@@ -4038,6 +4071,8 @@ window.openEditModal = function (docId) {
     : '';
   document.getElementById('e-istest').checked = !!c.isTestAccount;
   document.getElementById('e-isteams').checked = !!c.isTeamsAccount;
+  const derivedType = c.accountType || (c.isTestAccount ? 'test2j' : c.isTeamsAccount ? 'philmobile' : 'standard');
+  document.getElementById('e-accounttype').value = derivedType;
   // Rétrocompatibilité : les anciens consultants avec un paidAmount > 0 sont considérés payés
   document.getElementById('e-paystatus').value = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
   document.getElementById('edit-modal').classList.add('open');
@@ -4062,6 +4097,7 @@ window.confirmEdit = async function () {
   const fastECValidated = document.getElementById('e-fastec').checked;
   const isTestAccount = document.getElementById('e-istest').checked;
   const isTeamsAccount = document.getElementById('e-isteams').checked;
+  const accountType = document.getElementById('e-accounttype').value;
   const payStatus = document.getElementById('e-paystatus').value;
   const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
   const upline = document.getElementById('e-upline').value.trim();
@@ -4113,7 +4149,7 @@ window.confirmEdit = async function () {
       : '';
     const updatePayload = {
       name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
-      expirationDate, isTestAccount, isTeamsAccount, payStatus, paidDate, upline, uplineId, uplineTel, uplineEmail
+      expirationDate, isTestAccount, isTeamsAccount, accountType, payStatus, paidDate, upline, uplineId, uplineTel, uplineEmail
     };
     // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)
     if (editPhotoPendingUrl) updatePayload.photoURL = editPhotoPendingUrl;
