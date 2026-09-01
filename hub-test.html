@@ -191,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Tarifs &amp; parrainage
+Build <span id="app-version-1">…</span> — Messages expiration
      </span>
     </div>
     </div>
@@ -2260,16 +2260,15 @@ window.checkAndApplyExpiration = async function(consultantId) {
     const daysLeft = Math.ceil((expDate - now) / 86400000);
 
     if (daysLeft < 0) {
-      // Expiré : désactivation automatique
       try {
         await window.updateDoc(window.doc(window.db, 'consultants', consultantId), { active: false });
       } catch(e) {
         console.log('Désactivation automatique impossible:', e.message);
       }
-      return { expired: true, daysLeft, isTestAccount: !!data.isTestAccount };
+      return { expired: true, daysLeft, isTestAccount: !!data.isTestAccount, accountType: data.accountType || 'standard' };
     }
 
-    return { expired: false, daysLeft, isTestAccount: !!data.isTestAccount };
+    return { expired: false, daysLeft, isTestAccount: !!data.isTestAccount, accountType: data.accountType || 'standard' };
 
   } catch(e) {
     console.log('Vérification expiration impossible:', e.message);
@@ -2277,10 +2276,26 @@ window.checkAndApplyExpiration = async function(consultantId) {
   }
 };
 
+function pmExpirationMsg(info) {
+  const t = info.accountType || 'standard';
+  if (info.expired) {
+    if (t === 'test2j')   return "⏱️ Votre période d'essai est terminée. Merci de procéder au paiement afin de prolonger votre utilisation.";
+    if (t === 'newbc30')  return "⏱️ Votre période d'essai de 30 jours est terminée. Merci de procéder au paiement afin de prolonger votre utilisation.";
+    return "🔒 Votre accès a expiré. Merci de contacter l'administrateur pour le renouveler.";
+  }
+  // Bannière avertissement (pas encore expiré)
+  const j = info.daysLeft;
+  if (t === 'test2j')  return j <= 0 ? "⏱️ Votre période d'essai se termine aujourd'hui. Procédez au paiement pour continuer."
+                                     : `⏱️ Période d'essai : encore ${j} jour(s). Procédez au paiement pour continuer après l'essai.`;
+  if (t === 'newbc30') return j <= 0 ? "⏱️ Votre période de 30 jours se termine aujourd'hui. Procédez au paiement pour continuer."
+                                     : `⏱️ Période 30 jours : encore ${j} jour(s). Procédez au paiement pour prolonger votre accès.`;
+  return `⚠️ Votre abonnement expire dans ${j} jour(s). Contactez l'administrateur pour le renouveler.`;
+}
+
 function showExpirationBanner(info) {
   if (info.daysLeft === null) return;
 
-  const threshold = info.isTestAccount ? 999 : 14; // compte test : toujours visible ; abonnement : 14 derniers jours
+  const threshold = (info.accountType === 'test2j' || info.isTestAccount) ? 999 : 14;
   if (info.daysLeft > threshold) return;
 
   const existing = document.getElementById('expiration-banner');
@@ -2295,14 +2310,7 @@ function showExpirationBanner(info) {
     border-top:1px solid ${info.daysLeft <= 3 ? '#ef4444' : '#f97316'};
     border-bottom:1px solid ${info.daysLeft <= 3 ? '#ef4444' : '#f97316'};
   `;
-
-  if (info.isTestAccount) {
-    banner.textContent = info.daysLeft <= 0
-      ? "⏱️ Votre période d'essai se termine aujourd'hui."
-      : `⏱️ Période d'essai : encore ${info.daysLeft} jour(s).`;
-  } else {
-    banner.textContent = `⚠️ Votre abonnement expire dans ${info.daysLeft} jour(s). Contactez l'administrateur pour le renouveler.`;
-  }
+  banner.textContent = pmExpirationMsg(info);
 
   const newsBanner = document.getElementById('news-banner');
   if (newsBanner && newsBanner.parentNode) {
@@ -7833,17 +7841,13 @@ onAuthStateChanged(auth, async (user) => {
 
   const expirationCheck = await window.checkAndApplyExpiration(consultant.id);
   if (expirationCheck.expired) {
-    document.getElementById('rem-error').textContent =
-      "Votre accès a expiré. Merci de contacter l'administrateur pour le renouveler.";
+    document.getElementById('rem-error').textContent = pmExpirationMsg(expirationCheck);
     document.getElementById('rem-error').style.display = 'block';
     await signOut(auth);
     return;
   }
 
   doUnlock(consultant);
-  window._expirationInfo = expirationCheck;
-  showExpirationBanner(expirationCheck);
-  loadNews();
   loadTeamsLink();
   loadHubDocuments();
   loadHubLinks();
@@ -7885,8 +7889,7 @@ window.firebaseLogin = async function(){
 
     const expirationCheck = await window.checkAndApplyExpiration(consultant.id);
     if (expirationCheck.expired) {
-      document.getElementById('rem-error').textContent =
-        "Votre accès a expiré. Merci de contacter l'administrateur pour le renouveler.";
+      document.getElementById('rem-error').textContent = pmExpirationMsg(expirationCheck);
       document.getElementById('rem-error').style.display = 'block';
       await signOut(auth);
       return;
