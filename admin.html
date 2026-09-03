@@ -4872,8 +4872,9 @@ window.deleteProduitOrange = async function (id) {
 
 window.hideProduitOrangeDefault = async function (id) {
   if (!confirm('Masquer ce produit ? Il disparaîtra du simulateur — tu pourras le réafficher à tout moment depuis "Produits masqués".')) return;
+  const def = PRODUITS_ORANGE_DEFAULTS.find(d => d.id === id);
   try {
-    await setDoc(doc(db, 'produitsOrange', id), { hidden: true }, { merge: true });
+    await setDoc(doc(db, 'produitsOrange', id), { ...(def ? { category: def.category } : {}), hidden: true }, { merge: true });
     showToast('🙈 Produit masqué.');
   } catch (err) {
     alert('Erreur lors du masquage: ' + err.message);
@@ -4881,8 +4882,9 @@ window.hideProduitOrangeDefault = async function (id) {
 };
 
 window.restoreProduitOrangeDefault = async function (id) {
+  const def = PRODUITS_ORANGE_DEFAULTS.find(d => d.id === id);
   try {
-    await setDoc(doc(db, 'produitsOrange', id), { hidden: false }, { merge: true });
+    await setDoc(doc(db, 'produitsOrange', id), { ...(def ? { category: def.category } : {}), hidden: false }, { merge: true });
     showToast('✅ Produit réaffiché.');
   } catch (err) {
     alert('Erreur: ' + err.message);
