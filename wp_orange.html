@@ -37,7 +37,8 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
-.header { background:#ff5a14; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.header { background:#062B68; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; position:relative; overflow:hidden; }
+.header::after { content:''; position:absolute; left:0; right:0; bottom:0; height:6px; background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%); }
 @media (max-width: 480px) {
   .header { padding:16px; gap:10px; }
   .header-title { font-size:22px; }

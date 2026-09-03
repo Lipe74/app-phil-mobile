@@ -85,7 +85,7 @@
 #ctr-import-pdf-btn:disabled{ opacity:.6;cursor:default; }
 @keyframes ctr-import-spin{ to{ transform:rotate(360deg); } }
 
-.menu-item:hover { background:#fff3e8; }
+.menu-item:hover { background:#e6f5ff; border-color:#00A7FF; }
 .active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
 @media(max-width:600px){
   #outils-unlocked > div { flex-direction:column !important; }
@@ -166,7 +166,7 @@
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
 
 <!-- LISERÉ TRICOLORE PHIL-MOBILE (branding) -->
-<div style="height:4px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+<div style="height:7px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
 
 <!-- HEADER compact -->
   <div id="top-header"
@@ -257,6 +257,11 @@ Build <span id="app-version-1">…</span> — Messages expiration
             padding:16px;">
    <!-- VERROU FIREBASE -->
 <div id="rem-lock" style="background:#f8f8f8;padding:10px 16px;text-align:center;margin-bottom:8px;">
+
+<div style="max-width:400px;margin:20px auto;background:#fff;border-radius:18px;box-shadow:0 8px 28px rgba(6,43,104,.10);border:1px solid #eef1f6;overflow:hidden;">
+  <div style="height:5px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+  <div style="padding:26px 26px 30px;">
+
   <div style="margin-bottom:20px;">
     <img src="images/logo.png"
          class="pm-default-logo"
@@ -322,6 +327,10 @@ Build <span id="app-version-1">…</span> — Messages expiration
        style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
     Mot de passe oublié ?
   </div>
+
+  </div>
+</div>
+
 <!-- Bouton toggle -->
 <div style="margin-top:22px;padding-bottom:6px;text-align:center;">
   <button id="btn-info-toggle" onclick="toggleInfoSection()" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;width:100%;max-width:320px;transition:all .2s;">
@@ -1075,7 +1084,8 @@ Build <span id="app-version-1">…</span> — Messages expiration
           <div id="panel-contrats" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📋 Mes Contrats</h2>
 
-            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div style="background:#062B68;color:#fff;border-radius:14px;padding:16px 20px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:relative;overflow:hidden;">
+              <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
               <div>
                 <div style="font-size:28px;font-weight:700;" id="ctr-asp-total-display">0</div>
                 <div style="font-size:12px;opacity:.9;">ASP total (de départ + contrats)</div>
@@ -1211,7 +1221,8 @@ STATUT: independant
           <div id="panel-prosp-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🎯 Prospects Clients</h2>
 
-            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;">
+            <div style="background:#062B68;color:#fff;border-radius:14px;padding:12px 16px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;position:relative;overflow:hidden;">
+              <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
@@ -1430,7 +1441,8 @@ OPERATEUR: Proximus
           <div id="panel-prosp-consultants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🚀 Prospects Consultants</h2>
 
-            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;">
+            <div style="background:#062B68;color:#fff;border-radius:14px;padding:12px 16px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;position:relative;overflow:hidden;">
+              <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
