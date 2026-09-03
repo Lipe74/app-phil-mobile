@@ -1377,7 +1377,7 @@ function buildProductRow(p) {
   row.className = 'product-row';
   row.dataset.id = p.id;
   row.innerHTML = `
-    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}${p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 '+p.condition+'</span>' : ''}</div>
+    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}${p.condition ? '<br><span style="font-size:13px;color:#cc4400;font-weight:700;">📌 '+p.condition+'</span>' : ''}</div>
     <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
     <div class="qty-ctrl">
       <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
