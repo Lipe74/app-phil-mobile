@@ -4698,15 +4698,17 @@ const PRODUITS_ORANGE_DEFAULTS = [
 ];
 
 window.importDefaultProduitsOrange = async function () {
-  const existing = window._produitsOrangeCache || [];
-  if (existing.length > 0) {
-    if (!confirm("Des produits sont déjà enregistrés. Réimporter écrasera leurs valeurs actuelles par les valeurs par défaut d'origine. Continuer ?")) return;
+  const existing = new Set(window._produitsOrangeCache || []);
+  const missing = PRODUITS_ORANGE_DEFAULTS.filter(p => !existing.has(p.id));
+  if (missing.length === 0) {
+    alert('Tous les produits par défaut ont déjà une fiche dans Firebase — rien à importer.');
+    return;
   }
   try {
-    await Promise.all(PRODUITS_ORANGE_DEFAULTS.map(p =>
-      setDoc(doc(db, 'produitsOrange', p.id), { category: p.category, name: p.name, sub: p.sub, price: p.price })
+    await Promise.all(missing.map(p =>
+      setDoc(doc(db, 'produitsOrange', p.id), { category: p.category, name: p.name, sub: p.sub, price: p.price }, { merge: true })
     ));
-    showToast('✅ Produits importés.');
+    showToast(`✅ ${missing.length} produit(s) importé(s).`);
   } catch (err) {
     alert("Erreur lors de l'import: " + err.message);
   }
