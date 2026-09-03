@@ -4734,7 +4734,8 @@ function loadProduitsOrangeAdmin() {
       price: (stored[def.id] && stored[def.id].price !== undefined) ? stored[def.id].price : def.price,
       max: (stored[def.id] && stored[def.id].max) || 9,
       order: (stored[def.id] && stored[def.id].order !== undefined) ? stored[def.id].order : idx,
-      hidden: !!(stored[def.id] && stored[def.id].hidden)
+      hidden: !!(stored[def.id] && stored[def.id].hidden),
+      condition: (stored[def.id] && stored[def.id].condition) || ''
     }));
     // Produits personnalisés : tout document Firestore qui n'est pas dans la liste par défaut
     const customs = Object.keys(stored).filter(id => !defaultIds.has(id)).map((id, idx) => ({
@@ -4743,6 +4744,7 @@ function loadProduitsOrangeAdmin() {
       price: stored[id].price || 0, max: stored[id].max || 9,
       order: stored[id].order !== undefined ? stored[id].order : 1000 + idx,
       hidden: false,
+      condition: stored[id].condition || '',
       countsAsInternet: stored[id].countsAsInternet !== false
     }));
     const merged = [...defaults, ...customs];
@@ -4773,6 +4775,10 @@ function loadProduitsOrangeAdmin() {
           ${p.custom
             ? `<button class="btn btn-danger" style="height:34px;" title="Supprimer définitivement" onclick="deleteProduitOrange('${p.id}')">🗑</button>`
             : `<button class="btn btn-danger" style="height:34px;" title="Masquer du simulateur" onclick="hideProduitOrangeDefault('${p.id}')">🙈</button>`}
+          <div style="flex-basis:100%;min-width:220px;">
+            <label style="font-size:11px;">📌 Condition (affichée sous le produit, laisser vide si aucune)</label>
+            <input type="text" id="po-${p.id}-condition" value="${escapeHtml(p.condition || '')}" placeholder="ex: Nécessite un abonnement Livebox Giga">
+          </div>
         </div>
       `).join('');
 
@@ -4823,6 +4829,10 @@ function loadProduitsOrangeAdmin() {
                 <label style="font-size:11px;">Qté max</label>
                 <input type="number" id="po-new-${cat.key}-max" value="9">
               </div>
+              <div style="flex-basis:100%;min-width:220px;">
+                <label style="font-size:11px;">📌 Condition (optionnel, laisser vide si aucune)</label>
+                <input type="text" id="po-new-${cat.key}-condition" placeholder="ex: Nécessite un abonnement Livebox Giga">
+              </div>
             </div>
             ${internetCheckbox}
             ${mobileWarning}
@@ -4842,13 +4852,15 @@ window.addNewProduitOrange = async function (categoryKey) {
   const sub = document.getElementById(`po-new-${categoryKey}-sub`).value.trim();
   const price = parseFloat(document.getElementById(`po-new-${categoryKey}-price`).value);
   const max = parseInt(document.getElementById(`po-new-${categoryKey}-max`).value, 10) || 9;
+  const conditionEl = document.getElementById(`po-new-${categoryKey}-condition`);
+  const condition = conditionEl ? conditionEl.value.trim() : '';
   if (!name) { alert('Merci de renseigner un nom.'); return; }
   if (isNaN(price)) { alert('Merci de renseigner un prix.'); return; }
 
   const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const id = `custom_${categoryKey}_${slug}_${Date.now().toString(36)}`;
 
-  const data = { category: categoryKey, name, sub, price, max, custom: true };
+  const data = { category: categoryKey, name, sub, price, max, condition, custom: true };
   if (categoryKey === 'internet') {
     const cb = document.getElementById(`po-new-${categoryKey}-internet`);
     data.countsAsInternet = cb ? cb.checked : true;
@@ -4918,8 +4930,10 @@ window.saveProduitsOrangeCategorie = async function (categoryKey) {
       const name = document.getElementById(`po-${p.id}-name`).value.trim();
       const sub = document.getElementById(`po-${p.id}-sub`).innerHTML.trim();
       const price = parseFloat(document.getElementById(`po-${p.id}-price`).value);
+      const conditionEl = document.getElementById(`po-${p.id}-condition`);
+      const condition = conditionEl ? conditionEl.value.trim() : '';
       const data = {
-        category: p.category, name: name || p.name, sub, price: isNaN(price) ? p.price : price
+        category: p.category, name: name || p.name, sub, price: isNaN(price) ? p.price : price, condition
       };
       if (p.custom) {
         data.custom = true;

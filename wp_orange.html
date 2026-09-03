@@ -606,16 +606,18 @@ async function loadProductsFromFirestore() {
       if (!arr) return;
       let target = arr.find(x => x.id === id);
       if (target) {
-        // Produit existant : mise à jour nom/sous-titre/prix/ordre/visibilité
+        // Produit existant : mise à jour nom/sous-titre/prix/ordre/visibilité/condition
         if (d.name) target.name = d.name;
         if (d.sub !== undefined) target.sub = d.sub;
         if (d.price !== undefined) target.price = Number(d.price);
         if (d.order !== undefined) target.order = Number(d.order);
         if (d.hidden) target.hidden = true;
+        if (d.condition !== undefined) target.condition = d.condition;
       } else {
         // Nouveau produit ajouté depuis l'admin : ajout à la liste + initialisation de sa quantité
         target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true };
         if (d.order !== undefined) target.order = Number(d.order);
+        if (d.condition) target.condition = d.condition;
         if (d.category === 'internet') target.countsAsInternet = d.countsAsInternet !== false;
         arr.push(target);
         window.qtyMap[id] = 0;
@@ -1375,7 +1377,7 @@ function buildProductRow(p) {
   row.className = 'product-row';
   row.dataset.id = p.id;
   row.innerHTML = `
-    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}</div>
+    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}${p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 '+p.condition+'</span>' : ''}</div>
     <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
     <div class="qty-ctrl">
       <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
