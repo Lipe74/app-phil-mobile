@@ -4725,27 +4725,36 @@ function loadProduitsOrangeAdmin() {
     const defaultIds = new Set(PRODUITS_ORANGE_DEFAULTS.map(d => d.id));
 
     // Produits par défaut : valeur Firestore si elle existe, sinon valeur codée en dur
-    const defaults = PRODUITS_ORANGE_DEFAULTS.map(def => ({
+    const defaults = PRODUITS_ORANGE_DEFAULTS.map((def, idx) => ({
       id: def.id, category: def.category, custom: false,
       name: (stored[def.id] && stored[def.id].name) || def.name,
       sub: (stored[def.id] && stored[def.id].sub !== undefined) ? stored[def.id].sub : def.sub,
       price: (stored[def.id] && stored[def.id].price !== undefined) ? stored[def.id].price : def.price,
-      max: (stored[def.id] && stored[def.id].max) || 9
+      max: (stored[def.id] && stored[def.id].max) || 9,
+      order: (stored[def.id] && stored[def.id].order !== undefined) ? stored[def.id].order : idx,
+      hidden: !!(stored[def.id] && stored[def.id].hidden)
     }));
     // Produits personnalisés : tout document Firestore qui n'est pas dans la liste par défaut
-    const customs = Object.keys(stored).filter(id => !defaultIds.has(id)).map(id => ({
+    const customs = Object.keys(stored).filter(id => !defaultIds.has(id)).map((id, idx) => ({
       id, category: stored[id].category, custom: true,
       name: stored[id].name || '', sub: stored[id].sub || '',
       price: stored[id].price || 0, max: stored[id].max || 9,
+      order: stored[id].order !== undefined ? stored[id].order : 1000 + idx,
+      hidden: false,
       countsAsInternet: stored[id].countsAsInternet !== false
     }));
     const merged = [...defaults, ...customs];
     window._produitsOrangeMerged = merged;
 
     container.innerHTML = PRODUITS_ORANGE_CATEGORIES.map(cat => {
-      const items = merged.filter(p => p.category === cat.key);
-      const rows = items.map(p => `
+      const items = merged.filter(p => p.category === cat.key && !p.hidden).sort((a, b) => a.order - b.order);
+      const hiddenItems = merged.filter(p => p.category === cat.key && p.hidden);
+      const rows = items.map((p, idx) => `
         <div class="form-row" style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f0f0f0;">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Monter" ${idx === 0 ? 'disabled' : ''} onclick="moveProduitOrange('${cat.key}','${p.id}','up')">▲</button>
+            <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Descendre" ${idx === items.length - 1 ? 'disabled' : ''} onclick="moveProduitOrange('${cat.key}','${p.id}','down')">▼</button>
+          </div>
           <div style="flex:2;min-width:160px;">
             <label style="font-size:11px;">Nom ${p.custom ? '<span style=\"color:#f97316;\">(ajouté)</span>' : ''}</label>
             <input type="text" id="po-${p.id}-name" value="${escapeHtml(p.name)}">
@@ -4759,9 +4768,22 @@ function loadProduitsOrangeAdmin() {
             <label style="font-size:11px;">Prix (€)</label>
             <input type="number" step="0.01" id="po-${p.id}-price" value="${p.price}">
           </div>
-          ${p.custom ? `<button class="btn btn-danger" style="height:34px;" onclick="deleteProduitOrange('${p.id}')">🗑</button>` : ''}
+          ${p.custom
+            ? `<button class="btn btn-danger" style="height:34px;" title="Supprimer définitivement" onclick="deleteProduitOrange('${p.id}')">🗑</button>`
+            : `<button class="btn btn-danger" style="height:34px;" title="Masquer du simulateur" onclick="hideProduitOrangeDefault('${p.id}')">🙈</button>`}
         </div>
       `).join('');
+
+      const hiddenBlock = hiddenItems.length ? `
+        <div style="margin-top:14px;padding:10px 12px;background:#f8f8f8;border-radius:8px;">
+          <div style="font-size:11px;font-weight:700;color:#777;margin-bottom:6px;">🙈 Produits masqués (${hiddenItems.length})</div>
+          ${hiddenItems.map(p => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px;color:#555;">
+              <span>${escapeHtml(p.name)}</span>
+              <button class="btn btn-secondary" style="height:26px;font-size:11px;" onclick="restoreProduitOrangeDefault('${p.id}')">↩️ Réafficher</button>
+            </div>
+          `).join('')}
+        </div>` : '';
 
       const internetCheckbox = cat.key === 'internet' ? `
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#555;margin:8px 0;">
@@ -4777,6 +4799,7 @@ function loadProduitsOrangeAdmin() {
         <div class="card" style="margin-bottom:16px;">
           <div class="section-title" style="font-size:14px;margin-bottom:10px;">${cat.label}</div>
           ${rows}
+          ${hiddenBlock}
           <button class="btn btn-primary" onclick="saveProduitsOrangeCategorie('${cat.key}')">💾 Enregistrer ${cat.label}</button>
 
           <div style="margin-top:16px;padding-top:14px;border-top:1px dashed #ddd;">
@@ -4847,8 +4870,45 @@ window.deleteProduitOrange = async function (id) {
   }
 };
 
+window.hideProduitOrangeDefault = async function (id) {
+  if (!confirm('Masquer ce produit ? Il disparaîtra du simulateur — tu pourras le réafficher à tout moment depuis "Produits masqués".')) return;
+  try {
+    await setDoc(doc(db, 'produitsOrange', id), { hidden: true }, { merge: true });
+    showToast('🙈 Produit masqué.');
+  } catch (err) {
+    alert('Erreur lors du masquage: ' + err.message);
+  }
+};
+
+window.restoreProduitOrangeDefault = async function (id) {
+  try {
+    await setDoc(doc(db, 'produitsOrange', id), { hidden: false }, { merge: true });
+    showToast('✅ Produit réaffiché.');
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+window.moveProduitOrange = async function (categoryKey, id, direction) {
+  const items = (window._produitsOrangeMerged || [])
+    .filter(p => p.category === categoryKey && !p.hidden)
+    .sort((a, b) => a.order - b.order);
+  const idx = items.findIndex(p => p.id === id);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= items.length) return;
+  const reordered = [...items];
+  [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+  try {
+    await Promise.all(reordered.map((p, i) =>
+      setDoc(doc(db, 'produitsOrange', p.id), { category: p.category, order: i }, { merge: true })
+    ));
+  } catch (err) {
+    alert('Erreur lors du déplacement: ' + err.message);
+  }
+};
+
 window.saveProduitsOrangeCategorie = async function (categoryKey) {
-  const items = (window._produitsOrangeMerged || []).filter(p => p.category === categoryKey);
+  const items = (window._produitsOrangeMerged || []).filter(p => p.category === categoryKey && !p.hidden);
   try {
     await Promise.all(items.map(p => {
       const name = document.getElementById(`po-${p.id}-name`).value.trim();

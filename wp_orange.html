@@ -97,6 +97,8 @@
 .active-line { background: #fff8f4; border-radius: 6px; }
 </style>
 
+<div style="height:6px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+
 <!-- LOGIN CONTAINER -->
 <div id="login-container" style="display:none;"></div>
 
@@ -604,18 +606,35 @@ async function loadProductsFromFirestore() {
       if (!arr) return;
       let target = arr.find(x => x.id === id);
       if (target) {
-        // Produit existant : mise à jour nom/sous-titre/prix
+        // Produit existant : mise à jour nom/sous-titre/prix/ordre/visibilité
         if (d.name) target.name = d.name;
         if (d.sub !== undefined) target.sub = d.sub;
         if (d.price !== undefined) target.price = Number(d.price);
+        if (d.order !== undefined) target.order = Number(d.order);
+        if (d.hidden) target.hidden = true;
       } else {
         // Nouveau produit ajouté depuis l'admin : ajout à la liste + initialisation de sa quantité
         target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true };
+        if (d.order !== undefined) target.order = Number(d.order);
         if (d.category === 'internet') target.countsAsInternet = d.countsAsInternet !== false;
         arr.push(target);
         window.qtyMap[id] = 0;
       }
     });
+
+    // Retire les produits masqués depuis l'admin et retrie chaque catégorie selon l'ordre défini
+    // (fallback sur la position d'origine pour les produits jamais réordonnés).
+    const sortByOrder = (arr) => {
+      const withIdx = arr.map((p, i) => ({ p, fallback: i }));
+      return withIdx
+        .filter(x => !x.p.hidden)
+        .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
+        .map(x => x.p);
+    };
+    Object.keys(window.productList).forEach(cat => {
+      if (window.productList[cat]) window.productList[cat] = sortByOrder(window.productList[cat]);
+    });
+    window.options = sortByOrder(window.options);
 
     window.renderProductSections();
 
