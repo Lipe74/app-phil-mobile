@@ -634,7 +634,12 @@ async function loadProductsFromFirestore() {
     Object.keys(window.productList).forEach(cat => {
       if (window.productList[cat]) window.productList[cat] = sortByOrder(window.productList[cat]);
     });
-    window.options = sortByOrder(window.options);
+    // Important : on modifie le tableau "options" en place (et non une réaffectation) car
+    // le reste du script y fait référence directement via la variable locale `options`,
+    // qui ne verrait jamais un remplacement de window.options par un nouveau tableau.
+    const sortedOptions = sortByOrder(window.options);
+    window.options.length = 0;
+    window.options.push(...sortedOptions);
 
     window.renderProductSections();
 
