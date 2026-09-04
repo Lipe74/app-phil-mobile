@@ -3069,13 +3069,8 @@ window.deleteAllAgendaEvents = async function () {
   }
   loadAgendaAdmin();
 };
-const PROMO_FAMILY_SECTIONS = [
-  ['mobile', '📱 Promo Mobile'],
-  ['internet', '🌐 Promo Internet'],
-  ['tv', '📺 Promo TV'],
-  ['films', '🎬 Promo Films (Netflix, Disney+)'],
-  ['options', '⚙️ Promo Options']
-];
+// (L'ancien PROMO_FAMILY_SECTIONS fixe a été remplacé par buildPromoFamilySections() + resolveOrangeSectionOrder(),
+// pour que l'ordre des groupes de promos suive automatiquement l'ordre des blocs produits.)
 
 let promosCache = [];
 let currentEditPromoId = null;
@@ -3138,6 +3133,9 @@ async function loadPromosAdmin() {
   const container = document.getElementById('promos-list');
   container.innerHTML = '<div class="empty">Chargement...</div>';
   try {
+    const sectionOrder = await resolveOrangeSectionOrder();
+    const promoFamilySections = buildPromoFamilySections(sectionOrder);
+
     const snap = await getDocs(collection(db, 'promosOrange'));
     const list = [];
     snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
@@ -3149,7 +3147,7 @@ async function loadPromosAdmin() {
     }
 
     let html = '';
-    PROMO_FAMILY_SECTIONS.forEach(([fam, label]) => {
+    promoFamilySections.forEach(([fam, label]) => {
       const inFam = list.filter(p => derivePromoFamily(p) === fam);
       if (inFam.length === 0) return;
 
@@ -5895,21 +5893,40 @@ const ORANGE_SECTIONS_DEFAULT_ORDER = [
   { key: 'options', label: '⚙️ Options' }
 ];
 
-async function loadOrangeSectionOrderAdmin() {
-  const container = document.getElementById('orange-section-order-content');
+// Résout (et met en cache dans window._orangeSectionOrder) l'ordre des 4 blocs produits — réutilisé
+// à la fois par le réglage "Ordre des blocs" et par le tri des groupes de promos, pour que les deux
+// restent toujours cohérents entre eux, quel que soit celui chargé en premier.
+async function resolveOrangeSectionOrder() {
+  if (window._orangeSectionOrder) return window._orangeSectionOrder;
+  let order = ORANGE_SECTIONS_DEFAULT_ORDER.map(s => s.key);
   try {
     const snap = await getDoc(doc(db, 'settings', 'orangeSectionOrder'));
     const savedOrder = snap.exists() && Array.isArray(snap.data().order) ? snap.data().order : null;
-    const order = savedOrder && savedOrder.length === 4
-      ? savedOrder
-      : ORANGE_SECTIONS_DEFAULT_ORDER.map(s => s.key);
-    window._orangeSectionOrder = order;
-    renderOrangeSectionOrderAdmin();
+    if (savedOrder && savedOrder.length === 4) order = savedOrder;
   } catch (e) {
     console.log('Chargement ordre des blocs impossible:', e.message);
-    window._orangeSectionOrder = ORANGE_SECTIONS_DEFAULT_ORDER.map(s => s.key);
-    renderOrangeSectionOrderAdmin();
   }
+  window._orangeSectionOrder = order;
+  return order;
+}
+
+// Dérive l'ordre des groupes de promos à partir de l'ordre des blocs produits : "Films" est toujours
+// placé juste après "Options" (son contenu, Netflix/Disney+, vit dans ce bloc).
+const PROMO_FAMILY_LABELS = { mobile: '📱 Promo Mobile', internet: '🌐 Promo Internet', tv: '📺 Promo TV', films: '🎬 Promo Films (Netflix, Disney+)', options: '⚙️ Promo Options' };
+function buildPromoFamilySections(sectionOrder) {
+  const keys = [];
+  sectionOrder.forEach(key => {
+    keys.push(key);
+    if (key === 'options') keys.push('films');
+  });
+  if (!keys.includes('options')) keys.push('options');
+  if (!keys.includes('films')) keys.push('films');
+  return keys.map(key => [key, PROMO_FAMILY_LABELS[key] || key]);
+}
+
+async function loadOrangeSectionOrderAdmin() {
+  await resolveOrangeSectionOrder();
+  renderOrangeSectionOrderAdmin();
 }
 
 function renderOrangeSectionOrderAdmin() {
@@ -5924,7 +5941,8 @@ function renderOrangeSectionOrderAdmin() {
       </div>
       <div style="font-size:14px;font-weight:600;">${idx + 1}. ${labelOf(key)}</div>
     </div>
-  `).join('') + `<button class="btn btn-primary" style="margin-top:14px;" onclick="saveOrangeSectionOrder()">💾 Enregistrer l'ordre</button>`;
+  `).join('') + `<button class="btn btn-primary" style="margin-top:14px;" onclick="saveOrangeSectionOrder()">💾 Enregistrer l'ordre</button>
+  <div style="font-size:11px;color:#888;margin-top:8px;">L'ordre des groupes de promos (page "Promotions existantes") suit automatiquement cet ordre.</div>`;
 }
 
 window.moveOrangeSection = function (idx, direction) {
@@ -5939,6 +5957,7 @@ window.saveOrangeSectionOrder = async function () {
   try {
     await setDoc(doc(db, 'settings', 'orangeSectionOrder'), { order: window._orangeSectionOrder });
     showToast('✅ Ordre enregistré.');
+    loadPromosAdmin(); // Rafraîchit tout de suite l'ordre des groupes dans la liste des promos
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
   }

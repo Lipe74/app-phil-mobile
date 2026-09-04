@@ -582,6 +582,8 @@ async function loadPromosFromFirestore() {
     document.getElementById('promos-rows').innerHTML = '';
     document.getElementById('promos-permanent-rows').innerHTML = '';
     window.buildToggleRows('promos-permanent-rows', window.promosPermanent);
+    const secOrderForPromos = await resolveSectionOrder();
+    window._promoGroupOrder = buildPromoGroupOrder(secOrderForPromos);
     window.buildGroupedPromoRows('promos-rows', window.promos);
     window.renderOrangeApp();
   } catch (err) {
@@ -722,22 +724,52 @@ async function loadPromoBanners() {
 
 // Ordre des 4 blocs produits (Internet/TV/Mobile/Options), réglable depuis l'admin.
 // Repli silencieux sur l'ordre codé en dur (Internet, TV, Mobile, Options) si rien n'est configuré.
-// Construit aussi le petit menu de navigation rapide en haut de page, dans le même ordre.
+// Construit aussi le petit menu de navigation rapide en haut de page, et sert de référence pour
+// l'ordre des groupes de promos (voir buildPromoGroupOrder ci-dessous), dans le même ordre partout.
 const ORANGE_SECTION_LABELS = { internet: '🌍 Internet', tv: '📺 TV', mobile: '📱 Mobile', options: '⚙️ Options' };
 function scrollToOrangeSection(key) {
   const el = document.getElementById('section-' + key);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 window.scrollToOrangeSection = scrollToOrangeSection;
-async function loadSectionOrder() {
-  let order = ['internet', 'tv', 'mobile', 'options'];
-  try {
-    const snap = await getDoc(doc(db, 'settings', 'orangeSectionOrder'));
-    const fetched = snap.exists() ? snap.data().order : null;
-    if (Array.isArray(fetched) && fetched.length > 0) order = fetched;
-  } catch (err) {
-    console.log('Chargement ordre des blocs impossible, ordre par défaut conservé:', err.message);
+
+// Résolu une seule fois (mis en cache) : évite de refaire la lecture Firestore à chaque appel, et
+// permet à loadSectionOrder() et loadPromosFromFirestore() de partager le même résultat quel que
+// soit celui qui démarre en premier (les deux tournent en parallèle au chargement).
+let _sectionOrderPromise = null;
+function resolveSectionOrder() {
+  if (!_sectionOrderPromise) {
+    _sectionOrderPromise = (async () => {
+      let order = ['internet', 'tv', 'mobile', 'options'];
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'orangeSectionOrder'));
+        const fetched = snap.exists() ? snap.data().order : null;
+        if (Array.isArray(fetched) && fetched.length > 0) order = fetched;
+      } catch (err) {
+        console.log('Chargement ordre des blocs impossible, ordre par défaut conservé:', err.message);
+      }
+      return order;
+    })();
   }
+  return _sectionOrderPromise;
+}
+
+// Dérive l'ordre des groupes de promos à partir de l'ordre des blocs produits : "Films" est toujours
+// placé juste après "Options" (son contenu, Netflix/Disney+, vit dans ce bloc).
+const ORANGE_PROMO_GROUP_LABELS = { internet: '🌍 Internet', mobile: '📱 Mobile', tv: '📺 TV', films: '🎬 Films (Netflix, Disney+)', options: '⚙️ Options' };
+function buildPromoGroupOrder(sectionOrder) {
+  const keys = [];
+  sectionOrder.forEach(key => {
+    keys.push(key);
+    if (key === 'options') keys.push('films');
+  });
+  if (!keys.includes('options')) keys.push('options');
+  if (!keys.includes('films')) keys.push('films');
+  return keys.map(key => ({ key, label: ORANGE_PROMO_GROUP_LABELS[key] || key }));
+}
+
+async function loadSectionOrder() {
+  const order = await resolveSectionOrder();
 
   const parent = document.getElementById('section-internet')?.parentElement;
   const anchor = document.getElementById('section-love-anchor');
@@ -1520,19 +1552,22 @@ function buildToggleRows(containerId, items) {
   });
 }
 
-// Rendu groupé des promos temporaires (Internet / Mobile / TV / Films / Options), avec séparateur
-// entre groupes, pour ne pas tout mélanger visuellement quand il y a beaucoup de promos actives en même temps.
+// Rendu groupé des promos temporaires, avec séparateur entre groupes, pour ne pas tout mélanger
+// visuellement quand il y a beaucoup de promos actives en même temps. L'ordre des groupes suit
+// automatiquement l'ordre des blocs produits (window._promoGroupOrder, calculé par le script Firebase
+// via loadSectionOrder/loadPromosFromFirestore) — repli sur cet ordre par défaut tant que non résolu.
 const PROMO_FAMILY_GROUPS = [
   { key: 'internet', label: '🌍 Internet' },
-  { key: 'mobile', label: '📱 Mobile' },
   { key: 'tv', label: '📺 TV' },
-  { key: 'films', label: '🎬 Films (Netflix, Disney+)' },
-  { key: 'options', label: '⚙️ Options' }
+  { key: 'mobile', label: '📱 Mobile' },
+  { key: 'options', label: '⚙️ Options' },
+  { key: 'films', label: '🎬 Films (Netflix, Disney+)' }
 ];
 function buildGroupedPromoRows(containerId, items) {
   const c = document.getElementById(containerId);
   c.innerHTML = '';
-  PROMO_FAMILY_GROUPS.forEach((group, idx) => {
+  const groups = window._promoGroupOrder || PROMO_FAMILY_GROUPS;
+  groups.forEach((group, idx) => {
     const groupItems = items
       .map((p, i) => ({ p, fallback: i }))
       .filter(x => (x.p.family || 'options') === group.key)
