@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Simulateur Orange (by Phil-Mobile)</title>
+
+<link rel="icon" type="image/png" href="images/logo.png">
+<link rel="apple-touch-icon" href="images/logo.png">
+<script src="version.js"></script>
+<script>
+// Vérifie en arrière-plan (sans bloquer l'affichage) si une version plus récente est en ligne,
+// et fait un nettoyage complet + rechargement automatique si c'est le cas (silencieux, sans rien
+// demander) — même nettoyage que le bouton manuel "Actualiser l'application", pour ne jamais rester
+// bloqué sur une vieille version à cause du cache navigateur/service worker.
+(async function(){
+  try {
+    const r = await fetch('version.js?t='+Date.now(), {cache:'no-store'});
+    const txt = await r.text();
+    const m = txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    if (!(m && window.APP_VERSION && m[1] !== window.APP_VERSION)) return;
+
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    location.reload();
+  } catch (e) {}
+})();
+</script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
+.header { background:#062B68; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; position:relative; overflow:hidden; }
+.header::after { content:''; position:absolute; left:0; right:0; bottom:0; height:6px; background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%); }
+@media (max-width: 480px) {
+  .header { padding:16px; gap:10px; }
+  .header-title { font-size:22px; }
+  .header-sub { font-size:13px; }
+  .header-actions { width:100%; align-items:center !important; }
+}
+.header-logo { width:64px; height:64px; border-radius:14px; background:white; padding:4px; object-fit:contain; flex-shrink:0; }
+.header-text { flex: 1; }
+.header-title { color:#fff; font-size:30px; font-weight:bold; }
+.header-by { color:rgba(255,255,255,0.8); font-size:14px;  }
+.header-sub { color:rgba(255,255,255,0.9); font-size:15px; }
+.section { background:white; border:1.5px solid #ffb680; border-radius:22px; padding:26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(0,0,0,0.06); }
+.section-title { font-size:24px; font-weight:700; color:#222; margin-bottom:22px; display:flex; align-items:center; gap:8px; }
+.product-row { display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid #f0f0f0; flex-wrap:wrap; }
+.product-row:last-child { border-bottom: none; }
+.product-name { flex:1; min-width:180px; font-size:18px; color:#222; line-height:1.3; }
+.product-sub { font-size:15px; color:#777; margin-top:4px; font-weight:500; line-height:1.4; }
+.product-price { font-size:18px; font-weight:bold; color:#333; min-width:100px; text-align:right; }
+.qty-ctrl { display: flex; align-items: center; gap: 5px; }
+.qty-btn { width:36px; height:36px; border-radius:10px; border:1px solid #ddd; background:white; color:#222; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.qty-btn:active { transform: scale(0.93); }
+@media (max-width: 480px) {
+  .product-row { align-items:flex-start; gap:8px; }
+  .product-name { flex:1 1 100%; }
+  .product-price { min-width:auto; margin-left:auto; }
+}
+.qty-val { font-size:18px; font-weight:bold; min-width:24px; text-align:center; color:#222; }
+.toggle-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); cursor: pointer; flex-wrap:wrap; }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-name { flex: 1; min-width:160px; font-size: 13px; color: var(--color-text-primary); line-height: 1.3; }
+.toggle-price { font-size: 26px !important; font-weight:700 !important; min-width: 140px; text-align: right; color: #cc4400; }
+.toggle-btn { width: 36px; height: 22px; border-radius: 11px; border: none; cursor: pointer; position: relative; flex-shrink: 0; }
+.toggle-btn.off { background: var(--color-border-secondary); }
+.toggle-btn.on { background: #ff6600; }
+@media (max-width: 480px) {
+  .toggle-row { align-items:flex-start; }
+  .toggle-name { flex:1 1 100%; }
+  .toggle-price { min-width:auto; margin-left:auto; }
+}
+.toggle-knob { position: absolute; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.toggle-btn.off .toggle-knob { left: 3px; }
+.toggle-btn.on .toggle-knob { left: 17px; }
+.love-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+.love-line { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; color: var(--color-text-tertiary); }
+.love-line.active { color: #cc4400; font-weight: 500; }
+.love-none { font-size: 12px; color: var(--color-text-tertiary);  padding: 4px 0; }
+.love-total { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; border-top: 0.5px solid var(--color-border-tertiary); margin-top: 6px; padding-top: 6px; color: var(--color-text-primary); }
+.summary { background:#ff5a14; border-radius:24px; padding:28px; margin-bottom:16px; }
+.sum-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.sum-label { font-size:18px; color:rgba(255,255,255,0.92); }
+.sum-val { font-size:18px; font-weight:bold; color:#fff; }
+.sum-divider { border: none; border-top: 0.5px solid rgba(255,255,255,0.3); margin: 8px 0; }
+.sum-total-val { font-size:48px; font-weight:bold; color:#fff; }
+.sum-total-label { font-size:24px; font-weight:bold; color:#fff; }
+.reset-btn { width: 100%; padding: 11px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 14px; cursor: pointer; }
+.active-line { background: #fff8f4; border-radius: 6px; }
+</style>
+
+<div style="height:6px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+
+<!-- LOGIN CONTAINER -->
+<div id="login-container" style="display:none;"></div>
+
+<!-- APP CONTENT -->
+<div class="app" id="orange-app" style="display:none;">
+  <div class="header">
+
+    <div class="header-text" style="flex:1;">
+      <div class="header-title">
+        Simulateur Orange
+      </div>
+
+     <div class="header-sub" style="font-size:16px;margin-top:4px;">
+        By Phil-Mobile.
+      </div>
+
+      <div style="margin-top:8px;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
+        Build <span id="app-version-1">…</span> Stable
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <img class="header-logo" id="logo-img" src="" alt="Logo consultant" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;" onerror="this.onerror=null;this.src=window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png'">
+        <div style="color:#fff;font-size:11px;line-height:1.4;">
+          <span class="consultant-name" style="font-weight:700;"></span>
+          &nbsp;·&nbsp;<span class="consultant-phone"></span>
+          &nbsp;·&nbsp;<span class="consultant-email"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions" style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+
+      <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
+        <button onclick="resetCache()" title="Actualiser l'application"
+          style="background:white;color:#ff5a14;border:none;border-right:2px solid white;padding:7px 12px;font-size:15px;cursor:pointer;line-height:1;">
+          🔧
+        </button>
+
+        <button id="btn-tvac" onclick="setTVAC(true)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:white;color:#ff5a14;">
+          TVAC
+        </button>
+
+        <button id="btn-htva" onclick="setTVAC(false)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:white;">
+          HTVA
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px;margin-bottom:16px;">
+  </div>
+
+  <div class="section" id="section-internet">
+    <div class="section-title"><i class="ti ti-wifi" aria-hidden="true"></i> Internet</div>
+    <div id="banner-internet-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="banner-internet-info-icon" style="flex-shrink:0;line-height:1.4;">🌍</span> <span id="banner-internet-info-text" style="line-height:1.4;">Si aucun forfait mobile n'est ajouté, un supplément de <strong>4€/mois</strong> s'applique (forfait Internet seul).</span>
+</div>
+    <div id="internet-rows"></div>
+  </div>
+  <div class="section" id="section-tv">
+    <div class="section-title"><i class="ti ti-device-tv" aria-hidden="true"></i> TV</div>
+    <div id="banner-tv-info" style="margin-bottom:12px;background:#f3e5f5;border:1px solid #8e24aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#8e24aa;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="banner-tv-info-icon" style="flex-shrink:0;line-height:1.4;">📺</span> <span id="banner-tv-info-text" style="line-height:1.4;">Options TV disponibles en complément de votre abonnement Internet.</span>
+</div>
+    <div id="tv-rows"></div>
+  </div>
+  <div class="section" id="section-mobile">
+    <div class="section-title"><i class="ti ti-device-mobile" aria-hidden="true"></i> Mobile</div>
+    <div id="banner-mobile-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="banner-mobile-info-icon" style="flex-shrink:0;line-height:1.4;">📱</span> <span id="banner-mobile-info-text" style="line-height:1.4;">Ajoutez un ou plusieurs forfaits mobiles à votre offre.</span>
+</div>
+    <div id="mobile-rows"></div>
+  </div>
+  <div class="section" id="section-options">
+    <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> Options</div>
+
+    <div style="margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
+      📌 FRAIS UNIQUES
+    </div>
+
+<div id="banner-frais-uniques" style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="banner-frais-uniques-icon" style="flex-shrink:0;line-height:1.4;">ℹ️</span> <span id="banner-frais-uniques-text" style="line-height:1.4;">Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.</span>
+</div>
+<div id="options-unique-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:9px 13px;font-size:13px;color:#1e88e5;font-weight:600;">
+      🌐 OPTION INTERNET
+    </div>
+    <div id="banner-options-mensuelles" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="banner-options-mensuelles-icon" style="flex-shrink:0;line-height:1.4;">📅</span> <span id="banner-options-mensuelles-text" style="line-height:1.4;">Options additionnelles pouvant être ajoutées à votre abonnement Internet.</span>
+</div>
+    <div id="options-internet-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#f3e5f5;border:1px solid #8e24aa;border-radius:10px;padding:9px 13px;font-size:13px;color:#8e24aa;font-weight:600;">
+      📺 OPTION TV
+    </div>
+    <div id="options-tv-rows"></div>
+
+    <div style="margin-top:15px;margin-bottom:10px;background:#ffebee;border:1px solid #c2185b;border-radius:10px;padding:9px 13px;font-size:13px;color:#c2185b;font-weight:600;">
+      🎬 LES OPTIONS FILMS
+    </div>
+    <div id="options-films-rows"></div>
+  </div>
+
+  <div class="section" id="section-love-anchor">
+    <div class="section-title"><i class="ti ti-heart" aria-hidden="true"></i> Remises Love — automatiques</div>
+    <div id="banner-remises-love" style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="banner-remises-love-icon" style="flex-shrink:0;line-height:1.4;">🧡</span> <span id="banner-remises-love-text" style="line-height:1.4;">Les remises Love sont calculées <strong>automatiquement</strong> selon les produits de votre panier (Internet + Mobile).</span>
+</div>
+    <div class="love-box" id="love-detail">
+      <div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> REMISES PERMANENTES</div>
+    <div id="banner-promos-permanentes" style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+      <span id="banner-promos-permanentes-icon" style="flex-shrink:0;line-height:1.4;">✅</span> <span id="banner-promos-permanentes-text" style="line-height:1.4;">Promotions permanentes et réductions uniques.</span>
+    </div>
+    <div id="promos-permanent-rows"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 OFFRES EN COURS</div>
+    <div id="promos-unified-date" style="display:none;margin-bottom:10px;font-size:13px;font-weight:700;color:#0369a1;">📅 </div>
+
+    <div id="promo-banner-important" style="margin-bottom:12px;background:#fff3e0;border:1px solid #ff9800;border-radius:10px;padding:10px 14px;font-size:13px;color:#e65100;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+<span id="promo-banner-important-icon" style="flex-shrink:0;line-height:1.4;">📢</span> <span id="promo-banner-important-text" style="line-height:1.4;">Important : Les promotions Orange peuvent être modifiées plusieurs fois au cours du mois. Vérifiez toujours les offres en vigueur dans <strong>My Smart</strong> avant toute simulation ou commande.</span>
+</div>
+
+    <div id="promos-rows"></div>
+
+    <div id="promo-banner-attention" style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
+      <span id="promo-banner-attention-icon" style="flex-shrink:0;line-height:1.4;">⚠️</span> <span id="promo-banner-attention-text" style="line-height:1.4;">Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.</span>
+    </div>
+  </div>
+
+  
+<div class="section">
+  <div class="section-title">👤 Informations client</div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Nom du client
+    </label>
+    <input id="client-name" type="text"
+      placeholder="Ex : Jean Dupont"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Société
+    </label>
+    <input id="client-company" type="text"
+      placeholder="Ex : Garage Dupont SRL"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Téléphone
+    </label>
+    <input id="client-phone" type="text"
+      placeholder="Ex : 0499 12 34 56"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Email
+    </label>
+    <input id="client-email" type="email"
+      placeholder="Ex : contact@societe.be"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      N° TVA
+    </label>
+    <input id="client-tva" type="text"
+      placeholder="Ex : BE0123.456.789"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+</div>
+
+<div class="summary">
+
+    <div class="sum-row" style="margin-bottom:10px;">
+      <span class="sum-total-label" style="font-size:18px;">Prix affichés</span>
+      <span id="tva-badge" style="background:rgba(255,255,255,0.25);color:white;font-weight:700;font-size:14px;padding:5px 16px;border-radius:20px;">TVAC (21%)</span>
+    </div>
+    <div class="sum-row"><span class="sum-label">Total produits</span><span class="sum-val" id="s-products">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📱 Total Mobiles (sans remise)</span><span class="sum-val" id="s-mobiles" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">🌐 Total Internet (sans remise)</span><span class="sum-val" id="s-internet" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">📺 Total TV (sans remise)</span><span class="sum-val" id="s-tv" style="font-size:13px;">0,00 €</span></div>
+    <div class="sum-row" style="padding-left:16px;opacity:0.85;"><span class="sum-label" style="font-size:13px;">⚙️ Total Options (sans remise)</span><span class="sum-val" id="s-options" style="font-size:13px;">0,00 €</span></div><div class="sum-row" id="home-row" style="display:none;"><span class="sum-label">🌐 Supplément Internet Home</span><span class="sum-val" id="s-home">+ 4,00 €</span></div><div class="sum-row"><span class="sum-label">📌 Frais uniques</span><span class="sum-val" id="s-frais">39,00 €</span></div>
+    <div class="sum-row"><span class="sum-label">Remise Orange Love mensuelle</span><span class="sum-val" id="s-love"><span style="font-size:18px;font-weight:700;font-family:Arial,sans-serif;color:#e54b16;">- 0,00 €</span></span></div>
+    
+<div class="sum-row">
+<span class="sum-label">🟠 Promotions 6 mois</span>
+<span class="sum-val" id="s-promos6">- 0,00 €</span>
+</div>
+<div class="sum-row">
+<span class="sum-label">🔴 Promotions 12 mois</span>
+<span class="sum-val" id="s-promos12">- 0,00 €</span>
+</div>
+<div class="sum-row">
+<span class="sum-label">💚 Promotions à vie</span>
+<span class="sum-val" id="s-promos-avie">- 0,00 €</span>
+</div>
+<div class="sum-row"><span class="sum-label">🎁 Promotions uniques</span><span class="sum-val" id="s-promos-unique">- 0,00 €</span></div>
+    <hr class="sum-divider">
+    <div class="sum-row">
+      <span class="sum-total-label">🏁 Tarifs après les promotions</span>
+      <span class="sum-total-val" id="s-total">0,00 €</span>
+    </div>
+    
+    <div class="sum-row" style="margin-top:12px;border-top:1px solid rgba(255,255,255,.35);padding-top:14px">
+      <span class="sum-label" style="color:#7CFF7C;font-weight:700;">🟢 Aujourd'hui</span>
+      <span class="sum-val" id="s-now" style="font-size:22px;font-weight:800;color:#7CFF7C;">0,00 €</span>
+    </div>
+    <div class="sum-row">
+      <span class="sum-label" style="color:#FFD166;font-weight:700;">🟠 Après 6 mois</span>
+      <span class="sum-val" id="s-6months" style="font-size:22px;font-weight:800;color:#FFD166;">0,00 €</span>
+    </div>
+    <div class="sum-row">
+      <span class="sum-label" style="color:#FF8A8A;font-weight:700;">🔴 Après 12 mois</span>
+      <span class="sum-val" id="s-12months" style="font-size:22px;font-weight:800;color:#FF8A8A;">0,00 €</span>
+    </div>
+
+    
+  </div>
+
+  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+</div>
+
+<div style="margin-top:-4px;margin-bottom:16px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
+  ⚠️ Tarifs indicatifs sous réserve de modification par Orange. Simulation réalisée le <span id="sim-date">…</span> — à confirmer lors de la souscription effective.
+</div>
+
+<script type="module">
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  where
+}
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88",
+  measurementId: "G-6TJR9GTK90"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Exposés globalement pour que le script classique plus bas (promos dynamiques) puisse les utiliser
+window.db = db;
+window.auth = auth;
+window.collection = collection;
+window.getDocs = getDocs;
+
+// Infos par défaut (fallback si aucun consultant identifié dans l'URL)
+window.consultantInfo = {
+  id: null,
+  name: 'Phil-Mobile',
+  phone: '0475 24 02 05',
+  email: 'infos@phil-mobile.be',
+  logoUrl: 'https://app.phil-mobile.be/images/logo.png'
+};
+
+(async function loadConsultantInfo(){
+  // Logo par défaut de l'app, configurable depuis l'admin (Firestore settings/app.logoUrl).
+  // images/logo.png reste l'ultime filet de sécurité si Firebase est injoignable.
+  try {
+    const settingsSnap = await getDoc(doc(db, 'settings', 'app'));
+    if (settingsSnap.exists() && settingsSnap.data().logoUrl) {
+      window.pmDefaultLogoUrl = settingsSnap.data().logoUrl;
+      window.consultantInfo.logoUrl = window.pmDefaultLogoUrl;
+      document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(link => link.href = window.pmDefaultLogoUrl);
+    }
+  } catch(e) {
+    console.log('Lecture logo par défaut impossible:', e.message);
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  let consultantId = params.get('consultantId');
+  const consultantName = params.get('consultantName');
+  const consultantEmail = params.get('consultantEmail');
+
+  if (consultantId) {
+    window.consultantInfo.id = consultantId;
+    window.consultantInfo.name = consultantName || window.consultantInfo.name;
+    window.consultantInfo.email = consultantEmail || window.consultantInfo.email;
+    window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+  }
+
+  // Attendre que Firebase confirme une éventuelle session déjà ouverte avant de lire Firestore
+  const authUser = await new Promise(resolve => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
+
+  if (!consultantId && authUser && authUser.email) {
+    // Pas de paramètre d'URL (page ouverte directement, pas via le hub) : on retrouve
+    // le consultant via son email de connexion Firebase (même logique que wp_comparatif.html).
+    try {
+      const q = query(collection(db, 'consultants'), where('email', '==', authUser.email));
+      const qs = await getDocs(q);
+      if (!qs.empty) {
+        const d0 = qs.docs[0];
+        consultantId = d0.id;
+        window.consultantInfo.id = consultantId;
+        window.consultantInfo.logoUrl = `https://app.phil-mobile.be/images/${consultantId}.png`;
+      }
+    } catch(e) {
+      console.log('Recherche du consultant par email impossible:', e.message);
+    }
+  }
+
+  // Récupérer le téléphone + la photo de profil (Firebase Storage) depuis Firestore
+  if (consultantId) {
+    try {
+      const snap = await getDoc(doc(db, 'consultants', consultantId));
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.phone) window.consultantInfo.phone = d.phone;
+        if (d.photoURL) window.consultantInfo.logoUrl = d.photoURL;
+        if (d.fullName || d.name) window.consultantInfo.name = consultantName || d.fullName || d.name;
+        if (!consultantEmail && d.emailOffres) window.consultantInfo.email = d.emailOffres;
+      }
+    } catch(e) {
+      console.log('Lecture téléphone/photo consultant impossible:', e.message);
+    }
+  }
+
+  // Logo : essaie le logo personnalisé, retombe sur le logo standard si absent
+  const logoImg = document.getElementById('logo-img');
+  if (logoImg) {
+    const testImg = new Image();
+    testImg.onload = () => { logoImg.src = window.consultantInfo.logoUrl; };
+    testImg.onerror = () => { logoImg.src = window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png'; };
+    testImg.src = window.consultantInfo.logoUrl;
+  }
+
+  // Met à jour l'affichage des coordonnées dans le footer si présent
+  document.querySelectorAll('.consultant-name').forEach(el => el.textContent = window.consultantInfo.name);
+  document.querySelectorAll('.consultant-phone').forEach(el => el.textContent = window.consultantInfo.phone);
+  document.querySelectorAll('.consultant-email').forEach(el => el.textContent = window.consultantInfo.email);
+})();
+
+// --- Promotions dynamiques depuis Firestore (admin.html) ---
+// Si la lecture échoue ou que la collection est vide, les promos codées en dur dans le script
+// classique plus bas (variables `promos` / `promosPermanent`) restent affichées tel quel : aucun risque de page vide.
+function formatDateFrOrange(isoDate) {
+  if (!isoDate) return '';
+  const [y, m, d] = isoDate.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+async function loadPromosFromFirestore() {
+  try {
+    let tries = 0;
+    while ((!window.buildToggleRows || !window.promos || !window.promosPermanent) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.buildToggleRows) throw new Error('Script principal pas encore prêt');
+
+    const snap = await getDocs(collection(db, 'promosOrange'));
+    const fetchedTemp = [];
+    const fetchedPermanent = [];
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    // Pré-scan : si toutes les offres temporaires (encore valides) partagent exactement
+    // la même période, on l'affiche une seule fois en haut plutôt que sur chaque carte.
+    const tempDatePairs = new Set();
+    let anyTempDate = null;
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      if (p.active === false || p.category === 'permanente') return;
+      if (p.dateDebut && todayStr < p.dateDebut) return;
+      if (p.dateFin && todayStr > p.dateFin) return;
+      if (!p.dateDebut && !p.dateFin) return;
+      const key = (p.dateDebut || '') + '|' + (p.dateFin || '');
+      tempDatePairs.add(key);
+      anyTempDate = p;
+    });
+    const unifiedDate = (tempDatePairs.size === 1) ? anyTempDate : null;
+    const unifiedDateEl = document.getElementById('promos-unified-date');
+    if (unifiedDateEl) {
+      if (unifiedDate) {
+        unifiedDateEl.style.display = 'block';
+        unifiedDateEl.innerHTML = `📅 ${unifiedDate.dateDebut ? 'Du ' + formatDateFrOrange(unifiedDate.dateDebut) : ''}${unifiedDate.dateFin ? ' au ' + formatDateFrOrange(unifiedDate.dateFin) : ''}`;
+      } else {
+        unifiedDateEl.style.display = 'none';
+      }
+    }
+
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      if (p.active === false) return;
+      // Masque automatiquement la promo si elle n'est pas (ou plus) dans sa période de validité
+      if (p.dateDebut && todayStr < p.dateDebut) return;
+      if (p.dateFin && todayStr > p.dateFin) return;
+
+      // Si une date unique s'affiche déjà en haut de la section "Offres en cours", on ne la répète
+      // pas sur chaque carte temporaire (les remises permanentes gardent toujours leur date individuelle).
+      const dateLabel = (!(unifiedDate && p.category !== 'permanente') && (p.dateDebut || p.dateFin))
+        ? `<br><span style="color:#0369a1;font-weight:700;">📅 ${p.dateDebut ? 'Du ' + formatDateFrOrange(p.dateDebut) : ''}${p.dateFin ? ' au ' + formatDateFrOrange(p.dateFin) : ''}</span>`
+        : '';
+
+      let durationBadge;
+      if (p.isUnique) {
+        durationBadge = '<span style="display:inline-block;background:#f3e8ff;color:#7c3aed;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">🎁 UNIQUE</span>';
+      } else if (p.duration === 6) {
+        durationBadge = '<span style="display:inline-block;background:#fff3e0;color:#e65100;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">🟠 6 MOIS</span>';
+      } else if (p.duration === 12) {
+        durationBadge = '<span style="display:inline-block;background:#ffebee;color:#c62828;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">🔴 12 MOIS</span>';
+      } else {
+        durationBadge = '<span style="display:inline-block;background:#e8f5e9;color:#2e7d32;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:6px;">💚 À VIE</span>';
+      }
+
+      const item = {
+        id: docSnap.id,
+        name: window.wrapPromoName(p.name || ''),
+        sub: durationBadge + '<br>' + (p.sub || '') + (p.condition ? '<br><span style="color:#cc4400;font-weight:700;">📌 ' + window.escapeHtmlOrange(p.condition) + '</span>' : '') + dateLabel,
+        price: Number(p.price) || 0,
+        perAbo: !!p.perAbo,
+        mobileId: p.mobileId || undefined,
+        requiresChild: !!p.requiresChild,
+        duration: p.duration || undefined,
+        isUnique: !!p.isUnique,
+        family: p.productFamily || (p.perAbo ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'divers')),
+        order: p.order !== undefined ? Number(p.order) : undefined,
+        autoProducts: Array.isArray(p.autoProducts) ? p.autoProducts : undefined
+      };
+      if (p.category === 'permanente') fetchedPermanent.push(item);
+      else fetchedTemp.push(item);
+    });
+
+    // Collection vide (pas encore importée côté admin) : on garde les valeurs par défaut codées en dur
+    if (fetchedTemp.length === 0 && fetchedPermanent.length === 0) return;
+
+    window.promos.length = 0;
+    window.promos.push(...fetchedTemp);
+    window.promosPermanent.length = 0;
+    window.promosPermanent.push(...fetchedPermanent);
+
+    Object.keys(window.togMap).forEach(k => delete window.togMap[k]);
+    [...window.promos, ...window.promosPermanent].forEach(p => window.togMap[p.id] = false);
+
+    document.getElementById('promos-rows').innerHTML = '';
+    document.getElementById('promos-permanent-rows').innerHTML = '';
+    window.buildToggleRows('promos-permanent-rows', window.promosPermanent);
+    window.buildGroupedPromoRows('promos-rows', window.promos);
+    window.renderOrangeApp();
+  } catch (err) {
+    console.log('Chargement promos Firestore impossible, conservation des promos par défaut:', err.message);
+  }
+}
+
+// --- Produits Orange dynamiques depuis Firestore (admin.html) ---
+// Édite uniquement nom/sous-titre/prix des produits existants (les id techniques ne sont jamais
+// modifiés ici, car ils sont référencés en dur ailleurs dans le calcul : hasInternet(), totalMobileAbo(), etc.).
+// Si la lecture échoue ou que la collection est vide, les produits codés en dur dans le script
+// classique plus bas (variable `productList` / `options`) restent affichés tel quel : aucun risque de page vide.
+async function loadProductsFromFirestore() {
+  try {
+    let tries = 0;
+    while ((!window.productList || !window.options || !window.buildQtyRows) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.productList) throw new Error('Script principal pas encore prêt');
+
+    const snap = await getDocs(collection(db, 'produitsOrange'));
+    if (snap.empty) return; // rien d'importé côté admin : on garde les valeurs par défaut codées en dur
+
+    snap.forEach(docSnap => {
+      const d = docSnap.data();
+      const id = docSnap.id;
+      const isOption = d.category === 'options';
+      const arr = isOption ? window.options : window.productList[d.category];
+      if (!arr) return;
+      let target = arr.find(x => x.id === id);
+      if (target) {
+        // Produit existant : mise à jour nom/sous-titre/prix/ordre/visibilité/condition
+        if (d.name) target.name = d.name;
+        if (d.sub !== undefined) target.sub = d.sub;
+        if (d.price !== undefined) target.price = Number(d.price);
+        if (d.order !== undefined) target.order = Number(d.order);
+        if (d.hidden) target.hidden = true;
+        if (d.condition !== undefined) target.condition = d.condition;
+      } else {
+        // Nouveau produit ajouté depuis l'admin : ajout à la liste + initialisation de sa quantité
+        target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true };
+        if (d.order !== undefined) target.order = Number(d.order);
+        if (d.condition) target.condition = d.condition;
+        if (d.category === 'internet') target.countsAsInternet = d.countsAsInternet !== false;
+        arr.push(target);
+        window.qtyMap[id] = 0;
+      }
+    });
+
+    // Retire les produits masqués depuis l'admin et retrie chaque catégorie selon l'ordre défini
+    // (fallback sur la position d'origine pour les produits jamais réordonnés).
+    const sortByOrder = (arr) => {
+      const withIdx = arr.map((p, i) => ({ p, fallback: i }));
+      return withIdx
+        .filter(x => !x.p.hidden)
+        .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
+        .map(x => x.p);
+    };
+    Object.keys(window.productList).forEach(cat => {
+      if (window.productList[cat]) window.productList[cat] = sortByOrder(window.productList[cat]);
+    });
+    // Important : on modifie le tableau "options" en place (et non une réaffectation) car
+    // le reste du script y fait référence directement via la variable locale `options`,
+    // qui ne verrait jamais un remplacement de window.options par un nouveau tableau.
+    const sortedOptions = sortByOrder(window.options);
+    window.options.length = 0;
+    window.options.push(...sortedOptions);
+
+    window.renderProductSections();
+
+    window.renderOrangeApp();
+  } catch (err) {
+    console.log('Chargement produits Firestore impossible, conservation des valeurs par défaut:', err.message);
+  }
+}
+
+// --- Bandeaux d'info éditables depuis l'admin (settings/promoBanners) ---
+// Repli sur le texte/icône/couleur codés en dur dans le HTML si rien n'est encore personnalisé.
+// Un seul doc Firestore, un champ par bandeau : {key}, {key}Icon, {key}Color.
+const ORANGE_BANNER_KEYS = ['important', 'attention', 'fraisUniques', 'optionsMensuelles', 'remisesLove', 'promosPermanentes', 'internetInfo', 'tvInfo', 'mobileInfo'];
+const ORANGE_BANNER_ELEMENT_IDS = {
+  important: 'promo-banner-important',
+  attention: 'promo-banner-attention',
+  fraisUniques: 'banner-frais-uniques',
+  optionsMensuelles: 'banner-options-mensuelles',
+  remisesLove: 'banner-remises-love',
+  promosPermanentes: 'banner-promos-permanentes',
+  internetInfo: 'banner-internet-info',
+  tvInfo: 'banner-tv-info',
+  mobileInfo: 'banner-mobile-info'
+};
+
+function hexToRgbOrange(hex) {
+  hex = (hex || '').replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  const num = parseInt(hex, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+function mixColorOrange(hex, target, amount) {
+  const [r, g, b] = hexToRgbOrange(hex);
+  const [tr, tg, tb] = target;
+  const mr = Math.round(r + (tr - r) * amount);
+  const mg = Math.round(g + (tg - g) * amount);
+  const mb = Math.round(b + (tb - b) * amount);
+  return `rgb(${mr},${mg},${mb})`;
+}
+function applyOrangeBannerColor(elId, hex) {
+  if (!hex) return;
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.style.background = mixColorOrange(hex, [255, 255, 255], 0.90);
+  el.style.borderColor = hex;
+  el.style.color = mixColorOrange(hex, [0, 0, 0], 0.35);
+}
+
+async function loadPromoBanners() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'promoBanners'));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    ORANGE_BANNER_KEYS.forEach(key => {
+      const elId = ORANGE_BANNER_ELEMENT_IDS[key];
+      if (d[key]) {
+        const textEl = document.getElementById(elId + '-text');
+        if (textEl) textEl.innerHTML = d[key];
+      }
+      if (d[key + 'Icon']) {
+        const iconEl = document.getElementById(elId + '-icon');
+        if (iconEl) iconEl.textContent = d[key + 'Icon'];
+      }
+      if (d[key + 'Color']) applyOrangeBannerColor(elId, d[key + 'Color']);
+    });
+  } catch (err) {
+    console.log('Chargement bandeaux impossible, valeurs par défaut conservées:', err.message);
+  }
+}
+
+// Ordre des 4 blocs produits (Internet/TV/Mobile/Options), réglable depuis l'admin.
+// Repli silencieux sur l'ordre codé en dur (Internet, TV, Mobile, Options) si rien n'est configuré.
+// Construit aussi le petit menu de navigation rapide en haut de page, dans le même ordre.
+const ORANGE_SECTION_LABELS = { internet: '🌍 Internet', tv: '📺 TV', mobile: '📱 Mobile', options: '⚙️ Options' };
+function scrollToOrangeSection(key) {
+  const el = document.getElementById('section-' + key);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+window.scrollToOrangeSection = scrollToOrangeSection;
+async function loadSectionOrder() {
+  let order = ['internet', 'tv', 'mobile', 'options'];
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'orangeSectionOrder'));
+    const fetched = snap.exists() ? snap.data().order : null;
+    if (Array.isArray(fetched) && fetched.length > 0) order = fetched;
+  } catch (err) {
+    console.log('Chargement ordre des blocs impossible, ordre par défaut conservé:', err.message);
+  }
+
+  const parent = document.getElementById('section-internet')?.parentElement;
+  const anchor = document.getElementById('section-love-anchor');
+  if (parent && anchor) {
+    order.forEach(key => {
+      const el = document.getElementById('section-' + key);
+      if (el) parent.insertBefore(el, anchor); // insertBefore sur un nœud déjà attaché le déplace (ne le duplique pas)
+    });
+  }
+
+  const nav = document.getElementById('orange-quick-nav');
+  if (nav) {
+    nav.innerHTML = order.map(key => `
+      <button onclick="scrollToOrangeSection('${key}')" style="flex:1;min-width:70px;padding:8px 6px;border:none;border-radius:8px;background:#fff3e8;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;">${ORANGE_SECTION_LABELS[key] || key}</button>
+    `).join('');
+  }
+}
+
+onAuthStateChanged(auth, () => {
+  loadPromosFromFirestore();
+  loadProductsFromFirestore();
+  loadPromoBanners();
+  loadSectionOrder();
+});
+</script>
+
+<script>
+
+async function resetCache() {
+  if (!confirm("Vider le cache de l'application ?")) return;
+
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      await reg.unregister();
+    }
+  }
+
+  localStorage.clear();
+  sessionStorage.clear();
+
+  alert("Cache vidé. Rechargement...");
+  const params = new URLSearchParams(location.search);
+  params.delete('refresh');
+  params.set('refresh', Date.now());
+  location.href = location.pathname + '?' + params.toString();
+}
+
+let isTVAC = true;
+
+const TVA = 1.21;
+
+
+function shareWhatsApp(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+  const today = new Date().toLocaleDateString('fr-BE');
+
+  const msg =
+`================================
+SIMULATION ORANGE
+================================
+
+Client : ${client}
+Téléphone : ${phone}
+
+✓ Aujourd'hui : ${document.getElementById('s-now').textContent}
+✓ Après 6 mois : ${document.getElementById('s-6months').textContent}
+✓ Après 12 mois : ${document.getElementById('s-12months').textContent}
+
+★ Tarifs après les promotions : ${document.getElementById('s-total').textContent}
+
+⚠️ Tarifs indicatifs sous réserve de modification par Orange.
+Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
+
+${ci.name}
+${ci.phone}
+${ci.email}`;
+
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg),'_blank');
+}
+
+function copyResume(){
+  const client = document.getElementById('client-name')?.value || '';
+  const phone = document.getElementById('client-phone')?.value || '';
+  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be' };
+  const today = new Date().toLocaleDateString('fr-BE');
+
+  const txt =
+`================================
+SIMULATION ORANGE
+================================
+
+Client : ${client}
+Téléphone : ${phone}
+
+✓ Aujourd'hui : ${document.getElementById('s-now').textContent}
+✓ Après 6 mois : ${document.getElementById('s-6months').textContent}
+✓ Après 12 mois : ${document.getElementById('s-12months').textContent}
+
+★ Tarifs après les promotions : ${document.getElementById('s-total').textContent}
+
+⚠️ Tarifs indicatifs sous réserve de modification par Orange.
+Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
+
+${ci.name}
+${ci.phone}
+${ci.email}`;
+
+  navigator.clipboard.writeText(txt);
+  alert('Résumé copié dans le presse-papiers');
+}
+
+
+
+
+function generateClientOffer(){
+const client=document.getElementById('client-name')?.value||'Client';
+const phone=document.getElementById('client-phone')?.value||'';
+const ref='PM-'+Date.now();
+const today=new Date().toLocaleDateString('fr-BE');
+const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png' };
+
+// Construit une ligne "Nom xQ — Total €/mois" (ou "(unique)" pour les frais uniques)
+function pmOffreLigne(p, q){
+ const nom=p.name.replace(/<[^>]*>/g,'');
+ const uniteHT=isTVAC?p.price:p.price/TVA;
+ const total=fmt(uniteHT*q);
+ const oneshot=p.oneshot===true || /unique/i.test(p.sub||'');
+ return nom+' x'+q+' — '+total+(oneshot?' (unique)':'/mois');
+}
+
+let produits=[];
+Object.values(productList).flat().forEach(p=>{
+ const q=qtyMap[p.id]||0;
+ if(q>0) produits.push(pmOffreLigne(p,q));
+});
+options.forEach(p=>{
+ const q=qtyMap[p.id]||0;
+ if(q>0) produits.push(pmOffreLigne(p,q));
+});
+
+// Cartes de promotions (permanentes + temporaires réunies, triées par type de badge) + remises Love automatiques
+// Le montant par carte reprend exactement la logique de calcPromos() (à garder synchronisé si celle-ci évolue).
+function pmPromoMontant(p){
+ if(p.isUnique) return p.price;
+ const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
+ if(p.mobileId==='_internet') return p.price*Math.max(1,inetCount);
+ if(p.perAbo && p.mobileId) return p.price*Math.max(1,qtyMap[p.mobileId]||0);
+ return p.price;
+}
+function pmPromoBadgeOrder(p){
+ if(p.isUnique) return 0;
+ if(p.duration===12) return 1;
+ if(p.duration===6) return 2;
+ return 3; // à vie
+}
+const r=isTVAC?1:1/TVA;
+let promoCards=[...promosPermanent,...promos]
+ .filter(p=>togMap[p.id])
+ .sort((a,b)=>pmPromoBadgeOrder(a)-pmPromoBadgeOrder(b))
+ .map(p=>{
+   const nom=p.name.replace(/<[^>]*>/g,'');
+   const montant=pmPromoMontant(p)*r;
+   const montantTxt='- '+fmt(montant)+(p.isUnique?'':'/mois');
+   return `<div style="border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+<div style="font-size:13px;font-weight:700;">${nom}</div>
+<div style="font-size:13px;font-weight:700;color:#2e7d32;white-space:nowrap;">${montantTxt}</div>
+</div>
+<div style="font-size:12px;margin-top:4px;">${p.sub||''}</div>
+</div>`;
+ });
+const loveResult=calcLoveLines();
+const loveTxt=loveResult.lines.filter(l=>l.active).map(l=>l.text+' — '+fmt(l.disc));
+const hasAnyPromo=promoCards.length||loveTxt.length;
+
+// Total des économies mensuelles + uniques (pour l'en-tête du bloc promotions)
+const promosCalc=calcPromos();
+const economieMensuelle=promosCalc.mensuel*r;
+const economieUnique=promosCalc.unique*r;
+
+// Prix catalogue (sans aucune promotion ni remise Love) — pour comparaison avec le prix promo
+const prodCatalog=calcProducts(), optsCatalog=calcOptionsBase();
+const homeFeeCatalog=(hasInternet() && totalMobileAbo()===0)?4:0;
+const catalogPrice=(prodCatalog+optsCatalog+homeFeeCatalog)*r;
+
+// Promos qui expirent à 6 mois / 12 mois (pour annoter les paliers de tarification)
+function pmPromoNamesByDuration(dur){
+ return [...promosPermanent,...promos]
+   .filter(p=>togMap[p.id] && !p.isUnique && p.duration===dur)
+   .map(p=>p.name.replace(/<[^>]*>/g,''));
+}
+const namesFin6=pmPromoNamesByDuration(6);
+const namesFin12=pmPromoNamesByDuration(12);
+const prom6Txt=promosCalc.promo6?fmt(promosCalc.promo6*r):null;
+const prom12Txt=promosCalc.promo12?fmt(promosCalc.promo12*r):null;
+
+const w=window.open('','_blank');
+w.document.write(`
+<html><head><title>Offre Client</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+<style>
+body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
+.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;}
+h1{color:#ff5a14;text-align:center}
+.btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
+</style></head><body>
+<div id="pdf-content">
+<div style="text-align:center">
+<h1>OFFRE COMMERCIALE</h1>
+</div>
+
+<div class="box">
+<b>Référence :</b> ${ref}<br>
+<b>Date :</b> ${today}<br>
+<b>Client :</b> ${client}<br>
+<b>Téléphone :</b> ${phone}<br>
+<b>Mode de prix :</b> ${isTVAC?'TVAC (21%)':'HTVA'}
+</div>
+
+<div class="box">
+<h3>📦 Produits sélectionnés</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
+${produits.length?produits.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join(''):'<div style="font-size:13px;">Aucun produit sélectionné</div>'}
+</div>
+</div>
+
+<div class="box">
+<h3>🎁 Promotions activées</h3>
+${!hasAnyPromo?'<div style="font-size:13px;">Aucune promotion active</div>':`
+<div style="background:#e8f5e9;border:1px solid #66bb6a;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#2e7d32;">
+💶 Total économies : - ${fmt(economieMensuelle)}/mois${economieUnique?' + '+fmt(economieUnique)+' (frais uniques offerts)':''}
+</div>`}
+
+${promoCards.length?`
+<div style="margin-bottom:12px;">${promoCards.join('')}</div>` : ''}
+
+${loveTxt.length?`
+<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">🧡 Remises Love — automatiques</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
+${loveTxt.map(t=>`<div style="font-size:13px;line-height:1.5;">${t}</div>`).join('')}
+</div>
+<div style="font-size:13px;font-weight:700;margin-top:8px;">Total remises Love — ${fmt(loveResult.total)}</div>` : ''}
+</div>
+
+<div class="box">
+<h3>💰 Tarification</h3>
+Prix catalogue (sans promotions) : ${fmt(catalogPrice)}/mois<br><br>
+🟢 Aujourd'hui : <b>${document.getElementById('s-now').textContent}</b><br>
+🟠 Après 6 mois : <b>${document.getElementById('s-6months').textContent}</b>${namesFin6.length?`<br><span style="font-size:12px;color:#856404;">↳ fin de ${namesFin6.join(', ')} (+ ${prom6Txt}/mois)</span>`:''}<br><br>
+🔴 Après 12 mois : <b>${document.getElementById('s-12months').textContent}</b>${namesFin12.length?`<br><span style="font-size:12px;color:#856404;">↳ fin de ${namesFin12.join(', ')} (+ ${prom12Txt}/mois)</span>`:''}<br><br>
+<hr>
+<b>🏁 Tarifs après les promotions : ${document.getElementById('s-total').textContent}</b>
+</div>
+
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:12px;color:#856404;font-weight:600;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;">
+⚠️ Tarifs indicatifs sous réserve de modification par Orange. Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
+</div>
+
+<div class="box" style="text-align:center;">
+<img src="${ci.logoUrl}" crossorigin="anonymous" width="90" onerror="this.onerror=null;this.removeAttribute('crossorigin');this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'" style="display:block;margin:0 auto 10px;"><br>
+<b>${ci.name.toUpperCase()}</b><br>
+${ci.phone}<br>
+${ci.email}
+</div>
+</div>
+
+<button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
+<script>
+// Génère un PDF à UNE seule page, dont la hauteur s'ajuste exactement au contenu
+// (au lieu de découper en pages A4, ce qui coupait les blocs entre deux pages).
+async function downloadOffrePDF(){
+  const btn=document.getElementById('pdf-download-btn');
+  btn.disabled=true;
+  btn.textContent='⏳ Génération en cours...';
+  const el=document.getElementById('pdf-content');
+
+  const genereAndSave=async()=>{
+    try{
+      const scale=2;
+      const canvas=await html2canvas(el,{scale:scale,useCORS:true});
+      const imgData=canvas.toDataURL('image/jpeg',0.98);
+      const mmPerPx=25.4/(96*scale);
+      const marginMm=10;
+      const pdfWidth=canvas.width*mmPerPx+marginMm*2;
+      const pdfHeight=canvas.height*mmPerPx+marginMm*2;
+      const { jsPDF }=window.jspdf;
+      const pdf=new jsPDF({unit:'mm',format:[pdfWidth,pdfHeight],orientation:'portrait'});
+      pdf.addImage(imgData,'JPEG',marginMm,marginMm,canvas.width*mmPerPx,canvas.height*mmPerPx);
+      pdf.save('Offre-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf');
+    } finally {
+      btn.disabled=false;
+      btn.textContent='📄 Télécharger le PDF';
+    }
+  };
+
+  // Attend que le logo soit VRAIMENT chargé (avec ses vraies dimensions) avant de générer
+  // le PDF. On ne peut pas se fier à un seul évènement load/error : si l'image d'origine
+  // échoue, son onerror bascule sur le logo de secours qui doit lui aussi finir de charger,
+  // sinon html2canvas capture l'image en plein milieu du remplacement (logo invisible).
+  const logoImg=document.querySelector('#pdf-content img');
+  if(logoImg){
+    const attendreLogo=()=>new Promise(resolve=>{
+      const debut=Date.now();
+      const verifier=()=>{
+        if((logoImg.complete && logoImg.naturalWidth>0) || Date.now()-debut>4000) resolve();
+        else setTimeout(verifier,50);
+      };
+      verifier();
+    });
+    attendreLogo().then(genereAndSave);
+  } else {
+    genereAndSave();
+  }
+}
+<\/script>
+</body></html>`);
+w.document.close();
+}
+
+
+
+function setTVAC(tvac) {
+  isTVAC = tvac;
+  document.getElementById('btn-tvac').style.background = tvac ? 'white' : 'transparent';
+  document.getElementById('btn-tvac').style.color = tvac ? '#ff5a14' : 'white';
+  document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
+  document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
+  document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
+  ['internet-rows','tv-rows','mobile-rows','options-internet-rows','options-tv-rows','options-films-rows','options-unique-rows','promos-rows','promos-permanent-rows'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  
+
+
+renderProductSections();
+  buildToggleRows('promos-permanent-rows', promosPermanent);
+  buildGroupedPromoRows('promos-rows', promos);
+  // Restaurer les quantités
+  document.querySelectorAll('.qty-val').forEach(el => {
+    const id = el.id.replace('qty-','');
+    el.textContent = qtyMap[id] || 0;
+  });
+  render();
+}
+
+function priceFmt(p) {
+  const val = isTVAC ? p : p / TVA;
+  return fmt(Math.abs(val));
+}
+
+const productList = {
+  internet: [
+    { id:'inet_start', name:'Internet Start', sub:'Vitesse jusqu\'à 200MB', price:49, max:2 },
+    { id:'inet_zen',   name:'Internet Zen',   sub:'Vitesse jusqu\'à 500MB', price:58, max:2 },
+    { id:'inet_giga',  name:'Internet Giga',  sub:'Vitesse jusqu\'à 1000MB', price:68, max:2 },
+    { id:'inet_fixe',  name:'Ligne Fixe',     sub:'Téléphone fixe', price:12, max:2, countsAsInternet:false },
+  ],
+  tv: [
+    { id:'tv_deco',   name:'TV Deco Sup', price:9,  max:1 },
+    { id:'tv_light',  name:'TV Light',    price:10, max:1 },
+    { id:'tv_orange', name:'TV Orange',   price:20, max:1 },
+  ],
+  mobile: [
+    { id:'mob_small',  name:'Mobile Small 12GB',      price:15, max:9 },
+    { id:'mob_medium', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium</span> 70GB',     price:23, max:9 },
+    { id:'mob_large',  name:'Mobile Large 140GB',     price:29, max:9 },
+    { id:'mob_unlim',  name:'Mobile Unlimited 300GB', price:40, max:9 },
+    { id:'mob_child',  name:'Mobile Child 5GB',       price:5,  max:9 },
+  ],
+  netflix: [
+    { id:'net_ess',  name:'Netflix Essentiel', price:10.99, max:1 },
+    { id:'net_std',  name:'Netflix Standard',  price:16.99, max:1 },
+    { id:'net_prem', name:'Netflix Premium',   price:21.99, max:1 },
+  ],
+  disney: [
+    { id:'disney_std_ads', name:'Disney+ Standard avec Pub', price:6.99,  max:1 },
+    { id:'disney_std',     name:'Disney+ Standard',          price:10.99, max:1 },
+    { id:'disney_prem',    name:'Disney+ Premium',           price:15.99, max:1 },
+  ],
+};
+
+const options = [
+  { id:'opt_install_m', name:"Frais d'activation",         sub:'Frais Unique',   price:39 },
+  { id:'opt_raccord',   name:'Frais de Raccordement',        sub:'Si pas de cable dans la maison (Frais d\'installation)', price:99, oneshot:true },
+  { id:'opt_booster',   name:'WiFi Booster',                 sub:'Prix / booster', price:3, max:5 },
+  { id:'opt_confort',   name:'Option WiFi Confort',          sub:'3 Booster + Boitier 4G (Prix / mois)', price:10 },
+  
+  { id:'opt_surf',      name:'Carte Extra Surf Mobile',      sub:'Prix par carte', price:3, max:9 },
+];
+
+const promosPermanent = [
+  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'-10€/mois · À vie', price:10, perAbo:false, duration:12 },
+  { id:'pr_activation', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">🎁 Frais d’activation offerts</span>', sub:'-39€ · Remise unique', price:39, perAbo:false, isUnique:true },
+  { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'-5,99€/mois · À vie', price:5.99, perAbo:false, duration:6 },
+];
+
+const promos = [
+  { id:'pr_start', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Start</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6, family:'internet' },
+  { id:'pr_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Zen</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6, family:'internet' },
+  { id:'pr_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Giga</span>', sub:'-15€/mois pendant 12 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:12, family:'internet' },
+  { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium", duration:6, family:'mobile' },
+  { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true, duration:6, family:'mobile' },
+  { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large", duration:12, family:'mobile' },
+  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6, family:'divers' },
+  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12, family:'divers' }
+];
+
+const loveRates = {
+  mob_small:  { rateNoInet: 1,    rateInet1: 3,    rateInet2: 4    },
+  mob_medium: { rateNoInet: 2,    rateInet1: 6,    rateInet2: 8    },
+  mob_large:  { rateNoInet: 2.5,  rateInet1: 6.5,  rateInet2: 9    },
+  mob_unlim:  { rateNoInet: 3,    rateInet1: 7,    rateInet2: 10   },
+};
+
+const qtyMap = {};
+[...Object.values(productList).flat(), ...options].forEach(p => qtyMap[p.id] = 0);
+const togMap = {};
+[...promos, ...promosPermanent].forEach(p => togMap[p.id] = false);
+// Suivi des promos activées/désactivées manuellement par le consultant : dès qu'il touche une promo,
+// on ne la gère plus automatiquement (il garde la main), jusqu'à un "Réinitialiser".
+const togMapManualOverride = new Set();
+
+// Active/désactive automatiquement les promos qui ont des "produits requis" (champ autoProducts,
+// réglé depuis l'admin) dès que ces produits sont sélectionnés avec une quantité ≥ 1 — sauf si le
+// consultant a lui-même touché la promo, auquel cas son choix est respecté.
+function autoApplyPromos() {
+  [...promos, ...promosPermanent].forEach(p => {
+    if (!p.autoProducts || !p.autoProducts.length) return;
+    if (togMapManualOverride.has(p.id)) return;
+    togMap[p.id] = p.autoProducts.every(pid => (qtyMap[pid] || 0) >= 1);
+  });
+}
+
+function fmt(v) { return Math.abs(v).toFixed(2).replace('.',',') + ' €'; }
+function hasInternet() { return (productList.internet || []).some(p => p.countsAsInternet !== false && (qtyMap[p.id] || 0) > 0); }
+function totalMobileAbo() { return (productList.mobile || []).reduce((s, p) => s + (qtyMap[p.id] || 0), 0); }
+
+// Calcule les lignes de remise Love (pur, sans toucher au DOM) — réutilisé par calcLove()
+// pour l'affichage à l'écran et par generateClientOffer() pour le PDF.
+function calcLoveLines() {
+  const inet = hasInternet();
+  const totalAbo = totalMobileAbo();
+  let total = 0;
+  const lines = [];
+  [{ id:'mob_small', label:'Small' },{ id:'mob_medium', label:'Medium' },{ id:'mob_large', label:'Large' },{ id:'mob_unlim', label:'Unlimited' }].forEach(({ id, label }) => {
+    const qty = qtyMap[id] || 0;
+    if (qty === 0) return;
+    const rates = loveRates[id];
+    let ratePerAbo = 0, palier = '';
+    if (inet && totalAbo >= 2) {
+      ratePerAbo = rates.rateInet2;
+      palier = '×' + qty + ' + internet (2+ abo) → ' + fmt(rates.rateInet2) + '/abo';
+    } else if (inet && totalAbo === 1) {
+      ratePerAbo = rates.rateInet1;
+      palier = '×' + qty + ' + internet → ' + fmt(rates.rateInet1) + '/abo';
+    } else if (!inet && totalAbo >= 2) {
+      ratePerAbo = rates.rateNoInet;
+      palier = '×' + qty + ' sans internet → ' + fmt(rates.rateNoInet) + '/abo';
+    } else {
+      lines.push({ text: label + ' ×1 — internet requis pour remise', disc: 0, active: false });
+      return;
+    }
+    const disc = qty * ratePerAbo;
+    total += disc;
+    lines.push({ text: label + ' ' + palier, disc, active: true });
+  });
+  return { lines, total };
+}
+
+function calcLove() {
+  const { lines, total } = calcLoveLines();
+  const box = document.getElementById('love-detail');
+  if (lines.length === 0) {
+    box.innerHTML = '<div class="love-none"><span class="product-name"><span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Ajoutez internet + mobile pour voir les remises</span></span></div>';
+  } else {
+    let html = lines.map(l =>
+      `<div class="love-line${l.active ? ' active' : ''}"><span>${l.text}</span><span>${l.active ? '- ' + fmt(l.disc) : '—'}</span></div>`
+    ).join('');
+    html += `<div class="love-total"><span>Total remises Love</span><span>- ${fmt(total)}</span></div>`;
+    box.innerHTML = html;
+  }
+  return total;
+}
+
+function calcProducts() {
+  let t = 0;
+  Object.values(productList).flat().forEach(p => { t += p.price * (qtyMap[p.id]||0); });
+  return t;
+}
+function calcOptionsBase() {
+  let t = 0;
+  // Toute option "brute" (booster/confort/carte surf) sauf les frais uniques gérés à part.
+  options.filter(o => !['opt_install_m', 'opt_raccord'].includes(o.id)).forEach(o => {
+    t += o.price * (qtyMap[o.id] || 0);
+  });
+  return t;
+}
+
+function calcFraisUniques() {
+
+  let frais = 0;
+
+  if (hasInternet()) {
+    frais += 39;
+  }
+
+  frais += (qtyMap['opt_raccord'] || 0) * 99;
+
+  return frais;
+}
+function calcPromos() {
+  let mensuel=0, unique=0, promo6=0, promo12=0;
+  const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
+
+  [...promos,...promosPermanent].forEach(p=>{
+    if(!togMap[p.id]) return;
+
+    if(p.isUnique){ unique += p.price; return; }
+
+    let montant=0;
+    if(p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
+    // Note 7.8.3 : l'ancienne condition "requiresChild" (Mobile Child obligatoire) est neutralisée.
+    // Les conditions particulières sont désormais purement informatives (champ "condition" géré dans l'admin).
+    else if(p.perAbo && p.mobileId){
+      montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+    } else montant = p.price;
+
+    mensuel += montant;
+
+    if(p.duration===6) promo6 += montant;
+    if(p.duration===12) promo12 += montant;
+  });
+
+  return {mensuel, unique, promo6, promo12};
+}
+
+function calcMobiles() {
+  let t = 0;
+  (productList.mobile || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+
+// Internet/TV "de base" uniquement (les ajouts personnalisés depuis l'admin rejoignent Options)
+function calcInternetBase() {
+  let t = 0;
+  (productList.internet || []).filter(p => !p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+function calcTVBase() {
+  let t = 0;
+  (productList.tv || []).filter(p => !p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+// Total Options = options brutes (booster/confort/surf) + ajouts perso Internet/TV + tous les films (Netflix/Disney)
+function calcOptionsTotal() {
+  let t = calcOptionsBase();
+  (productList.internet || []).filter(p => p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.tv || []).filter(p => p.custom).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.netflix || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.disney || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+// Total Internet, TV & Acc. combiné (utilisé pour le calcul du total général, inchangé)
+function calcInternet() {
+  let t = 0;
+  (productList.internet || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.tv || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.netflix || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  (productList.disney || []).forEach(p => { t += p.price * (qtyMap[p.id] || 0); });
+  return t;
+}
+
+function render() {
+  const prod = calcProducts(), opts = calcOptionsBase(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel;
+  const prom6 = promosCalc.promo6 || 0;
+  const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
+  const promAVie = prom - prom6 - prom12; // part des remises mensuelles sans durée fixe (permanentes)
+  const mob = calcMobiles(), inetBase = calcInternetBase(), tvBase = calcTVBase(), optionsTotal = calcOptionsTotal();
+  const hasInet = hasInternet();
+  const mobileCount = totalMobileAbo();
+  const homeFee = (hasInet && mobileCount===0) ? 4 : 0;
+  const total = Math.max(0, prod + opts + homeFee - love - prom);
+  const after = Math.max(0, prod + opts + homeFee - love - promAVie);
+  const r = isTVAC ? 1 : 1/TVA;
+  document.getElementById('s-products').textContent = fmt(prod*r);
+  document.getElementById('s-mobiles').textContent = fmt(mob*r);
+  document.getElementById('s-internet').textContent = fmt(inetBase*r);
+  document.getElementById('s-tv').textContent = fmt(tvBase*r);
+  document.getElementById('s-options').textContent = fmt(optionsTotal*r);
+  const hr=document.getElementById('home-row');
+  if(hr){hr.style.display=homeFee?'flex':'none';}
+  const sh=document.getElementById('s-home');
+  if(sh){sh.textContent='+ ' + fmt(homeFee*r);}
+  document.getElementById('s-love').textContent = '- ' + fmt(love*r);
+  const p6=document.getElementById('s-promos6');
+  const p12=document.getElementById('s-promos12');
+  if(p6) p6.textContent='- ' + fmt(prom6*r);
+  if(p12) p12.textContent='- ' + fmt(prom12*r);
+  const pAVie=document.getElementById('s-promos-avie');
+  if(pAVie) pAVie.textContent='- ' + fmt(promAVie*r);
+  document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
+  document.getElementById('s-total').textContent = fmt(total*r);
+  
+
+  const after12 = after;
+  const after6 = Math.max(0, after - prom12);
+  const today = Math.max(0, after - prom6 - prom12);
+
+  const n=document.getElementById('s-now');
+  const m6=document.getElementById('s-6months');
+  const m12=document.getElementById('s-12months');
+
+  if(n) n.textContent = fmt(today*r);
+  if(m6) m6.textContent = fmt(after6*r);
+  if(m12) m12.textContent = fmt(after12*r);
+  [...promos, ...promosPermanent].forEach(p => {
+    if (!p.perAbo || !p.mobileId) return;
+    const qty = qtyMap[p.mobileId] || 0;
+    const el = document.querySelector('[data-id="'+p.id+'"] .toggle-name');
+    if (el) {
+      const calc = togMap[p.id] && qty > 0 ? ' = - ' + fmt(p.price * qty) : '';
+      el.innerHTML = p.name + (qty > 1 ? ' ×'+qty : '') + calc + '<br><span class="product-sub">'+p.sub+'</span>';
+    }
+  });
+  document.querySelectorAll('.product-row').forEach(row => {
+    if (row.dataset.id) row.classList.toggle('active-line', (qtyMap[row.dataset.id]||0) > 0);
+  });
+  document.querySelectorAll('.toggle-row').forEach(row => {
+    if (row.dataset.id) {
+      row.classList.toggle('active-line', togMap[row.dataset.id]);
+      const btn = row.querySelector('.toggle-btn');
+      if (btn) btn.className = 'toggle-btn ' + (togMap[row.dataset.id] ? 'on' : 'off');
+    }
+  });
+  localStorage.setItem('orangeSimToday', (today*r).toFixed(2));
+  localStorage.setItem('orangeSimAfter6', (after6*r).toFixed(2));
+  localStorage.setItem('orangeSimAfter12', (after12*r).toFixed(2));
+  
+  // Sauvegarder aussi les infos du consultant
+  const clientName = document.getElementById('client-name')?.value || '';
+  const clientPhone = document.getElementById('client-phone')?.value || '';
+  const clientEmail = document.getElementById('client-email')?.value || '';
+  localStorage.setItem('consultantName', clientName);
+  localStorage.setItem('consultantPhone', clientPhone);
+  localStorage.setItem('consultantEmail', clientEmail);
+  
+  // Sauvegarder les DÉTAILS COMPLETS de l'offre
+  const offerDetails = {
+    produits: fmt(prod*r),
+    mobiles: fmt(mob*r),
+    internet: fmt(inetBase*r),
+    tv: fmt(tvBase*r),
+    options: fmt(optionsTotal*r),
+    fraisUniques: homeFee ? fmt(homeFee*r) : '0,00 €',
+    remisesLove: fmt(love*r),
+    promos6mois: fmt(prom6*r),
+    promos12mois: fmt(prom12*r),
+    promosUniques: fmt(promUnique*r),
+    fraisTotal: fmt((frais-promUnique)*r),
+    sousTotal: fmt(after*r),
+    prixAujourdhui: fmt(today*r),
+    prixApres6mois: fmt(after6*r),
+    prixApres12mois: fmt(after12*r),
+    qtyMap: JSON.stringify(qtyMap),
+    togMap: JSON.stringify(togMap)
+  };
+  localStorage.setItem('orangeOfferDetails', JSON.stringify(offerDetails));
+}
+
+function change(id, delta, max) {
+  qtyMap[id] = Math.max(0, Math.min(max || 9, (qtyMap[id]||0) + delta));
+  document.getElementById('qty-' + id).textContent = qtyMap[id];
+  autoApplyPromos();
+  render();
+}
+function togglePromo(id) { togMapManualOverride.add(id); togMap[id] = !togMap[id]; render(); }
+function resetAll() {
+  Object.keys(qtyMap).forEach(k => qtyMap[k] = 0);
+  Object.keys(togMap).forEach(k => togMap[k] = false);
+  togMapManualOverride.clear();
+  document.querySelectorAll('.qty-val').forEach(el => el.textContent = '0');
+  render();
+}
+
+function buildProductRow(p) {
+  const max = p.max || 1;
+  const row = document.createElement('div');
+  row.className = 'product-row';
+  row.dataset.id = p.id;
+  row.innerHTML = `
+    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}${p.condition ? '<br><span style="font-size:13px;color:#cc4400;font-weight:700;">📌 '+p.condition+'</span>' : ''}</div>
+    <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
+    <div class="qty-ctrl">
+      <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
+      <span class="qty-val" id="qty-${p.id}">0</span>
+      <button class="qty-btn" onclick="change('${p.id}',1,${max})" aria-label="Plus">+</button>
+    </div>`;
+  return row;
+}
+
+function buildQtyRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  items.forEach(p => c.appendChild(buildProductRow(p)));
+}
+
+// Sépare les produits "de base" des produits ajoutés depuis l'admin ("custom"), avec une ligne
+// de séparation "➕ Options" — évite de tout mélanger quand plusieurs options sont ajoutées (ex: TV).
+function buildGroupedQtyRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  const base = items.filter(p => !p.custom);
+  const options = items.filter(p => p.custom);
+  base.forEach(p => c.appendChild(buildProductRow(p)));
+  if (options.length > 0) {
+    const sep = document.createElement('div');
+    sep.style.cssText = 'border-top:2px solid #f0f0f0;margin:10px 0 8px;padding-top:10px;font-size:12px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.03em;';
+    sep.textContent = '➕ Options';
+    c.appendChild(sep);
+    options.forEach(p => c.appendChild(buildProductRow(p)));
+  }
+}
+
+// Rendu unique de toutes les catégories produits/options selon le nouveau découpage :
+// Internet et TV n'affichent que leurs produits "de base" ; tout ajout personnalisé (Internet/TV)
+// ainsi que Netflix/Disney+ rejoignent la section Options (3 sous-groupes : Internet / TV / Films).
+function renderProductSections() {
+  const internetItems = productList.internet || [];
+  const tvItems = productList.tv || [];
+
+  const elInternet = document.getElementById('internet-rows');
+  if (elInternet) { elInternet.innerHTML = ''; buildQtyRows('internet-rows', internetItems.filter(p => !p.custom)); }
+
+  const elTv = document.getElementById('tv-rows');
+  if (elTv) { elTv.innerHTML = ''; buildQtyRows('tv-rows', tvItems.filter(p => !p.custom)); }
+
+  const elMobile = document.getElementById('mobile-rows');
+  if (elMobile) buildGroupedQtyRows('mobile-rows', productList.mobile || []);
+
+  const elOptInternet = document.getElementById('options-internet-rows');
+  if (elOptInternet) {
+    elOptInternet.innerHTML = '';
+    buildQtyRows('options-internet-rows', [...options.filter(o => !['opt_raccord', 'opt_install_m'].includes(o.id)), ...internetItems.filter(p => p.custom)]);
+  }
+
+  const elOptTv = document.getElementById('options-tv-rows');
+  if (elOptTv) { elOptTv.innerHTML = ''; buildQtyRows('options-tv-rows', tvItems.filter(p => p.custom)); }
+
+  const elOptFilms = document.getElementById('options-films-rows');
+  if (elOptFilms) {
+    elOptFilms.innerHTML = '';
+    buildQtyRows('options-films-rows', [...(productList.netflix || []), ...(productList.disney || [])]);
+  }
+
+  const elUnique = document.getElementById('options-unique-rows');
+  if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.id === 'opt_raccord')); }
+}
+
+function buildToggleRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  items.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'toggle-row';
+    row.dataset.id = p.id;
+    row.onclick = () => togglePromo(p.id);
+    row.innerHTML = `
+      <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+      <div class="toggle-price">- ${priceFmt(p.price)}</div>
+      <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
+    c.appendChild(row);
+  });
+}
+
+// Rendu groupé des promos temporaires (Internet / Mobile / TV / Autres), avec séparateur entre groupes,
+// pour ne pas tout mélanger visuellement quand il y a beaucoup de promos actives en même temps.
+const PROMO_FAMILY_GROUPS = [
+  { key: 'internet', label: '🌍 Internet' },
+  { key: 'mobile', label: '📱 Mobile' },
+  { key: 'tv', label: '📺 TV' },
+  { key: 'divers', label: '🎁 Autres (Netflix, Disney+...)' }
+];
+function buildGroupedPromoRows(containerId, items) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  PROMO_FAMILY_GROUPS.forEach((group, idx) => {
+    const groupItems = items
+      .map((p, i) => ({ p, fallback: i }))
+      .filter(x => (x.p.family || 'divers') === group.key)
+      .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
+      .map(x => x.p);
+    if (groupItems.length === 0) return;
+    if (idx > 0 && c.children.length > 0) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'border-top:2px solid #f0f0f0;margin:14px 0 10px;';
+      c.appendChild(sep);
+    }
+    const header = document.createElement('div');
+    header.style.cssText = 'font-size:12px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;';
+    header.textContent = group.label;
+    c.appendChild(header);
+    groupItems.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'toggle-row';
+      row.dataset.id = p.id;
+      row.onclick = () => togglePromo(p.id);
+      row.innerHTML = `
+        <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+        <div class="toggle-price">- ${priceFmt(p.price)}</div>
+        <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
+      c.appendChild(row);
+    });
+  });
+}
+
+renderProductSections();
+buildToggleRows('promos-permanent-rows', promosPermanent);
+buildGroupedPromoRows('promos-rows', promos);
+render();
+
+// Exposés globalement pour permettre le rafraîchissement dynamique des promos ET produits depuis Firestore (voir module plus haut)
+window.promos = promos;
+window.promosPermanent = promosPermanent;
+window.togMap = togMap;
+window.buildToggleRows = buildToggleRows;
+window.buildGroupedPromoRows = buildGroupedPromoRows;
+window.renderOrangeApp = render;
+window.productList = productList;
+window.options = options;
+window.buildQtyRows = buildQtyRows;
+window.buildGroupedQtyRows = buildGroupedQtyRows;
+window.renderProductSections = renderProductSections;
+window.qtyMap = qtyMap;
+window.escapeHtmlOrange = function(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+};
+window.wrapPromoName = function(text) {
+  return '<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">' + window.escapeHtmlOrange(text) + '</span>';
+};
+</script>
+
+
+<style>
+.love-row,
+.promo-row{
+font-size:17px !important;
+font-weight:500 !important;
+line-height:1.5 !important;
+}
+</style>
+
+
+<style>
+
+/* Harmonisation LOVE + PROMOS */
+
+.section .product-name{
+font-size:18px !important;
+font-weight:500 !important;
+color:#222 !important;
+line-height:1.4 !important;
+}
+
+.section .product-sub{
+font-size:15px !important;
+font-weight:500 !important;
+color:#777 !important;
+line-height:1.4 !important;
+font-style:normal !important;
+}
+
+</style>
+
+<script>
+document.querySelectorAll('[id^="app-version"]').forEach(el => {
+  el.textContent = window.APP_VERSION || '?';
+});
+const simDateEl = document.getElementById('sim-date');
+if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
+
+
+</script>
+
+<!-- FIREBASE AUTH - LOGIN SCREEN -->
+<script>
+(async () => {
+  try {
+    const { signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
+
+    // Réutilise la connexion Firebase déjà initialisée plus haut dans le fichier
+    // (un 2e appel à initializeApp() ici provoquait une erreur "app/duplicate-app" qui empêchait
+    // ce bloc de s'exécuter, et donc désactivait complètement l'écran de connexion).
+    // IMPORTANT : ce script (classique) peut s'exécuter AVANT le module plus haut (différé par le
+    // navigateur) selon la vitesse réseau — on attend donc explicitement que window.auth existe
+    // pour éviter un crash aléatoire ("Cannot read properties of undefined (reading 'onAuthStateChanged')").
+    let authWaitTries = 0;
+    while (!window.auth && authWaitTries < 50) {
+      await new Promise(r => setTimeout(r, 50));
+      authWaitTries++;
+    }
+    const auth = window.auth;
+    if (!auth) throw new Error('Connexion Firebase indisponible (délai dépassé)');
+
+    const loginHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
+        <div style="background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
+          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Build ${window.APP_VERSION || '?'}</div>
+          <div style="font-size:24px;font-weight:bold;color:#222;margin-bottom:8px;">Simulateur Orange</div>
+          <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Connectez-vous avec votre adresse e-mail.</div>
+          
+          <input type="email" id="orange-email" placeholder="Votre adresse e-mail" autocomplete="email"
+            style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+          
+          <input type="password" id="orange-password" placeholder="Votre mot de passe" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') window.orangeLogin();"
+            style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+          
+          <div id="orange-error" style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">Adresse e-mail ou mot de passe incorrect.</div>
+          
+          <button onclick="window.orangeLogin()" style="background:#f97316;color:white;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Connexion</button>
+          
+          <div onclick="window.orangeForgotPassword()" style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">Mot de passe oublié ?</div>
+        </div>
+      </div>
+    `;
+    
+    window.orangeAuth = auth;
+    window.orangeLogin = async function() {
+      const email = document.getElementById('orange-email')?.value;
+      const password = document.getElementById('orange-password')?.value;
+      const errorDiv = document.getElementById('orange-error');
+      
+      if (!email || !password) {
+        if (errorDiv) errorDiv.style.display = 'block';
+        return;
+      }
+      
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        if (errorDiv) errorDiv.style.display = 'none';
+      } catch (error) {
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'Adresse e-mail ou mot de passe incorrect.';
+        }
+      }
+    };
+    
+    window.orangeForgotPassword = async function() {
+      const email = document.getElementById('orange-email')?.value;
+      if (!email) {
+        alert('Veuillez entrer votre adresse e-mail');
+        return;
+      }
+      
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert('Email de réinitialisation envoyé. Vérifiez votre boîte de réception.');
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    };
+    
+    onAuthStateChanged(auth, (user) => {
+      const loginContainer = document.getElementById('login-container');
+      const appDiv = document.getElementById('orange-app');
+      
+      if (!user) {
+        if (loginContainer) {
+          loginContainer.innerHTML = loginHTML;
+          loginContainer.style.display = 'block';
+        }
+        if (appDiv) appDiv.style.display = 'none';
+      } else {
+        if (loginContainer) loginContainer.style.display = 'none';
+        if (appDiv) appDiv.style.display = 'block';
+      }
+    });
+  } catch(err) {
+    console.error('Firebase init failed:', err);
+  }
+})();
+</script>
+
+
