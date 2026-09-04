@@ -548,7 +548,8 @@
                 <option value="mobile">📱 Mobile</option>
                 <option value="internet">🌐 Internet</option>
                 <option value="tv">📺 TV</option>
-                <option value="divers">🎁 Autres</option>
+                <option value="films">🎬 Films (Netflix, Disney+)</option>
+                <option value="options">⚙️ Options</option>
               </select>
             </div>
 
@@ -3072,19 +3073,20 @@ const PROMO_FAMILY_SECTIONS = [
   ['mobile', '📱 Promo Mobile'],
   ['internet', '🌐 Promo Internet'],
   ['tv', '📺 Promo TV'],
-  ['divers', '🎁 Promo Autres']
+  ['films', '🎬 Promo Films (Netflix, Disney+)'],
+  ['options', '⚙️ Promo Options']
 ];
 
 let promosCache = [];
 let currentEditPromoId = null;
 
-// Sécurité pour les promos déjà créées avant l'ajout du champ productFamily : déduit la famille à partir
-// des données existantes (type / nom) plutôt que de les laisser disparaître de l'affichage groupé.
+// Sécurité pour les promos déjà créées avant l'ajout du champ productFamily (ou créées avant le
+// passage à 5 groupes) : déduit la famille à partir des données existantes plutôt que de les
+// laisser disparaître de l'affichage groupé. L'ancien groupe "divers" atterrit dans "options" par
+// défaut — à reclasser manuellement (Films/Options) au cas par cas depuis l'admin.
 function derivePromoFamily(p) {
-  if (p.productFamily) return p.productFamily;
-  if (p.type === 'mobile') return 'mobile';
-  if ((p.name || '').toLowerCase().includes('internet')) return 'internet';
-  return 'divers';
+  const fam = p.productFamily || (p.type === 'mobile' ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'divers'));
+  return fam === 'divers' ? 'options' : fam;
 }
 
 window.onPromoCategoryChange = function () {
@@ -3109,7 +3111,7 @@ window.onPromoTypeChange = function () {
   if (!isEditing) {
     if (type === 'mobile') document.getElementById('promo-family').value = 'mobile';
     else if (type === 'internet') document.getElementById('promo-family').value = 'internet';
-    else document.getElementById('promo-family').value = 'divers';
+    else document.getElementById('promo-family').value = 'options';
   }
   if (!isEditing) autofillPromoName();
 };

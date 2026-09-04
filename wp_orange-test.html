@@ -557,7 +557,10 @@ async function loadPromosFromFirestore() {
         requiresChild: !!p.requiresChild,
         duration: p.duration || undefined,
         isUnique: !!p.isUnique,
-        family: p.productFamily || (p.perAbo ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'divers')),
+        family: (() => {
+          const fam = p.productFamily || (p.perAbo ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'divers'));
+          return fam === 'divers' ? 'options' : fam; // ancien groupe "Autres" -> "Options" par défaut
+        })(),
         order: p.order !== undefined ? Number(p.order) : undefined,
         autoProducts: Array.isArray(p.autoProducts) ? p.autoProducts : undefined
       };
@@ -1148,8 +1151,8 @@ const promos = [
   { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium", duration:6, family:'mobile' },
   { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true, duration:6, family:'mobile' },
   { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large", duration:12, family:'mobile' },
-  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6, family:'divers' },
-  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12, family:'divers' }
+  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6, family:'films' },
+  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12, family:'options' }
 ];
 
 const loveRates = {
@@ -1517,13 +1520,14 @@ function buildToggleRows(containerId, items) {
   });
 }
 
-// Rendu groupé des promos temporaires (Internet / Mobile / TV / Autres), avec séparateur entre groupes,
-// pour ne pas tout mélanger visuellement quand il y a beaucoup de promos actives en même temps.
+// Rendu groupé des promos temporaires (Internet / Mobile / TV / Films / Options), avec séparateur
+// entre groupes, pour ne pas tout mélanger visuellement quand il y a beaucoup de promos actives en même temps.
 const PROMO_FAMILY_GROUPS = [
   { key: 'internet', label: '🌍 Internet' },
   { key: 'mobile', label: '📱 Mobile' },
   { key: 'tv', label: '📺 TV' },
-  { key: 'divers', label: '🎁 Autres (Netflix, Disney+...)' }
+  { key: 'films', label: '🎬 Films (Netflix, Disney+)' },
+  { key: 'options', label: '⚙️ Options' }
 ];
 function buildGroupedPromoRows(containerId, items) {
   const c = document.getElementById(containerId);
@@ -1531,7 +1535,7 @@ function buildGroupedPromoRows(containerId, items) {
   PROMO_FAMILY_GROUPS.forEach((group, idx) => {
     const groupItems = items
       .map((p, i) => ({ p, fallback: i }))
-      .filter(x => (x.p.family || 'divers') === group.key)
+      .filter(x => (x.p.family || 'options') === group.key)
       .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
       .map(x => x.p);
     if (groupItems.length === 0) return;

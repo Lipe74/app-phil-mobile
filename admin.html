@@ -298,6 +298,7 @@
           </div>
           <button onclick="showAdminPanel('panel-produits-orange', this)" class="menu-item" id="menu-produits-orange">📦 Produits &amp; tarifs</button>
           <button onclick="showAdminPanel('panel-orange-banners', this)" class="menu-item" id="menu-orange-banners">🎨 Textes &amp; couleurs</button>
+          <button onclick="showAdminPanel('panel-orange-section-order', this)" class="menu-item" id="menu-orange-section-order">↕️ Ordre des blocs</button>
           <button onclick="showAdminPanel('panel-commissions', this)" class="menu-item" id="menu-commissions">💰 Gestion des commissions</button>
         </div>
 
@@ -540,6 +541,17 @@
                 <option value="unique">💶 Remise unique (frais, etc.)</option>
               </select>
             </div>
+            <div class="form-row">
+              <label>Groupe d'affichage dans le simulateur</label>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;">Détermine sous quel bloc la promo apparaît (indépendant du type de remise ci-dessus).</div>
+              <select id="promo-family">
+                <option value="mobile">📱 Mobile</option>
+                <option value="internet">🌐 Internet</option>
+                <option value="tv">📺 TV</option>
+                <option value="films">🎬 Films (Netflix, Disney+)</option>
+                <option value="options">⚙️ Options</option>
+              </select>
+            </div>
 
             <div class="form-row" id="promo-product-mobile-row" style="display:none;">
               <label>Abonnement mobile concerné</label>
@@ -613,6 +625,11 @@
               <label>Condition particulière (affichée sous la promo dans le simulateur, laisser vide si aucune)</label>
               <input type="text" id="promo-condition" placeholder="ex: Nécessite un Internet dans le contrat">
             </div>
+            <div class="form-row">
+              <label>⚡ Activation automatique (optionnel — laisser vide = activation manuelle comme aujourd'hui)</label>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;">Coche le ou les produits qui, une fois sélectionnés dans le simulateur (quantité ≥ 1), activent automatiquement cette promo. Le consultant garde la main pour la décocher si besoin.</div>
+              <select id="promo-auto-products" multiple size="8" style="width:100%;padding:6px;font-size:13px;"></select>
+            </div>
             <div class="form-row" id="promo-dates-permanente-row" style="display:none;gap:10px;flex-wrap:wrap;">
               <div style="flex:1;min-width:140px;">
                 <label>Date de début (optionnel)</label>
@@ -670,6 +687,14 @@
             Icône, couleur et texte de chaque bandeau d'info du simulateur. La couleur choisie colore la bordure/l'icône/le texte, avec un fond clair calculé automatiquement.
           </div>
           <div id="orange-banners-content"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-orange-section-order">
+          <div class="section-title">↕️ Ordre des blocs du simulateur Orange</div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Change l'ordre d'affichage des 4 blocs produits (Internet, TV, Mobile, Options) dans le simulateur — par exemple pour démarrer par Mobile plutôt que par Internet.
+          </div>
+          <div id="orange-section-order-content"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-commissions">
@@ -1619,6 +1644,7 @@ onAuthStateChanged(auth, async (user) => {
   loadVideoVenteAdmin();
   loadVideoPromotionAdmin();
   loadOrangeBannersAdmin();
+  loadOrangeSectionOrderAdmin();
   loadPromoGlobalDate();
   checkExpiredConsultants();
   initFavoritesSystem();
@@ -3046,19 +3072,21 @@ window.deleteAllAgendaEvents = async function () {
 const PROMO_FAMILY_SECTIONS = [
   ['mobile', '📱 Promo Mobile'],
   ['internet', '🌐 Promo Internet'],
-  ['divers', '🎁 Promo Divers']
+  ['tv', '📺 Promo TV'],
+  ['films', '🎬 Promo Films (Netflix, Disney+)'],
+  ['options', '⚙️ Promo Options']
 ];
 
 let promosCache = [];
 let currentEditPromoId = null;
 
-// Sécurité pour les promos déjà créées avant l'ajout du champ productFamily : déduit la famille à partir
-// des données existantes (type / nom) plutôt que de les laisser disparaître de l'affichage groupé.
+// Sécurité pour les promos déjà créées avant l'ajout du champ productFamily (ou créées avant le
+// passage à 5 groupes) : déduit la famille à partir des données existantes plutôt que de les
+// laisser disparaître de l'affichage groupé. L'ancien groupe "divers" atterrit dans "options" par
+// défaut — à reclasser manuellement (Films/Options) au cas par cas depuis l'admin.
 function derivePromoFamily(p) {
-  if (p.productFamily) return p.productFamily;
-  if (p.type === 'mobile') return 'mobile';
-  if ((p.name || '').toLowerCase().includes('internet')) return 'internet';
-  return 'divers';
+  const fam = p.productFamily || (p.type === 'mobile' ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'divers'));
+  return fam === 'divers' ? 'options' : fam;
 }
 
 window.onPromoCategoryChange = function () {
@@ -3078,6 +3106,13 @@ window.onPromoTypeChange = function () {
   document.getElementById('promo-product-mobile-row').style.display = (!isEditing && type === 'mobile') ? 'block' : 'none';
   document.getElementById('promo-product-internet-row').style.display = (!isEditing && type === 'internet') ? 'block' : 'none';
   document.getElementById('promo-product-option-row').style.display = (!isEditing && type === 'option') ? 'block' : 'none';
+  // Pré-sélectionne un groupe d'affichage cohérent avec le type choisi (uniquement à la création —
+  // en édition, on ne touche jamais à un choix déjà fait par l'admin).
+  if (!isEditing) {
+    if (type === 'mobile') document.getElementById('promo-family').value = 'mobile';
+    else if (type === 'internet') document.getElementById('promo-family').value = 'internet';
+    else document.getElementById('promo-family').value = 'options';
+  }
   if (!isEditing) autofillPromoName();
 };
 
@@ -3118,15 +3153,13 @@ async function loadPromosAdmin() {
       const inFam = list.filter(p => derivePromoFamily(p) === fam);
       if (inFam.length === 0) return;
 
-      inFam.sort((a, b) => {
-        const plainA = (a.name || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
-        const plainB = (b.name || '').replace(/<[^>]*>/g, '').trim().toLowerCase();
-        return plainA.localeCompare(plainB, 'fr');
-      });
+      const withIdx = inFam.map((p, i) => ({ p, fallback: i }));
+      withIdx.sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback));
+      const sorted = withIdx.map(x => x.p);
 
       html += `<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">${label}</div>`;
 
-      inFam.forEach(p => {
+      sorted.forEach((p, idx) => {
         const durLabel = p.type === 'unique' ? 'Remise unique' : (p.duration ? p.duration + ' mois' : 'À vie');
         const mobileLabel = p.type === 'mobile'
           ? ` · ${PROMO_MOBILE_LABELS[p.mobileId] || p.mobileId}`
@@ -3137,8 +3170,12 @@ async function loadPromosAdmin() {
           : '<span class="badge" style="background:#fef3c7;color:#92400e;">🟠 Temporaire</span>';
 
         html += `
-        <div class="card" style="${inactive ? 'opacity:.5;' : ''}">
-          <div class="card-row">
+        <div class="card" style="${inactive ? 'opacity:.5;' : ''}display:flex;gap:10px;align-items:flex-start;">
+          <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+            <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Monter" ${idx === 0 ? 'disabled' : ''} onclick="movePromo('${fam}','${p.docId}','up')">▲</button>
+            <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Descendre" ${idx === sorted.length - 1 ? 'disabled' : ''} onclick="movePromo('${fam}','${p.docId}','down')">▼</button>
+          </div>
+          <div class="card-row" style="flex:1;">
             <div class="card-info">
               <strong>${escapeHtmlAdmin(p.name || '')}</strong>
               <span class="badge" style="background:#fff3e8;color:#f97316;">${PROMO_TYPE_LABEL[p.type] || p.type}</span>
@@ -3179,11 +3216,14 @@ window.editPromo = function (docId) {
     ? (derivePromoFamily(p) === 'internet' ? 'internet' : 'option')
     : storedType;
   document.getElementById('promo-type').value = uiType;
+  document.getElementById('promo-family').value = p.productFamily || derivePromoFamily(p);
   document.getElementById('promo-name').value = p.name || '';
   document.getElementById('promo-sub').innerHTML = p.sub || '';
   document.getElementById('promo-price').value = p.price ?? 0;
   document.getElementById('promo-duration').value = p.duration ? String(p.duration) : '';
   document.getElementById('promo-condition').value = p.condition || '';
+  const autoIds = new Set(p.autoProducts || []);
+  Array.from(document.getElementById('promo-auto-products').options).forEach(o => o.selected = autoIds.has(o.value));
   document.getElementById('promo-date-debut').value = p.dateDebut || '';
   document.getElementById('promo-date-fin').value = p.dateFin || '';
   onPromoCategoryChange();
@@ -3202,6 +3242,7 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-sub').innerHTML = '';
   document.getElementById('promo-price').value = '';
   document.getElementById('promo-condition').value = '';
+  Array.from(document.getElementById('promo-auto-products').options).forEach(o => o.selected = false);
   document.getElementById('promo-date-debut').value = '';
   document.getElementById('promo-date-fin').value = '';
   document.getElementById('promo-product-mobile').selectedIndex = 0;
@@ -3225,6 +3266,8 @@ window.addOrUpdatePromo = async function () {
   const durationRaw = document.getElementById('promo-duration').value;
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
   const condition = type !== 'unique' ? document.getElementById('promo-condition').value.trim() : '';
+  const autoProducts = Array.from(document.getElementById('promo-auto-products').selectedOptions).map(o => o.value);
+  const productFamily = document.getElementById('promo-family').value;
   const dateDebut = category === 'temporaire' ? (window._promoGlobalDate?.dateDebut || null) : (document.getElementById('promo-date-debut').value || null);
   const dateFin = category === 'temporaire' ? (window._promoGlobalDate?.dateFin || null) : (document.getElementById('promo-date-fin').value || null);
 
@@ -3241,8 +3284,8 @@ window.addOrUpdatePromo = async function () {
     const data = {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
-      condition, dateDebut, dateFin,
-      productFamily: type === 'mobile' ? 'mobile' : (name.toLowerCase().includes('internet') ? 'internet' : 'divers'),
+      condition, autoProducts, dateDebut, dateFin,
+      productFamily,
       perAbo: type === 'mobile',
       isUnique: type === 'unique'
     };
@@ -3264,7 +3307,8 @@ window.addOrUpdatePromo = async function () {
     try {
       await addDoc(collection(db, 'promosOrange'), {
         category, type, name, sub, price, duration: null,
-        mobileId: null, productFamily: 'divers', dateDebut, dateFin,
+        mobileId: null, productFamily, condition: '', autoProducts, dateDebut, dateFin,
+        order: promosCache.filter(x => (x.productFamily || derivePromoFamily(x)) === productFamily).length,
         perAbo: false, isUnique: true, active: true, createdAt: new Date().toISOString()
       });
       showToast('✅ Promo ajoutée.');
@@ -3290,13 +3334,13 @@ window.addOrUpdatePromo = async function () {
   const productId = opt.value;
   const customName = document.getElementById('promo-name').value.trim();
   const label = customName || opt.dataset.label || opt.textContent;
-  const family = uiType === 'mobile' ? 'mobile' : (opt.dataset.family || 'divers');
 
   const data = {
     category, type, name: label, sub, price, duration,
     mobileId: type === 'mobile' ? productId : null,
-    condition, dateDebut, dateFin,
-    productFamily: family,
+    condition, autoProducts, dateDebut, dateFin,
+    productFamily,
+    order: promosCache.filter(x => (x.productFamily || derivePromoFamily(x)) === productFamily).length,
     perAbo: type === 'mobile',
     isUnique: false,
     active: true,
@@ -3694,6 +3738,25 @@ window.deletePromo = async function (docId) {
     loadPromosAdmin();
   } catch (err) {
     alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
+window.movePromo = async function (family, docId, direction) {
+  const items = promosCache
+    .filter(p => derivePromoFamily(p) === family)
+    .map((p, i) => ({ p, fallback: i }))
+    .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
+    .map(x => x.p);
+  const idx = items.findIndex(p => p.docId === docId);
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= items.length) return;
+  const reordered = [...items];
+  [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+  try {
+    await Promise.all(reordered.map((p, i) => updateDoc(doc(db, 'promosOrange', p.docId), { order: i })));
+    loadPromosAdmin();
+  } catch (err) {
+    alert('Erreur lors du déplacement: ' + err.message);
   }
 };
 
@@ -4696,6 +4759,19 @@ const PRODUITS_ORANGE_DEFAULTS = [
   { id: 'opt_confort', category: 'options', name: 'Option WiFi Confort', sub: '3 Booster + Boitier 4G (Prix / mois)', price: 10 },
   { id: 'opt_surf', category: 'options', name: 'Carte Extra Surf Mobile', sub: 'Prix par carte', price: 3 }
 ];
+
+// Remplit la liste "Activation automatique" du formulaire promo avec tous les produits par défaut,
+// groupés par catégorie. Exécuté une fois au chargement (les IDs de select ne changent jamais).
+function populatePromoAutoProductsSelect() {
+  const sel = document.getElementById('promo-auto-products');
+  if (!sel) return;
+  sel.innerHTML = PRODUITS_ORANGE_CATEGORIES.map(cat => {
+    const opts = PRODUITS_ORANGE_DEFAULTS.filter(p => p.category === cat.key)
+      .map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    return opts ? `<optgroup label="${cat.label}">${opts}</optgroup>` : '';
+  }).join('');
+}
+populatePromoAutoProductsSelect();
 
 window.importDefaultProduitsOrange = async function () {
   const existing = new Set(window._produitsOrangeCache || []);
@@ -5812,6 +5888,62 @@ function renderOrangeBannersAdmin(stored) {
   `).join('') + '<button class="btn btn-primary" onclick="saveOrangeBanners()">💾 Enregistrer tous les bandeaux</button>';
 }
 
+const ORANGE_SECTIONS_DEFAULT_ORDER = [
+  { key: 'internet', label: '🌍 Internet' },
+  { key: 'tv', label: '📺 TV' },
+  { key: 'mobile', label: '📱 Mobile' },
+  { key: 'options', label: '⚙️ Options' }
+];
+
+async function loadOrangeSectionOrderAdmin() {
+  const container = document.getElementById('orange-section-order-content');
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'orangeSectionOrder'));
+    const savedOrder = snap.exists() && Array.isArray(snap.data().order) ? snap.data().order : null;
+    const order = savedOrder && savedOrder.length === 4
+      ? savedOrder
+      : ORANGE_SECTIONS_DEFAULT_ORDER.map(s => s.key);
+    window._orangeSectionOrder = order;
+    renderOrangeSectionOrderAdmin();
+  } catch (e) {
+    console.log('Chargement ordre des blocs impossible:', e.message);
+    window._orangeSectionOrder = ORANGE_SECTIONS_DEFAULT_ORDER.map(s => s.key);
+    renderOrangeSectionOrderAdmin();
+  }
+}
+
+function renderOrangeSectionOrderAdmin() {
+  const container = document.getElementById('orange-section-order-content');
+  const order = window._orangeSectionOrder;
+  const labelOf = key => (ORANGE_SECTIONS_DEFAULT_ORDER.find(s => s.key === key) || {}).label || key;
+  container.innerHTML = order.map((key, idx) => `
+    <div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Monter" ${idx === 0 ? 'disabled' : ''} onclick="moveOrangeSection(${idx},'up')">▲</button>
+        <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Descendre" ${idx === order.length - 1 ? 'disabled' : ''} onclick="moveOrangeSection(${idx},'down')">▼</button>
+      </div>
+      <div style="font-size:14px;font-weight:600;">${idx + 1}. ${labelOf(key)}</div>
+    </div>
+  `).join('') + `<button class="btn btn-primary" style="margin-top:14px;" onclick="saveOrangeSectionOrder()">💾 Enregistrer l'ordre</button>`;
+}
+
+window.moveOrangeSection = function (idx, direction) {
+  const order = window._orangeSectionOrder;
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= order.length) return;
+  [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+  renderOrangeSectionOrderAdmin();
+};
+
+window.saveOrangeSectionOrder = async function () {
+  try {
+    await setDoc(doc(db, 'settings', 'orangeSectionOrder'), { order: window._orangeSectionOrder });
+    showToast('✅ Ordre enregistré.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+  }
+};
+
 async function loadOrangeBannersAdmin() {
   try {
     const snap = await getDoc(doc(db, 'settings', 'promoBanners'));
@@ -5889,6 +6021,7 @@ const FAV_ITEMS = {
   'menu-promo-list':           { label: '📋 Promotions existantes',         panelId: 'panel-promo-list' },
   'menu-produits-orange':      { label: '📦 Produits & tarifs',             panelId: 'panel-produits-orange' },
   'menu-orange-banners':       { label: '🎨 Textes & couleurs',            panelId: 'panel-orange-banners' },
+  'menu-orange-section-order': { label: '↕️ Ordre des blocs',              panelId: 'panel-orange-section-order' },
   'menu-commissions':          { label: '💰 Commissions',                  panelId: 'panel-commissions' },
   'menu-documents':            { label: '📄 Gestion des documents',         panelId: 'panel-documents' },
   'menu-liens':                { label: '🌐 Gestion des liens',            panelId: 'panel-liens' },
