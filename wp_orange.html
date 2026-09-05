@@ -37,7 +37,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .app { padding:24px; font-family:Arial,sans-serif; max-width:1000px; margin:0 auto; }
-.header { background:#062B68; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; position:relative; overflow:hidden; }
+.header { background:#062B68; border-radius:24px; padding:22px; margin-bottom:18px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; position:sticky; top:0; z-index:60; overflow:hidden; }
 .header::after { content:''; position:absolute; left:0; right:0; bottom:0; height:6px; background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%); }
 @media (max-width: 480px) {
   .header { padding:16px; gap:10px; }
@@ -50,7 +50,7 @@
 .header-title { color:#fff; font-size:30px; font-weight:bold; }
 .header-by { color:rgba(255,255,255,0.8); font-size:14px;  }
 .header-sub { color:rgba(255,255,255,0.9); font-size:15px; }
-.section { background:white; border:1.5px solid #ffb680; border-radius:22px; padding:26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(0,0,0,0.06); scroll-margin-top:110px; }
+.section { background:white; border:1.5px solid #ffb680; border-radius:22px; padding:26px; margin-bottom:16px; box-shadow:0 4px 18px rgba(0,0,0,0.06); scroll-margin-top:var(--pm-scroll-offset, 220px); }
 .section-title { font-size:24px; font-weight:700; color:#222; margin-bottom:22px; display:flex; align-items:center; gap:8px; }
 .product-row { display:flex; align-items:center; gap:18px; padding:14px 0; border-bottom:1px solid #f0f0f0; flex-wrap:wrap; }
 .product-row:last-child { border-bottom: none; }
@@ -1829,4 +1829,21 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
 })();
 </script>
 
+<script>
+// Colle le bandeau prix/nav juste sous le header (maintenant sticky lui aussi), en mesurant sa
+// hauteur réelle plutôt qu'une valeur fixe — le header peut varier légèrement de taille selon la
+// largeur d'écran (retour à la ligne des infos consultant, etc.).
+function pmSyncOrangeStickyOffsets() {
+  const header = document.querySelector('.header');
+  const bar = document.getElementById('orange-sticky-summary');
+  if (!header || !bar) return;
+  const headerH = header.offsetHeight;
+  bar.style.top = headerH + 'px';
+  document.documentElement.style.setProperty('--pm-scroll-offset', (headerH + bar.offsetHeight + 16) + 'px');
+}
+window.addEventListener('load', pmSyncOrangeStickyOffsets);
+window.addEventListener('resize', pmSyncOrangeStickyOffsets);
+setTimeout(pmSyncOrangeStickyOffsets, 300);
+setTimeout(pmSyncOrangeStickyOffsets, 1200);
+</script>
 
