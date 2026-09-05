@@ -562,7 +562,8 @@ async function loadPromosFromFirestore() {
           return fam === 'divers' ? 'options' : fam; // ancien groupe "Autres" -> "Options" par défaut
         })(),
         order: p.order !== undefined ? Number(p.order) : undefined,
-        autoProducts: Array.isArray(p.autoProducts) ? p.autoProducts : undefined
+        autoProducts: Array.isArray(p.autoProducts) ? p.autoProducts : undefined,
+        autoProductsAny: Array.isArray(p.autoProductsAny) ? p.autoProductsAny : undefined
       };
       if (p.category === 'permanente') fetchedPermanent.push(item);
       else fetchedTemp.push(item);
@@ -923,8 +924,8 @@ options.forEach(p=>{
 function pmPromoMontant(p){
  if(p.isUnique) return p.price;
  const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
- if(p.mobileId==='_internet') return p.price*Math.max(1,inetCount);
- if(p.perAbo && p.mobileId) return p.price*Math.max(1,qtyMap[p.mobileId]||0);
+ if(p.mobileId==='_internet') return p.price*inetCount;
+ if(p.perAbo && p.mobileId) return p.price*(qtyMap[p.mobileId]||0);
  return p.price;
 }
 function pmPromoBadgeOrder(p){
@@ -1202,14 +1203,19 @@ const togMap = {};
 // on ne la gère plus automatiquement (il garde la main), jusqu'à un "Réinitialiser".
 const togMapManualOverride = new Set();
 
-// Active/désactive automatiquement les promos qui ont des "produits requis" (champ autoProducts,
-// réglé depuis l'admin) dès que ces produits sont sélectionnés avec une quantité ≥ 1 — sauf si le
-// consultant a lui-même touché la promo, auquel cas son choix est respecté.
+// Active/désactive automatiquement les promos qui ont des "produits requis" réglés depuis l'admin,
+// selon 2 champs combinables : autoProducts (TOUS doivent être présents) et autoProductsAny (AU MOINS
+// UN doit être présent) — utile pour des conditions du type "Internet Giga + au moins un mobile parmi
+// Medium/Large/Unlimited". Sauf si le consultant a lui-même touché la promo, auquel cas son choix est respecté.
 function autoApplyPromos() {
   [...promos, ...promosPermanent].forEach(p => {
-    if (!p.autoProducts || !p.autoProducts.length) return;
+    const hasAllGroup = p.autoProducts && p.autoProducts.length;
+    const hasAnyGroup = p.autoProductsAny && p.autoProductsAny.length;
+    if (!hasAllGroup && !hasAnyGroup) return; // pas d'activation automatique configurée pour cette promo
     if (togMapManualOverride.has(p.id)) return;
-    togMap[p.id] = p.autoProducts.every(pid => (qtyMap[pid] || 0) >= 1);
+    const allOk = !hasAllGroup || p.autoProducts.every(pid => (qtyMap[pid] || 0) >= 1);
+    const anyOk = !hasAnyGroup || p.autoProductsAny.some(pid => (qtyMap[pid] || 0) >= 1);
+    togMap[p.id] = allOk && anyOk;
   });
 }
 
@@ -1300,11 +1306,11 @@ function calcPromos() {
     if(p.isUnique){ unique += p.price; return; }
 
     let montant=0;
-    if(p.mobileId === '_internet') montant = p.price * Math.max(1, inetCount);
+    if(p.mobileId === '_internet') montant = p.price * inetCount;
     // Note 7.8.3 : l'ancienne condition "requiresChild" (Mobile Child obligatoire) est neutralisée.
     // Les conditions particulières sont désormais purement informatives (champ "condition" géré dans l'admin).
     else if(p.perAbo && p.mobileId){
-      montant = p.price * Math.max(1, qtyMap[p.mobileId] || 0);
+      montant = p.price * (qtyMap[p.mobileId] || 0);
     } else montant = p.price;
 
     mensuel += montant;

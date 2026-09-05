@@ -627,8 +627,13 @@
             </div>
             <div class="form-row">
               <label>⚡ Activation automatique (optionnel — laisser vide = activation manuelle comme aujourd'hui)</label>
-              <div style="font-size:11px;color:#888;margin-bottom:4px;">Coche le ou les produits qui, une fois sélectionnés dans le simulateur (quantité ≥ 1), activent automatiquement cette promo. Le consultant garde la main pour la décocher si besoin.</div>
-              <select id="promo-auto-products" multiple size="8" style="width:100%;padding:6px;font-size:13px;"></select>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;">Coche le ou les produits qui doivent être <strong>TOUS</strong> présents ensemble (quantité ≥ 1) pour activer automatiquement cette promo. Le consultant garde la main pour la décocher si besoin.</div>
+              <select id="promo-auto-products" multiple size="6" style="width:100%;padding:6px;font-size:13px;"></select>
+            </div>
+            <div class="form-row">
+              <label>⚡ ...ET au moins UN parmi ces produits (optionnel)</label>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;">À utiliser quand la promo dépend d'un choix parmi plusieurs options — ex: Internet Giga <strong>+ au moins un</strong> forfait Mobile Medium/Large/Unlimited. Laisser vide si non applicable.</div>
+              <select id="promo-auto-products-any" multiple size="6" style="width:100%;padding:6px;font-size:13px;"></select>
             </div>
             <div class="form-row" id="promo-dates-permanente-row" style="display:none;gap:10px;flex-wrap:wrap;">
               <div style="flex:1;min-width:140px;">
@@ -3222,6 +3227,8 @@ window.editPromo = function (docId) {
   document.getElementById('promo-condition').value = p.condition || '';
   const autoIds = new Set(p.autoProducts || []);
   Array.from(document.getElementById('promo-auto-products').options).forEach(o => o.selected = autoIds.has(o.value));
+  const autoIdsAny = new Set(p.autoProductsAny || []);
+  Array.from(document.getElementById('promo-auto-products-any').options).forEach(o => o.selected = autoIdsAny.has(o.value));
   document.getElementById('promo-date-debut').value = p.dateDebut || '';
   document.getElementById('promo-date-fin').value = p.dateFin || '';
   onPromoCategoryChange();
@@ -3241,6 +3248,7 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-price').value = '';
   document.getElementById('promo-condition').value = '';
   Array.from(document.getElementById('promo-auto-products').options).forEach(o => o.selected = false);
+  Array.from(document.getElementById('promo-auto-products-any').options).forEach(o => o.selected = false);
   document.getElementById('promo-date-debut').value = '';
   document.getElementById('promo-date-fin').value = '';
   document.getElementById('promo-product-mobile').selectedIndex = 0;
@@ -3265,6 +3273,7 @@ window.addOrUpdatePromo = async function () {
   const duration = type === 'unique' ? null : (durationRaw ? Number(durationRaw) : null);
   const condition = type !== 'unique' ? document.getElementById('promo-condition').value.trim() : '';
   const autoProducts = Array.from(document.getElementById('promo-auto-products').selectedOptions).map(o => o.value);
+  const autoProductsAny = Array.from(document.getElementById('promo-auto-products-any').selectedOptions).map(o => o.value);
   const productFamily = document.getElementById('promo-family').value;
   const dateDebut = category === 'temporaire' ? (window._promoGlobalDate?.dateDebut || null) : (document.getElementById('promo-date-debut').value || null);
   const dateFin = category === 'temporaire' ? (window._promoGlobalDate?.dateFin || null) : (document.getElementById('promo-date-fin').value || null);
@@ -3282,7 +3291,7 @@ window.addOrUpdatePromo = async function () {
     const data = {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
-      condition, autoProducts, dateDebut, dateFin,
+      condition, autoProducts, autoProductsAny, dateDebut, dateFin,
       productFamily,
       perAbo: type === 'mobile',
       isUnique: type === 'unique'
@@ -3305,7 +3314,7 @@ window.addOrUpdatePromo = async function () {
     try {
       await addDoc(collection(db, 'promosOrange'), {
         category, type, name, sub, price, duration: null,
-        mobileId: null, productFamily, condition: '', autoProducts, dateDebut, dateFin,
+        mobileId: null, productFamily, condition: '', autoProducts, autoProductsAny, dateDebut, dateFin,
         order: promosCache.filter(x => (x.productFamily || derivePromoFamily(x)) === productFamily).length,
         perAbo: false, isUnique: true, active: true, createdAt: new Date().toISOString()
       });
@@ -3336,7 +3345,7 @@ window.addOrUpdatePromo = async function () {
   const data = {
     category, type, name: label, sub, price, duration,
     mobileId: type === 'mobile' ? productId : null,
-    condition, autoProducts, dateDebut, dateFin,
+    condition, autoProducts, autoProductsAny, dateDebut, dateFin,
     productFamily,
     order: promosCache.filter(x => (x.productFamily || derivePromoFamily(x)) === productFamily).length,
     perAbo: type === 'mobile',
@@ -4758,16 +4767,23 @@ const PRODUITS_ORANGE_DEFAULTS = [
   { id: 'opt_surf', category: 'options', name: 'Carte Extra Surf Mobile', sub: 'Prix par carte', price: 3 }
 ];
 
-// Remplit la liste "Activation automatique" du formulaire promo avec tous les produits par défaut,
-// groupés par catégorie. Exécuté une fois au chargement (les IDs de select ne changent jamais).
+// Remplit les listes "Activation automatique" (TOUS + AU MOINS UN) du formulaire promo avec les
+// produits actuels (nom à jour si renommé depuis "Produits & tarifs" — repli sur le nom d'origine
+// codé en dur tant que les produits n'ont pas encore été chargés).
 function populatePromoAutoProductsSelect() {
-  const sel = document.getElementById('promo-auto-products');
-  if (!sel) return;
-  sel.innerHTML = PRODUITS_ORANGE_CATEGORIES.map(cat => {
-    const opts = PRODUITS_ORANGE_DEFAULTS.filter(p => p.category === cat.key)
+  const source = (window._produitsOrangeMerged && window._produitsOrangeMerged.length)
+    ? window._produitsOrangeMerged.filter(p => !p.hidden)
+    : PRODUITS_ORANGE_DEFAULTS;
+  const optionsHtml = PRODUITS_ORANGE_CATEGORIES.map(cat => {
+    const opts = source.filter(p => p.category === cat.key)
       .map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     return opts ? `<optgroup label="${cat.label}">${opts}</optgroup>` : '';
   }).join('');
+  // Conserve la sélection en cours (utile si appelé pendant l'édition d'une promo)
+  const sel = document.getElementById('promo-auto-products');
+  if (sel) { const prev = new Set(Array.from(sel.selectedOptions).map(o => o.value)); sel.innerHTML = optionsHtml; Array.from(sel.options).forEach(o => o.selected = prev.has(o.value)); }
+  const selAny = document.getElementById('promo-auto-products-any');
+  if (selAny) { const prevAny = new Set(Array.from(selAny.selectedOptions).map(o => o.value)); selAny.innerHTML = optionsHtml; Array.from(selAny.options).forEach(o => o.selected = prevAny.has(o.value)); }
 }
 populatePromoAutoProductsSelect();
 
@@ -4823,6 +4839,7 @@ function loadProduitsOrangeAdmin() {
     }));
     const merged = [...defaults, ...customs];
     window._produitsOrangeMerged = merged;
+    populatePromoAutoProductsSelect(); // Rafraîchit avec les noms à jour (y compris renommés) une fois les produits chargés
 
     container.innerHTML = PRODUITS_ORANGE_CATEGORIES.map(cat => {
       const items = merged.filter(p => p.category === cat.key && !p.hidden).sort((a, b) => a.order - b.order);
