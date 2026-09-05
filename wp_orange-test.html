@@ -153,6 +153,15 @@
   <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px;margin-bottom:16px;">
   </div>
 
+  <div id="orange-sticky-summary" style="position:sticky;top:0;z-index:50;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.08);">
+    <div style="display:flex;gap:18px;flex-wrap:wrap;">
+      <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢 Aujourd'hui</span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
+      <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#f97316;font-weight:700;">🟠 6 mois</span> <span id="sticky-price-6m" style="font-weight:800;color:#222;">0,00 €</span></div>
+      <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#dc2626;font-weight:700;">🔴 12 mois</span> <span id="sticky-price-12m" style="font-weight:800;color:#222;">0,00 €</span></div>
+    </div>
+    <button onclick="window.scrollTo({top:0,behavior:'smooth'})" style="padding:6px 14px;border:none;border-radius:8px;background:#062B68;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">⬆️ Haut</button>
+  </div>
+
   <div class="section" id="section-internet">
     <div class="section-title"><i class="ti ti-wifi" aria-hidden="true"></i> <span id="section-title-text-internet">Internet</span></div>
     <div id="banner-internet-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
@@ -1445,6 +1454,12 @@ function render() {
   if(n) n.textContent = fmt(today*r);
   if(m6) m6.textContent = fmt(after6*r);
   if(m12) m12.textContent = fmt(after12*r);
+  const stickyToday = document.getElementById('sticky-price-today');
+  const sticky6m = document.getElementById('sticky-price-6m');
+  const sticky12m = document.getElementById('sticky-price-12m');
+  if (stickyToday) stickyToday.textContent = fmt(today*r);
+  if (sticky6m) sticky6m.textContent = fmt(after6*r);
+  if (sticky12m) sticky12m.textContent = fmt(after12*r);
   [...promos, ...promosPermanent].forEach(p => {
     if (!p.perAbo || !p.mobileId) return;
     const qty = qtyMap[p.mobileId] || 0;
