@@ -819,11 +819,24 @@ async function loadSectionOrder() {
   }
 }
 
+// Interrupteur général (réglé depuis l'admin) : coupe l'activation automatique de TOUTES les promos
+// d'un coup, sans toucher à leur configuration individuelle. Activé par défaut si jamais réglé.
+async function loadAutoActivationSwitch() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'orangePromoAutoActivation'));
+    window._promoAutoActivationEnabled = snap.exists() ? snap.data().enabled !== false : true;
+  } catch (err) {
+    console.log('Chargement interrupteur activation auto impossible, activé par défaut:', err.message);
+    window._promoAutoActivationEnabled = true;
+  }
+}
+
 onAuthStateChanged(auth, () => {
   loadPromosFromFirestore();
   loadProductsFromFirestore();
   loadPromoBanners();
   loadSectionOrder();
+  loadAutoActivationSwitch();
 });
 </script>
 
@@ -1238,6 +1251,7 @@ const togMapManualOverride = new Set();
 // UN doit être présent) — utile pour des conditions du type "Internet Giga + au moins un mobile parmi
 // Medium/Large/Unlimited". Sauf si le consultant a lui-même touché la promo, auquel cas son choix est respecté.
 function autoApplyPromos() {
+  if (window._promoAutoActivationEnabled === false) return; // interrupteur général désactivé depuis l'admin
   [...promos, ...promosPermanent].forEach(p => {
     const hasAllGroup = p.autoProducts && p.autoProducts.length;
     const hasAnyGroup = p.autoProductsAny && p.autoProductsAny.length;

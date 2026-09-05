@@ -672,6 +672,13 @@
           <div style="font-size:11px;color:#888;margin-bottom:10px;">
             ⚠️ La domiciliation bancaire est obligatoire pour accorder une promo Orange à un client.
           </div>
+          <div id="promo-auto-master-switch" style="display:flex;align-items:center;gap:10px;background:#fff8f0;border:1px solid #ffd9b3;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:700;color:#333;">
+              <input type="checkbox" id="promo-auto-master-checkbox" checked onchange="toggleGlobalAutoActivation(this.checked)" style="width:18px;height:18px;">
+              ⚡ Activation automatique des promos (toutes)
+            </label>
+            <span style="font-size:11px;color:#888;">Décoche pour repasser <strong>toutes</strong> les promos en 100% manuel d'un coup, sans toucher à leur configuration individuelle.</span>
+          </div>
           <div id="promos-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
@@ -3138,6 +3145,16 @@ async function loadPromosAdmin() {
   const container = document.getElementById('promos-list');
   container.innerHTML = '<div class="empty">Chargement...</div>';
   try {
+    // Reflète l'état de l'interrupteur général sur la case à cocher (indépendant de la liste des promos)
+    try {
+      const switchSnap = await getDoc(doc(db, 'settings', 'orangePromoAutoActivation'));
+      const enabled = switchSnap.exists() ? switchSnap.data().enabled !== false : true;
+      const cb = document.getElementById('promo-auto-master-checkbox');
+      if (cb) cb.checked = enabled;
+    } catch (e) {
+      console.log('Chargement interrupteur activation auto impossible:', e.message);
+    }
+
     const sectionOrder = await resolveOrangeSectionOrder();
     const promoFamilySections = buildPromoFamilySections(sectionOrder);
 
@@ -3736,6 +3753,16 @@ async function loadBotStats() {
     console.log('Chargement stats bot impossible:', err.message);
   }
 }
+
+window.toggleGlobalAutoActivation = async function (enabled) {
+  try {
+    await setDoc(doc(db, 'settings', 'orangePromoAutoActivation'), { enabled });
+    showToast(enabled ? '⚡ Activation automatique réactivée.' : '⏸ Activation automatique désactivée pour toutes les promos.');
+  } catch (err) {
+    alert("Erreur lors de l'enregistrement: " + err.message);
+    document.getElementById('promo-auto-master-checkbox').checked = !enabled; // annule visuellement si l'écriture a échoué
+  }
+};
 
 window.deletePromo = async function (docId) {
   if (!confirm('Supprimer définitivement cette promo ?')) return;
