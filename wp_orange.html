@@ -104,59 +104,48 @@
 
 <!-- APP CONTENT -->
 <div class="app" id="orange-app" style="display:none;">
-  <div class="header">
+  <div class="header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 16px;">
 
-    <div class="header-text" style="flex:1;">
-      <div class="header-title">
-        Simulateur Orange
-      </div>
+    <div class="header-title" style="margin:0;white-space:nowrap;">
+      Simulateur Orange <span style="font-weight:400;font-size:14px;opacity:.85;">· By Phil-Mobile.</span>
+    </div>
 
-     <div class="header-sub" style="font-size:16px;margin-top:4px;">
-        By Phil-Mobile.
-      </div>
-
-      <div style="margin-top:8px;color:rgba(255,255,255,0.85);font-size:13px;font-weight:600;">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;white-space:nowrap;">
         Build <span id="app-version-1">…</span> Stable
       </div>
 
-      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
-        <img class="header-logo" id="logo-img" src="" alt="Logo consultant" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;" onerror="this.onerror=null;this.src=window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png'">
-        <div style="color:#fff;font-size:11px;line-height:1.4;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <img class="header-logo" id="logo-img" src="" alt="Logo consultant" style="width:28px;height:28px;border-radius:7px;flex-shrink:0;" onerror="this.onerror=null;this.src=window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png'">
+        <div style="color:#fff;font-size:11px;line-height:1.3;white-space:nowrap;">
           <span class="consultant-name" style="font-weight:700;"></span>
           &nbsp;·&nbsp;<span class="consultant-phone"></span>
           &nbsp;·&nbsp;<span class="consultant-email"></span>
         </div>
       </div>
-    </div>
 
-    <div class="header-actions" style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
-
-      <div style="display:flex;align-items:center;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;border:2px solid white;">
-        <button onclick="resetCache()" title="Actualiser l'application"
-          style="background:white;color:#ff5a14;border:none;border-right:2px solid white;padding:7px 12px;font-size:15px;cursor:pointer;line-height:1;">
-          🔧
-        </button>
-
-        <button id="btn-tvac" onclick="setTVAC(true)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:white;color:#ff5a14;">
-          TVAC
-        </button>
-
-        <button id="btn-htva" onclick="setTVAC(false)" style="padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:transparent;color:white;">
-          HTVA
-        </button>
-      </div>
-
+      <button onclick="resetCache()" title="Actualiser l'application"
+        style="background:rgba(255,255,255,0.2);border:2px solid white;color:#fff;border-radius:8px;padding:5px 9px;font-size:14px;cursor:pointer;line-height:1;">
+        🔧
+      </button>
     </div>
 
   </div>
 
-  <div id="orange-sticky-summary" style="position:sticky;top:0;z-index:50;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.08);">
-    <div style="display:flex;gap:18px;flex-wrap:wrap;">
-      <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢 Aujourd'hui</span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
-      <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#f97316;font-weight:700;">🟠 6 mois</span> <span id="sticky-price-6m" style="font-weight:800;color:#222;">0,00 €</span></div>
-      <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#dc2626;font-weight:700;">🔴 12 mois</span> <span id="sticky-price-12m" style="font-weight:800;color:#222;">0,00 €</span></div>
+  <div id="orange-sticky-summary" style="position:sticky;top:0;z-index:50;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px 14px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;gap:18px;flex-wrap:wrap;">
+        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢 Aujourd'hui</span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
+        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#f97316;font-weight:700;">🟠 6 mois</span> <span id="sticky-price-6m" style="font-weight:800;color:#222;">0,00 €</span></div>
+        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#dc2626;font-weight:700;">🔴 12 mois</span> <span id="sticky-price-12m" style="font-weight:800;color:#222;">0,00 €</span></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button id="btn-tvac" onclick="setTVAC(true)" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#062B68;color:#fff;">TVAC</button>
+        <button id="btn-htva" onclick="setTVAC(false)" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#fff3e8;color:#f97316;">HTVA</button>
+        <button onclick="resetAll()" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#fdecea;color:#dc2626;"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+      </div>
     </div>
-    <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+    <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
     </div>
   </div>
 
@@ -1162,10 +1151,10 @@ w.document.close();
 
 function setTVAC(tvac) {
   isTVAC = tvac;
-  document.getElementById('btn-tvac').style.background = tvac ? 'white' : 'transparent';
-  document.getElementById('btn-tvac').style.color = tvac ? '#ff5a14' : 'white';
-  document.getElementById('btn-htva').style.background = tvac ? 'transparent' : 'white';
-  document.getElementById('btn-htva').style.color = tvac ? 'white' : '#ff5a14';
+  document.getElementById('btn-tvac').style.background = tvac ? '#062B68' : '#fff3e8';
+  document.getElementById('btn-tvac').style.color = tvac ? '#fff' : '#f97316';
+  document.getElementById('btn-htva').style.background = tvac ? '#fff3e8' : '#062B68';
+  document.getElementById('btn-htva').style.color = tvac ? '#f97316' : '#fff';
   document.getElementById('tva-badge').textContent = tvac ? 'TVAC (21%)' : 'HTVA';
   ['internet-rows','tv-rows','mobile-rows','options-internet-rows','options-tv-rows','options-films-rows','options-unique-rows','promos-rows','promos-permanent-rows'].forEach(id => {
     const el = document.getElementById(id);
