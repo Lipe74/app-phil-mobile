@@ -154,28 +154,28 @@
   </div>
 
   <div class="section" id="section-internet">
-    <div class="section-title"><i class="ti ti-wifi" aria-hidden="true"></i> Internet</div>
+    <div class="section-title"><i class="ti ti-wifi" aria-hidden="true"></i> <span id="section-title-text-internet">Internet</span></div>
     <div id="banner-internet-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
 <span id="banner-internet-info-icon" style="flex-shrink:0;line-height:1.4;">🌍</span> <span id="banner-internet-info-text" style="line-height:1.4;">Si aucun forfait mobile n'est ajouté, un supplément de <strong>4€/mois</strong> s'applique (forfait Internet seul).</span>
 </div>
     <div id="internet-rows"></div>
   </div>
   <div class="section" id="section-tv">
-    <div class="section-title"><i class="ti ti-device-tv" aria-hidden="true"></i> TV</div>
+    <div class="section-title"><i class="ti ti-device-tv" aria-hidden="true"></i> <span id="section-title-text-tv">TV</span></div>
     <div id="banner-tv-info" style="margin-bottom:12px;background:#f3e5f5;border:1px solid #8e24aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#8e24aa;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
 <span id="banner-tv-info-icon" style="flex-shrink:0;line-height:1.4;">📺</span> <span id="banner-tv-info-text" style="line-height:1.4;">Options TV disponibles en complément de votre abonnement Internet.</span>
 </div>
     <div id="tv-rows"></div>
   </div>
   <div class="section" id="section-mobile">
-    <div class="section-title"><i class="ti ti-device-mobile" aria-hidden="true"></i> Mobile</div>
+    <div class="section-title"><i class="ti ti-device-mobile" aria-hidden="true"></i> <span id="section-title-text-mobile">Mobile</span></div>
     <div id="banner-mobile-info" style="margin-bottom:12px;background:#e3f2fd;border:1px solid #1e88e5;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e88e5;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
 <span id="banner-mobile-info-icon" style="flex-shrink:0;line-height:1.4;">📱</span> <span id="banner-mobile-info-text" style="line-height:1.4;">Ajoutez un ou plusieurs forfaits mobiles à votre offre.</span>
 </div>
     <div id="mobile-rows"></div>
   </div>
   <div class="section" id="section-options">
-    <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> Options</div>
+    <div class="section-title"><i class="ti ti-settings" aria-hidden="true"></i> <span id="section-title-text-options">Options</span></div>
 
     <div style="margin-bottom:10px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:9px 13px;font-size:13px;color:#cc4400;font-weight:600;">
       📌 FRAIS UNIQUES
@@ -727,7 +727,8 @@ async function loadPromoBanners() {
 // Repli silencieux sur l'ordre codé en dur (Internet, TV, Mobile, Options) si rien n'est configuré.
 // Construit aussi le petit menu de navigation rapide en haut de page, et sert de référence pour
 // l'ordre des groupes de promos (voir buildPromoGroupOrder ci-dessous), dans le même ordre partout.
-const ORANGE_SECTION_LABELS = { internet: '🌍 Internet', tv: '📺 TV', mobile: '📱 Mobile', options: '⚙️ Options' };
+const ORANGE_SECTION_ICONS = { internet: '🌍', tv: '📺', mobile: '📱', options: '⚙️' };
+const ORANGE_SECTION_DEFAULT_NAMES = { internet: 'Internet', tv: 'TV', mobile: 'Mobile', options: 'Options' };
 function scrollToOrangeSection(key) {
   const el = document.getElementById('section-' + key);
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -755,6 +756,28 @@ function resolveSectionOrder() {
   return _sectionOrderPromise;
 }
 
+// Noms personnalisés des 4 blocs (ex: "Internet" renommé "Livebox"), réglables depuis l'admin
+// (panneau "↕️ Ordre des blocs"). Repli sur le nom par défaut si rien n'est personnalisé.
+let _sectionLabelsPromise = null;
+function resolveSectionLabels() {
+  if (!_sectionLabelsPromise) {
+    _sectionLabelsPromise = (async () => {
+      let names = { ...ORANGE_SECTION_DEFAULT_NAMES };
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'orangeSectionLabels'));
+        if (snap.exists()) {
+          const d = snap.data();
+          Object.keys(names).forEach(key => { if (d[key]) names[key] = d[key]; });
+        }
+      } catch (err) {
+        console.log('Chargement des noms de blocs impossible, noms par défaut conservés:', err.message);
+      }
+      return names;
+    })();
+  }
+  return _sectionLabelsPromise;
+}
+
 // Dérive l'ordre des groupes de promos à partir de l'ordre des blocs produits : "Films" est toujours
 // placé juste après "Options" (son contenu, Netflix/Disney+, vit dans ce bloc).
 const ORANGE_PROMO_GROUP_LABELS = { internet: '🌍 Internet', mobile: '📱 Mobile', tv: '📺 TV', films: '🎬 Films (Netflix, Disney+)', options: '⚙️ Options' };
@@ -771,6 +794,7 @@ function buildPromoGroupOrder(sectionOrder) {
 
 async function loadSectionOrder() {
   const order = await resolveSectionOrder();
+  const names = await resolveSectionLabels();
 
   const parent = document.getElementById('section-internet')?.parentElement;
   const anchor = document.getElementById('section-love-anchor');
@@ -781,10 +805,16 @@ async function loadSectionOrder() {
     });
   }
 
+  // Applique les noms personnalisés (ou par défaut) sur les titres des 4 blocs
+  Object.keys(ORANGE_SECTION_DEFAULT_NAMES).forEach(key => {
+    const titleEl = document.getElementById('section-title-text-' + key);
+    if (titleEl) titleEl.textContent = names[key] || ORANGE_SECTION_DEFAULT_NAMES[key];
+  });
+
   const nav = document.getElementById('orange-quick-nav');
   if (nav) {
     nav.innerHTML = order.map(key => `
-      <button onclick="scrollToOrangeSection('${key}')" style="flex:1;min-width:70px;padding:8px 6px;border:none;border-radius:8px;background:#fff3e8;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;">${ORANGE_SECTION_LABELS[key] || key}</button>
+      <button onclick="scrollToOrangeSection('${key}')" style="flex:1;min-width:70px;padding:8px 6px;border:none;border-radius:8px;background:#fff3e8;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;">${ORANGE_SECTION_ICONS[key] || ''} ${names[key] || ORANGE_SECTION_DEFAULT_NAMES[key] || key}</button>
     `).join('');
   }
 }

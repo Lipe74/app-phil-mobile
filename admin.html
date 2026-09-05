@@ -5909,6 +5909,8 @@ const ORANGE_SECTIONS_DEFAULT_ORDER = [
   { key: 'mobile', label: '📱 Mobile' },
   { key: 'options', label: '⚙️ Options' }
 ];
+const ORANGE_SECTION_ICONS = { internet: '🌍', tv: '📺', mobile: '📱', options: '⚙️' };
+const ORANGE_SECTION_DEFAULT_NAMES = { internet: 'Internet', tv: 'TV', mobile: 'Mobile', options: 'Options' };
 
 // Résout (et met en cache dans window._orangeSectionOrder) l'ordre des 4 blocs produits — réutilisé
 // à la fois par le réglage "Ordre des blocs" et par le tri des groupes de promos, pour que les deux
@@ -5927,6 +5929,24 @@ async function resolveOrangeSectionOrder() {
   return order;
 }
 
+// Résout (et met en cache dans window._orangeSectionLabels) les noms personnalisés des 4 blocs
+// (ex: "Internet" renommé "Livebox"). Repli sur le nom par défaut si rien n'est personnalisé.
+async function resolveOrangeSectionLabels() {
+  if (window._orangeSectionLabels) return window._orangeSectionLabels;
+  let names = { ...ORANGE_SECTION_DEFAULT_NAMES };
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'orangeSectionLabels'));
+    if (snap.exists()) {
+      const d = snap.data();
+      Object.keys(names).forEach(key => { if (d[key]) names[key] = d[key]; });
+    }
+  } catch (e) {
+    console.log('Chargement des noms de blocs impossible:', e.message);
+  }
+  window._orangeSectionLabels = names;
+  return names;
+}
+
 // Dérive l'ordre des groupes de promos à partir de l'ordre des blocs produits : "Films" est toujours
 // placé juste après "Options" (son contenu, Netflix/Disney+, vit dans ce bloc).
 const PROMO_FAMILY_LABELS = { mobile: '📱 Promo Mobile', internet: '🌐 Promo Internet', tv: '📺 Promo TV', films: '🎬 Promo Films (Netflix, Disney+)', options: '⚙️ Promo Options' };
@@ -5943,23 +5963,26 @@ function buildPromoFamilySections(sectionOrder) {
 
 async function loadOrangeSectionOrderAdmin() {
   await resolveOrangeSectionOrder();
+  await resolveOrangeSectionLabels();
   renderOrangeSectionOrderAdmin();
 }
 
 function renderOrangeSectionOrderAdmin() {
   const container = document.getElementById('orange-section-order-content');
   const order = window._orangeSectionOrder;
-  const labelOf = key => (ORANGE_SECTIONS_DEFAULT_ORDER.find(s => s.key === key) || {}).label || key;
-  container.innerHTML = order.map((key, idx) => `
+  const names = window._orangeSectionLabels || ORANGE_SECTION_DEFAULT_NAMES;
+  container.innerHTML = `<div style="font-size:11px;font-weight:700;color:#888;margin-bottom:6px;">Ordre & noms affichés</div>` +
+    order.map((key, idx) => `
     <div style="display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
       <div style="display:flex;flex-direction:column;gap:2px;">
         <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Monter" ${idx === 0 ? 'disabled' : ''} onclick="moveOrangeSection(${idx},'up')">▲</button>
         <button class="btn btn-secondary" style="height:26px;width:30px;padding:0;font-size:11px;" title="Descendre" ${idx === order.length - 1 ? 'disabled' : ''} onclick="moveOrangeSection(${idx},'down')">▼</button>
       </div>
-      <div style="font-size:14px;font-weight:600;">${idx + 1}. ${labelOf(key)}</div>
+      <div style="font-size:18px;">${ORANGE_SECTION_ICONS[key] || ''}</div>
+      <input type="text" id="osl-name-${key}" value="${escapeHtml(names[key] || ORANGE_SECTION_DEFAULT_NAMES[key] || key)}" style="flex:1;padding:6px 8px;font-size:14px;">
     </div>
-  `).join('') + `<button class="btn btn-primary" style="margin-top:14px;" onclick="saveOrangeSectionOrder()">💾 Enregistrer l'ordre</button>
-  <div style="font-size:11px;color:#888;margin-top:8px;">L'ordre des groupes de promos (page "Promotions existantes") suit automatiquement cet ordre.</div>`;
+  `).join('') + `<button class="btn btn-primary" style="margin-top:14px;" onclick="saveOrangeSectionOrder()">💾 Enregistrer l'ordre et les noms</button>
+  <div style="font-size:11px;color:#888;margin-top:8px;">L'ordre des groupes de promos (page "Promotions existantes") suit automatiquement cet ordre. Les noms sont utilisés pour le titre de chaque bloc et le petit menu de navigation, dans le simulateur.</div>`;
 }
 
 window.moveOrangeSection = function (idx, direction) {
@@ -5971,9 +5994,16 @@ window.moveOrangeSection = function (idx, direction) {
 };
 
 window.saveOrangeSectionOrder = async function () {
+  const names = {};
+  window._orangeSectionOrder.forEach(key => {
+    const el = document.getElementById('osl-name-' + key);
+    names[key] = (el ? el.value.trim() : '') || ORANGE_SECTION_DEFAULT_NAMES[key];
+  });
+  window._orangeSectionLabels = names;
   try {
     await setDoc(doc(db, 'settings', 'orangeSectionOrder'), { order: window._orangeSectionOrder });
-    showToast('✅ Ordre enregistré.');
+    await setDoc(doc(db, 'settings', 'orangeSectionLabels'), names);
+    showToast('✅ Ordre et noms enregistrés.');
     loadPromosAdmin(); // Rafraîchit tout de suite l'ordre des groupes dans la liste des promos
   } catch (err) {
     alert("Erreur lors de l'enregistrement: " + err.message);
