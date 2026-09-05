@@ -90,6 +90,7 @@
 @media(max-width:600px){
   #outils-unlocked > div { flex-direction:column !important; }
   #outils-unlocked > div > div:first-child { width:100% !important; }
+  #pm-left-menu { position:static !important; max-height:none !important; overflow-y:visible !important; top:auto !important; }
   #iframe-panel { height:60vh !important;min-height:350px !important; }
 
   /* Mode plein écran mobile : évite de devoir scroller sous tout le menu pour voir le panneau ouvert */
@@ -543,7 +544,7 @@ Build <span id="app-version-1">…</span> — Messages expiration
 
 
         <!-- COLONNE GAUCHE : menu -->
-        <div id="pm-left-menu" style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
+        <div id="pm-left-menu" style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;position:sticky;align-self:flex-start;top:60px;max-height:calc(100vh - 76px);overflow-y:auto;padding-right:4px;">
 
           <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
           <div id="sec-accueil" class="pm-sec-body">
@@ -1843,11 +1844,11 @@ STATUT: independant
           </div>
 
           <!-- Iframe panel (caché par défaut) -->
-          <div id="iframe-panel" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#fff;min-height:200px;display:none;flex-direction:column;">
+          <div id="iframe-panel" style="border:1px solid #f97316;border-radius:12px;overflow:hidden;background:#fff;height:calc(100vh - 24px);min-height:650px;display:none;flex-direction:column;">
             <div id="iframe-loading" style="display:flex;align-items:center;justify-content:center;height:100%;color:#f97316;font-size:13px;flex-direction:column;gap:8px;">
               <div style="font-size:28px;">⏳</div>Chargement...
             </div>
-            <iframe id="embed-frame" src="" style="width:100%;flex:0 0 auto;border:none;display:none;min-height:200px;"></iframe>
+            <iframe id="embed-frame" src="" style="width:100%;flex:1;border:none;display:none;"></iframe>
           </div>
 
 
@@ -2762,34 +2763,7 @@ function toggleFormation(id){
 
 function frameLoaded() {
   document.getElementById('iframe-loading').style.display = 'none';
-  const iframe = document.getElementById('embed-frame');
-  iframe.style.display = 'block';
-
-  // Ajuste automatiquement la hauteur de l'iframe à celle de son contenu réel (au lieu d'un cadre
-  // à hauteur fixe) : plus besoin de scroller "dans une fenêtre dans une fenêtre", c'est la page du
-  // Hub qui défile normalement à travers tout le contenu. Un ResizeObserver suit les changements de
-  // taille (ex: contenu chargé après coup depuis Firebase) pour garder la hauteur toujours juste.
-  try {
-    const doc = iframe.contentDocument || iframe.contentWindow.document;
-    const applyHeight = () => {
-      const h = doc.documentElement.scrollHeight;
-      if (h > 0) iframe.style.height = h + 'px';
-    };
-    applyHeight();
-    if (window.ResizeObserver) {
-      if (iframe._pmResizeObserver) iframe._pmResizeObserver.disconnect();
-      const ro = new ResizeObserver(applyHeight);
-      ro.observe(doc.body);
-      iframe._pmResizeObserver = ro;
-    } else {
-      // Repli pour navigateurs sans ResizeObserver : quelques mesures espacées après le chargement
-      setTimeout(applyHeight, 500);
-      setTimeout(applyHeight, 1500);
-      setTimeout(applyHeight, 3000);
-    }
-  } catch (e) {
-    console.log('Ajustement auto de la hauteur impossible (contenu externe ?):', e.message);
-  }
+  document.getElementById('embed-frame').style.display = 'block';
 }
 
 // Attacher frameLoaded à l'iframe
@@ -8302,6 +8276,25 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
 </div>
 
 <div id="prosp-toast" style="display:none;position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:4000;"></div>
+
+<script>
+// Garde le menu de gauche bien collé sous le header (sticky), quelle que soit sa hauteur exacte
+// (peut varier légèrement selon le bandeau d'actu affiché ou non). Sans ça, un panneau de droite
+// devenu très haut (ex: le simulateur Orange, qui s'étire maintenant à sa hauteur réelle) laisse le
+// menu de gauche disparaître en scrollant, puisqu'il n'était pas fixé lui non plus.
+function pmSyncLeftMenuStickyOffset() {
+  const header = document.getElementById('top-header');
+  const menu = document.getElementById('pm-left-menu');
+  if (!header || !menu) return;
+  const h = header.offsetHeight || 60;
+  menu.style.top = h + 'px';
+  menu.style.maxHeight = 'calc(100vh - ' + (h + 16) + 'px)';
+}
+window.addEventListener('load', pmSyncLeftMenuStickyOffset);
+window.addEventListener('resize', pmSyncLeftMenuStickyOffset);
+setTimeout(pmSyncLeftMenuStickyOffset, 300);
+setTimeout(pmSyncLeftMenuStickyOffset, 1200);
+</script>
 
 </body>
 </html>
