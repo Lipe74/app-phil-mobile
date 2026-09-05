@@ -150,16 +150,14 @@
 
   </div>
 
-  <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px;margin-bottom:16px;">
-  </div>
-
   <div id="orange-sticky-summary" style="position:sticky;top:0;z-index:50;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.08);">
     <div style="display:flex;gap:18px;flex-wrap:wrap;">
       <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢 Aujourd'hui</span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
       <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#f97316;font-weight:700;">🟠 6 mois</span> <span id="sticky-price-6m" style="font-weight:800;color:#222;">0,00 €</span></div>
       <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#dc2626;font-weight:700;">🔴 12 mois</span> <span id="sticky-price-12m" style="font-weight:800;color:#222;">0,00 €</span></div>
     </div>
-    <button onclick="window.scrollTo({top:0,behavior:'smooth'})" style="padding:6px 14px;border:none;border-radius:8px;background:#062B68;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">⬆️ Haut</button>
+    <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+    </div>
   </div>
 
   <div class="section" id="section-internet">
@@ -224,7 +222,7 @@
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" id="section-promotions">
     <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> REMISES PERMANENTES</div>
     <div id="banner-promos-permanentes" style="margin-bottom:10px;background:#e8f5e9;border:1px solid #66bb6a;border-radius:10px;padding:9px 13px;font-size:13px;color:#2e7d32;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
       <span id="banner-promos-permanentes-icon" style="flex-shrink:0;line-height:1.4;">✅</span> <span id="banner-promos-permanentes-text" style="line-height:1.4;">Promotions permanentes et réductions uniques.</span>
@@ -232,7 +230,7 @@
     <div id="promos-permanent-rows"></div>
   </div>
 
-  <div class="section">
+  <div class="section" id="section-offres">
     <div class="section-title"><i class="ti ti-tag" aria-hidden="true"></i> 🟠 OFFRES EN COURS</div>
     <div id="promos-unified-date" style="display:none;margin-bottom:10px;font-size:13px;font-weight:700;color:#0369a1;">📅 </div>
 
@@ -822,9 +820,18 @@ async function loadSectionOrder() {
 
   const nav = document.getElementById('orange-quick-nav');
   if (nav) {
-    nav.innerHTML = order.map(key => `
-      <button onclick="scrollToOrangeSection('${key}')" style="flex:1;min-width:70px;padding:8px 6px;border:none;border-radius:8px;background:#fff3e8;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;">${ORANGE_SECTION_ICONS[key] || ''} ${names[key] || ORANGE_SECTION_DEFAULT_NAMES[key] || key}</button>
+    const btnStyle = 'flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;';
+    const homeButton = `<button onclick="window.scrollTo({top:0,behavior:'smooth'})" style="${btnStyle}background:#062B68;color:#fff;">🏠 Accueil</button>`;
+    const mainButtons = order.map(key => `
+      <button onclick="scrollToOrangeSection('${key}')" style="${btnStyle}background:#fff3e8;color:#f97316;">${ORANGE_SECTION_ICONS[key] || ''} ${names[key] || ORANGE_SECTION_DEFAULT_NAMES[key] || key}</button>
     `).join('');
+    // "Promotions" (remises permanentes) et "Offres" (offres en cours) : toujours en fin de menu,
+    // non réordonnables (ce ne sont pas des blocs produits comme les 4 autres).
+    const extraButtons = `
+      <button onclick="scrollToOrangeSection('promotions')" style="${btnStyle}background:#e8f5e9;color:#2e7d32;">✅ Promotions</button>
+      <button onclick="scrollToOrangeSection('offres')" style="${btnStyle}background:#fff3e0;color:#e65100;">🟠 Offres</button>
+    `;
+    nav.innerHTML = homeButton + mainButtons + extraButtons;
   }
 }
 
