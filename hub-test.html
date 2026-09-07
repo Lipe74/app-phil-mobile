@@ -191,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Catégories docs
+Build <span id="app-version-1">…</span> — Référencement
      </span>
     </div>
     </div>
@@ -406,36 +406,32 @@ Build <span id="app-version-1">…</span> — Catégories docs
         </div>
       </div>
 
-      <!-- Parrainage x3 = licence à vie -->
-      <div style="background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid #f59e0b;border-radius:10px;padding:9px 14px;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:22px;">🏆</span>
+      <!-- Référencement -->
+      <div style="background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid #f59e0b;border-radius:10px;padding:9px 14px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:22px;">🤝</span>
         <div style="text-align:left;">
-          <div style="font-size:12px;font-weight:800;color:#b45309;">Licence à vie offerte !</div>
-          <div style="font-size:11px;color:#78350f;">Parraine <strong>3 consultants</strong> qui achètent l'application → ta licence est offerte à vie, sans renouvellement.</div>
+          <div style="font-size:12px;font-weight:800;color:#b45309;">Référencement</div>
+          <div style="font-size:11px;color:#78350f;margin-top:2px;">Parraine <strong>3 consultants</strong> qui achètent l'application → reçois une <strong>licence gratuite d'un an</strong>.</div>
+          <div style="font-size:11px;color:#78350f;margin-top:4px;">Tu veux aller plus loin ? Sur présentation d'une <strong>facture d'apporteur d'affaires</strong>, reçois <strong>50 € HTVA</strong> par nouveau consultant supplémentaire parrainé.</div>
         </div>
       </div>
 
     </div>
 
-    <!-- Boutons essai -->
+    <!-- Boutons -->
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
       <button onclick="openAccessFormWith('demo')" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
         🧪 Essai 3 jours
       </button>
-      <button onclick="openAccessFormWith('trial')" style="background:transparent;border:1.5px solid #16a34a;color:#16a34a;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
-        🎁 Mois offert
+      <button onclick="toggleAccessForm()" style="background:#f97316;color:#fff;border:1.5px solid #f97316;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+        🛒 Commander l'app
       </button>
-    </div>
-
-    <div style="font-size:10px;color:#9a3412;line-height:1.5;padding-top:8px;border-top:1px solid #fde8cc;">
-      * <strong>Mois offert</strong> réservé aux nouveaux consultants Smart démarrés il y a moins de 2 mois,<br>
-      sous condition d'un abonnement annuel. Après le mois gratuit, la licence annuelle est de <strong>149 € HTVA</strong>.
     </div>
 
   </div>
 
   <!-- Bouton demande accès -->
-  <div style="text-align:center;margin-bottom:14px;">
+  <div style="text-align:center;margin-bottom:14px;display:none;">
     <button id="btn-access-request" onclick="toggleAccessForm()" style="background:#f97316;color:white;border:none;border-radius:12px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
       📝 Demander un accès
     </button>
