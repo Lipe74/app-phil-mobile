@@ -85,12 +85,11 @@
 #ctr-import-pdf-btn:disabled{ opacity:.6;cursor:default; }
 @keyframes ctr-import-spin{ to{ transform:rotate(360deg); } }
 
-.menu-item:hover { background:#e6f5ff; border-color:#00A7FF; }
+.menu-item:hover { background:#fff3e8; }
 .active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
 @media(max-width:600px){
   #outils-unlocked > div { flex-direction:column !important; }
   #outils-unlocked > div > div:first-child { width:100% !important; }
-  #pm-left-menu { position:static !important; max-height:none !important; overflow-y:visible !important; top:auto !important; }
   #iframe-panel { height:60vh !important;min-height:350px !important; }
 
   /* Mode plein écran mobile : évite de devoir scroller sous tout le menu pour voir le panneau ouvert */
@@ -166,17 +165,14 @@
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
 
-<!-- LISERÉ TRICOLORE PHIL-MOBILE (branding) -->
-<div style="height:7px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
-
 <!-- HEADER compact -->
   <div id="top-header"
      style="display:none;
             justify-content:space-between;
             align-items:center;
             padding:10px 16px;
-            background:#062B68;
-            border-bottom:none;
+            background:#f8f8f8;
+            border-bottom:1px solid #f97316;
             position:sticky;
             top:0;
             z-index:100;">
@@ -190,12 +186,12 @@
          style="width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;">
 
     <div style="display:flex;flex-direction:column;line-height:1;">
-      <span style="font-weight:700;font-size:14px;color:#fff;">
+      <span style="font-weight:700;font-size:14px;color:#f97316;">
         Outils Phil-Mobile
       </span>
 
-      <span style="font-size:9px;color:#9db3d6;font-weight:600;">
-Build <span id="app-version-1">…</span> — Messages expiration
+      <span style="font-size:9px;color:#999;font-weight:600;">
+Build <span id="app-version-1">…</span> — News temps réel
      </span>
     </div>
     </div>
@@ -258,11 +254,6 @@ Build <span id="app-version-1">…</span> — Messages expiration
             padding:16px;">
    <!-- VERROU FIREBASE -->
 <div id="rem-lock" style="background:#f8f8f8;padding:10px 16px;text-align:center;margin-bottom:8px;">
-
-<div style="max-width:400px;margin:20px auto;background:#fff;border-radius:18px;box-shadow:0 8px 28px rgba(6,43,104,.10);border:1px solid #eef1f6;overflow:hidden;">
-  <div style="height:5px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
-  <div style="padding:26px 26px 30px;">
-
   <div style="margin-bottom:20px;">
     <img src="images/logo.png"
          class="pm-default-logo"
@@ -328,10 +319,6 @@ Build <span id="app-version-1">…</span> — Messages expiration
        style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
     Mot de passe oublié ?
   </div>
-
-  </div>
-</div>
-
 <!-- Bouton toggle -->
 <div style="margin-top:22px;padding-bottom:6px;text-align:center;">
   <button id="btn-info-toggle" onclick="toggleInfoSection()" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;width:100%;max-width:320px;transition:all .2s;">
@@ -544,7 +531,7 @@ Build <span id="app-version-1">…</span> — Messages expiration
 
 
         <!-- COLONNE GAUCHE : menu -->
-        <div id="pm-left-menu" style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;position:sticky;align-self:flex-start;top:60px;max-height:calc(100vh - 76px);overflow-y:auto;padding-right:4px;">
+        <div id="pm-left-menu" style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
 
           <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
           <div id="sec-accueil" class="pm-sec-body">
@@ -1085,8 +1072,7 @@ Build <span id="app-version-1">…</span> — Messages expiration
           <div id="panel-contrats" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📋 Mes Contrats</h2>
 
-            <div style="background:#062B68;color:#fff;border-radius:14px;padding:16px 20px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:relative;overflow:hidden;">
-              <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
               <div>
                 <div style="font-size:28px;font-weight:700;" id="ctr-asp-total-display">0</div>
                 <div style="font-size:12px;opacity:.9;">ASP total (de départ + contrats)</div>
@@ -1222,8 +1208,7 @@ STATUT: independant
           <div id="panel-prosp-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🎯 Prospects Clients</h2>
 
-            <div style="background:#062B68;color:#fff;border-radius:14px;padding:12px 16px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;">
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
@@ -1442,8 +1427,7 @@ OPERATEUR: Proximus
           <div id="panel-prosp-consultants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🚀 Prospects Consultants</h2>
 
-            <div style="background:#062B68;color:#fff;border-radius:14px;padding:12px 16px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;position:relative;overflow:hidden;">
-              <div style="position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
+            <div style="background:linear-gradient(90deg,#f97316,#fb923c);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;text-align:center;">
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
@@ -2778,12 +2762,8 @@ function loadFrame(url, btn) {
   const panel = document.getElementById('iframe-panel');
   panel.style.display = 'flex';
   document.getElementById('iframe-loading').style.display = 'flex';
-  const iframe = document.getElementById('embed-frame');
-  iframe.style.display = 'none';
-  // Paramètre anti-cache : force un vrai rechargement à chaque ouverture, pour ne jamais rester
-  // bloqué sur une ancienne version déjà en mémoire dans l'iframe (le fameux souci du cache).
-  const sep = url.includes('?') ? '&' : '?';
-  iframe.src = url + sep + 't=' + Date.now();
+  document.getElementById('embed-frame').style.display = 'none';
+  document.getElementById('embed-frame').src = url;
   document.body.classList.add('mobile-panel-open');
 }
 
@@ -8061,44 +8041,21 @@ window.showTeamsMeeting = function () {
   }
 };
 
+let _newsUnsub = null;
+
 async function loadNews() {
-
   try {
-
-    // Attendre que Firestore soit prêt ET que l'utilisateur soit authentifié (sinon lecture refusée par les règles Firestore)
+    // Attendre Firestore + auth
     let tries = 0;
-    while ((!window.db || !window.getDoc || !pmCurrentUser) && tries < 30) {
+    while ((!window.db || !window.onSnapshot || !window.doc || !pmCurrentUser) && tries < 30) {
       await new Promise(r => setTimeout(r, 100));
       tries++;
     }
+    if (!window.db || !window.onSnapshot) return;
 
-    let active = null;
+    // Désabonner l'écouteur précédent si existant
+    if (_newsUnsub) { _newsUnsub(); _newsUnsub = null; }
 
-    if (window.db && window.getDoc) {
-      // Réessaie jusqu'à 3 fois : l'authentification Firebase peut mettre un instant de plus
-      // à être réellement prête côté Firestore, même une fois pmCurrentUser rempli.
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const snap = await window.getDoc(window.doc(window.db, 'news', 'current'));
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.active) active = data;
-          }
-          break;
-        } catch (e) {
-          console.log(`Lecture news Firestore impossible (essai ${attempt}/3):`, e.message);
-          if (attempt < 3) await new Promise(r => setTimeout(r, 500));
-        }
-      }
-    }
-
-    if (!active) return;
-
-    const banner =
-      document.getElementById('news-banner');
-
-    // Doit rester synchronisé avec NEWS_META dans admin.html / admin-test.html.
-    // Le label n'est jamais stocké dans active.title : il est ajouté ici uniquement, selon le type.
     const NEWS_META = {
       orange:  { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
       eneco:   { label: 'Infos Eneco',       icon: '🟣', bg: '#f5f3ff', color: '#5b21b6', border: '#7c3aed' },
@@ -8106,29 +8063,37 @@ async function loadNews() {
       phil:    { label: 'Infos Phil-Mobile', icon: '🟢', bg: '#ecfdf5', color: '#166534', border: '#22c55e' },
       release: { label: 'Infos Release',     icon: '⚪', bg: '#f9fafb', color: '#374151', border: '#6b7280' },
       alert:   { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' },
-      // Alias rétro-compatibilité avec les anciennes valeurs déjà enregistrées dans Firestore
       danger:  { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' },
       success: { label: 'Infos Phil-Mobile', icon: '🟢', bg: '#ecfdf5', color: '#166534', border: '#22c55e' },
       info:    { label: 'Infos Orange',      icon: '🟠', bg: '#fff7ed', color: '#9a3412', border: '#f97316' },
       app:     { label: 'Infos Phil-Mobile', icon: '🟢', bg: '#ecfdf5', color: '#166534', border: '#22c55e' }
     };
 
-    const meta = NEWS_META[active.type] || NEWS_META.orange;
+    // onSnapshot : mise à jour temps réel sans rechargement
+    _newsUnsub = window.onSnapshot(
+      window.doc(window.db, 'news', 'current'),
+      (snap) => {
+        const banner = document.getElementById('news-banner');
+        if (!banner) return;
+        if (!snap.exists() || !snap.data().active) {
+          banner.style.display = 'none';
+          banner.innerHTML = '';
+          return;
+        }
+        const data = snap.data();
+        const meta = NEWS_META[data.type] || NEWS_META.orange;
+        banner.style.display = 'block';
+        banner.style.background = meta.bg;
+        banner.style.color = meta.color;
+        banner.style.border = '1px solid ' + meta.border;
+        banner.innerHTML = meta.icon + ' ' + (meta.label ? meta.label + ' : ' : '') + data.title;
+      },
+      (err) => { console.log('News onSnapshot erreur:', err.message); }
+    );
 
-    banner.style.display = 'block';
-    banner.style.background = meta.bg;
-    banner.style.color = meta.color;
-    banner.style.border = '1px solid ' + meta.border;
-
-    banner.innerHTML =
-      meta.icon + ' ' + (meta.label ? meta.label + ' : ' : '') + active.title;
-
-  } catch(err){
-
-    console.log('News indisponibles');
-
+  } catch(err) {
+    console.log('News indisponibles:', err.message);
   }
-
 }
 
 loadNews();
@@ -8276,25 +8241,6 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
 </div>
 
 <div id="prosp-toast" style="display:none;position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:4000;"></div>
-
-<script>
-// Garde le menu de gauche bien collé sous le header (sticky), quelle que soit sa hauteur exacte
-// (peut varier légèrement selon le bandeau d'actu affiché ou non). Sans ça, un panneau de droite
-// devenu très haut (ex: le simulateur Orange, qui s'étire maintenant à sa hauteur réelle) laisse le
-// menu de gauche disparaître en scrollant, puisqu'il n'était pas fixé lui non plus.
-function pmSyncLeftMenuStickyOffset() {
-  const header = document.getElementById('top-header');
-  const menu = document.getElementById('pm-left-menu');
-  if (!header || !menu) return;
-  const h = header.offsetHeight || 60;
-  menu.style.top = h + 'px';
-  menu.style.maxHeight = 'calc(100vh - ' + (h + 16) + 'px)';
-}
-window.addEventListener('load', pmSyncLeftMenuStickyOffset);
-window.addEventListener('resize', pmSyncLeftMenuStickyOffset);
-setTimeout(pmSyncLeftMenuStickyOffset, 300);
-setTimeout(pmSyncLeftMenuStickyOffset, 1200);
-</script>
 
 </body>
 </html>
