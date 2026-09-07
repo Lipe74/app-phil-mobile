@@ -2327,7 +2327,7 @@ async function loadHubDocuments() {
         const slug = 'docs-' + cat.label.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').toLowerCase();
         const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
         return `<button onclick="toggleMenu('${slug}')" class="menu-item group-toggle">
-          ${escapeHtmlDocs(cat.icone || '📁')} Docs ${escapeHtmlDocs(cat.label)}
+          ${escapeHtmlDocs(cat.icone || '📁')} ${escapeHtmlDocs(cat.label)}
         </button>
         <div id="${slug}" class="submenu">
           ${docs.length
