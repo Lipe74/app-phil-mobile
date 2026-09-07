@@ -5377,22 +5377,33 @@ function renderCategoriesAdmin(cats) {
     container.innerHTML = '<div class="empty">Aucune catégorie — cliquez sur "🌱 Initialiser".</div>';
     return;
   }
-  let html = visible.map(cat => `
-    <div class="cat-drag-item" draggable="true" data-id="${cat.id}" data-label="${escapeAttrDocs(cat.label)}"
-         style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #f0f0f0;transition:opacity .15s;">
-      <span style="cursor:grab;color:#ccc;font-size:13px;letter-spacing:-2px;user-select:none;">⠿⠿</span>
-      ${window._catEditingId === cat.id
-        ? `<input type="text" id="cat-edit-icone-${cat.id}" value="${escapeAttrDocs(cat.icone||'')}" maxlength="4"
-               style="width:44px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;font-size:13px;">
-           <input type="text" id="cat-edit-label-${cat.id}" value="${escapeAttrDocs(cat.label)}"
-               style="flex:1;padding:4px 6px;border:1px solid #f97316;border-radius:6px;font-size:13px;"
-               onkeydown="if(event.key==='Enter')saveCategoryEdit('${cat.id}');if(event.key==='Escape')cancelCategoryEdit();">
-           <button class="btn btn-primary" onclick="saveCategoryEdit('${cat.id}')">✅</button>
-           <button class="btn btn-secondary" onclick="cancelCategoryEdit()">✖</button>`
-        : `<span style="font-size:13px;flex:1;font-weight:600;">${escapeHtmlDocs(cat.icone||'📁')} ${escapeHtmlDocs(cat.label)}</span>
+  const iconBar = DOC_ICON_CHOICES.map(e =>
+    `<button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:12px;" onclick="pickDocIcone('cat-edit-icone-CATID','${e}')">${e}</button>`
+  ).join('');
+
+  let html = visible.map(cat => {
+    const isEditing = window._catEditingId === cat.id;
+    const bar = iconBar.replace(/cat-edit-icone-CATID/g, 'cat-edit-icone-' + cat.id);
+    return `<div class="cat-drag-item" draggable="true" data-id="${cat.id}" data-label="${escapeAttrDocs(cat.label)}"
+         style="display:flex;flex-direction:${isEditing ? 'column' : 'row'};gap:6px;padding:7px 4px;border-bottom:1px solid #f0f0f0;transition:opacity .15s;">
+      ${isEditing
+        ? `<div style="display:flex;align-items:center;gap:6px;width:100%;">
+             <span style="cursor:grab;color:#ccc;font-size:13px;letter-spacing:-2px;user-select:none;flex-shrink:0;">⠿⠿</span>
+             <input type="text" id="cat-edit-icone-${cat.id}" value="${escapeAttrDocs(cat.icone||'')}" maxlength="4"
+                 style="width:44px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;font-size:13px;flex-shrink:0;">
+             <input type="text" id="cat-edit-label-${cat.id}" value="${escapeAttrDocs(cat.label)}"
+                 style="flex:1;padding:4px 6px;border:1px solid #f97316;border-radius:6px;font-size:13px;"
+                 onkeydown="if(event.key==='Enter')saveCategoryEdit('${cat.id}');if(event.key==='Escape')cancelCategoryEdit();">
+             <button class="btn btn-primary" onclick="saveCategoryEdit('${cat.id}')">✅</button>
+             <button class="btn btn-secondary" onclick="cancelCategoryEdit()">✖</button>
+           </div>
+           <div style="display:flex;flex-wrap:wrap;gap:3px;padding-left:26px;">${bar}</div>`
+        : `<span style="cursor:grab;color:#ccc;font-size:13px;letter-spacing:-2px;user-select:none;flex-shrink:0;">⠿⠿</span>
+           <span style="font-size:13px;flex:1;font-weight:600;">${escapeHtmlDocs(cat.icone||'📁')} ${escapeHtmlDocs(cat.label)}</span>
            <button class="btn btn-secondary" style="padding:3px 8px;" onclick="startCategoryEdit('${cat.id}')">✏️</button>
            <button class="btn btn-secondary" style="padding:3px 8px;color:#ef4444;" onclick="deleteCategory('${cat.id}','${escapeAttrDocs(cat.label)}')">🗑️</button>`}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   if (hidden.length) {
     html += `<div style="margin-top:8px;font-size:11px;color:#9a3412;font-style:italic;">
       ⚠️ Catégorie système (admin uniquement) : ${hidden.map(c => `${escapeHtmlDocs(c.icone||'📋')} <strong>${escapeHtmlDocs(c.label)}</strong>`).join(', ')}
@@ -5466,16 +5477,18 @@ window.saveCategoryEdit = async function (catId) {
   if (!newLabel) { alert('Le nom ne peut pas être vide.'); return; }
   const oldCat = (window._categoriesCache||[]).find(c => c.id === catId);
   if (!oldCat) return;
+  const newIcone = (iInp ? iInp.value.trim() : '') || '📁';
+  // Fermeture visuelle immédiate — patch cache local + re-render avant l'async Firestore
+  window._catEditingId = null;
+  if (oldCat) { oldCat.label = newLabel; oldCat.icone = newIcone; }
+  renderCategoriesAdmin(window._categoriesCache);
+  refreshCategorySelects(window._categoriesCache);
   try {
-    await updateDoc(doc(db, 'documentCategories', catId), {
-      label: newLabel, icone: (iInp ? iInp.value.trim() : '') || '📁'
-    });
-    // Si le label a changé → mettre à jour tous les documents de cette catégorie
+    await updateDoc(doc(db, 'documentCategories', catId), { label: newLabel, icone: newIcone });
     if (oldCat.label !== newLabel) {
       const toUpdate = (window._documentsCache||[]).filter(d => d.categorie === oldCat.label);
       if (toUpdate.length) await Promise.all(toUpdate.map(d => updateDoc(doc(db, 'documents', d.id), { categorie: newLabel })));
     }
-    window._catEditingId = null;
     showToast('✅ Catégorie mise à jour.');
   } catch (err) { alert('Erreur: ' + err.message); }
 };
@@ -5744,20 +5757,26 @@ function renderLiensAdmin(items) {
   const container = document.getElementById('liens-content');
   if (!container) return;
   if (!items.length) { container.innerHTML = '<div class="empty">Aucun lien</div>'; return; }
-  container.innerHTML = items.map((l, idx) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+  container.innerHTML = items.map((l, idx) => {
+    const isEditing = window._liensEditingId === l.id;
+    const LIEN_ICONS = ['🌐','🏛️','📱','☁️','📄','⚡','🟠','🔵','🟢','⭐','🔧','🏠','📊','🎯','🔑','📋','💼','🚀','🤝','📞'];
+    const iconBar = isEditing ? LIEN_ICONS.map(e =>
+      `<button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:12px;" onclick="pickDocIcone('lien-edit-icone-${l.id}','${e}')">${e}</button>`
+    ).join('') : '';
+    return `<div style="display:flex;flex-direction:${isEditing ? 'column' : 'row'};gap:${isEditing ? '6' : '8'}px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
       <span style="flex:1;min-width:220px;font-weight:600;display:flex;align-items:center;gap:6px;">
-        ${window._liensEditingId === l.id
+        ${isEditing
           ? `<div style="display:flex;flex-direction:column;gap:5px;width:100%;">
                <div style="display:flex;gap:6px;">
                  <input type="text" id="lien-edit-icone-${l.id}" value="${escapeAttrDocs(l.icone || '')}" placeholder="🌐" maxlength="4" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:44px;box-sizing:border-box;flex-shrink:0;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
                  <input type="text" id="lien-edit-titre-${l.id}" value="${escapeAttrDocs(l.titre)}" placeholder="Titre" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
                </div>
+               <div style="display:flex;flex-wrap:wrap;gap:3px;">${iconBar}</div>
                <input type="text" id="lien-edit-url-${l.id}" value="${escapeAttrDocs(l.url)}" placeholder="URL" style="font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;width:100%;box-sizing:border-box;" onkeydown="if(event.key==='Enter'){saveRenameLien('${l.id}')} if(event.key==='Escape'){cancelRenameLien()}">
              </div>`
           : `<span>${l.icone || '🌐'} ${escapeHtmlDocs(l.titre)}</span><span style="font-size:11px;color:#888;font-weight:400;">${escapeHtmlDocs(l.url)}</span>`}
       </span>
-      ${window._liensEditingId === l.id
+      ${isEditing
         ? `<button class="btn btn-primary" onclick="saveRenameLien('${l.id}')" title="Valider">✅</button>
            <button class="btn btn-secondary" onclick="cancelRenameLien()" title="Annuler">✖</button>`
         : `<button class="btn btn-secondary" onclick="startRenameLien('${l.id}')" title="Modifier">✏️</button>`}
@@ -5766,8 +5785,8 @@ function renderLiensAdmin(items) {
         <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === items.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveLienOrdre('${l.id}', 1)" title="Descendre">▼</button>
       </span>
       <button class="btn btn-secondary" onclick="deleteLienFiche('${l.id}')">🗑️</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 window.addLienFiche = async function () {
