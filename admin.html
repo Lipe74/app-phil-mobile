@@ -723,14 +723,29 @@
 
         <div class="admin-panel" id="panel-documents">
           <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-            <span>📄 Gestion des documents</span>
+            <span>📄 Gestion des documents &amp; catégories</span>
             <button class="btn btn-secondary" onclick="importExistingDocuments()">📥 Importer les documents existants</button>
           </div>
           <div style="font-size:11px;color:#888;margin-bottom:14px;">
-            Documents (PDF) consultables depuis le Hub, classés par catégorie. Ils s'affichent en visionneuse intégrée dans l'app — pas de bouton téléchargement proposé au consultant. "Importer les documents existants" récupère en une fois les PDF actuellement en ligne sur le site vers Firebase (à faire une seule fois ; les documents déjà importés sont ignorés automatiquement).
+            Gérez les catégories et les documents PDF consultables depuis le Hub. Les documents s'affichent en visionneuse intégrée — sans bouton de téléchargement pour les consultants.
           </div>
           <div id="documents-import-progress" style="display:none;margin-bottom:16px;font-size:12px;background:#fafafa;border:1px solid #eee;border-radius:8px;padding:10px 12px;"></div>
 
+          <!-- CATÉGORIES -->
+          <div class="card" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <div style="font-weight:700;font-size:13px;color:#f97316;">📂 Catégories</div>
+              <button class="btn btn-secondary" onclick="seedDefaultCategories()">🌱 Initialiser les catégories par défaut</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;">
+              <input type="text" id="cat-new-icone" placeholder="📁" maxlength="4" style="width:54px;padding:6px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;">
+              <input type="text" id="cat-new-label" placeholder="Nom de la catégorie" style="flex:1;min-width:140px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;" onkeydown="if(event.key==='Enter')addCategory();">
+              <button class="btn btn-primary" onclick="addCategory()">➕ Ajouter</button>
+            </div>
+            <div id="categories-content"><div class="empty">Chargement...</div></div>
+          </div>
+
+          <!-- AJOUTER UN DOCUMENT -->
           <div class="card">
             <div class="form-row">
               <label>Titre du document *</label>
@@ -764,13 +779,7 @@
             </div>
             <div class="form-row">
               <label>Catégorie *</label>
-              <select id="doc-new-categorie">
-                <option value="Phil-Mobile">Phil-Mobile</option>
-                <option value="Smart SN">Smart SN</option>
-                <option value="Orange">Orange</option>
-                <option value="Eneco">Eneco</option>
-                <option value="Divers">Divers</option>
-              </select>
+              <select id="doc-new-categorie"><option value="">Chargement...</option></select>
             </div>
             <button class="btn btn-primary" onclick="addDocumentFiche()">➕ Ajouter une fiche document</button>
           </div>
@@ -1651,6 +1660,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProduitsOrangeAdmin();
   loadCommissionsAdmin();
   loadDocumentsAdmin();
+  loadCategoriesAdmin();
   loadLiensAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
@@ -5281,9 +5291,20 @@ function loadCommissionsAdmin() {
 // Storage : chemin documents/{categorie}/{docId}_{fileName}
 // Une fiche peut exister sans fichier (url:null) — le bouton affiché passe alors de
 // "Remplacer" à "Importer" selon la présence ou non d'un fichier déjà associé.
+// ===== DOCUMENTS & CATÉGORIES DYNAMIQUES =====
+// Catégories par défaut (seeding initial si collection vide)
+const DEFAULT_CATEGORIES = [
+  { label: 'Phil-Mobile', icone: '🟢', ordre: 0 },
+  { label: 'Smart SN',    icone: '🔵', ordre: 1 },
+  { label: 'Orange',      icone: '🟠', ordre: 2 },
+  { label: 'Eneco',       icone: '⚡', ordre: 3 },
+  { label: 'Divers',      icone: '📁', ordre: 4 },
+];
+const A_TRIER_CATEGORY = { label: 'À trier', icone: '📋', ordre: 999, hidden: true };
+// Rétro-compatibilité : labels connus sans Firestore (fallback)
 const DOC_CATEGORIES = ['Phil-Mobile', 'Smart SN', 'Orange', 'Eneco', 'Divers'];
 
-// Migration unique des PDF déjà en ligne sur le site (repo statique) vers Firebase.
+// Mémoire migration PDF existants (inchangée)
 const EXISTING_DOCS_MIGRATION = [
   { titre: 'Manuel Sales Force', icone: '🟠', categorie: 'Smart SN', fileName: 'wp_salesforce.pdf' },
   { titre: 'Manuel My Smart SN', icone: '📘', categorie: 'Smart SN', fileName: 'wp_mysmart.pdf' },
@@ -5305,18 +5326,189 @@ function escapeHtmlDocs(str) {
   div.textContent = str ?? '';
   return div.innerHTML;
 }
-
 function escapeAttrDocs(str) {
   return (str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
 const DOC_ICON_CHOICES = ['📄','📘','📗','📙','💶','📊','📺','📡','🌍','🟠','🔵','🟢','📁','⭐','✅','🎯','📌','🔧','📱','💡'];
-
 window.pickDocIcone = function (targetId, emoji) {
   const inp = document.getElementById(targetId);
   if (inp) { inp.value = emoji; inp.focus(); }
 };
 
+// ----- CATÉGORIES -----
+let categoriesUnsub = null;
+window._categoriesCache = [];
+window._catEditingId = null;
+
+function loadCategoriesAdmin() {
+  const container = document.getElementById('categories-content');
+  if (!container) return;
+  if (categoriesUnsub) { try { categoriesUnsub(); } catch (e) {} categoriesUnsub = null; }
+  categoriesUnsub = onSnapshot(collection(db, 'documentCategories'), (snap) => {
+    const cats = [];
+    snap.forEach(d => cats.push({ id: d.id, ...d.data() }));
+    cats.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+    window._categoriesCache = cats;
+    renderCategoriesAdmin(cats);
+    refreshCategorySelects(cats);
+    if (window._documentsCache && window._documentsCache.length) renderDocumentsAdmin(window._documentsCache);
+  }, err => {
+    if (container) container.innerHTML = '<div class="empty">Erreur chargement catégories.</div>';
+  });
+}
+
+function refreshCategorySelects(cats) {
+  const visible = cats.filter(c => !c.hidden);
+  const sel = document.getElementById('doc-new-categorie');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = visible.map(c =>
+    `<option value="${escapeAttrDocs(c.label)}">${c.icone || '📁'} ${escapeHtmlDocs(c.label)}</option>`
+  ).join('') || '<option value="">Aucune catégorie</option>';
+  if (cur && visible.some(c => c.label === cur)) sel.value = cur;
+}
+
+function renderCategoriesAdmin(cats) {
+  const container = document.getElementById('categories-content');
+  if (!container) return;
+  const visible = cats.filter(c => !c.hidden);
+  const hidden  = cats.filter(c => c.hidden);
+  if (!cats.length) {
+    container.innerHTML = '<div class="empty">Aucune catégorie — cliquez sur "🌱 Initialiser".</div>';
+    return;
+  }
+  let html = visible.map(cat => `
+    <div class="cat-drag-item" draggable="true" data-id="${cat.id}" data-label="${escapeAttrDocs(cat.label)}"
+         style="display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #f0f0f0;transition:opacity .15s;">
+      <span style="cursor:grab;color:#ccc;font-size:13px;letter-spacing:-2px;user-select:none;">⠿⠿</span>
+      ${window._catEditingId === cat.id
+        ? `<input type="text" id="cat-edit-icone-${cat.id}" value="${escapeAttrDocs(cat.icone||'')}" maxlength="4"
+               style="width:44px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;font-size:13px;">
+           <input type="text" id="cat-edit-label-${cat.id}" value="${escapeAttrDocs(cat.label)}"
+               style="flex:1;padding:4px 6px;border:1px solid #f97316;border-radius:6px;font-size:13px;"
+               onkeydown="if(event.key==='Enter')saveCategoryEdit('${cat.id}');if(event.key==='Escape')cancelCategoryEdit();">
+           <button class="btn btn-primary" onclick="saveCategoryEdit('${cat.id}')">✅</button>
+           <button class="btn btn-secondary" onclick="cancelCategoryEdit()">✖</button>`
+        : `<span style="font-size:13px;flex:1;font-weight:600;">${escapeHtmlDocs(cat.icone||'📁')} ${escapeHtmlDocs(cat.label)}</span>
+           <button class="btn btn-secondary" style="padding:3px 8px;" onclick="startCategoryEdit('${cat.id}')">✏️</button>
+           <button class="btn btn-secondary" style="padding:3px 8px;color:#ef4444;" onclick="deleteCategory('${cat.id}','${escapeAttrDocs(cat.label)}')">🗑️</button>`}
+    </div>`).join('');
+  if (hidden.length) {
+    html += `<div style="margin-top:8px;font-size:11px;color:#9a3412;font-style:italic;">
+      ⚠️ Catégorie système (admin uniquement) : ${hidden.map(c => `${escapeHtmlDocs(c.icone||'📋')} <strong>${escapeHtmlDocs(c.label)}</strong>`).join(', ')}
+    </div>`;
+  }
+  container.innerHTML = html;
+
+  // Drag & drop catégories
+  let catDragSrc = null;
+  container.querySelectorAll('.cat-drag-item').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      catDragSrc = el.dataset.id;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => { el.style.opacity = '0.4'; }, 0);
+    });
+    el.addEventListener('dragend', () => {
+      el.style.opacity = '';
+      container.querySelectorAll('.cat-drag-item').forEach(i => i.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      container.querySelectorAll('.cat-drag-item').forEach(i => i.classList.remove('drag-over'));
+      if (el.dataset.id !== catDragSrc) el.classList.add('drag-over');
+    });
+    el.addEventListener('drop', async e => {
+      e.preventDefault();
+      if (!catDragSrc || catDragSrc === el.dataset.id) return;
+      const vis = (window._categoriesCache||[]).filter(c => !c.hidden);
+      const sIdx = vis.findIndex(c => c.id === catDragSrc);
+      const dIdx = vis.findIndex(c => c.id === el.dataset.id);
+      if (sIdx === -1 || dIdx === -1) return;
+      [vis[sIdx], vis[dIdx]] = [vis[dIdx], vis[sIdx]];
+      catDragSrc = null;
+      try {
+        await Promise.all(vis.map((c, i) => updateDoc(doc(db, 'documentCategories', c.id), { ordre: i })));
+      } catch (err) { alert('Erreur: ' + err.message); }
+    });
+  });
+}
+
+window.addCategory = async function () {
+  const label = (document.getElementById('cat-new-label').value || '').trim();
+  const icone = (document.getElementById('cat-new-icone').value || '').trim();
+  if (!label) { alert('Nom requis.'); return; }
+  if ((window._categoriesCache||[]).some(c => c.label.toLowerCase() === label.toLowerCase())) {
+    alert('Cette catégorie existe déjà.'); return;
+  }
+  try {
+    const ordre = (window._categoriesCache||[]).filter(c => !c.hidden).length;
+    await addDoc(collection(db, 'documentCategories'), { label, icone: icone || '📁', ordre, hidden: false });
+    document.getElementById('cat-new-label').value = '';
+    document.getElementById('cat-new-icone').value = '';
+    showToast('✅ Catégorie créée.');
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.startCategoryEdit = function (catId) {
+  window._catEditingId = catId;
+  renderCategoriesAdmin(window._categoriesCache);
+  setTimeout(() => { const i = document.getElementById('cat-edit-label-' + catId); if (i) { i.focus(); i.select(); } }, 0);
+};
+window.cancelCategoryEdit = function () {
+  window._catEditingId = null;
+  renderCategoriesAdmin(window._categoriesCache);
+};
+window.saveCategoryEdit = async function (catId) {
+  const lInp = document.getElementById('cat-edit-label-' + catId);
+  const iInp = document.getElementById('cat-edit-icone-' + catId);
+  if (!lInp) return;
+  const newLabel = lInp.value.trim();
+  if (!newLabel) { alert('Le nom ne peut pas être vide.'); return; }
+  const oldCat = (window._categoriesCache||[]).find(c => c.id === catId);
+  if (!oldCat) return;
+  try {
+    await updateDoc(doc(db, 'documentCategories', catId), {
+      label: newLabel, icone: (iInp ? iInp.value.trim() : '') || '📁'
+    });
+    // Si le label a changé → mettre à jour tous les documents de cette catégorie
+    if (oldCat.label !== newLabel) {
+      const toUpdate = (window._documentsCache||[]).filter(d => d.categorie === oldCat.label);
+      if (toUpdate.length) await Promise.all(toUpdate.map(d => updateDoc(doc(db, 'documents', d.id), { categorie: newLabel })));
+    }
+    window._catEditingId = null;
+    showToast('✅ Catégorie mise à jour.');
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+window.deleteCategory = async function (catId, catLabel) {
+  if (!confirm(`Supprimer la catégorie "${catLabel}" ?\nLes documents seront déplacés dans "À trier" (visible admin uniquement).`)) return;
+  try {
+    // S'assurer que la catégorie "À trier" existe
+    let aTrier = (window._categoriesCache||[]).find(c => c.hidden && c.label === 'À trier');
+    if (!aTrier) {
+      const r = await addDoc(collection(db, 'documentCategories'), A_TRIER_CATEGORY);
+      aTrier = { id: r.id, ...A_TRIER_CATEGORY };
+    }
+    const toMove = (window._documentsCache||[]).filter(d => d.categorie === catLabel);
+    if (toMove.length) await Promise.all(toMove.map(d => updateDoc(doc(db, 'documents', d.id), { categorie: 'À trier' })));
+    await deleteDoc(doc(db, 'documentCategories', catId));
+    showToast(`🗑️ Catégorie supprimée. ${toMove.length} doc(s) → "À trier".`);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+window.seedDefaultCategories = async function () {
+  const existing = (window._categoriesCache||[]).map(c => c.label.toLowerCase());
+  const toCreate = DEFAULT_CATEGORIES.filter(c => !existing.includes(c.label.toLowerCase()));
+  if (!toCreate.length && existing.length) { alert('Les catégories par défaut existent déjà.'); return; }
+  if (!confirm(`Créer ${toCreate.length || DEFAULT_CATEGORIES.length} catégorie(s) par défaut ?`)) return;
+  try {
+    const hasATrier = (window._categoriesCache||[]).some(c => c.hidden && c.label === 'À trier');
+    if (!hasATrier) await addDoc(collection(db, 'documentCategories'), A_TRIER_CATEGORY);
+    const base = toCreate.length ? toCreate : DEFAULT_CATEGORIES;
+    await Promise.all(base.map(c => addDoc(collection(db, 'documentCategories'), { ...c, hidden: false })));
+    showToast(`✅ ${base.length} catégorie(s) créée(s).`);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// ----- DOCUMENTS -----
 let documentsUnsub = null;
 window._documentsCache = [];
 
@@ -5339,8 +5531,21 @@ function loadDocumentsAdmin() {
 function renderDocumentsAdmin(items) {
   const container = document.getElementById('documents-content');
   if (!container) return;
-  container.innerHTML = DOC_CATEGORIES.map(cat => {
-    const list = items.filter(d => d.categorie === cat);
+
+  // Catégories visibles depuis Firestore, fallback sur les labels codés en dur
+  const dynCats = (window._categoriesCache||[]).filter(c => !c.hidden);
+  const catLabels = dynCats.length ? dynCats.map(c => c.label) : DOC_CATEGORIES;
+
+  // Afficher "À trier" uniquement s'il y a des documents dedans
+  const allLabels = [...catLabels];
+  if (items.some(d => d.categorie === 'À trier')) allLabels.push('À trier');
+
+  // Options pour le select de déplacement
+  const moveOptions = allLabels.map(c => `<option value="${escapeAttrDocs(c)}">${c}</option>`).join('');
+
+  container.innerHTML = allLabels.map(cat => {
+    const isSystem = cat === 'À trier';
+    const list = items.filter(d => d.categorie === cat).sort((a,b) => (a.ordre||0)-(b.ordre||0));
     const rows = list.length ? list.map((d, idx) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
         <span style="flex:1;min-width:160px;font-weight:600;display:flex;align-items:center;gap:6px;">
@@ -5359,28 +5564,28 @@ function renderDocumentsAdmin(items) {
         ${window._documentsEditingId === d.id
           ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
              <button class="btn btn-secondary" onclick="cancelRenameDocument()" title="Annuler">✖</button>`
-          : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer / changer l'icône">✏️</button>`}
+          : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer">✏️</button>`}
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
         <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
           ${d.url ? '🔄 Remplacer' : '📥 Importer'}
           <input type="file" accept="application/pdf" style="display:none;" onchange="uploadDocumentFile('${d.id}', this)">
         </label>
         <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
-          ${DOC_CATEGORIES.map(c => `<option value="${c}" ${c === cat ? 'selected' : ''}>${c}</option>`).join('')}
+          ${moveOptions.replace(`value="${escapeAttrDocs(cat)}"`, `value="${escapeAttrDocs(cat)}" selected`)}
         </select>
         <span style="display:flex;flex-direction:column;gap:1px;">
           <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
           <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
         </span>
         <button class="btn btn-secondary" onclick="deleteDocumentFiche('${d.id}')">🗑️</button>
-      </div>
-    `).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
+      </div>`).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
     return `
       <div style="margin-bottom:18px;">
-        <div style="font-weight:700;color:#f97316;font-size:13px;margin-bottom:6px;">${cat}</div>
+        <div style="font-weight:700;color:${isSystem ? '#9a3412' : '#f97316'};font-size:13px;margin-bottom:6px;">
+          ${isSystem ? '📋 À trier (admin uniquement)' : escapeHtmlDocs(cat)}
+        </div>
         ${rows}
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
@@ -5391,6 +5596,7 @@ window.addDocumentFiche = async function () {
   const icone = iconeInput.value.trim();
   const categorie = document.getElementById('doc-new-categorie').value;
   if (!titre) { alert('Titre requis.'); return; }
+  if (!categorie) { alert('Catégorie requise.'); return; }
   try {
     const ordre = window._documentsCache.filter(d => d.categorie === categorie).length;
     await addDoc(collection(db, 'documents'), {
@@ -5400,9 +5606,7 @@ window.addDocumentFiche = async function () {
     titreInput.value = '';
     iconeInput.value = '';
     showToast('✅ Fiche document créée.');
-  } catch (err) {
-    alert("Erreur: " + err.message);
-  }
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 
 window.uploadDocumentFile = async function (docId, input) {
@@ -5415,15 +5619,10 @@ window.uploadDocumentFile = async function (docId, input) {
     const sRef = window.storageRef(window.storage, path);
     await window.uploadBytes(sRef, file, { contentType: file.type || 'application/pdf' });
     const url = await window.getDownloadURL(sRef);
-    await updateDoc(doc(db, 'documents', docId), {
-      url, storagePath: path, fileName: file.name, dateAjout: new Date().toISOString()
-    });
+    await updateDoc(doc(db, 'documents', docId), { url, storagePath: path, fileName: file.name, dateAjout: new Date().toISOString() });
     showToast('✅ Document importé.');
-  } catch (err) {
-    alert("Erreur lors de l'import: " + err.message);
-  } finally {
-    input.value = '';
-  }
+  } catch (err) { alert("Erreur lors de l'import: " + err.message); }
+  finally { input.value = ''; }
 };
 
 window.deleteDocumentFiche = async function (docId) {
@@ -5431,18 +5630,14 @@ window.deleteDocumentFiche = async function (docId) {
   try {
     await deleteDoc(doc(db, 'documents', docId));
     showToast('🗑️ Document supprimé.');
-  } catch (err) {
-    alert("Erreur: " + err.message);
-  }
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 
 window.moveDocumentCategorie = async function (docId, newCategorie) {
   try {
     await updateDoc(doc(db, 'documents', docId), { categorie: newCategorie });
     showToast('✅ Catégorie mise à jour.');
-  } catch (err) {
-    alert("Erreur: " + err.message);
-  }
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 
 window._documentsEditingId = null;
@@ -5450,17 +5645,12 @@ window._documentsEditingId = null;
 window.startRenameDocument = function (docId) {
   window._documentsEditingId = docId;
   renderDocumentsAdmin(window._documentsCache);
-  setTimeout(() => {
-    const inp = document.getElementById('doc-edit-input-' + docId);
-    if (inp) { inp.focus(); inp.select(); }
-  }, 0);
+  setTimeout(() => { const inp = document.getElementById('doc-edit-input-' + docId); if (inp) { inp.focus(); inp.select(); } }, 0);
 };
-
 window.cancelRenameDocument = function () {
   window._documentsEditingId = null;
   renderDocumentsAdmin(window._documentsCache);
 };
-
 window.saveRenameDocument = async function (docId) {
   const inp = document.getElementById('doc-edit-input-' + docId);
   const iconeInp = document.getElementById('doc-edit-icone-' + docId);
@@ -5471,35 +5661,24 @@ window.saveRenameDocument = async function (docId) {
   try {
     await updateDoc(doc(db, 'documents', docId), { titre: trimmed, icone: icone || null });
     window._documentsEditingId = null;
-    // Corrige localement le cache pour un retour visuel immédiat (sans attendre
-    // le prochain événement onSnapshot, qui peut tarder sur un simple changement
-    // de métadonnées réseau).
     const item = (window._documentsCache || []).find(d => d.id === docId);
     if (item) { item.titre = trimmed; item.icone = icone || null; }
     renderDocumentsAdmin(window._documentsCache);
     showToast('✅ Document mis à jour.');
-  } catch (err) {
-    alert("Erreur: " + err.message);
-  }
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 
 window.moveDocumentOrdre = async function (docId, direction) {
   const item = (window._documentsCache || []).find(d => d.id === docId);
   if (!item) return;
-  const siblings = (window._documentsCache || [])
-    .filter(d => d.categorie === item.categorie)
-    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+  const siblings = (window._documentsCache || []).filter(d => d.categorie === item.categorie).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
   const idx = siblings.findIndex(d => d.id === docId);
   const swapIdx = idx + direction;
   if (swapIdx < 0 || swapIdx >= siblings.length) return;
-  // Échange les deux positions puis renumérote tout le groupe (0,1,2...) — fiable même
-  // si les valeurs "ordre" existantes avaient des doublons (ex: import initial).
   [siblings[idx], siblings[swapIdx]] = [siblings[swapIdx], siblings[idx]];
   try {
     await Promise.all(siblings.map((d, i) => updateDoc(doc(db, 'documents', d.id), { ordre: i })));
-  } catch (err) {
-    alert("Erreur: " + err.message);
-  }
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 
 window.importExistingDocuments = async function () {
@@ -5514,10 +5693,7 @@ window.importExistingDocuments = async function () {
     const line = document.createElement('div');
     line.textContent = `⏳ ${item.titre}...`;
     progress.appendChild(line);
-    if (existingFileNames.has(item.fileName)) {
-      line.textContent = `↪️ ${item.titre} — déjà importé, ignoré.`;
-      continue;
-    }
+    if (existingFileNames.has(item.fileName)) { line.textContent = `↪️ ${item.titre} — déjà importé, ignoré.`; continue; }
     try {
       const res = await fetch(`https://app.phil-mobile.be/documents/${item.fileName}`);
       if (!res.ok) throw new Error('fichier introuvable sur le site');
@@ -5527,18 +5703,12 @@ window.importExistingDocuments = async function () {
       const sRef = window.storageRef(window.storage, path);
       await window.uploadBytes(sRef, blob, { contentType: 'application/pdf' });
       const url = await window.getDownloadURL(sRef);
-      await setDoc(newDocRef, {
-        titre: item.titre, icone: item.icone || null, categorie: item.categorie, url, storagePath: path,
-        fileName: item.fileName, ordre: i, dateAjout: new Date().toISOString()
-      });
+      await setDoc(newDocRef, { titre: item.titre, icone: item.icone || null, categorie: item.categorie, url, storagePath: path, fileName: item.fileName, ordre: i, dateAjout: new Date().toISOString() });
       line.textContent = `✅ ${item.titre}`;
-    } catch (err) {
-      line.textContent = `❌ ${item.titre} — ${err.message}`;
-    }
+    } catch (err) { line.textContent = `❌ ${item.titre} — ${err.message}`; }
   }
   showToast('Import terminé.');
 };
-
 // ===== LIENS (menu Hub "Liens importants") =====
 // Firestore : collection "liens" : { titre, url, icone, ordre, dateAjout }.
 const EXISTING_LIENS_MIGRATION = [

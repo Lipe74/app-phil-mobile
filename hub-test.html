@@ -191,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — News temps réel
+Build <span id="app-version-1">…</span> — Catégories docs
      </span>
     </div>
     </div>
@@ -648,40 +648,8 @@ Build <span id="app-version-1">…</span> — News temps réel
 <div id="linksMenu" class="submenu">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
-<!-- DOCUMENTS (chargés dynamiquement depuis Firestore, collection "documents") -->
-
-<button onclick="toggleMenu('docsPhilMobile')" class="menu-item group-toggle">
-🟢 Docs Phil-Mobile
-</button>
-<div id="docsPhilMobile" class="submenu">
-  <div class="menu-item" style="opacity:.5;">Chargement...</div>
-</div>
-
-<button onclick="toggleMenu('docsSmartSN')" class="menu-item group-toggle">
-🔵 Docs Smart SN
-</button>
-<div id="docsSmartSN" class="submenu">
-  <div class="menu-item" style="opacity:.5;">Chargement...</div>
-</div>
-
-<button onclick="toggleMenu('docsOrange')" class="menu-item group-toggle">
-🟠 Docs Orange
-</button>
-<div id="docsOrange" class="submenu">
-  <div class="menu-item" style="opacity:.5;">Chargement...</div>
-</div>
-
-<button onclick="toggleMenu('docsEneco')" class="menu-item group-toggle">
-⚡ Docs Eneco
-</button>
-<div id="docsEneco" class="submenu">
-  <div class="menu-item" style="opacity:.5;">Chargement...</div>
-</div>
-
-<button onclick="toggleMenu('docsDivers')" class="menu-item group-toggle">
-📁 Docs Divers
-</button>
-<div id="docsDivers" class="submenu">
+<!-- DOCUMENTS (chargés dynamiquement depuis Firestore — documents + documentCategories) -->
+<div id="hub-docs-container">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 </div>
@@ -2339,36 +2307,54 @@ async function loadHubDocuments() {
     }
     if (!window.db || !window.onSnapshot) throw new Error('Firestore non disponible');
 
-    const catMap = {
-      'Phil-Mobile': 'docsPhilMobile',
-      'Smart SN': 'docsSmartSN',
-      'Orange': 'docsOrange',
-      'Eneco': 'docsEneco',
-      'Divers': 'docsDivers'
-    };
+    // Cache partagé pour le rendu combiné catégories + documents
+    let hubCats = [];
+    let hubDocs = [];
 
-    if (window._hubDocumentsUnsub) { try { window._hubDocumentsUnsub(); } catch (e) {} }
-
-    window._hubDocumentsUnsub = window.onSnapshot(window.collection(window.db, 'documents'), (snap) => {
-      const items = [];
-      snap.forEach(docSnap => {
-        const d = docSnap.data();
-        if (d.url) items.push({ id: docSnap.id, ...d });
-      });
-      items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
-
-      Object.keys(catMap).forEach(cat => {
-        const el = document.getElementById(catMap[cat]);
-        if (!el) return;
-        const list = items.filter(d => d.categorie === cat);
-        el.innerHTML = list.length
-          ? list.map(d => `<button onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" style="display:flex;align-items:flex-start;gap:6px;"><span>${d.icone || '📄'}</span><span style="flex:1;">${escapeHtmlDocs(d.titre)}</span></button>`).join('')
-          : '<div class="menu-item" style="opacity:.5;">Aucun document</div>';
-      });
+    function renderHubDocuments() {
+      const container = document.getElementById('hub-docs-container');
+      if (!container) return;
+      // Catégories visibles (ordre Firestore), fallback sur les 5 catégories codées en dur
+      const FALLBACK_CATS = [
+        { label: 'Phil-Mobile', icone: '🟢' },
+        { label: 'Smart SN',    icone: '🔵' },
+        { label: 'Orange',      icone: '🟠' },
+        { label: 'Eneco',       icone: '⚡' },
+        { label: 'Divers',      icone: '📁' },
+      ];
+      const cats = hubCats.length > 0 ? hubCats.filter(c => !c.hidden) : FALLBACK_CATS;
+      container.innerHTML = cats.map(cat => {
+        const slug = 'docs-' + cat.label.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').toLowerCase();
+        const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
+        return `<button onclick="toggleMenu('${slug}')" class="menu-item group-toggle">
+          ${escapeHtmlDocs(cat.icone || '📁')} Docs ${escapeHtmlDocs(cat.label)}
+        </button>
+        <div id="${slug}" class="submenu">
+          ${docs.length
+            ? docs.map(d => `<button onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" style="display:flex;align-items:flex-start;gap:6px;"><span>${escapeHtmlDocs(d.icone||'📄')}</span><span style="flex:1;">${escapeHtmlDocs(d.titre)}</span></button>`).join('')
+            : '<div class="menu-item" style="opacity:.5;">Aucun document</div>'}
+        </div>`;
+      }).join('');
       if (typeof initFavorites === 'function') initFavorites();
-    }, (err) => {
-      console.log('Chargement documents impossible:', err.message);
-    });
+    }
+
+    // Listener catégories
+    if (window._hubCatsUnsub) { try { window._hubCatsUnsub(); } catch(e) {} }
+    window._hubCatsUnsub = window.onSnapshot(window.collection(window.db, 'documentCategories'), (snap) => {
+      hubCats = [];
+      snap.forEach(d => hubCats.push({ id: d.id, ...d.data() }));
+      hubCats.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+      renderHubDocuments();
+    }, () => {});
+
+    // Listener documents
+    if (window._hubDocumentsUnsub) { try { window._hubDocumentsUnsub(); } catch (e) {} }
+    window._hubDocumentsUnsub = window.onSnapshot(window.collection(window.db, 'documents'), (snap) => {
+      hubDocs = [];
+      snap.forEach(docSnap => { const d = docSnap.data(); if (d.url) hubDocs.push({ id: docSnap.id, ...d }); });
+      renderHubDocuments();
+    }, (err) => { console.log('loadHubDocuments error:', err.message); });
+
   } catch (err) {
     console.log('loadHubDocuments error:', err.message);
   }
