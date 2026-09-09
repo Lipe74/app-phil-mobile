@@ -1781,12 +1781,6 @@ STATUT: independant
             <div class="pm-sec">Abonnement application</div>
             <div id="mp-abonnement" style="font-size:12px;color:#6b7280;margin-bottom:14px;"></div>
 
-            <!-- Stats Smart (perso) — visible uniquement pour delta835 -->
-            <div id="mp-smart-stats-block" style="display:none;">
-              <div class="pm-sec">📊 Mes stats Smart</div>
-              <div id="mp-smart-stats-table" style="overflow-x:auto;margin-bottom:14px;"></div>
-            </div>
-
             <button onclick="saveMonProfilInfo()" style="width:100%;padding:10px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">💾 Enregistrer mes informations</button>
             <div id="mp-save-status" style="font-size:12px;font-weight:600;text-align:center;margin-bottom:10px;"></div>
 
@@ -1825,6 +1819,11 @@ STATUT: independant
             </div>
             <!-- Métriques -->
             <div id="pm-accueil-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
+            <!-- Carte Stats Smart (perso) — visible uniquement pour delta835 -->
+            <div id="pm-smart-stats-card" style="display:none;border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;">
+              <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📊 MES STATS SMART</div>
+              <div id="mp-smart-stats-table" style="overflow-x:auto;"></div>
+            </div>
           </div>
 
           <!-- Panel Suivi des contrats v6 -->
@@ -3011,16 +3010,6 @@ async function renderMonProfil() {
     }
   }
 
-  // Stats Smart (perso) — visible uniquement pour delta835
-  const smartBlock = document.getElementById('mp-smart-stats-block');
-  if (smartBlock) {
-    if (id === 'delta835') {
-      smartBlock.style.display = 'block';
-      renderSmartStatsBlock();
-    } else {
-      smartBlock.style.display = 'none';
-    }
-  }
 }
 
 // ===== STATS SMART (PERSO) — consultants/delta835/smartStats/{month} =====
@@ -5213,6 +5202,17 @@ function renderDashboard() {
 
   // Métriques (Contrats ce mois / Orange / Eneco / ASP ce mois) — lues depuis Firestore (wp_contrats.html)
   refreshAccueilMetrics(u);
+
+  // Stats Smart (perso) — visible uniquement pour delta835
+  const smartCard = document.getElementById('pm-smart-stats-card');
+  if (smartCard) {
+    if (u.id === 'delta835') {
+      smartCard.style.display = 'block';
+      renderSmartStatsBlock();
+    } else {
+      smartCard.style.display = 'none';
+    }
+  }
 }
 
 async function refreshAccueilMetrics(u) {
