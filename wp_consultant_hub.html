@@ -1781,6 +1781,12 @@ STATUT: independant
             <div class="pm-sec">Abonnement application</div>
             <div id="mp-abonnement" style="font-size:12px;color:#6b7280;margin-bottom:14px;"></div>
 
+            <!-- Stats Smart (perso) — visible uniquement pour delta835 -->
+            <div id="mp-smart-stats-block" style="display:none;">
+              <div class="pm-sec">📊 Mes stats Smart</div>
+              <div id="mp-smart-stats-table" style="overflow-x:auto;margin-bottom:14px;"></div>
+            </div>
+
             <button onclick="saveMonProfilInfo()" style="width:100%;padding:10px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">💾 Enregistrer mes informations</button>
             <div id="mp-save-status" style="font-size:12px;font-weight:600;text-align:center;margin-bottom:10px;"></div>
 
@@ -3004,6 +3010,87 @@ async function renderMonProfil() {
       ab.textContent = "Aucune date d'expiration définie.";
     }
   }
+
+  // Stats Smart (perso) — visible uniquement pour delta835
+  const smartBlock = document.getElementById('mp-smart-stats-block');
+  if (smartBlock) {
+    if (id === 'delta835') {
+      smartBlock.style.display = 'block';
+      renderSmartStatsBlock();
+    } else {
+      smartBlock.style.display = 'none';
+    }
+  }
+}
+
+// ===== STATS SMART (PERSO) — consultants/delta835/smartStats/{month} =====
+async function renderSmartStatsBlock() {
+  const el = document.getElementById('mp-smart-stats-table');
+  if (!el) return;
+  el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Chargement...</div>';
+
+  let months = [];
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) { await new Promise(r=>setTimeout(r,100)); tries++; }
+    if (window.db && window.getDocs) {
+      const snap = await window.getDocs(window.query(
+        window.collection(window.db, 'consultants', 'delta835', 'smartStats'),
+        window.orderBy('month', 'desc')
+      ));
+      snap.forEach(d => months.push(d.data()));
+    }
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:12px;color:#E24B4A;">Erreur de chargement : ${e.message}</div>`;
+    return;
+  }
+
+  if (!months.length) {
+    el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucune donnée importée pour le moment.</div>';
+    return;
+  }
+
+  // Union des lignes (type/sous-type), dans l'ordre de première apparition
+  const rowKeys = [];
+  const rowLabels = {};
+  months.forEach(m => (m.lines || []).forEach(l => {
+    const key = `${l.type}||${l.subtype}`;
+    if (!rowKeys.includes(key)) { rowKeys.push(key); rowLabels[key] = { type: l.type, subtype: l.subtype }; }
+  }));
+
+  const fmt = n => (Number(n) || 0).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let html = '<table style="border-collapse:collapse;font-size:11px;white-space:nowrap;">';
+  // En-tête : mois
+  html += '<tr><th style="position:sticky;left:0;background:#fff;border:1px solid #eee;padding:5px 8px;text-align:left;">Type</th>';
+  months.forEach(m => {
+    html += `<th colspan="3" style="border:1px solid #eee;padding:5px 8px;background:#fef9f5;text-align:center;">${m.monthLabel || m.month}</th>`;
+  });
+  html += '</tr><tr><th style="position:sticky;left:0;background:#fff;border:1px solid #eee;padding:5px 8px;"></th>';
+  months.forEach(() => {
+    html += '<th style="border:1px solid #eee;padding:4px 6px;color:#888;font-weight:600;">Perso</th><th style="border:1px solid #eee;padding:4px 6px;color:#888;font-weight:600;">Upline</th><th style="border:1px solid #eee;padding:4px 6px;color:#888;font-weight:600;">S-total</th>';
+  });
+  html += '</tr>';
+
+  rowKeys.forEach(key => {
+    const { type, subtype } = rowLabels[key];
+    html += `<tr><td style="position:sticky;left:0;background:#fff;border:1px solid #eee;padding:5px 8px;font-weight:600;">${type} — ${subtype}</td>`;
+    months.forEach(m => {
+      const line = (m.lines || []).find(l => `${l.type}||${l.subtype}` === key);
+      html += `<td style="border:1px solid #eee;padding:4px 6px;text-align:right;">${fmt(line ? line.personal : 0)}</td><td style="border:1px solid #eee;padding:4px 6px;text-align:right;">${fmt(line ? line.upline : 0)}</td><td style="border:1px solid #eee;padding:4px 6px;text-align:right;font-weight:600;">${fmt(line ? line.subtotal : 0)}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  // Total
+  html += '<tr style="background:#fef9f5;"><td style="position:sticky;left:0;background:#fef9f5;border:1px solid #eee;padding:5px 8px;font-weight:700;">Total</td>';
+  months.forEach(m => {
+    const t = m.total || {};
+    html += `<td style="border:1px solid #eee;padding:4px 6px;text-align:right;font-weight:700;">${fmt(t.personal)}</td><td style="border:1px solid #eee;padding:4px 6px;text-align:right;font-weight:700;">${fmt(t.upline)}</td><td style="border:1px solid #eee;padding:4px 6px;text-align:right;font-weight:700;">${fmt(t.subtotal)}</td>`;
+  });
+  html += '</tr></table>';
+
+  el.innerHTML = html;
 }
 
 async function saveMonProfilInfo() {

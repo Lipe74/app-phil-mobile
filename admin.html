@@ -308,6 +308,8 @@
 
         <button onclick="showAdminPanel('panel-liens', this)" class="menu-item" id="menu-liens">🌐 Gestion des liens</button>
 
+        <button onclick="showAdminPanel('panel-smart-stats', this)" class="menu-item" id="menu-smart-stats">📊 Mes stats Smart (perso)</button>
+
       </div>
 
       <!-- CONTENU : un panneau affiché à la fois -->
@@ -1245,6 +1247,31 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
           <div id="agenda-list"><div class="empty">Chargement...</div></div>
         </div>
 
+        <!-- STATS SMART (PERSO) — visible uniquement pour Philippe (delta835) -->
+        <div class="admin-panel" id="panel-smart-stats">
+          <div class="section-title">📊 Mes stats Smart (perso)</div>
+          <div style="font-size:12px;color:#888;margin-bottom:14px;">
+            Panel personnel (delta835 uniquement). Collez ici le JSON préparé à partir du rapport
+            "Remuneration Personal vs Upline" du portail Smart SN.
+          </div>
+
+          <details open style="border:1px solid #eee;border-radius:10px;padding:10px 12px;background:#fafafa;">
+            <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:13px;">📥 Importer un ou plusieurs mois (JSON)</summary>
+            <div style="font-size:11px;color:#888;margin:8px 0;">
+              Format attendu : <code>{"months":[{"month":"2026-08","monthLabel":"août 2026","lines":[{"type":"Services","subtype":"Activations","personal":575,"upline":0,"subtotal":575}],"total":{"personal":575,"upline":0,"subtotal":575}}]}</code>.
+              Si un mois existe déjà, il sera remplacé par la nouvelle version collée (correction possible).
+            </div>
+            <textarea id="smart-stats-import-json" rows="8" placeholder='{"months":[...]}' style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:8px;"></textarea>
+            <button class="btn btn-primary" style="margin-top:8px;" onclick="importSmartStats()">📥 Importer</button>
+            <div id="smart-stats-import-status" style="font-size:12px;margin-top:8px;"></div>
+          </details>
+
+          <div class="section-title" style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;">
+            <span>📅 Mois importés</span>
+          </div>
+          <div id="smart-stats-list"><div class="empty">Chargement...</div></div>
+        </div>
+
       </div>
 
     </div>
@@ -1856,6 +1883,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-bot-stats') loadBotStats();
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
+  if (panelId === 'panel-smart-stats') loadSmartStatsAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
   document.querySelectorAll('.fav-btn').forEach(b => b.classList.remove('active-item'));
   if (btn) {
@@ -3602,6 +3630,104 @@ window.importFaqJson = async function () {
   if (added > 0) {
     document.getElementById('faq-import-json').value = '';
     loadFaqAdmin();
+  }
+};
+
+// ===== STATS SMART (PERSO) — consultants/delta835/smartStats/{month} =====
+const SMART_STATS_OWNER_ID = 'delta835';
+
+window.importSmartStats = async function () {
+  const raw = document.getElementById('smart-stats-import-json').value.trim();
+  const statusEl = document.getElementById('smart-stats-import-status');
+  const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || '#555'; } };
+
+  if (!raw) { setStatus('Collez d\'abord un JSON.', '#c0392b'); return; }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    setStatus('❌ JSON invalide : ' + e.message, '#c0392b');
+    return;
+  }
+
+  const months = Array.isArray(parsed) ? parsed : parsed.months;
+  if (!Array.isArray(months) || !months.length) {
+    setStatus('❌ Le JSON doit contenir un tableau "months" non vide.', '#c0392b');
+    return;
+  }
+
+  let added = 0, invalid = 0;
+  setStatus('Import en cours...', '#555');
+
+  for (const m of months) {
+    const month = (m.month || '').toString().trim();
+    if (!/^\d{4}-\d{2}$/.test(month)) { invalid++; continue; }
+    const lines = Array.isArray(m.lines) ? m.lines.map(l => ({
+      type: (l.type || '').toString().trim(),
+      subtype: (l.subtype || '').toString().trim(),
+      personal: Number(l.personal) || 0,
+      upline: Number(l.upline) || 0,
+      subtotal: Number(l.subtotal) || 0
+    })) : [];
+    const total = {
+      personal: Number(m.total && m.total.personal) || 0,
+      upline: Number(m.total && m.total.upline) || 0,
+      subtotal: Number(m.total && m.total.subtotal) || 0
+    };
+
+    try {
+      await setDoc(doc(db, 'consultants', SMART_STATS_OWNER_ID, 'smartStats', month), {
+        month,
+        monthLabel: (m.monthLabel || month).toString().trim(),
+        lines,
+        total
+      });
+      added++;
+    } catch (e) {
+      invalid++;
+    }
+  }
+
+  setStatus(`✅ ${added} mois importé(s)/mis à jour · ${invalid} invalide(s).`, '#2E7D32');
+  if (added > 0) {
+    document.getElementById('smart-stats-import-json').value = '';
+    loadSmartStatsAdmin();
+  }
+};
+
+async function loadSmartStatsAdmin() {
+  const el = document.getElementById('smart-stats-list');
+  if (!el) return;
+  el.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(query(collection(db, 'consultants', SMART_STATS_OWNER_ID, 'smartStats'), orderBy('month', 'desc')));
+    if (snap.empty) { el.innerHTML = '<div class="empty">Aucun mois importé.</div>'; return; }
+    let html = '';
+    snap.forEach(d => {
+      const s = d.data();
+      const total = s.total || {};
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
+        <div>
+          <div style="font-weight:700;font-size:13px;">${s.monthLabel || s.month}</div>
+          <div style="font-size:11px;color:#888;">Personal: ${(total.personal||0).toFixed(2)} € · Upline: ${(total.upline||0).toFixed(2)} € · Total: ${(total.subtotal||0).toFixed(2)} €</div>
+        </div>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="deleteSmartStatsMonth('${d.id}')">🗑</button>
+      </div>`;
+    });
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = `<div class="empty">Erreur de chargement : ${e.message}</div>`;
+  }
+}
+
+window.deleteSmartStatsMonth = async function (month) {
+  if (!confirm(`Supprimer les stats de ${month} ?`)) return;
+  try {
+    await deleteDoc(doc(db, 'consultants', SMART_STATS_OWNER_ID, 'smartStats', month));
+    loadSmartStatsAdmin();
+  } catch (e) {
+    alert('Erreur pendant la suppression: ' + e.message);
   }
 };
 
