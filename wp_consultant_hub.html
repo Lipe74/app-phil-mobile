@@ -4875,9 +4875,34 @@ async function checkCode() {
   }
 }
 
+// ===== Vérification périodique d'expiration pendant une session active =====
+// Objectif : couper l'accès en cours de session (pas seulement au login/rechargement)
+// si la date d'expiration est dépassée. Vérifie toutes les 2h (couvre largement 2x/jour).
+let pmExpirationIntervalId = null;
+
+function startExpirationWatcher(consultantId) {
+  if (pmExpirationIntervalId) clearInterval(pmExpirationIntervalId);
+  const CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2h
+  pmExpirationIntervalId = setInterval(async () => {
+    try {
+      const check = await window.checkAndApplyExpiration(consultantId);
+      if (check.expired) {
+        clearInterval(pmExpirationIntervalId);
+        pmExpirationIntervalId = null;
+        alert(pmExpirationMsg(check));
+        if (window.signOut) await window.signOut();
+        location.reload();
+      }
+    } catch (e) {
+      console.log('Vérification périodique expiration impossible:', e.message);
+    }
+  }, CHECK_INTERVAL_MS);
+}
+
 function doUnlock(user) {
   pmCurrentUser = user;
   window.pmCurrentUser = user;
+  startExpirationWatcher(user.id);
   document.getElementById('rem-lock').style.display = 'none';
   document.getElementById('rem-error').style.display = 'none';
   document.getElementById('outils-unlocked').style.display = 'block';
@@ -8126,7 +8151,23 @@ window.firebaseResetPassword = async function(){
   }
 }
 
-window.openSimulator = function(url, btn) {
+window.openSimulator = async function(url, btn) {
+  // Vérification d'expiration à chaque ouverture d'un simulateur (sécurité supplémentaire
+  // en plus du contrôle périodique toutes les 2h)
+  if (pmCurrentUser) {
+    try {
+      const check = await window.checkAndApplyExpiration(pmCurrentUser.id);
+      if (check.expired) {
+        alert(pmExpirationMsg(check));
+        if (window.signOut) await window.signOut();
+        location.reload();
+        return;
+      }
+    } catch (e) {
+      console.log('Vérification expiration (ouverture simulateur) impossible:', e.message);
+    }
+  }
+
   // Ajouter les paramètres consultant à l'URL
   if (pmCurrentUser) {
     const params = new URLSearchParams({
