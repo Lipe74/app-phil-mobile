@@ -687,11 +687,11 @@ Build <span id="app-version-1">…</span> — Présentation app
 <div id="sec-agenda" class="pm-sec-body">
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
-<button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News et Blog Smart SN</button>
+<button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News, Blog Phil-Mobile, Blog Smart SN</button>
 <div id="newsMenu" class="submenu">
   <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
-  <button onclick="showBlogSmart(this)" class="menu-item" id="menu-blogsmart">📰 Blog Smart SN</button>
   <button onclick="showBlogPhil(this)" class="menu-item" id="menu-blogphil">🗞️ Blog Phil-Mobile<span id="philblog-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
+  <button onclick="showBlogSmart(this)" class="menu-item" id="menu-blogsmart">📰 Blog Smart SN</button>
 </div>
 <button onclick="showNouveautes(this)" class="menu-item" id="menu-nouveautes">🚀 Idées &amp; Projets<span id="nouveautes-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 <button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
@@ -4076,15 +4076,14 @@ window.renderBlogPhilList = function () {
     pageItems.map((p, i) => {
       const dateStr = p.date ? p.date.split('-').reverse().join('/') : '';
       const cats = (p.categories || []).map(c => `<span style="font-size:9px;font-weight:700;background:#fff7ed;color:#c2410c;padding:2px 7px;border-radius:99px;">${escapeHtmlNews(c)}</span>`).join(' ');
-      const bodyId = 'blogphil-item-' + (p.docId || i);
+      const docId = p.docId || i;
       return `
-      <div style="border:1px solid #fed7aa;border-radius:10px;overflow:hidden;background:#fff;">
+      <div style="border:1px solid #fed7aa;border-radius:10px;overflow:hidden;background:#fff;cursor:pointer;" onclick="openBlogPhilModal('${docId}')">
         ${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:110px;object-fit:cover;display:block;">` : ''}
         <div style="padding:10px 12px;">
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${cats}${dateStr ? `<span style="font-size:9px;color:#9ca3af;align-self:center;">${dateStr}</span>` : ''}</div>
           <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">${escapeHtmlNews(p.title || '')}</div>
-          <button onclick="toggleBlogPhilItem('${bodyId}')" style="font-size:11px;font-weight:700;color:#f97316;background:none;border:none;cursor:pointer;padding:0;">en lire plus ▾</button>
-          <div id="${bodyId}" class="rte-content" style="display:none;margin-top:8px;font-size:12px;color:#374151;line-height:1.7;">${p.fullText || ''}</div>
+          <span style="font-size:11px;font-weight:700;color:#f97316;">en lire plus ▾</span>
         </div>
       </div>`;
     }).join('') + `</div>`;
@@ -4109,10 +4108,21 @@ window.setBlogPhilPage = function (n) {
   document.getElementById('blogphil-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-window.toggleBlogPhilItem = function (id) {
-  const body = document.getElementById(id);
-  if (!body) return;
-  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+window.openBlogPhilModal = function (docId) {
+  const p = blogPhilHubCache.find((x, i) => (x.docId || i) == docId);
+  if (!p) return;
+  const photo = document.getElementById('modal-blogphil-photo');
+  if (p.photoUrl) { photo.src = p.photoUrl; photo.style.display = 'block'; } else { photo.style.display = 'none'; }
+  document.getElementById('modal-blogphil-cats').innerHTML = (p.categories || [])
+    .map(c => `<span style="font-size:9px;font-weight:700;background:#fff7ed;color:#c2410c;padding:2px 7px;border-radius:99px;">${escapeHtmlNews(c)}</span>`).join(' ');
+  document.getElementById('modal-blogphil-date').textContent = p.date ? p.date.split('-').reverse().join('/') : '';
+  document.getElementById('modal-blogphil-title').textContent = p.title || '';
+  document.getElementById('modal-blogphil-text').innerHTML = p.fullText || '';
+  document.getElementById('modal-blogphil').style.display = 'flex';
+};
+
+window.closeBlogPhilModal = function () {
+  document.getElementById('modal-blogphil').style.display = 'none';
 };
 
 // Vérifie en tâche de fond (sans ouvrir le panneau) s'il existe un article plus récent
@@ -8552,6 +8562,20 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
   el.textContent = window.APP_VERSION || '?';
 });
 </script>
+
+<!-- Modal lecture complète Blog Phil-Mobile -->
+<div id="modal-blogphil" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;" onclick="if(event.target===this) closeBlogPhilModal();">
+  <div style="background:#fff;border-radius:16px;padding:0;max-width:680px;width:92%;margin:20px auto;max-height:88vh;overflow-y:auto;position:relative;">
+    <button onclick="closeBlogPhilModal()" style="position:absolute;top:10px;right:12px;background:#fff;border:1px solid #ddd;border-radius:50%;width:32px;height:32px;font-size:16px;font-weight:700;color:#555;cursor:pointer;z-index:1;">✕</button>
+    <img id="modal-blogphil-photo" src="" style="width:100%;max-height:280px;object-fit:cover;display:none;border-radius:16px 16px 0 0;">
+    <div style="padding:22px;">
+      <div id="modal-blogphil-cats" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;"></div>
+      <div id="modal-blogphil-date" style="font-size:11px;color:#9ca3af;margin-bottom:6px;"></div>
+      <h3 id="modal-blogphil-title" style="color:#f97316;margin:0 0 14px;font-size:18px;"></h3>
+      <div id="modal-blogphil-text" style="font-size:14px;color:#374151;line-height:1.8;"></div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal CRM Clients/Consultants -->
 <div id="modal-crm" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
