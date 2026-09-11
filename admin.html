@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.17</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.18</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -1136,7 +1136,7 @@ Un seul recrutement cet été et tu pourrais gagner un iPhone 17 Pro Max 256 GB.
             <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Un bloc par article, séparés par une ligne <code>===</code>. Le texte peut faire plusieurs lignes.<br>
-              Ligne <code>PHOTO:</code> optionnelle (URL directe de l'image — pas besoin d'upload manuel si le lien est déjà public).<br>
+              Ligne <code>PHOTO:</code> optionnelle (URL directe déjà en ligne) — sinon tu pourras choisir une image locale à l'étape suivante (upload direct vers Firebase, pas besoin de passer par GitHub).<br>
               Dédoublonnage automatique sur titre + date (les articles déjà importés sont ignorés).
             </div>
             <textarea id="bp-bulk-text" rows="10" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="TITRE: Nouvelle fonctionnalité disponible !
@@ -1144,7 +1144,8 @@ DATE: 28/07/2026
 CATEGORIE: App
 TEXTE:
 On vient d'ajouter..."></textarea>
-            <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportBlogPhil()">📥 Importer la liste</button>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="previewBulkImportBlogPhil()">🔍 Aperçu de l'import</button>
+            <div id="bp-bulk-preview" style="margin-top:14px;"></div>
           </div>
         </div>
 
@@ -2684,11 +2685,32 @@ window.deleteBlogPhilPost = async function (docId) {
   }
 };
 
-window.bulkImportBlogPhil = async function () {
+// Import en masse Blog Phil-Mobile — en 2 temps :
+// 1) previewBulkImportBlogPhil() parse le texte, vérifie les doublons, affiche un aperçu
+//    avec un champ d'upload d'image PAR article (upload direct Firebase, plus rapide que GitHub).
+// 2) confirmBulkImportBlogPhil() envoie les images choisies puis crée les articles.
+let bpBulkPending = [];
+let bpBulkFiles = {};
+
+window.previewBulkImportBlogPhil = async function () {
   const raw = document.getElementById('bp-bulk-text').value.trim();
+  const previewEl = document.getElementById('bp-bulk-preview');
   if (!raw) {
     alert('Le champ est vide.');
     return;
+  }
+
+  // Relit les articles déjà en base (pas seulement le cache local, potentiellement vide
+  // si on n'a pas encore ouvert "Articles publiés") pour un dédoublonnage fiable.
+  let existingKeys = new Set();
+  try {
+    const snap = await getDocs(collection(db, 'philMobileBlogPosts'));
+    snap.forEach(d => {
+      const p = d.data();
+      existingKeys.add(`${normalizeBlogPhilTitle(p.title)}|${p.date}`);
+    });
+  } catch (e) {
+    console.log('Lecture articles existants (dédoublonnage) impossible:', e.message);
   }
 
   // Découpe en blocs séparés par une ligne "===", puis parse les champs labellisés de chaque bloc.
@@ -2696,10 +2718,6 @@ window.bulkImportBlogPhil = async function () {
   const valid = [];
   const errors = [];
   const duplicates = [];
-
-  const existingKeys = new Set(
-    blogPhilCache.map(p => `${normalizeBlogPhilTitle(p.title)}|${p.date}`)
-  );
   const seenInBatch = new Set();
 
   blocks.forEach((block, idx) => {
@@ -2735,20 +2753,57 @@ window.bulkImportBlogPhil = async function () {
     valid.push({ title, date, categories, fullText, photoUrl });
   });
 
-  let msg = `${valid.length} article(s) prêt(s) à être importé(s).`;
-  if (duplicates.length > 0) msg += `\n\n🔁 ${duplicates.length} doublon(s) détecté(s) et ignoré(s) :\n` + duplicates.join('\n');
-  if (errors.length > 0) msg += `\n\n⚠️ ${errors.length} bloc(s) avec souci :\n` + errors.join('\n');
-  msg += '\n\nContinuer l\'import ?';
+  bpBulkPending = valid;
+  bpBulkFiles = {};
+
+  let summary = `<div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:8px;">${valid.length} article(s) prêt(s) à être importé(s).</div>`;
+  if (duplicates.length > 0) summary += `<div style="font-size:11px;color:#c2410c;margin-bottom:6px;">🔁 ${duplicates.length} doublon(s) ignoré(s) :<br>${duplicates.map(escapeHtmlAdmin).join('<br>')}</div>`;
+  if (errors.length > 0) summary += `<div style="font-size:11px;color:#dc2626;margin-bottom:6px;">⚠️ ${errors.length} bloc(s) avec souci :<br>${errors.map(escapeHtmlAdmin).join('<br>')}</div>`;
 
   if (valid.length === 0) {
-    alert(msg);
+    previewEl.innerHTML = summary;
     return;
   }
-  if (!confirm(msg)) return;
 
+  const rows = valid.map((p, idx) => {
+    const dateStr = p.date.split('-').reverse().join('/');
+    const cats = p.categories.length ? p.categories.join(', ') : '—';
+    return `
+    <div class="card" style="display:flex;align-items:center;gap:12px;">
+      <img id="bp-bulk-thumb-${idx}" src="${p.photoUrl || 'images/smart.png'}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid #eee;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <strong style="font-size:13px;">${escapeHtmlAdmin(p.title)}</strong>
+        <div class="meta">${dateStr} · ${escapeHtmlAdmin(cats)}${p.photoUrl ? ' · photo via URL fournie' : ''}</div>
+      </div>
+      <div style="flex-shrink:0;">
+        <input type="file" accept="image/*" onchange="handleBulkImagePick(${idx}, event)">
+      </div>
+    </div>`;
+  }).join('');
+
+  previewEl.innerHTML = summary +
+    `<div style="font-size:11px;color:#888;margin:10px 0;">Choisis une image locale par article si besoin (facultatif — écrase la ligne PHOTO: si les deux sont fournis). Upload direct vers Firebase, pas besoin de passer par GitHub.</div>` +
+    rows +
+    `<button class="btn btn-primary" style="margin-top:10px;" onclick="confirmBulkImportBlogPhil()">✅ Lancer l'import (${valid.length})</button>`;
+};
+
+window.handleBulkImagePick = function (idx, event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  bpBulkFiles[idx] = file;
+  const thumb = document.getElementById('bp-bulk-thumb-' + idx);
+  if (thumb) thumb.src = URL.createObjectURL(file);
+};
+
+window.confirmBulkImportBlogPhil = async function () {
+  if (bpBulkPending.length === 0) return;
   let done = 0;
-  for (const post of valid) {
+  for (let idx = 0; idx < bpBulkPending.length; idx++) {
+    const post = bpBulkPending[idx];
     try {
+      if (bpBulkFiles[idx]) {
+        post.photoUrl = await uploadImageToStorage(bpBulkFiles[idx], 'news', null);
+      }
       await addDoc(collection(db, 'philMobileBlogPosts'), { ...post, createdAt: new Date().toISOString() });
       done++;
     } catch (err) {
@@ -2757,6 +2812,9 @@ window.bulkImportBlogPhil = async function () {
   }
   showToast(`✅ ${done} article(s) importé(s).`);
   document.getElementById('bp-bulk-text').value = '';
+  document.getElementById('bp-bulk-preview').innerHTML = '';
+  bpBulkPending = [];
+  bpBulkFiles = {};
   loadBlogPhilAdmin();
 };
 
