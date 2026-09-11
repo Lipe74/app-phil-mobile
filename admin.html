@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.16</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.17</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -279,6 +279,11 @@
           <div id="blogSmartMenu" class="submenu">
             <button onclick="showAdminPanel('panel-blogsmart-create', this)" class="menu-item" id="menu-blogsmart-create">➕ Créer / Importer</button>
             <button onclick="showAdminPanel('panel-blogsmart-list', this)" class="menu-item" id="menu-blogsmart-list">📋 Articles publiés</button>
+          </div>
+          <button onclick="toggleMenu('blogPhilMenu')" class="menu-item group-toggle">🗞️ Blog Phil-Mobile</button>
+          <div id="blogPhilMenu" class="submenu">
+            <button onclick="showAdminPanel('panel-blogphil-create', this)" class="menu-item" id="menu-blogphil-create">➕ Créer / Importer</button>
+            <button onclick="showAdminPanel('panel-blogphil-list', this)" class="menu-item" id="menu-blogphil-list">📋 Articles publiés</button>
           </div>
           <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News</button>
           <div id="newsMenu" class="submenu">
@@ -1077,6 +1082,75 @@ Un seul recrutement cet été et tu pourrais gagner un iPhone 17 Pro Max 256 GB.
         <div class="admin-panel" id="panel-blogsmart-list">
           <div class="section-title">📋 Articles Blog Smart SN publiés</div>
           <div id="blogsmart-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-blogphil-create">
+          <div class="section-title">➕ Créer / Importer un article Blog Phil-Mobile</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Ton blog perso Phil-Mobile — séparé du Blog Smart SN. Visible dans le hub sous "News et Blog", bloc "Blog Phil-Mobile".
+            </div>
+            <div class="form-row">
+              <label>Titre</label>
+              <input type="text" id="bp-title" placeholder="ex: Nouvelle fonctionnalité disponible !">
+            </div>
+            <div class="form-row">
+              <label>Date de l'article</label>
+              <input type="date" id="bp-date">
+            </div>
+            <div class="form-row">
+              <label>Catégorie(s) — séparées par ;</label>
+              <input type="text" id="bp-categories" placeholder="ex: App;Astuce">
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <img id="bp-photo-preview" src="images/smart.png" style="width:56px;height:56px;border-radius:8px;object-fit:cover;border:1px solid #eee;">
+              <div style="flex:1;">
+                <input type="file" id="bp-photo-input" accept="image/*" onchange="handleBlogPhilPhotoChange(event)">
+                <div style="font-size:10px;color:#9ca3af;margin-top:4px;">Optionnelle — JPG/PNG, max 5 Mo, compressée automatiquement.</div>
+                <div id="bp-photo-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Texte complet</label>
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold')"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic')"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline')"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Liste à puces" onmousedown="event.preventDefault()" onclick="document.execCommand('insertUnorderedList')">• Liste</button>
+                <button type="button" class="rte-btn" title="Liste numérotée" onmousedown="event.preventDefault()" onclick="document.execCommand('insertOrderedList')">1. Liste</button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft')">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter')">↔</button>
+                <button type="button" class="rte-btn" title="Aligner à droite" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight')">➡</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull')">☰</button>
+                <button type="button" class="rte-btn" title="Insérer une image" onmousedown="event.preventDefault()" onclick="rteInsertImageBP()">🖼️ Image</button>
+                <input type="file" id="bp-inline-image-input" accept="image/*" style="display:none;" onchange="handleBlogPhilInlineImageSelected(event)">
+              </div>
+              <div id="bp-fulltext" contenteditable="true" class="rte-editor" data-placeholder="Le texte complet de l'article..." style="width:100%;min-height:110px;padding:10px;border:1px solid #ddd;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;box-sizing:border-box;overflow-y:auto;"></div>
+              <div id="bp-inline-image-status" style="font-size:11px;font-weight:600;margin-top:4px;"></div>
+            </div>
+            <button class="btn btn-primary" id="bp-submit-btn" onclick="addOrUpdateBlogPhilPost()">➕ Publier dans le Blog Phil-Mobile</button>
+            <button class="btn btn-secondary" id="bp-cancel-btn" onclick="cancelBlogPhilEdit()" style="display:none;">Annuler la modification</button>
+          </div>
+
+          <div class="card" style="margin-top:14px;">
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:8px;">📥 Import en masse</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Un bloc par article, séparés par une ligne <code>===</code>. Le texte peut faire plusieurs lignes.<br>
+              Ligne <code>PHOTO:</code> optionnelle (URL directe de l'image — pas besoin d'upload manuel si le lien est déjà public).<br>
+              Dédoublonnage automatique sur titre + date (les articles déjà importés sont ignorés).
+            </div>
+            <textarea id="bp-bulk-text" rows="10" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-family:monospace;font-size:12px;box-sizing:border-box;" placeholder="TITRE: Nouvelle fonctionnalité disponible !
+DATE: 28/07/2026
+CATEGORIE: App
+TEXTE:
+On vient d'ajouter..."></textarea>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="bulkImportBlogPhil()">📥 Importer la liste</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-blogphil-list">
+          <div class="section-title">📋 Articles Blog Phil-Mobile publiés</div>
+          <div id="blogphil-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-concours">
@@ -1883,6 +1957,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-bot-stats') loadBotStats();
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
+  if (panelId === 'panel-blogphil-list') loadBlogPhilAdmin();
   if (panelId === 'panel-smart-stats') loadSmartStatsAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
   document.querySelectorAll('.fav-btn').forEach(b => b.classList.remove('active-item'));
@@ -2432,6 +2507,257 @@ window.bulkImportBlogSmart = async function () {
   showToast(`✅ ${done} article(s) importé(s).`);
   document.getElementById('bs-bulk-text').value = '';
   loadBlogSmartAdmin();
+};
+
+// ===== BLOG PHIL-MOBILE =====
+// Firestore : collection 'philMobileBlogPosts' : { title, date (YYYY-MM-DD), categories: string[], photoUrl, fullText, createdAt }
+// Blog perso de Philippe, totalement séparé du Blog Smart SN (autre collection, autre panneau, autre affichage hub).
+let blogPhilCache = [];
+let currentEditBlogPhilId = null;
+let bpPhotoPendingUrl = null;
+
+function normalizeBlogPhilTitle(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[-–—_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function loadBlogPhilAdmin() {
+  const container = document.getElementById('blogphil-list');
+  container.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'philMobileBlogPosts'));
+    const list = [];
+    snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+    list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    blogPhilCache = list;
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="empty">Aucun article pour le moment.</div>';
+      return;
+    }
+
+    container.innerHTML = list.map(p => {
+      const dateStr = p.date ? p.date.split('-').reverse().join('/') : '—';
+      const cats = (p.categories || []).map(c => `<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #f97316;">${escapeHtmlAdmin(c)}</span>`).join(' ');
+      return `
+      <div class="card">
+        <div class="card-row">
+          ${p.photoUrl ? `<img src="${p.photoUrl}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #eee;align-self:center;">` : ''}
+          <div class="card-info">
+            <span class="meta">${dateStr}</span> ${cats}
+            <div style="margin-top:6px;"><strong>${escapeHtmlAdmin(p.title || '')}</strong></div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" onclick="editBlogPhilPost('${p.docId}')">✏️ Modifier</button>
+            <button class="btn btn-danger" onclick="deleteBlogPhilPost('${p.docId}')">🗑 Supprimer</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement Blog Phil-Mobile impossible:', err.message);
+  }
+}
+
+window.handleBlogPhilPhotoChange = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('bp-photo-status');
+  try {
+    // 'blog-philmobile' n'a pas de règle Storage dédiée → on réutilise 'news', déjà autorisé (allow write: if request.auth != null).
+    const url = await uploadImageToStorage(file, 'news', statusEl);
+    bpPhotoPendingUrl = url;
+    document.getElementById('bp-photo-preview').src = url;
+  } catch (e) {
+    console.log('Upload photo Blog Phil-Mobile impossible:', e.message);
+  }
+};
+
+let bpInlineImgRange = null;
+window.rteInsertImageBP = function () {
+  const editor = document.getElementById('bp-fulltext');
+  editor.focus();
+  const sel = window.getSelection();
+  bpInlineImgRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+  document.getElementById('bp-inline-image-input').click();
+};
+
+window.handleBlogPhilInlineImageSelected = async function (event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const statusEl = document.getElementById('bp-inline-image-status');
+  try {
+    // 'blog-philmobile' n'a pas de règle Storage dédiée → on réutilise 'news', déjà autorisé (allow write: if request.auth != null).
+    const url = await uploadImageToStorage(file, 'news', statusEl);
+    const editor = document.getElementById('bp-fulltext');
+    editor.focus();
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    if (bpInlineImgRange) sel.addRange(bpInlineImgRange);
+    document.execCommand('insertHTML', false, '<img src="' + url + '" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;">');
+  } catch (e) {
+    console.log('Upload image inline Blog Phil-Mobile impossible:', e.message);
+  }
+};
+
+window.editBlogPhilPost = function (docId) {
+  const p = blogPhilCache.find(x => x.docId === docId);
+  if (!p) return;
+  currentEditBlogPhilId = docId;
+  bpPhotoPendingUrl = null;
+  document.getElementById('bp-title').value = p.title || '';
+  document.getElementById('bp-date').value = p.date || '';
+  document.getElementById('bp-categories').value = (p.categories || []).join(';');
+  document.getElementById('bp-photo-preview').src = p.photoUrl || 'images/smart.png';
+  document.getElementById('bp-fulltext').innerHTML = p.fullText || '';
+  document.getElementById('bp-submit-btn').textContent = '💾 Enregistrer les modifications';
+  document.getElementById('bp-cancel-btn').style.display = 'inline-block';
+  goToPanel('blogPhilMenu', 'menu-blogphil-create', 'panel-blogphil-create');
+  document.getElementById('bp-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.cancelBlogPhilEdit = function () {
+  const wasEditing = !!currentEditBlogPhilId;
+  currentEditBlogPhilId = null;
+  bpPhotoPendingUrl = null;
+  document.getElementById('bp-title').value = '';
+  document.getElementById('bp-date').value = '';
+  document.getElementById('bp-categories').value = '';
+  document.getElementById('bp-photo-preview').src = 'images/smart.png';
+  document.getElementById('bp-fulltext').innerHTML = '';
+  document.getElementById('bp-submit-btn').textContent = '➕ Publier dans le Blog Phil-Mobile';
+  document.getElementById('bp-cancel-btn').style.display = 'none';
+  if (wasEditing) goToPanel('blogPhilMenu', 'menu-blogphil-list', 'panel-blogphil-list');
+};
+
+window.addOrUpdateBlogPhilPost = async function () {
+  const title = document.getElementById('bp-title').value.trim();
+  const date = document.getElementById('bp-date').value;
+  const categories = document.getElementById('bp-categories').value.split(';').map(c => c.trim()).filter(Boolean);
+  const fullText = normalizeNewsLinks(document.getElementById('bp-fulltext').innerHTML.trim());
+
+  if (!title || !date || !fullText) {
+    alert('Merci de renseigner au moins le titre, la date et le texte complet.');
+    return;
+  }
+
+  const payload = { title, date, categories, fullText };
+  if (bpPhotoPendingUrl) payload.photoUrl = bpPhotoPendingUrl;
+
+  try {
+    if (currentEditBlogPhilId) {
+      await updateDoc(doc(db, 'philMobileBlogPosts', currentEditBlogPhilId), payload);
+      showToast('✅ Article modifié.');
+      cancelBlogPhilEdit();
+    } else {
+      if (!payload.photoUrl) payload.photoUrl = '';
+      await addDoc(collection(db, 'philMobileBlogPosts'), { ...payload, createdAt: new Date().toISOString() });
+      showToast('✅ Article publié dans le Blog Phil-Mobile.');
+      document.getElementById('bp-title').value = '';
+      document.getElementById('bp-date').value = '';
+      document.getElementById('bp-categories').value = '';
+      document.getElementById('bp-photo-preview').src = 'images/smart.png';
+      document.getElementById('bp-fulltext').innerHTML = '';
+      bpPhotoPendingUrl = null;
+    }
+    loadBlogPhilAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+window.deleteBlogPhilPost = async function (docId) {
+  if (!confirm('Supprimer définitivement cet article du Blog Phil-Mobile ?')) return;
+  try {
+    await deleteDoc(doc(db, 'philMobileBlogPosts', docId));
+    showToast('🗑 Article supprimé.');
+    loadBlogPhilAdmin();
+  } catch (err) {
+    alert('Erreur lors de la suppression: ' + err.message);
+  }
+};
+
+window.bulkImportBlogPhil = async function () {
+  const raw = document.getElementById('bp-bulk-text').value.trim();
+  if (!raw) {
+    alert('Le champ est vide.');
+    return;
+  }
+
+  // Découpe en blocs séparés par une ligne "===", puis parse les champs labellisés de chaque bloc.
+  const blocks = raw.split(/\n\s*===\s*\n?/).map(b => b.trim()).filter(Boolean);
+  const valid = [];
+  const errors = [];
+  const duplicates = [];
+
+  const existingKeys = new Set(
+    blogPhilCache.map(p => `${normalizeBlogPhilTitle(p.title)}|${p.date}`)
+  );
+  const seenInBatch = new Set();
+
+  blocks.forEach((block, idx) => {
+    const titleMatch = block.match(/^TITRE\s*:\s*(.+)$/mi);
+    const dateMatch = block.match(/^DATE\s*:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/mi);
+    const catMatch = block.match(/^CATEGORIE\s*:\s*(.+)$/mi);
+    const photoMatch = block.match(/^PHOTO\s*:\s*(\S+)\s*$/mi);
+    const texteMatch = block.match(/^TEXTE\s*:\s*\n?([\s\S]*)$/mi);
+
+    const title = titleMatch ? titleMatch[1].trim() : '';
+    if (!title || !dateMatch) {
+      errors.push(`Bloc ${idx + 1} : titre ou date invalide (attendu "TITRE: ..." et "DATE: JJ/MM/AAAA")`);
+      return;
+    }
+    const date = `${dateMatch[3]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[1].padStart(2, '0')}`;
+    const categories = catMatch ? catMatch[1].split(';').map(c => c.trim()).filter(Boolean) : [];
+    const photoUrl = photoMatch ? photoMatch[1].trim() : '';
+    const fullTextRaw = texteMatch ? texteMatch[1].trim() : '';
+    if (!fullTextRaw) {
+      errors.push(`Bloc ${idx + 1} ("${title}") : pas de texte ("TEXTE: ..." manquant)`);
+      return;
+    }
+    // Texte brut → paragraphes HTML simples (une ligne vide = nouveau paragraphe)
+    const fullText = fullTextRaw.split(/\n\s*\n/).map(p => `<p>${escapeHtmlAdmin(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+
+    const key = `${normalizeBlogPhilTitle(title)}|${date}`;
+    if (existingKeys.has(key) || seenInBatch.has(key)) {
+      duplicates.push(`Bloc ${idx + 1} : "${title}" (${dateMatch[0].split(':')[1].trim()}) existe déjà → ignoré`);
+      return;
+    }
+    seenInBatch.add(key);
+
+    valid.push({ title, date, categories, fullText, photoUrl });
+  });
+
+  let msg = `${valid.length} article(s) prêt(s) à être importé(s).`;
+  if (duplicates.length > 0) msg += `\n\n🔁 ${duplicates.length} doublon(s) détecté(s) et ignoré(s) :\n` + duplicates.join('\n');
+  if (errors.length > 0) msg += `\n\n⚠️ ${errors.length} bloc(s) avec souci :\n` + errors.join('\n');
+  msg += '\n\nContinuer l\'import ?';
+
+  if (valid.length === 0) {
+    alert(msg);
+    return;
+  }
+  if (!confirm(msg)) return;
+
+  let done = 0;
+  for (const post of valid) {
+    try {
+      await addDoc(collection(db, 'philMobileBlogPosts'), { ...post, createdAt: new Date().toISOString() });
+      done++;
+    } catch (err) {
+      console.log('Erreur import bloc:', post, err.message);
+    }
+  }
+  showToast(`✅ ${done} article(s) importé(s).`);
+  document.getElementById('bp-bulk-text').value = '';
+  loadBlogPhilAdmin();
 };
 
 // --- Concours (Smart SN + Phil-Mobile) ---
@@ -6419,8 +6745,10 @@ const FAV_ITEMS = {
   'menu-consultants':          { label: '👥 Gestion des consultants',       panelId: 'panel-consultants' },
   'menu-agenda-create':        { label: '➕ Créer un événement',           panelId: 'panel-agenda-create' },
   'menu-agenda-list':          { label: '📅 Tous les événements',          panelId: 'panel-agenda-list' },
-  'menu-blogsmart-create':     { label: '➕ Blog — Créer/Importer',        panelId: 'panel-blogsmart-create' },
-  'menu-blogsmart-list':       { label: '📋 Blog — Articles publiés',       panelId: 'panel-blogsmart-list' },
+  'menu-blogsmart-create':     { label: '➕ Blog Smart — Créer/Importer',        panelId: 'panel-blogsmart-create' },
+  'menu-blogsmart-list':       { label: '📋 Blog Smart — Articles publiés',       panelId: 'panel-blogsmart-list' },
+  'menu-blogphil-create':      { label: '➕ Blog Phil-Mobile — Créer/Importer',   panelId: 'panel-blogphil-create' },
+  'menu-blogphil-list':        { label: '📋 Blog Phil-Mobile — Articles publiés', panelId: 'panel-blogphil-list' },
   'menu-bandeau':              { label: '📢 Message bandeau',              panelId: 'panel-bandeau' },
   'menu-news-create':          { label: '➕ Créer une news',               panelId: 'panel-news-create' },
   'menu-news-list':            { label: '📋 News publiées',                 panelId: 'panel-news-list' },

@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.12";
+  scope.APP_VERSION = "14.13 - Blog Perso";
 })();

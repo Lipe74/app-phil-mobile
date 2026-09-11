@@ -691,6 +691,7 @@ Build <span id="app-version-1">…</span> — Présentation app
 <div id="newsMenu" class="submenu">
   <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
   <button onclick="showBlogSmart(this)" class="menu-item" id="menu-blogsmart">📰 Blog Smart SN</button>
+  <button onclick="showBlogPhil(this)" class="menu-item" id="menu-blogphil">🗞️ Blog Phil-Mobile<span id="philblog-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 </div>
 <button onclick="showNouveautes(this)" class="menu-item" id="menu-nouveautes">🚀 Idées &amp; Projets<span id="nouveautes-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
 <button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
@@ -1662,6 +1663,18 @@ STATUT: independant
               <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
             </div>
             <div id="blogsmart-pagination" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;"></div>
+          </div>
+
+          <div id="panel-blogphil" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🗞️ Blog Phil-Mobile</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:16px;">Les actus et articles Phil-Mobile</div>
+            <input id="blogphil-search" type="text" placeholder="🔍 Rechercher dans le Blog Phil-Mobile..." oninput="renderBlogPhilList()"
+              style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
+            <div id="blogphil-cat-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+            <div id="blogphil-grid">
+              <div style="font-size:12px;color:#9ca3af;">Chargement...</div>
+            </div>
+            <div id="blogphil-pagination" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px;"></div>
           </div>
 
           <!-- Panel Nouveautés -->
@@ -3968,6 +3981,162 @@ window.toggleBlogSmartItem = function (id) {
   body.style.display = body.style.display === 'block' ? 'none' : 'block';
 };
 
+// ===== BLOG PHIL-MOBILE =====
+// Firestore : collection 'philMobileBlogPosts' : { title, date (YYYY-MM-DD), categories: string[], photoUrl, fullText, createdAt }
+// Blog perso de Philippe, totalement séparé du Blog Smart SN (autre collection, autre panneau).
+let blogPhilHubCache = [];
+let blogPhilHubCatFilter = 'all';
+let blogPhilHubPage = 1;
+const BLOGPHIL_PAGE_SIZE = 12;
+
+function showBlogPhil(btn) {
+  document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
+  btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-blogphil').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+
+  // Marque comme vu → masque le badge "nouveau"
+  if (pmCurrentUser) {
+    localStorage.setItem('pm_blogphil_lastseen_' + pmCurrentUser.id, new Date().toISOString());
+  }
+  const badge = document.getElementById('philblog-badge');
+  if (badge) badge.style.display = 'none';
+
+  loadBlogPhilHub();
+}
+
+async function loadBlogPhilHub() {
+  const grid = document.getElementById('blogphil-grid');
+  if (!grid) return;
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    const snap = await window.getDocs(window.collection(window.db, 'philMobileBlogPosts'));
+    const items = [];
+    snap.forEach(d => items.push({ docId: d.id, ...d.data() }));
+    items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    blogPhilHubCache = items;
+    blogPhilHubPage = 1;
+    renderBlogPhilCatFilters();
+    renderBlogPhilList();
+  } catch (err) {
+    grid.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Blog Phil-Mobile momentanément indisponible.</div>';
+    console.log('Lecture Blog Phil-Mobile impossible:', err.message);
+  }
+}
+
+function renderBlogPhilCatFilters() {
+  const el = document.getElementById('blogphil-cat-filters');
+  if (!el) return;
+  const cats = [...new Set(blogPhilHubCache.flatMap(p => p.categories || []))].sort((a, b) => a.localeCompare(b));
+  const chip = (value, label) => {
+    const active = blogPhilHubCatFilter === value;
+    return `<button onclick="setBlogPhilCatFilter('${value.replace(/'/g, "\\'")}')" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:99px;cursor:pointer;border:1px solid #f97316;background:${active ? '#f97316' : '#fff'};color:${active ? '#fff' : '#f97316'};">${label}</button>`;
+  };
+  el.innerHTML = chip('all', 'Tous') + cats.map(c => chip(c, c)).join('');
+}
+
+window.setBlogPhilCatFilter = function (cat) {
+  blogPhilHubCatFilter = cat;
+  blogPhilHubPage = 1;
+  renderBlogPhilCatFilters();
+  renderBlogPhilList();
+};
+
+window.renderBlogPhilList = function () {
+  const grid = document.getElementById('blogphil-grid');
+  const pagerEl = document.getElementById('blogphil-pagination');
+  if (!grid) return;
+
+  const q = normalizeNewsSearch(document.getElementById('blogphil-search')?.value || '');
+  let items = blogPhilHubCache;
+  if (blogPhilHubCatFilter !== 'all') items = items.filter(p => (p.categories || []).includes(blogPhilHubCatFilter));
+  if (q) {
+    items = items.filter(p => normalizeNewsSearch(`${p.title || ''} ${(p.fullText || '').replace(/<[^>]+>/g, ' ')}`).includes(q));
+  }
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div style="font-size:12px;color:#9ca3af;">${q || blogPhilHubCatFilter !== 'all' ? 'Aucun résultat.' : 'Aucun article pour le moment.'}</div>`;
+    if (pagerEl) pagerEl.innerHTML = '';
+    return;
+  }
+
+  const totalPages = Math.max(1, Math.ceil(items.length / BLOGPHIL_PAGE_SIZE));
+  if (blogPhilHubPage > totalPages) blogPhilHubPage = totalPages;
+  const pageItems = items.slice((blogPhilHubPage - 1) * BLOGPHIL_PAGE_SIZE, blogPhilHubPage * BLOGPHIL_PAGE_SIZE);
+
+  grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">` +
+    pageItems.map((p, i) => {
+      const dateStr = p.date ? p.date.split('-').reverse().join('/') : '';
+      const cats = (p.categories || []).map(c => `<span style="font-size:9px;font-weight:700;background:#fff7ed;color:#c2410c;padding:2px 7px;border-radius:99px;">${escapeHtmlNews(c)}</span>`).join(' ');
+      const bodyId = 'blogphil-item-' + (p.docId || i);
+      return `
+      <div style="border:1px solid #fed7aa;border-radius:10px;overflow:hidden;background:#fff;">
+        ${p.photoUrl ? `<img src="${p.photoUrl}" style="width:100%;height:110px;object-fit:cover;display:block;">` : ''}
+        <div style="padding:10px 12px;">
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">${cats}${dateStr ? `<span style="font-size:9px;color:#9ca3af;align-self:center;">${dateStr}</span>` : ''}</div>
+          <div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">${escapeHtmlNews(p.title || '')}</div>
+          <button onclick="toggleBlogPhilItem('${bodyId}')" style="font-size:11px;font-weight:700;color:#f97316;background:none;border:none;cursor:pointer;padding:0;">en lire plus ▾</button>
+          <div id="${bodyId}" class="rte-content" style="display:none;margin-top:8px;font-size:12px;color:#374151;line-height:1.7;">${p.fullText || ''}</div>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+
+  if (pagerEl) {
+    if (totalPages <= 1) {
+      pagerEl.innerHTML = '';
+    } else {
+      let pager = '';
+      for (let n = 1; n <= totalPages; n++) {
+        const active = n === blogPhilHubPage;
+        pager += `<button onclick="setBlogPhilPage(${n})" style="min-width:28px;padding:5px 8px;border-radius:6px;border:1px solid #f97316;background:${active ? '#f97316' : '#fff'};color:${active ? '#fff' : '#f97316'};font-size:12px;font-weight:700;cursor:pointer;">${n}</button>`;
+      }
+      pagerEl.innerHTML = pager;
+    }
+  }
+};
+
+window.setBlogPhilPage = function (n) {
+  blogPhilHubPage = n;
+  renderBlogPhilList();
+  document.getElementById('blogphil-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.toggleBlogPhilItem = function (id) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  body.style.display = body.style.display === 'block' ? 'none' : 'block';
+};
+
+// Vérifie en tâche de fond (sans ouvrir le panneau) s'il existe un article plus récent
+// que la dernière visite du consultant, pour activer le badge "nouveau" sur le menu.
+async function checkBlogPhilBadge() {
+  const badge = document.getElementById('philblog-badge');
+  if (!badge || !pmCurrentUser) return;
+  try {
+    let tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    const snap = await window.getDocs(window.collection(window.db, 'philMobileBlogPosts'));
+    const items = [];
+    snap.forEach(d => items.push(d.data()));
+    const lastSeen = localStorage.getItem('pm_blogphil_lastseen_' + pmCurrentUser.id);
+    const hasNew = items.some(p => p.createdAt && (!lastSeen || p.createdAt > lastSeen));
+    badge.style.display = hasNew ? 'inline-block' : 'none';
+  } catch (e) {
+    console.log('Vérification badge Blog Phil-Mobile impossible:', e.message);
+  }
+}
+
 const AGENDA_CATEGORY_ORDER = ['Formations', 'Team meetings', 'Événements', 'Événements spéciaux'];
 // La valeur stockée "Team meetings" est conservée en base — affichée "BOM" partout.
 const AGENDA_CATEGORY_LABEL = { 'Team meetings': 'BOM' };
@@ -4924,6 +5093,8 @@ function doUnlock(user) {
 
   // Nouveautés : lance l'écoute en tâche de fond pour activer le badge sans ouvrir le panneau
   listenNouveautes();
+  // Blog Phil-Mobile : vérifie en tâche de fond s'il y a un nouvel article non lu
+  checkBlogPhilBadge();
 
   setWelcome(user);
   // Pré-sélectionner l'agent dans le suivi
