@@ -458,7 +458,7 @@ Build <span id="app-version-1">…</span> — Présentation app
     </div>
     <div style="display:flex;align-items:flex-start;gap:9px;background:#fff7ed;border-radius:10px;padding:11px 12px;">
       <span style="font-size:20px;line-height:1;">📋</span>
-      <div><div style="font-size:12px;font-weight:700;color:#1a1a1a;">CRM &amp; Contrats</div><div style="font-size:11px;color:#6b7280;margin-top:1px;">Prospects, clients, suivi</div></div>
+      <div><div style="font-size:12px;font-weight:700;color:#1a1a1a;">Gestion Clients &amp; Prospects</div><div style="font-size:11px;color:#6b7280;margin-top:1px;">Prospects, clients, suivi</div></div>
     </div>
     <div style="display:flex;align-items:flex-start;gap:9px;background:#fff7ed;border-radius:10px;padding:11px 12px;">
       <span style="font-size:20px;line-height:1;">🎯</span>
@@ -711,7 +711,7 @@ Build <span id="app-version-1">…</span> — Présentation app
 </div>
 
 <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">
-📊 Mon CRM
+📊 Gestion Clients et Prospects
 </button>
 <div id="crmMenu" class="submenu">
   <button onclick="showCrmPanel('panel-contrats')" class="menu-item" id="btn-contrats">
@@ -761,7 +761,7 @@ Build <span id="app-version-1">…</span> — Présentation app
 <div id="sec-ressources" class="pm-sec-body">
 
 <button onclick="toggleMenu('linksMenu')" class="menu-item group-toggle">
-🌐 Liens importants
+🌐 Sites Web Importants
 </button>
 
 <!-- LIENS (chargés dynamiquement depuis Firestore, collection "liens") -->
@@ -775,7 +775,7 @@ Build <span id="app-version-1">…</span> — Présentation app
 </div>
 
           <!-- SCRIPTS -->
-          <button class="pm-sec-toggle" onclick="toggleSection('sec-scripts')"><span>📜 Scripts</span><span class="pm-sec-arrow" id="arrow-sec-scripts">▸</span></button>
+          <button class="pm-sec-toggle" onclick="toggleSection('sec-scripts')"><span>📜 Scripts contacts Clients</span><span class="pm-sec-arrow" id="arrow-sec-scripts">▸</span></button>
           <div id="sec-scripts" class="pm-sec-body">
 
 <button onclick="toggleMenu('scriptsOrange')" class="menu-item group-toggle">
@@ -1942,382 +1942,14 @@ STATUT: independant
 
 
           <!-- Script panels -->
-          <div id="sc-orange-froid" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">🟠❄️</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🟠 Orange — Prospect froid</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour, je suis bien chez Monsieur/Madame [Nom] ?
-
-Philippe de Phil-Mobile à l'appareil.
-
-Je vous rassure, je ne vous appelle pas pour vous vendre quelque chose immédiatement.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je réalise actuellement des analyses gratuites des factures GSM, Internet et TV dans votre région afin de vérifier si les habitants paient le juste prix.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Qualification</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous êtes actuellement chez quel opérateur ?
-Orange, Proximus, VOO, Telenet ou autre ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💬 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Et globalement vous êtes satisfait de votre abonnement ?
-
-Si je pouvais vous faire économiser quelques euros ou obtenir plus de services pour le même prix, cela vous intéresserait ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Prise de rendez-vous</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Le plus simple est de prendre 15 minutes ensemble afin que j'analyse votre facture gratuitement.
-
-Je peux passer quand cela vous convient ou le faire à distance.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Quel serait le meilleur moment pour vous ?</div>
-            </div>
-            <div id="txt-sc-orange-froid" style="display:none;">Bonjour, je suis bien chez Monsieur/Madame [Nom] ?
-
-Philippe de Phil-Mobile à l'appareil.
-
-Je vous rassure, je ne vous appelle pas pour vous vendre quelque chose immédiatement.
-Je réalise actuellement des analyses gratuites des factures GSM, Internet et TV dans votre région afin de vérifier si les habitants paient le juste prix.
-Vous êtes actuellement chez quel opérateur ?
-Orange, Proximus, VOO, Telenet ou autre ?
-Et globalement vous êtes satisfait de votre abonnement ?
-
-Si je pouvais vous faire économiser quelques euros ou obtenir plus de services pour le même prix, cela vous intéresserait ?
-Le plus simple est de prendre 15 minutes ensemble afin que j'analyse votre facture gratuitement.
-
-Je peux passer quand cela vous convient ou le faire à distance.
-Quel serait le meilleur moment pour vous ?</div>
-            <button onclick="copyText('txt-sc-orange-froid',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-orange-ref" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">🟠🤝</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🟠 Orange — Référence client</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom],
-
-Je vous contacte suite aux coordonnées que m'a communiquées [Prénom du client].</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Il est client chez moi pour ses services Orange et m'a indiqué que cela pourrait vous intéresser également.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Actuellement vous êtes chez quel opérateur ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔄 Transition</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je ne vais pas vous demander de changer aujourd'hui.
-
-Mon objectif est simplement de vérifier si votre offre actuelle est toujours adaptée.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je propose une analyse gratuite et sans engagement.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Quel serait le meilleur moment pour regarder cela ensemble ?</div>
-            </div>
-            <div id="txt-sc-orange-ref" style="display:none;">Bonjour Monsieur/Madame [Nom],
-
-Je vous contacte suite aux coordonnées que m'a communiquées [Prénom du client].
-Il est client chez moi pour ses services Orange et m'a indiqué que cela pourrait vous intéresser également.
-Actuellement vous êtes chez quel opérateur ?
-Je ne vais pas vous demander de changer aujourd'hui.
-
-Mon objectif est simplement de vérifier si votre offre actuelle est toujours adaptée.
-Je propose une analyse gratuite et sans engagement.
-Quel serait le meilleur moment pour regarder cela ensemble ?</div>
-            <button onclick="copyText('txt-sc-orange-ref',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-orange-amis" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">🟠👥</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🟠 Orange — Amis / connaissances</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Salut [Prénom], comment vas-tu ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je t'appelle rapidement car je développe actuellement mon activité dans la téléphonie et internet avec Orange.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je me demandais simplement si tu avais déjà regardé récemment ce que tu payes actuellement.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Beaucoup de personnes autour de moi ont réussi à économiser sans changer leurs habitudes.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📋 Proposition</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Si tu veux, je peux jeter un coup d'œil à ta facture gratuitement.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Ça te dirait qu'on regarde ça ensemble ?</div>
-            </div>
-            <div id="txt-sc-orange-amis" style="display:none;">Salut [Prénom], comment vas-tu ?
-Je t'appelle rapidement car je développe actuellement mon activité dans la téléphonie et internet avec Orange.
-Je me demandais simplement si tu avais déjà regardé récemment ce que tu payes actuellement.
-Beaucoup de personnes autour de moi ont réussi à économiser sans changer leurs habitudes.
-Si tu veux, je peux jeter un coup d'œil à ta facture gratuitement.
-Ça te dirait qu'on regarde ça ensemble ?</div>
-            <button onclick="copyText('txt-sc-orange-amis',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-eneco-froid" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">⚡❄️</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">⚡ Eneco — Prospect froid</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom].
-
-Philippe de Phil-Mobile.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">J'effectue actuellement des comparatifs gratuits d'énergie pour vérifier si les ménages paient un prix correct.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous êtes actuellement chez quel fournisseur ?
-Engie, Luminus, TotalEnergies ou autre ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Votre facture a-t-elle augmenté ces derniers mois ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Dans beaucoup de cas, nous trouvons des économies ou une formule plus adaptée.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Pour cela, j'ai simplement besoin de votre dernière facture.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Quand puis-je passer ou vous appeler pour regarder cela ensemble ?</div>
-            </div>
-            <div id="txt-sc-eneco-froid" style="display:none;">Bonjour Monsieur/Madame [Nom].
-
-Philippe de Phil-Mobile.
-J'effectue actuellement des comparatifs gratuits d'énergie pour vérifier si les ménages paient un prix correct.
-Vous êtes actuellement chez quel fournisseur ?
-Engie, Luminus, TotalEnergies ou autre ?
-Votre facture a-t-elle augmenté ces derniers mois ?
-Dans beaucoup de cas, nous trouvons des économies ou une formule plus adaptée.
-Pour cela, j'ai simplement besoin de votre dernière facture.
-Quand puis-je passer ou vous appeler pour regarder cela ensemble ?</div>
-            <button onclick="copyText('txt-sc-eneco-froid',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-eneco-ref" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">⚡🤝</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">⚡ Eneco — Référence</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom].
-
-Je vous contacte de la part de [Prénom].</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Nous avons récemment analysé ses contrats énergie et il m'a conseillé de vous contacter.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous avez déjà comparé vos tarifs cette année ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Beaucoup de clients restent plusieurs années sur des contrats qui ne sont plus optimisés.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Une simple analyse de facture permet de le vérifier.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Puis-je vous proposer un rendez-vous de 15 minutes ?</div>
-            </div>
-            <div id="txt-sc-eneco-ref" style="display:none;">Bonjour Monsieur/Madame [Nom].
-
-Je vous contacte de la part de [Prénom].
-Nous avons récemment analysé ses contrats énergie et il m'a conseillé de vous contacter.
-Vous avez déjà comparé vos tarifs cette année ?
-Beaucoup de clients restent plusieurs années sur des contrats qui ne sont plus optimisés.
-Une simple analyse de facture permet de le vérifier.
-Puis-je vous proposer un rendez-vous de 15 minutes ?</div>
-            <button onclick="copyText('txt-sc-eneco-ref',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-eneco-amis" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">⚡👥</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">⚡ Eneco — Amis / connaissances</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Salut [Prénom], comment vas-tu ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je travaille également dans le secteur de l'énergie avec Eneco.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Tu sais combien tu paies actuellement ton électricité et ton gaz ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Beaucoup de personnes sont surprises quand on compare réellement leur contrat.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📋 Proposition</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Si tu veux, envoie-moi simplement une facture et je regarde ça gratuitement.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Ça ne t'engage à rien.</div>
-            </div>
-            <div id="txt-sc-eneco-amis" style="display:none;">Salut [Prénom], comment vas-tu ?
-Je travaille également dans le secteur de l'énergie avec Eneco.
-Tu sais combien tu paies actuellement ton électricité et ton gaz ?
-Beaucoup de personnes sont surprises quand on compare réellement leur contrat.
-Si tu veux, envoie-moi simplement une facture et je regarde ça gratuitement.
-Ça ne t'engage à rien.</div>
-            <button onclick="copyText('txt-sc-eneco-amis',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-recr-client" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">🚀⭐</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🚀 Recrutement — Client existant</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour [Prénom].</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je vous appelle aujourd'hui non pas pour vos services, mais parce que je recherche actuellement quelques personnes motivées pour rejoindre notre équipe.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Avez-vous déjà envisagé un complément de revenus ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Nous travaillons avec Orange et Eneco, avec formation complète et accompagnement.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Vous connaissez peut-être des personnes qui cherchent un revenu complémentaire ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je peux vous expliquer cela en 20 minutes.</div>
-            </div>
-            <div id="txt-sc-recr-client" style="display:none;">Bonjour [Prénom].
-Je vous appelle aujourd'hui non pas pour vos services, mais parce que je recherche actuellement quelques personnes motivées pour rejoindre notre équipe.
-Avez-vous déjà envisagé un complément de revenus ?
-Nous travaillons avec Orange et Eneco, avec formation complète et accompagnement.
-Vous connaissez peut-être des personnes qui cherchent un revenu complémentaire ?
-Je peux vous expliquer cela en 20 minutes.</div>
-            <button onclick="copyText('txt-sc-recr-client',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-recr-prospect" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">🚀❄️</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🚀 Recrutement — Prospect</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Bonjour Monsieur/Madame [Nom].</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je vous contacte car je développe actuellement une équipe commerciale dans votre région.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Seriez-vous ouvert à découvrir une activité complémentaire qui peut être exercée à votre rythme ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">✔ Formation incluse
-✔ Pas besoin d'expérience
-✔ Possibilité de revenus récurrents</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🔍 Découverte</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Cherchez-vous actuellement un complément de revenus ou une nouvelle opportunité ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📅 Rendez-vous</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Si oui, je peux vous présenter le concept en une vingtaine de minutes.</div>
-            </div>
-            <div id="txt-sc-recr-prospect" style="display:none;">Bonjour Monsieur/Madame [Nom].
-Je vous contacte car je développe actuellement une équipe commerciale dans votre région.
-Seriez-vous ouvert à découvrir une activité complémentaire qui peut être exercée à votre rythme ?
-✔ Formation incluse
-✔ Pas besoin d'expérience
-✔ Possibilité de revenus récurrents
-Cherchez-vous actuellement un complément de revenus ou une nouvelle opportunité ?
-Si oui, je peux vous présenter le concept en une vingtaine de minutes.</div>
-            <button onclick="copyText('txt-sc-recr-prospect',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
-          </div>
-          <div id="sc-recr-amis" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-              <span style="font-size:20px;">🚀👥</span>
-              <div style="font-size:14px;font-weight:700;color:#1a1a1a;">🚀 Recrutement — Connaissances</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">📞 Introduction</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Salut [Prénom].</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">🎯 Accroche</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Je pense à toi parce que je développe actuellement mon activité avec Orange et Eneco.</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">❓ Question</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre un deuxième emploi ?</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">💡 Valeur</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">✔ Tu travailles quand tu veux
-✔ Formation complète
-✔ Accompagnement permanent</div>
-            </div>
-            <div style="margin-bottom:14px;">
-              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">✅ Conclusion</div>
-              <div style="font-size:13px;color:#374151;line-height:1.8;white-space:pre-line;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">Ça te dirait que je t'explique rapidement le concept autour d'un café ou en visio ?</div>
-            </div>
-            <div id="txt-sc-recr-amis" style="display:none;">Salut [Prénom].
-Je pense à toi parce que je développe actuellement mon activité avec Orange et Eneco.
-Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre un deuxième emploi ?
-✔ Tu travailles quand tu veux
-✔ Formation complète
-✔ Accompagnement permanent
-Ça te dirait que je t'explique rapidement le concept autour d'un café ou en visio ?</div>
-            <button onclick="copyText('txt-sc-recr-amis',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
+          <!-- Panneau unique dynamique : contenu chargé depuis Firestore (collection "scripts" + doc "scriptsMeta/definitions"),
+               géré depuis admin.html > Gestion des Scripts. Remplace les 9 panneaux qui étaient en dur (build 14.14 et avant). -->
+          <div id="panel-script-dynamic" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div id="script-dyn-header" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"></div>
+            <div id="script-dyn-def" style="display:none;font-size:12px;color:#6b7280;font-style:italic;background:#f9fafb;border-radius:8px;padding:10px 14px;margin-bottom:16px;border-left:3px solid #d1d5db;"></div>
+            <div id="script-dyn-sections"></div>
+            <div id="script-dyn-txt" style="display:none;"></div>
+            <button onclick="copyText('script-dyn-txt',this)" style="margin-top:4px;padding:8px 16px;background:transparent;border:1.5px solid #f97316;border-radius:8px;color:#f97316;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">📋 Copier le script complet</button>
           </div>
 
         </div>
@@ -2532,6 +2164,42 @@ function escapeAttrLinks(str) {
   return (str ?? '').replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 window.loadHubLinks = loadHubLinks;
+
+// ===== SCRIPTS CONTACTS CLIENTS (menu "Scripts contacts Clients") =====
+// Firestore : collection "scripts" (9 docs, un par script) + doc "scriptsMeta/definitions" (3 définitions Froid/Tiède/Chaud, communes aux 3 activités).
+// Gérés depuis admin.html > Gestion des Scripts. Si le panneau script est ouvert au moment où les données arrivent, on le rafraîchit.
+window._scriptsCache = {};
+window._scriptDefsCache = {};
+async function loadHubScripts() {
+  try {
+    let tries = 0;
+    while ((!window.db || !window.onSnapshot || !window.collection || !window.doc) && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.db || !window.onSnapshot) throw new Error('Firestore non disponible');
+
+    if (window._hubScriptsUnsub) { try { window._hubScriptsUnsub(); } catch (e) {} }
+    if (window._hubScriptDefsUnsub) { try { window._hubScriptDefsUnsub(); } catch (e) {} }
+
+    window._hubScriptsUnsub = window.onSnapshot(window.collection(window.db, 'scripts'), (snap) => {
+      const cache = {};
+      snap.forEach(docSnap => cache[docSnap.id] = docSnap.data());
+      window._scriptsCache = cache;
+    }, (err) => {
+      console.log('Chargement scripts impossible:', err.message);
+    });
+
+    window._hubScriptDefsUnsub = window.onSnapshot(window.doc(window.db, 'scriptsMeta', 'definitions'), (snap) => {
+      window._scriptDefsCache = snap.exists() ? snap.data() : {};
+    }, (err) => {
+      console.log('Chargement définitions scripts impossible:', err.message);
+    });
+  } catch (err) {
+    console.log('loadHubScripts error:', err.message);
+  }
+}
+window.loadHubScripts = loadHubScripts;
 
 async function loadPMUsers() {
   try {
@@ -2832,6 +2500,7 @@ async function initFavorites() {
   buttons.forEach(function (btn) {
     if (btn.tagName !== 'BUTTON') return;
     if (btn.classList.contains('group-toggle')) return;
+    if (btn.id === 'menu-dashboard') return; // Écran par défaut au login : aucun intérêt à le mettre en favori.
     if (btn.closest('#pm-favoris-list')) return;
     if (btn.dataset.pmFavReady) return;
     if (!btn.getAttribute('onclick') && !btn.id) return;
@@ -2890,14 +2559,64 @@ function loadFrame(url, btn) {
   document.body.classList.add('mobile-panel-open');
 }
 
+const SCRIPT_TYPE_LABELS = {
+  froid: '❄️ Prospect Froid',
+  tiede: '🤝 Prospect Tiède (Références Clients)',
+  chaud: '🔥 Prospect Chaud (Amis, Connaissances)'
+};
+
 function showScript(id) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   event.currentTarget.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
   document.getElementById('iframe-panel').style.display = 'none';
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
-  document.getElementById(id).style.display = 'block';
+  renderScriptPanel(id);
+  document.getElementById('panel-script-dynamic').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
+}
+
+// Construit le panneau script à partir du cache Firestore (window._scriptsCache / window._scriptDefsCache).
+function renderScriptPanel(id) {
+  const header = document.getElementById('script-dyn-header');
+  const defBox = document.getElementById('script-dyn-def');
+  const sectionsBox = document.getElementById('script-dyn-sections');
+  const txtBox = document.getElementById('script-dyn-txt');
+  const script = (window._scriptsCache || {})[id];
+
+  if (!script) {
+    header.innerHTML = '<div style="font-size:14px;font-weight:700;color:#1a1a1a;">Script indisponible</div>';
+    defBox.style.display = 'none';
+    sectionsBox.innerHTML = '<div style="font-size:13px;color:#888;">Ce script n\'a pas encore été importé dans l\'admin (Gestion des Scripts).</div>';
+    txtBox.textContent = '';
+    return;
+  }
+
+  header.innerHTML = `<span style="font-size:20px;">${script.icon || ''}</span><div style="font-size:14px;font-weight:700;color:#1a1a1a;">${escapeHtmlDocs(script.titre || '')}</div>`;
+
+  const defText = (window._scriptDefsCache || {})[script.type];
+  if (defText) {
+    defBox.style.display = 'block';
+    defBox.innerHTML = `<b>${SCRIPT_TYPE_LABELS[script.type] || ''}</b> — ${defText}`;
+  } else {
+    defBox.style.display = 'none';
+  }
+
+  const sections = script.sections || [];
+  sectionsBox.innerHTML = sections.map(sec => `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#f97316;margin-bottom:5px;">${escapeHtmlDocs(sec.icon || '')} ${escapeHtmlDocs(sec.label || '')}</div>
+      <div style="font-size:13px;color:#374151;line-height:1.8;padding:10px 14px;background:#fef9f5;border-radius:8px;border-left:3px solid #f97316;">${sec.content || ''}</div>
+    </div>
+  `).join('');
+
+  // Texte complet pour le bouton "Copier" : on dépouille le HTML riche en texte brut, une ligne par section.
+  const tmp = document.createElement('div');
+  const plainLines = sections.map(sec => {
+    tmp.innerHTML = (sec.content || '').replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div)>/gi, '\n');
+    return tmp.textContent.replace(/\n{3,}/g, '\n\n').trim();
+  });
+  txtBox.textContent = plainLines.join('\n');
 }
 
 function showDashboard(btn) {
@@ -8249,6 +7968,7 @@ onAuthStateChanged(auth, async (user) => {
   loadTeamsLink();
   loadHubDocuments();
   loadHubLinks();
+  loadHubScripts();
 
 });
 
@@ -8300,6 +8020,7 @@ window.firebaseLogin = async function(){
     loadTeamsLink();
     loadHubDocuments();
     loadHubLinks();
+    loadHubScripts();
 
   }catch(err){
     document.getElementById('rem-error').style.display='block';

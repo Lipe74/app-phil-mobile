@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 7.18</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.15 - Scripts Dynamiques</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -266,6 +266,7 @@
           </div>
           <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
           <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
+          <button onclick="showAdminPanel('panel-scripts', this)" class="menu-item" id="menu-scripts">📜 Gestion des Scripts</button>
         </div>
 
         <button onclick="toggleMenu('blogNewsMenu')" class="menu-item group-toggle">📰 Blog, News, Concours &amp; Agenda</button>
@@ -833,6 +834,24 @@
           </div>
 
           <div id="liens-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-scripts">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span>📜 Gestion des Scripts contacts Clients</span>
+            <button class="btn btn-secondary" onclick="importExistingScripts()">📥 Importer les scripts existants</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-bottom:14px;">
+            Scripts affichés dans le Hub, menu "📜 Scripts contacts Clients" (Orange / Eneco / Recrutement). "Importer les scripts existants" récupère en une fois les 9 scripts actuellement en dur dans le hub (à faire une seule fois ; ignoré automatiquement si déjà fait).
+          </div>
+
+          <div class="card">
+            <div class="section-title" style="font-size:13px;">📖 Définitions des types de prospects</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">Affichées sous le titre de chaque script dans le Hub, selon son type. Communes à Orange / Eneco / Recrutement.</div>
+            <div id="scripts-defs-content"><div class="empty">Chargement...</div></div>
+          </div>
+
+          <div id="scripts-list-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-faq">
@@ -1764,6 +1783,7 @@ onAuthStateChanged(auth, async (user) => {
   loadDocumentsAdmin();
   loadCategoriesAdmin();
   loadLiensAdmin();
+  loadScriptsAdmin();
   loadVideoRecrutementAdmin();
   loadVideoVenteAdmin();
   loadVideoPromotionAdmin();
@@ -6403,6 +6423,290 @@ window.importExistingLiens = async function () {
   showToast(`Import terminé : ${added} ajouté(s), ${skipped} déjà présent(s).`);
 };
 
+// ===== SCRIPTS CONTACTS CLIENTS (menu Hub "Scripts contacts Clients") =====
+// Firestore : collection "scripts" (9 docs, un par script) : { activite, type, icon, titre, ordre, sections:[{icon,label,content}] }
+// + doc "scriptsMeta/definitions" : { froid, tiede, chaud } (texte riche, commun aux 3 activités Orange/Eneco/Recrutement).
+const SCRIPT_TYPE_LABELS = {
+  froid: '❄️ Prospect Froid',
+  tiede: '🤝 Prospect Tiède (Références Clients)',
+  chaud: '🔥 Prospect Chaud (Amis, Connaissances)'
+};
+const SCRIPT_ACTIVITE_LABELS = { orange: '🟠 Orange', eneco: '⚡ Eneco', recrutement: '🚀 Recrutement' };
+
+const EXISTING_SCRIPTS_MIGRATION = [
+  { id: 'sc-orange-froid', activite: 'orange', type: 'froid', icon: '🟠❄️', titre: '🟠 Orange — Prospect froid', ordre: 0, sections: [
+    { icon: '📞', label: 'Introduction', content: "Bonjour, je suis bien chez Monsieur/Madame [Nom] ?<br><br>Philippe de Phil-Mobile à l'appareil.<br><br>Je vous rassure, je ne vous appelle pas pour vous vendre quelque chose immédiatement." },
+    { icon: '🎯', label: 'Accroche', content: "Je réalise actuellement des analyses gratuites des factures GSM, Internet et TV dans votre région afin de vérifier si les habitants paient le juste prix." },
+    { icon: '🔍', label: 'Qualification', content: "Vous êtes actuellement chez quel opérateur ?<br>Orange, Proximus, VOO, Telenet ou autre ?" },
+    { icon: '💬', label: 'Découverte', content: "Et globalement vous êtes satisfait de votre abonnement ?<br><br>Si je pouvais vous faire économiser quelques euros ou obtenir plus de services pour le même prix, cela vous intéresserait ?" },
+    { icon: '📅', label: 'Prise de rendez-vous', content: "Le plus simple est de prendre 15 minutes ensemble afin que j'analyse votre facture gratuitement.<br><br>Je peux passer quand cela vous convient ou le faire à distance." },
+    { icon: '✅', label: 'Conclusion', content: "Quel serait le meilleur moment pour vous ?" }
+  ]},
+  { id: 'sc-orange-ref', activite: 'orange', type: 'tiede', icon: '🟠🤝', titre: '🟠 Orange — Référence client', ordre: 1, sections: [
+    { icon: '📞', label: 'Introduction', content: "Bonjour Monsieur/Madame [Nom],<br><br>Je vous contacte suite aux coordonnées que m'a communiquées [Prénom du client]." },
+    { icon: '🎯', label: 'Accroche', content: "Il est client chez moi pour ses services Orange et m'a indiqué que cela pourrait vous intéresser également." },
+    { icon: '🔍', label: 'Découverte', content: "Actuellement vous êtes chez quel opérateur ?" },
+    { icon: '🔄', label: 'Transition', content: "Je ne vais pas vous demander de changer aujourd'hui.<br><br>Mon objectif est simplement de vérifier si votre offre actuelle est toujours adaptée." },
+    { icon: '📅', label: 'Rendez-vous', content: "Je propose une analyse gratuite et sans engagement." },
+    { icon: '✅', label: 'Conclusion', content: "Quel serait le meilleur moment pour regarder cela ensemble ?" }
+  ]},
+  { id: 'sc-orange-amis', activite: 'orange', type: 'chaud', icon: '🟠👥', titre: '🟠 Orange — Amis / connaissances', ordre: 2, sections: [
+    { icon: '📞', label: 'Introduction', content: "Salut [Prénom], comment vas-tu ?" },
+    { icon: '🎯', label: 'Accroche', content: "Je t'appelle rapidement car je développe actuellement mon activité dans la téléphonie et internet avec Orange." },
+    { icon: '🔍', label: 'Découverte', content: "Je me demandais simplement si tu avais déjà regardé récemment ce que tu payes actuellement." },
+    { icon: '💡', label: 'Valeur', content: "Beaucoup de personnes autour de moi ont réussi à économiser sans changer leurs habitudes." },
+    { icon: '📋', label: 'Proposition', content: "Si tu veux, je peux jeter un coup d'œil à ta facture gratuitement." },
+    { icon: '✅', label: 'Conclusion', content: "Ça te dirait qu'on regarde ça ensemble ?" }
+  ]},
+  { id: 'sc-eneco-froid', activite: 'eneco', type: 'froid', icon: '⚡❄️', titre: '⚡ Eneco — Prospect froid', ordre: 3, sections: [
+    { icon: '📞', label: 'Introduction', content: "Bonjour Monsieur/Madame [Nom].<br><br>Philippe de Phil-Mobile." },
+    { icon: '🎯', label: 'Accroche', content: "J'effectue actuellement des comparatifs gratuits d'énergie pour vérifier si les ménages paient un prix correct." },
+    { icon: '🔍', label: 'Découverte', content: "Vous êtes actuellement chez quel fournisseur ?<br>Engie, Luminus, TotalEnergies ou autre ?" },
+    { icon: '❓', label: 'Question', content: "Votre facture a-t-elle augmenté ces derniers mois ?" },
+    { icon: '💡', label: 'Valeur', content: "Dans beaucoup de cas, nous trouvons des économies ou une formule plus adaptée." },
+    { icon: '📅', label: 'Rendez-vous', content: "Pour cela, j'ai simplement besoin de votre dernière facture." },
+    { icon: '✅', label: 'Conclusion', content: "Quand puis-je passer ou vous appeler pour regarder cela ensemble ?" }
+  ]},
+  { id: 'sc-eneco-ref', activite: 'eneco', type: 'tiede', icon: '⚡🤝', titre: '⚡ Eneco — Référence', ordre: 4, sections: [
+    { icon: '📞', label: 'Introduction', content: "Bonjour Monsieur/Madame [Nom].<br><br>Je vous contacte de la part de [Prénom]." },
+    { icon: '🎯', label: 'Accroche', content: "Nous avons récemment analysé ses contrats énergie et il m'a conseillé de vous contacter." },
+    { icon: '🔍', label: 'Découverte', content: "Vous avez déjà comparé vos tarifs cette année ?" },
+    { icon: '💡', label: 'Valeur', content: "Beaucoup de clients restent plusieurs années sur des contrats qui ne sont plus optimisés." },
+    { icon: '📅', label: 'Rendez-vous', content: "Une simple analyse de facture permet de le vérifier." },
+    { icon: '✅', label: 'Conclusion', content: "Puis-je vous proposer un rendez-vous de 15 minutes ?" }
+  ]},
+  { id: 'sc-eneco-amis', activite: 'eneco', type: 'chaud', icon: '⚡👥', titre: '⚡ Eneco — Amis / connaissances', ordre: 5, sections: [
+    { icon: '📞', label: 'Introduction', content: "Salut [Prénom], comment vas-tu ?" },
+    { icon: '🎯', label: 'Accroche', content: "Je travaille également dans le secteur de l'énergie avec Eneco." },
+    { icon: '🔍', label: 'Découverte', content: "Tu sais combien tu paies actuellement ton électricité et ton gaz ?" },
+    { icon: '💡', label: 'Valeur', content: "Beaucoup de personnes sont surprises quand on compare réellement leur contrat." },
+    { icon: '📋', label: 'Proposition', content: "Si tu veux, envoie-moi simplement une facture et je regarde ça gratuitement." },
+    { icon: '✅', label: 'Conclusion', content: "Ça ne t'engage à rien." }
+  ]},
+  { id: 'sc-recr-client', activite: 'recrutement', type: 'tiede', icon: '🚀⭐', titre: '🚀 Recrutement — Client existant', ordre: 6, sections: [
+    { icon: '📞', label: 'Introduction', content: "Bonjour [Prénom]." },
+    { icon: '🎯', label: 'Accroche', content: "Je vous appelle aujourd'hui non pas pour vos services, mais parce que je recherche actuellement quelques personnes motivées pour rejoindre notre équipe." },
+    { icon: '❓', label: 'Question', content: "Avez-vous déjà envisagé un complément de revenus ?" },
+    { icon: '💡', label: 'Valeur', content: "Nous travaillons avec Orange et Eneco, avec formation complète et accompagnement." },
+    { icon: '🔍', label: 'Découverte', content: "Vous connaissez peut-être des personnes qui cherchent un revenu complémentaire ?" },
+    { icon: '📅', label: 'Rendez-vous', content: "Je peux vous expliquer cela en 20 minutes." }
+  ]},
+  { id: 'sc-recr-prospect', activite: 'recrutement', type: 'froid', icon: '🚀❄️', titre: '🚀 Recrutement — Prospect', ordre: 7, sections: [
+    { icon: '📞', label: 'Introduction', content: "Bonjour Monsieur/Madame [Nom]." },
+    { icon: '🎯', label: 'Accroche', content: "Je vous contacte car je développe actuellement une équipe commerciale dans votre région." },
+    { icon: '❓', label: 'Question', content: "Seriez-vous ouvert à découvrir une activité complémentaire qui peut être exercée à votre rythme ?" },
+    { icon: '💡', label: 'Valeur', content: "✔ Formation incluse<br>✔ Pas besoin d'expérience<br>✔ Possibilité de revenus récurrents" },
+    { icon: '🔍', label: 'Découverte', content: "Cherchez-vous actuellement un complément de revenus ou une nouvelle opportunité ?" },
+    { icon: '📅', label: 'Rendez-vous', content: "Si oui, je peux vous présenter le concept en une vingtaine de minutes." }
+  ]},
+  { id: 'sc-recr-amis', activite: 'recrutement', type: 'chaud', icon: '🚀👥', titre: '🚀 Recrutement — Connaissances', ordre: 8, sections: [
+    { icon: '📞', label: 'Introduction', content: "Salut [Prénom]." },
+    { icon: '🎯', label: 'Accroche', content: "Je pense à toi parce que je développe actuellement mon activité avec Orange et Eneco." },
+    { icon: '❓', label: 'Question', content: "Tu as déjà pensé à développer un revenu complémentaire sans devoir prendre un deuxième emploi ?" },
+    { icon: '💡', label: 'Valeur', content: "✔ Tu travailles quand tu veux<br>✔ Formation complète<br>✔ Accompagnement permanent" },
+    { icon: '✅', label: 'Conclusion', content: "Ça te dirait que je t'explique rapidement le concept autour d'un café ou en visio ?" }
+  ]}
+];
+
+// Définitions par défaut posées lors du premier import — Philippe pourra les réécrire librement depuis l'admin.
+const SCRIPTS_DEFAULT_DEFINITIONS = {
+  froid: "Une personne que vous ne connaissez pas et qui n'a jamais été en contact avec vous ou avec Phil-Mobile. C'est un premier contact, à convaincre entièrement.",
+  tiede: "Une personne qui vous a été recommandée par un client ou une connaissance déjà convaincu(e). La confiance est en partie déjà établie grâce à cette référence.",
+  chaud: "Une personne de votre entourage proche (amis, famille, connaissances). La relation de confiance existe déjà, l'approche peut être plus directe et personnelle."
+};
+
+let scriptsUnsub = null;
+let scriptDefsUnsub = null;
+window._scriptsCache = [];
+window._scriptDefsCache = { froid: '', tiede: '', chaud: '' };
+window._scriptsEditingId = null;
+
+function loadScriptsAdmin() {
+  const listEl = document.getElementById('scripts-list-content');
+  const defsEl = document.getElementById('scripts-defs-content');
+  if (!listEl && !defsEl) return;
+
+  if (scriptsUnsub) { try { scriptsUnsub(); } catch (e) {} scriptsUnsub = null; }
+  scriptsUnsub = onSnapshot(collection(db, 'scripts'), (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    window._scriptsCache = items;
+    renderScriptsAdmin(items);
+  }, (err) => {
+    if (listEl) listEl.innerHTML = '<div class="empty">Erreur de chargement.</div>';
+    console.log('Chargement scripts impossible:', err.message);
+  });
+
+  if (scriptDefsUnsub) { try { scriptDefsUnsub(); } catch (e) {} scriptDefsUnsub = null; }
+  scriptDefsUnsub = onSnapshot(doc(db, 'scriptsMeta', 'definitions'), (snap) => {
+    window._scriptDefsCache = snap.exists() ? { froid: '', tiede: '', chaud: '', ...snap.data() } : { froid: '', tiede: '', chaud: '' };
+    renderScriptDefsAdmin();
+  }, (err) => {
+    console.log('Chargement définitions scripts impossible:', err.message);
+  });
+}
+
+function renderScriptDefsAdmin() {
+  const el = document.getElementById('scripts-defs-content');
+  if (!el) return;
+  const d = window._scriptDefsCache || {};
+  el.innerHTML = ['froid', 'tiede', 'chaud'].map(type => `
+    <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f0f0f0;">
+      <label style="font-size:12px;font-weight:700;color:#f97316;">${SCRIPT_TYPE_LABELS[type]}</label>
+      ${richToolbarHtml()}
+      <div contenteditable="true" id="scriptdef-${type}" class="rte-editor" style="min-height:60px;padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;">${d[type] || ''}</div>
+      <button class="btn btn-primary" style="margin-top:6px;padding:5px 12px;font-size:12px;" onclick="saveScriptDefinition('${type}')">💾 Enregistrer</button>
+    </div>
+  `).join('');
+}
+
+window.saveScriptDefinition = async function (type) {
+  const el = document.getElementById('scriptdef-' + type);
+  if (!el) return;
+  try {
+    await setDoc(doc(db, 'scriptsMeta', 'definitions'), { [type]: el.innerHTML.trim() }, { merge: true });
+    showToast('✅ Définition enregistrée.');
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+function renderScriptsAdmin(items) {
+  const el = document.getElementById('scripts-list-content');
+  if (!el) return;
+  if (!items.length) { el.innerHTML = '<div class="empty">Aucun script — utilisez "Importer les scripts existants".</div>'; return; }
+
+  const groups = { orange: [], eneco: [], recrutement: [] };
+  items.forEach(s => { if (groups[s.activite]) groups[s.activite].push(s); });
+
+  el.innerHTML = Object.keys(groups).map(act => {
+    if (!groups[act].length) return '';
+    return `<div class="card" style="margin-bottom:14px;">
+      <div class="section-title" style="font-size:13px;">${SCRIPT_ACTIVITE_LABELS[act]}</div>
+      ${groups[act].map(s => renderScriptItemAdmin(s)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderScriptItemAdmin(s) {
+  const isEditing = window._scriptsEditingId === s.id;
+  if (!isEditing) {
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+      <span style="font-weight:600;flex:1;min-width:180px;">${s.icon || ''} ${escapeHtmlDocs(s.titre)}</span>
+      <span style="font-size:11px;color:#888;">${SCRIPT_TYPE_LABELS[s.type] || s.type}</span>
+      <button class="btn btn-secondary" onclick="startEditScript('${s.id}')">✏️ Modifier</button>
+    </div>`;
+  }
+
+  const sections = s.sections || [];
+  return `<div style="padding:10px 0;border-bottom:1px solid #f0f0f0;">
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+      <input type="text" id="script-edit-icon-${s.id}" value="${escapeAttrDocs(s.icon || '')}" placeholder="Icônes" maxlength="6" style="width:70px;font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;">
+      <input type="text" id="script-edit-titre-${s.id}" value="${escapeAttrDocs(s.titre || '')}" placeholder="Titre" style="flex:1;min-width:180px;font-size:13px;padding:4px 6px;border:1px solid #f97316;border-radius:6px;">
+    </div>
+    <div id="script-edit-sections-${s.id}">
+      ${sections.map((sec, i) => renderScriptSectionEditor(s.id, i, sec)).join('')}
+    </div>
+    <button type="button" class="btn btn-secondary" style="margin-top:6px;font-size:12px;" onclick="addScriptSection('${s.id}')">➕ Ajouter une section</button>
+    <div style="margin-top:10px;display:flex;gap:6px;">
+      <button class="btn btn-primary" onclick="saveScriptEdit('${s.id}')">✅ Enregistrer</button>
+      <button class="btn btn-secondary" onclick="cancelEditScript()">✖ Annuler</button>
+    </div>
+  </div>`;
+}
+
+function renderScriptSectionEditor(scriptId, idx, sec) {
+  return `<div style="border:1px solid #eee;border-radius:8px;padding:8px;margin-bottom:8px;background:#fafafa;">
+    <div style="display:flex;gap:6px;margin-bottom:5px;">
+      <input type="text" id="script-sec-icon-${scriptId}-${idx}" value="${escapeAttrDocs(sec.icon || '')}" placeholder="Icône" maxlength="4" style="width:50px;font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
+      <input type="text" id="script-sec-label-${scriptId}-${idx}" value="${escapeAttrDocs(sec.label || '')}" placeholder="Nom de la section" style="flex:1;font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
+      <button type="button" class="btn btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="removeScriptSection('${scriptId}', ${idx})" title="Supprimer cette section">🗑️</button>
+    </div>
+    ${richToolbarHtml()}
+    <div contenteditable="true" id="script-sec-content-${scriptId}-${idx}" class="rte-editor" style="min-height:50px;padding:8px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;">${sec.content || ''}</div>
+  </div>`;
+}
+
+window.startEditScript = function (id) {
+  window._scriptsEditingId = id;
+  renderScriptsAdmin(window._scriptsCache);
+};
+
+window.cancelEditScript = function () {
+  window._scriptsEditingId = null;
+  renderScriptsAdmin(window._scriptsCache);
+};
+
+// Lit l'état courant des sections depuis le DOM (avant d'en ajouter/retirer une), pour ne rien perdre de ce qui a déjà été tapé.
+function readScriptSectionsFromDom(scriptId) {
+  const container = document.getElementById('script-edit-sections-' + scriptId);
+  const rows = container ? Array.from(container.children) : [];
+  return rows.map((row, i) => ({
+    icon: (document.getElementById(`script-sec-icon-${scriptId}-${i}`) || {}).value || '',
+    label: (document.getElementById(`script-sec-label-${scriptId}-${i}`) || {}).value || '',
+    content: (document.getElementById(`script-sec-content-${scriptId}-${i}`) || {}).innerHTML || ''
+  }));
+}
+
+window.addScriptSection = function (scriptId) {
+  const container = document.getElementById('script-edit-sections-' + scriptId);
+  if (!container) return;
+  const sections = readScriptSectionsFromDom(scriptId);
+  sections.push({ icon: '📌', label: '', content: '' });
+  container.innerHTML = sections.map((sec, i) => renderScriptSectionEditor(scriptId, i, sec)).join('');
+};
+
+window.removeScriptSection = function (scriptId, idx) {
+  const container = document.getElementById('script-edit-sections-' + scriptId);
+  if (!container) return;
+  const sections = readScriptSectionsFromDom(scriptId);
+  sections.splice(idx, 1);
+  container.innerHTML = sections.map((sec, i) => renderScriptSectionEditor(scriptId, i, sec)).join('');
+};
+
+window.saveScriptEdit = async function (id) {
+  const iconInp = document.getElementById('script-edit-icon-' + id);
+  const titreInp = document.getElementById('script-edit-titre-' + id);
+  if (!titreInp || !titreInp.value.trim()) { alert('Le titre ne peut pas être vide.'); return; }
+  const sections = readScriptSectionsFromDom(id).filter(s => s.label || s.content);
+  try {
+    await updateDoc(doc(db, 'scripts', id), {
+      icon: iconInp ? iconInp.value.trim() : '',
+      titre: titreInp.value.trim(),
+      sections
+    });
+    window._scriptsEditingId = null;
+    showToast('✅ Script mis à jour.');
+  } catch (err) {
+    alert('Erreur: ' + err.message);
+  }
+};
+
+window.importExistingScripts = async function () {
+  if (!confirm(`Récupérer les ${EXISTING_SCRIPTS_MIGRATION.length} scripts déjà en dur dans le hub ? (à faire une seule fois, les scripts déjà importés — même id — seront ignorés)`)) return;
+  const existingIds = new Set((window._scriptsCache || []).map(s => s.id));
+  let added = 0, skipped = 0;
+  for (const item of EXISTING_SCRIPTS_MIGRATION) {
+    if (existingIds.has(item.id)) { skipped++; continue; }
+    try {
+      await setDoc(doc(db, 'scripts', item.id), item);
+      added++;
+    } catch (err) {
+      console.log('Erreur import script', item.id, err.message);
+    }
+  }
+  try {
+    const defsSnap = await getDoc(doc(db, 'scriptsMeta', 'definitions'));
+    if (!defsSnap.exists()) {
+      await setDoc(doc(db, 'scriptsMeta', 'definitions'), SCRIPTS_DEFAULT_DEFINITIONS);
+    }
+  } catch (err) {
+    console.log('Erreur seed définitions scripts', err.message);
+  }
+  showToast(`Import terminé : ${added} script(s) ajouté(s), ${skipped} déjà présent(s).`);
+};
+
 window.saveCommissionsCategorie = async function (categoryKey) {
   const items = (window._commissionsMerged || []).filter(p => p.cat === categoryKey);
 
@@ -6819,6 +7123,7 @@ const FAV_ITEMS = {
   'menu-commissions':          { label: '💰 Commissions',                  panelId: 'panel-commissions' },
   'menu-documents':            { label: '📄 Gestion des documents',         panelId: 'panel-documents' },
   'menu-liens':                { label: '🌐 Gestion des liens',            panelId: 'panel-liens' },
+  'menu-scripts':              { label: '📜 Gestion des Scripts',          panelId: 'panel-scripts' },
 };
 
 let favIds = [];          // ordre des favoris (IDs boutons)

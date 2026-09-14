@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.14 - Blog Modale";
+  scope.APP_VERSION = "14.15 - Scripts Dynamiques";
 })();
