@@ -191,7 +191,7 @@
       </span>
 
       <span style="font-size:9px;color:#999;font-weight:600;">
-Build <span id="app-version-1">…</span> — Présentation app
+Version stable : <span id="app-version-1">…</span> — Présentation app
      </span>
     </div>
     </div>
@@ -261,7 +261,7 @@ Build <span id="app-version-1">…</span> — Présentation app
          style="width:140px;height:140px;object-fit:contain;">
 
     <div style="font-size:12px;color:#999;font-weight:600;margin-top:6px;">
-      Build <span id="app-version-2">…</span>
+      Version stable : <span id="app-version-2">…</span>
     </div>
   </div>
 
@@ -8279,8 +8279,11 @@ z-index:99999;
 </div>
 
 <script>
+// Les pages consultant n'affichent que le numéro de build ("Version stable : 14.18"), pas le
+// descriptif interne ("14.18 - ...") — celui-ci reste réservé à l'admin.
+const appVersionNumberOnly = (window.APP_VERSION || '?').split(' - ')[0];
 document.querySelectorAll('[id^="app-version"]').forEach(el => {
-  el.textContent = window.APP_VERSION || '?';
+  el.textContent = appVersionNumberOnly;
 });
 </script>
 

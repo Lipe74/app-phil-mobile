@@ -176,7 +176,7 @@ textarea:focus{
 
 <div class="header">
   <h1>🎯 Prospects Consultants</h1>
-  <div><span id="app-version-1">…</span> Stable</div>
+  <div>Version stable : <span id="app-version-1">…</span></div>
 </div>
 
 <div class="stats-banner">
@@ -793,8 +793,9 @@ window.confirmImport = confirmImport;
 </script>
 
 <script>
+const appVersionNumberOnly = (window.APP_VERSION || '?').split(' - ')[0];
 document.querySelectorAll('[id^="app-version"]').forEach(el => {
-  el.textContent = window.APP_VERSION || '?';
+  el.textContent = appVersionNumberOnly;
 });
 </script>
 
