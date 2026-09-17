@@ -112,7 +112,7 @@
 
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <div style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;white-space:nowrap;">
-        Build <span id="app-version-1">…</span> Stable
+        Version stable : <span id="app-version-1">…</span>
       </div>
 
       <div style="display:flex;align-items:center;gap:8px;">
@@ -133,7 +133,7 @@
   </div>
 
   <div id="orange-sticky-summary" style="position:sticky;top:0;z-index:50;background:#fff;border:1px solid #ffd9b3;border-radius:10px;padding:8px 14px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);">
-    <div style="font-size:11.5px;color:#333;margin-bottom:4px;">Prix sans promo : <span id="sticky-price-before-promo" style="font-weight:700;">0,00 €</span></div>
+    <div style="font-size:11.5px;color:#333;margin-bottom:4px;">Prix sans promo : <span id="sticky-price-before-promo" style="font-weight:700;">0,00 €</span> &nbsp;·&nbsp; 🎁 Frais uniques : <span id="sticky-price-unique" style="font-weight:700;">0,00 €</span></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
       <div style="display:flex;gap:18px;flex-wrap:wrap;">
         <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢 Aujourd'hui</span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
@@ -1218,59 +1218,68 @@ function priceFmt(p) {
 
 const productList = {
   internet: [
-    { id:'inet_start', name:'Internet Start', sub:'Vitesse jusqu\'à 200MB', price:49, max:2 },
-    { id:'inet_zen',   name:'Internet Zen',   sub:'Vitesse jusqu\'à 500MB', price:58, max:2 },
-    { id:'inet_giga',  name:'Internet Giga',  sub:'Vitesse jusqu\'à 1000MB', price:68, max:2 },
-    { id:'inet_fixe',  name:'Ligne Fixe',     sub:'Téléphone fixe', price:12, max:2, countsAsInternet:false },
+  { id:"inet_start", name:"Livebox", sub:"<div style=\"text-align: justify;\">Connexion stable avec une vitesse de téléchargement allant jusqu'à <b>200 Mbps</b>. Idéal pour le streaming standard, le télétravail et la navigation quotidienne</div>", price:49, max:2 },
+  { id:"inet_zen", name:"Livebox Up", sub:"<div style=\"text-align: justify;\">Vitesse supérieure atteignant jusqu'à <b>500 Mbps</b>. Parfait pour les foyers connectés simultanément et les téléchargements rapides</div>", price:58, max:2 },
+  { id:"inet_giga", name:"Livebox Giga", sub:"<div style=\"text-align: justify;\">Connexion ultra-rapide jusqu'à <b>1000 Mbps</b> (1 Gbps) dans les zones éligibles (via Wifi 6). Conçu pour le gaming intensif, la 4K et les familles nombreuses</div>", price:68, max:2 },
+  { id:"inet_fixe", name:"Ligne Fixe", sub:"La ligne fixe Orange destinée aux particuliers, ou Soho", price:12, max:2, countsAsInternet:false, condition:"Attention : Pas compatible avec les systèmes d’alarme, ni avec les fax ou modems analogiques" }
   ],
   tv: [
-    { id:'tv_deco',   name:'TV Deco Sup', price:9,  max:1 },
-    { id:'tv_light',  name:'TV Light',    price:10, max:1 },
-    { id:'tv_orange', name:'TV Orange',   price:20, max:1 },
+  { id:"tv_deco", name:"Extra décodeur TV", sub:"L’Extra décodeur TV permet de profiter de la télévision digitale Orange sur un deuxième téléviseur, dans une autre pièce.", price:9 },
+  { id:"tv_light", name:"Orange TV Lite", sub:"<div style=\"text-align: justify;\">Version économique pour regarder les chaînes principales uniquement via <b>l'application mobile</b> ou la tablette</div>", price:10, condition:"Nécessite une TV Smart pour l'installation de l'application Orange TV" },
+  { id:"tv_orange", name:"Orange TV classique", sub:"<div style=\"text-align: justify;\">Accès complet à plus de <b>70 chaînes</b> avec l'installation d'un décodeur TV traditionnel pour votre salon</div>", price:20 },
+  { id:"custom_tv_orange-sport-orange-football_mslqu04d", name:"Orange Sport / Orange Football", sub:"<div style=\"text-align: justify;\">Orange Sports réunit les anciennes offres Orange Sport et Orange Football avec huit chaînes consacrées au sport belge et international.</div><div style=\"text-align: justify;\">L’offre permet de suivre la Jupiler Pro League, les grands championnats européens et d’autres sports, sur la TV ou via Orange TV Go.</div>", price:25, max:9, custom:true },
+  { id:"custom_tv_orange-tv-family_mslqtcfn", name:"Orange TV Family", sub:"<div style=\"text-align: justify;\">Orange TV Family propose une sélection variée de chaînes consacrées aux films, séries, programmes jeunesse, documentaires, sport et musique.</div><div style=\"text-align: justify;\">L’offre inclut également le catalogue Universal+ et reste accessible sur le décodeur Orange ainsi que via l’application Orange TV.</div>", price:15, max:1, custom:true },
+  { id:"custom_tv_orange-tv-plus_mtllkmu2", name:"Orange TV Plus", sub:"<div style=\"text-align: justify;\">Orange TV Plus réunit jusqu’à 70 chaînes, Netflix Standard et un décodeur TV de dernière génération pour profiter d’un large choix de divertissements.</div><div style=\"text-align: justify;\">Les programmes sont également accessibles en déplacement via l’application Orange TV Go.</div>", price:12, max:1, custom:true }
   ],
   mobile: [
-    { id:'mob_small',  name:'Mobile Small 12GB',      price:15, max:9 },
-    { id:'mob_medium', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium</span> 70GB',     price:23, max:9 },
-    { id:'mob_large',  name:'Mobile Large 140GB',     price:29, max:9 },
-    { id:'mob_unlim',  name:'Mobile Unlimited 300GB', price:40, max:9 },
-    { id:'mob_child',  name:'Mobile Child 5GB',       price:5,  max:9 },
+  { id:"mob_small", name:"Mobile Small", sub:"<div style=\"text-align: justify;\">Orange Mobile Small coûte 15 €/mois et comprend 12 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div>", price:15, max:9, condition:"Après 12 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
+  { id:"mob_medium", name:"Mobile Medium", sub:"<div style=\"text-align: justify;\">Orange Mobile Medium coûte 23 €/mois et comprend 70 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:23, max:9, condition:"Après 70 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
+  { id:"mob_large", name:"Mobile Large", sub:"<div style=\"text-align: justify;\">Orange Mobile Large coûte 29 €/mois et comprend 140 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:29, max:9, condition:"Après 140 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
+  { id:"mob_unlim", name:"Mobile Unlimited", sub:"<div style=\"text-align: justify;\">Orange Mobile Unlimited coûte 40 €/mois et comprend les appels, SMS et données illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:40, max:9, condition:"Après 300 Go, la vitesse est réduite à 512 kb/s ; 500 Mo sont aussi inclus dans certaines destinations hors UE." },
+  { id:"mob_child", name:"Mobile Child", sub:"<div style=\"text-align: justify;\">Orange Mobile Child coûte 5 €/mois et comprend 3 Go, 150 minutes d’appels et les SMS illimités, avec protection en ligne et hors forfait bloqué.</div>", price:5, max:9, condition:"Attention le Child doit être accompagné d'un autre Plan tarifaire récent (Small, Medium, Large ou Unlimited). Limitation 2 Child par compte Client" },
+  { id:"custom_mobile_carte-extra-surf-mobile_mtllux5f", name:"Carte Extra Surf Mobile", sub:"La Surf Extra Card d'Orange Belgique est une seconde carte SIM physique ou virtuelle reliée à votre abonnement mobile principal. Elle sert uniquement à partager le volume internet (data) de votre forfait avec un autre appareil.", price:3, max:3, custom:true, condition:"Maximum 3 cartes par Numéro." }
   ],
   netflix: [
-    { id:'net_ess',  name:'Netflix Essentiel', price:10.99, max:1 },
-    { id:'net_std',  name:'Netflix Standard',  price:16.99, max:1 },
-    { id:'net_prem', name:'Netflix Premium',   price:21.99, max:1 },
+  { id:"net_ess", name:"Netflix Essentiel", sub:"Netflix Essentiel permet de regarder les films et séries sur un écran à la fois en qualité HD 720p.<div>Les contenus peuvent également être téléchargés sur un appareil pour être visionnés hors connexion.</div>", price:10.99, max:1 },
+  { id:"net_std", name:"Netflix Standard", sub:"Netflix Standard permet de regarder les films et séries sur deux écrans simultanément en qualité Full HD 1080p.<div>Les contenus peuvent également être téléchargés sur deux appareils pour être visionnés hors connexion.</div>", price:16.99, max:1 },
+  { id:"net_prem", name:"Netflix Premium", sub:"Netflix Premium permet de regarder les films et séries sur quatre écrans simultanément en Ultra HD 4K avec HDR.<div>Les contenus peuvent être téléchargés sur six appareils, avec l’audio spatial Netflix inclus.</div>", price:21.99, max:1 }
   ],
   disney: [
-    { id:'disney_std_ads', name:'Disney+ Standard avec Pub', price:6.99,  max:1 },
-    { id:'disney_std',     name:'Disney+ Standard',          price:10.99, max:1 },
-    { id:'disney_prem',    name:'Disney+ Premium',           price:15.99, max:1 },
+  { id:"disney_std_ads", name:"Disney+ Standard avec Pub", sub:"<div style=\"text-align: justify;\">Disney+ Standard avec pub permet de regarder films et séries sur deux écrans simultanément en Full HD 1080p, avec un son jusqu’en 5.1.</div><div style=\"text-align: justify;\">La formule contient des publicités et ne permet pas de télécharger les contenus pour les regarder hors connexion.</div>", price:6.99, max:1 },
+  { id:"disney_std", name:"Disney+ Standard", sub:"Disney+ Standard permet de regarder films et séries sur deux écrans simultanément en Full HD 1080p, avec un son jusqu’en 5.1.<div>La formule est sans publicité et permet de télécharger les contenus sur dix appareils pour les regarder hors connexion.</div>", price:10.99, max:1 },
+  { id:"disney_prem", name:"Disney+ Premium", sub:"<div style=\"text-align: justify;\">Disney+ Premium permet de regarder films et séries sur quatre écrans simultanément en Ultra HD 4K avec HDR, avec le son Dolby Atmos.</div><div style=\"text-align: justify;\">La formule est sans publicité et permet de télécharger les contenus sur dix appareils pour les regarder hors connexion.</div>", price:15.99, max:1 }
   ],
 };
 
 const options = [
-  { id:'opt_install_m', name:"Frais d'activation",         sub:'Frais Unique',   price:39, oneshot:true },
-  { id:'opt_raccord',   name:'Frais de Raccordement',        sub:'Si pas de cable dans la maison (Frais d\'installation)', price:99, oneshot:true },
-  { id:'opt_booster',   name:'WiFi Booster',                 sub:'Prix / booster', price:3, max:5 },
-  { id:'opt_confort',   name:'Option WiFi Confort',          sub:'3 Booster + Boitier 4G (Prix / mois)', price:10 },
-  
-  { id:'opt_surf',      name:'Carte Extra Surf Mobile',      sub:'Prix par carte', price:3, max:9 },
+  { id:"opt_raccord", name:"Frais de Raccordement", sub:"<div style=\"text-align: justify;\">Les frais de raccordement couvrent le placement et la connexion du câble reliant l’habitation au réseau de télédistribution.</div><div style=\"text-align: justify;\">Ils s’élèvent à 99 € pour une nouvelle installation ; le raccordement est gratuit si les services sont déjà actifs, sauf travaux exceptionnels sur devis.</div>", price:99, oneshot:true },
+  { id:"opt_booster", name:"WiFi Booster", sub:"<div style=\"text-align: justify;\">Un booster Wi-Fi Orange est un appareil qui étend le signal de votre modem dans les pièces où la connexion est faible.</div><div style=\"text-align: justify;\">Il améliore la couverture et la stabilité du Wi-Fi, notamment à l’étage ou derrière des murs épais. (Entrée et Sortie RJ45 Réseau)</div>", price:3, max:5, condition:"Nécessite le nouveau Modem 3" },
+  { id:"opt_confort", name:"Option WiFi Confort", sub:"<div style=\"text-align: justify;\"><b>WiFi Comfort</b> est une option Orange qui améliore la couverture Wi-Fi de votre habitation grâce à un ou plusieurs boosters.</div><div style=\"text-align: justify;\">Elle permet d’obtenir une connexion plus stable dans toutes les pièces, avec une assistance et une gestion simplifiée du réseau.</div><div style=\"text-align: justify;\">Elle comprend jusqu'à 3 Booster, ainsi qu'un boitier backup 4G, et d'une visite d'un technicien annuellement.</div>", price:10 },
+  { id:"opt_surf", name:"Cartes Extra Surf Mobile", sub:"<div style=\"text-align: justify;\">La Surf Extra Card d'Orange Belgique (parfois orthographiée par erreur \"extra surg/surf\") est une seconde carte SIM physique ou virtuelle reliée à votre abonnement mobile principal. Elle sert uniquement à partager le volume internet (data) de votre forfait avec un autre appareil.<b>Maximum 3 cartes par Numéro.</b></div>", price:3, max:9 },
+  { id:"custom_options_frais-d-activation_mu56ue0v", name:"Frais d'activation", sub:"Les frais d’activation couvrent la mise en service de la connexion Internet et des équipements Orange.", price:39, max:1, oneshot:true, custom:true }
 ];
 
 const promosPermanent = [
-  { id:'pr_wallonie2', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Promotion 2ème Internet</span>', sub:'-10€/mois · À vie', price:10, perAbo:false, duration:12 },
-  { id:'pr_activation', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">🎁 Frais d’activation offerts</span>', sub:'-39€ · Remise unique', price:39, perAbo:false, isUnique:true },
-  { id:'pr_netflix_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Giga</span>', sub:'-5,99€/mois · À vie', price:5.99, perAbo:false, duration:6 },
+  { id:"bd5F95MG6FbRjUv47AnC", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Frais de raccordement</span>", sub:"Cette remise ne peut être validée que par le service client. (Contactez les pour avoir une exception)", price:99, perAbo:false, isUnique:true },
+  { id:"sdeI9hi5s4ey3KNFVBYu", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Installation et activation gratuites</span>", sub:"Valable pour&nbsp;Livebox, Livebox UP ou Livebox Giga (<b>Uniquement abonnement Love</b>)", price:39, perAbo:false, isUnique:true }
 ];
 
 const promos = [
-  { id:'pr_start', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Start</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6, family:'internet' },
-  { id:'pr_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Zen</span>', sub:'-15€/mois pendant 6 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:6, family:'internet' },
-  { id:'pr_giga', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Internet Giga</span>', sub:'-15€/mois pendant 12 mois (Client LOVE uniquement)', price:15, perAbo:false, duration:12, family:'internet' },
-  { id:'pr_medium_love', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client LOVE</span>', sub:'-5€/mois pendant 6 mois (uniquement pour les clients LOVE)', price:5, perAbo:true, mobileId:"mob_medium", duration:6, family:'mobile' },
-  { id:'pr_medium_nolove', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Medium Client NO LOVE</span>', sub:'-5€/mois pendant 6 mois (nécessite un Mobile Child)', price:5, perAbo:true, mobileId:"mob_medium", requiresChild:true, duration:6, family:'mobile' },
-  { id:'pr_large', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Mobile Large</span>', sub:'-5€/mois pendant 12 mois (cumulable)', price:5, perAbo:true, mobileId:"mob_large", duration:12, family:'mobile' },
-  { id:'pr_netflix_zen', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">Netflix avec Internet Zen</span>', sub:'-5,99€/mois pendant 6 mois', price:5.99, perAbo:false, duration:6, family:'films' },
-  { id:'pr_comfort', name:'<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">My Comfort Service</span>', sub:'Gratuit pendant 12 mois (nouveau client LOVE avec TVA)', price:10, perAbo:false, duration:12, family:'options' }
+  { id:"62eaTSwbthAH4qcRarju", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion Mobile Medium : Remise -8 € (Uniquement avec Livebox Giga)</span>", sub:"<p data-pm-slice=\"1 1 [&quot;list&quot;,{&quot;spread&quot;:false,&quot;start&quot;:336,&quot;end&quot;:463},&quot;regular_list_item&quot;,{&quot;start&quot;:394,&quot;end&quot;:463}]\">La remise à vie s’applique à chaque carte éligible ajoutée au pack.</p>", price:8, perAbo:true, mobileId:"mob_medium", family:"mobile", autoProducts:["mob_medium"], autoProductsAny:["inet_giga"] },
+  { id:"8TOt68P1fAdILE3jyEfu", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion : Livebox</span>", sub:"Remise durant 6 Mois sur Livebox", price:10, perAbo:false, duration:6, family:"internet", autoProducts:["inet_start"], autoProductsAny:["mob_medium","mob_large","mob_unlim"] },
+  { id:"D7R4OytOTe6l27Fa5S4A", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion Mobile Unlimited : Remise -8 € (Uniquement avec Livebox Giga)</span>", sub:"La remise à vie s’applique à chaque carte éligible ajoutée au pack.", price:8, perAbo:true, mobileId:"mob_unlim", family:"mobile", autoProducts:["mob_unlim"], autoProductsAny:["inet_giga"] },
+  { id:"FwaKla86myQHlSy2Evwv", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Orange TV Plus</span>", sub:"Remise de 12€ durant 12 Mois", price:12, perAbo:false, duration:12, family:"tv", autoProducts:["custom_tv_orange-tv-plus_mtllkmu2"] },
+  { id:"LGC6t0iRfCnMxw7srQCC", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Netflix Premium avec Livebox Giga</span>", sub:"Netflix Premium avec Livebox Giga", price:5.9, perAbo:false, family:"films", autoProducts:["net_prem"], autoProductsAny:["inet_giga"] },
+  { id:"ZVppPCsbHMFFNxsi2zCh", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">My Comfort Service</span>", sub:"Remise de 10 € durant 1 an (pour les Pro Uniquement)", price:10, perAbo:false, duration:12, family:"internet" },
+  { id:"ZWkHw329UHCB5efzBYyU", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Netflix Standard avec Livebox Giga</span>", sub:"Netflix avec Livebox Giga : réduction de 5,99€ à vie", price:5.99, perAbo:false, family:"films", autoProducts:["net_std"], autoProductsAny:["inet_giga"] },
+  { id:"a082ItwfvKkU6UsSE9Hv", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion Mobile Large : Remise -8 € (Uniquement avec Livebox Giga)</span>", sub:"<p data-pm-slice=\"1 1 [&quot;list&quot;,{&quot;spread&quot;:false,&quot;start&quot;:336,&quot;end&quot;:463},&quot;regular_list_item&quot;,{&quot;start&quot;:394,&quot;end&quot;:463}]\">La remise à vie s’applique à chaque carte éligible ajoutée au pack.</p>", price:8, perAbo:true, mobileId:"mob_large", family:"mobile", autoProducts:["mob_large"], autoProductsAny:["inet_giga"] },
+  { id:"gz3o25MAf7u0FFObugsl", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion :  Livebox UP</span>", sub:"Remise durant 6 Mois sur Livebox UP", price:10, perAbo:false, duration:6, family:"internet", autoProducts:["inet_zen"], autoProductsAny:["mob_medium","mob_large","mob_unlim"] },
+  { id:"hlaNPZNd85pZaKhv2MZL", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Netflix Standard avec Livebox Up</span>", sub:"Netflix avec Livebox Up : réduction de 5,99€ pendant 6 mois", price:5.99, perAbo:false, duration:6, family:"films", autoProducts:["net_std"], autoProductsAny:["inet_zen"] },
+  { id:"r6Hn0gzQuCLGGdmndxLL", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion :  Livebox Giga (Mobile Small)</span>", sub:"Remise durant 6 Mois sur Livebox Giga (avec un Small)", price:15, perAbo:false, duration:12, family:"internet", autoProducts:["inet_giga"], autoProductsAny:["mob_small"] },
+  { id:"sxSb0gx9ZTTZ9Ado5cdx", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Netflix Premium avec Livebox UP</span>", sub:"Netflix Premium avec Livebox Up", price:5.99, perAbo:false, duration:6, family:"films", autoProducts:["net_prem"], autoProductsAny:["inet_zen"] },
+  { id:"uFNdvrxdJlnqDYvhciyP", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion : Livebox Giga</span>", sub:"Remise à vie de 10 € sur Livebox Giga", price:10, perAbo:false, family:"internet", autoProducts:["inet_giga"], autoProductsAny:["mob_medium","mob_large","mob_unlim"] },
+  { id:"wINqMQ1sqIYb5AETMCpF", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Orange Sports gratuit</span>", sub:"Remise de 25 € pour Orange Sport&nbsp;", price:25, perAbo:false, duration:6, family:"tv" },
+  { id:"z6LpjZSillHyxekQKUpY", name:"<span style=\"font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;\">Promotion Mobile Medium : Remise -5 €  (Livebox et Livebox UP Internet)</span>", sub:"<p data-pm-slice=\"1 1 [&quot;list&quot;,{&quot;spread&quot;:false,&quot;start&quot;:336,&quot;end&quot;:463},&quot;regular_list_item&quot;,{&quot;start&quot;:394,&quot;end&quot;:463}]\">La remise s’applique à chaque carte éligible ajoutée au pack.</p>", price:5, perAbo:true, mobileId:"mob_medium", duration:6, family:"mobile", autoProducts:["mob_medium"], autoProductsAny:["inet_start","inet_zen"] }
 ];
 
 const loveRates = {
@@ -1472,6 +1481,8 @@ function render() {
   const pAVie=document.getElementById('s-promos-avie');
   if(pAVie) pAVie.textContent='- ' + fmt(promAVie*r);
   document.getElementById('s-promos-unique').textContent = '- ' + fmt(promUnique*r); document.getElementById('s-frais').textContent = fmt((frais-promUnique)*r);
+  const stickyUnique = document.getElementById('sticky-price-unique');
+  if (stickyUnique) stickyUnique.textContent = fmt((frais - promUnique) * r);
   document.getElementById('s-total').textContent = fmt(total*r);
   
 
@@ -1760,8 +1771,11 @@ font-style:normal !important;
 </style>
 
 <script>
+// Les pages consultant n'affichent que le numéro de build ("Version stable : 14.17"), pas le
+// descriptif interne ("14.17 - Frais manuels & Export secours") — celui-ci reste réservé à l'admin.
+const appVersionNumberOnly = (window.APP_VERSION || '?').split(' - ')[0];
 document.querySelectorAll('[id^="app-version"]').forEach(el => {
-  el.textContent = window.APP_VERSION || '?';
+  el.textContent = appVersionNumberOnly;
 });
 const simDateEl = document.getElementById('sim-date');
 if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
@@ -1792,7 +1806,7 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
     const loginHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
         <div style="background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
-          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Build ${window.APP_VERSION || '?'}</div>
+          <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:20px;">Version stable : ${(window.APP_VERSION || '?').split(' - ')[0]}</div>
           <div style="font-size:24px;font-weight:bold;color:#222;margin-bottom:8px;">Simulateur Orange</div>
           <div style="font-size:12px;color:#f97316;margin-bottom:20px;">Connectez-vous avec votre adresse e-mail.</div>
           
