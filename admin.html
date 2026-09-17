@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.16 - Frais uniques & Visibilité produits</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.17 - Export secours</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -691,12 +691,16 @@
         </div>
 
         <div class="admin-panel" id="panel-produits-orange">
-          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <span>📦 Produits &amp; tarifs Orange (simulateur)</span>
-            <button class="btn btn-secondary" onclick="importDefaultProduitsOrange()">📥 Importer les produits actuels</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="importDefaultProduitsOrange()">📥 Importer les produits actuels</button>
+              <button class="btn btn-primary" onclick="exportProduitsEtPromosSecours()">📋 Exporter (Produits + Promotions)</button>
+            </div>
           </div>
           <div style="font-size:11px;color:#888;margin-bottom:14px;">
             Modifie ici les noms et prix affichés dans le simulateur Orange (les identifiants techniques ne sont jamais touchés, aucun risque pour les calculs de commission). Si tu n'as encore rien importé, clique d'abord sur "Importer les produits actuels" pour pré-remplir avec les valeurs déjà en place — tu n'as ensuite qu'à ajuster ce qui change.
+            <br>💡 "Exporter" génère le code de secours à jour (utilisé uniquement si Firebase est injoignable) et le copie dans le presse-papier — colle-le dans le chat Claude pour qu'il mette à jour <code>wp_orange.html</code>. À faire de temps en temps (1x/mois ou après une grosse modif).
           </div>
           <div id="produits-orange-content"><div class="empty">Chargement...</div></div>
         </div>
@@ -5432,15 +5436,15 @@ function loadProduitsOrangeAdmin() {
             <label style="font-size:11px;">Prix (€)</label>
             <input type="number" step="0.01" id="po-${p.id}-price" value="${p.price}">
           </div>
-          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start;">
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:6px 0;">
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;white-space:nowrap;cursor:pointer;">
               <input type="checkbox" ${!p.hidden ? 'checked' : ''} onchange="toggleProduitOrangeVisible('${p.id}', this.checked)">
-              Visible
+              👁 Visible
             </label>
             ${cat.key === 'options' ? `
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;white-space:nowrap;cursor:pointer;" title="Facturé une seule fois, pas chaque mois">
               <input type="checkbox" id="po-${p.id}-oneshot" ${p.oneshot ? 'checked' : ''}>
-              🎁 Frais unique
+              🎁 Unique
             </label>` : ''}
             ${p.custom ? `<button class="btn btn-danger" style="height:26px;font-size:11px;padding:2px 8px;" title="Supprimer définitivement" onclick="deleteProduitOrange('${p.id}')">🗑 Supprimer</button>` : ''}
           </div>
@@ -5623,6 +5627,124 @@ window.saveProduitsOrangeCategorie = async function (categoryKey) {
     showToast('✅ Enregistré.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// ===== EXPORT DU CODE DE SECOURS (produits + promotions Orange) =====
+// Génère, à partir de l'état RÉEL actuel de Firestore, le code JS à coller dans wp_orange.html
+// à la place des tableaux codés en dur (productList/options/promosPermanent/promos). Ce code de
+// secours n'est utilisé QUE si Firebase est injoignable — il doit être régénéré de temps en temps
+// (1x/mois ou après une grosse modif) pour ne pas devenir périmé. Zéro écriture GitHub automatique
+// ici (pas de token stocké, pas de risque) : le résultat est copié dans le presse-papier, à coller
+// dans le chat pour que la mise à jour du fichier soit faite manuellement.
+window.exportProduitsEtPromosSecours = async function () {
+  if (!confirm("Générer le code de secours (produits + promotions) à partir de l'état actuel de Firebase, et le copier dans le presse-papier ?\n\nTu n'auras plus qu'à le coller dans le chat Claude pour que le fichier wp_orange.html soit mis à jour.")) return;
+
+  try {
+    const [prodSnap, promoSnap] = await Promise.all([
+      getDocs(collection(db, 'produitsOrange')),
+      getDocs(collection(db, 'promosOrange'))
+    ]);
+    const stored = {};
+    prodSnap.forEach(d => { stored[d.id] = d.data(); });
+
+    // Qté max des produits d'origine : jamais modifiable ni stockée depuis cet admin aujourd'hui —
+    // restituée ici pour générer un code fidèle à celui déjà en place dans wp_orange.html. À adapter
+    // manuellement ici si ces limites changent un jour dans wp_orange.html.
+    const DEFAULT_MAX = { inet_start: 2, inet_zen: 2, inet_giga: 2, inet_fixe: 2, opt_booster: 5, opt_surf: 9 };
+    const DEFAULT_COUNTS_AS_INTERNET_FALSE = new Set(['inet_fixe']);
+
+    const buckets = { internet: [], tv: [], mobile: [], netflix: [], disney: [], options: [] };
+
+    // 1) Produits par défaut, avec leur éventuelle surcharge Firestore (nom/prix/condition/frais unique...)
+    PRODUITS_ORANGE_DEFAULTS.forEach(def => {
+      const s = stored[def.id];
+      if (s && s.hidden) return; // masqué/supprimé : exclu du code de secours
+      const item = {
+        id: def.id,
+        name: (s && s.name) || def.name,
+        sub: (s && s.sub !== undefined) ? s.sub : def.sub,
+        price: (s && s.price !== undefined) ? Number(s.price) : def.price
+      };
+      if (DEFAULT_MAX[def.id]) item.max = DEFAULT_MAX[def.id];
+      if (DEFAULT_COUNTS_AS_INTERNET_FALSE.has(def.id)) item.countsAsInternet = false;
+      if ((s && s.oneshot !== undefined) ? !!s.oneshot : !!def.oneshot) item.oneshot = true;
+      const condition = (s && s.condition) || '';
+      if (condition) item.condition = condition;
+      (buckets[def.category] || buckets.options).push(item);
+    });
+
+    // 2) Produits personnalisés créés depuis l'admin
+    const defaultIds = new Set(PRODUITS_ORANGE_DEFAULTS.map(d => d.id));
+    Object.keys(stored).filter(id => !defaultIds.has(id)).forEach(id => {
+      const s = stored[id];
+      if (s.hidden) return;
+      const item = { id, name: s.name || id, sub: s.sub || '', price: Number(s.price) || 0, max: Number(s.max) || 9, custom: true };
+      if (s.category === 'internet') item.countsAsInternet = s.countsAsInternet !== false;
+      if (s.oneshot) item.oneshot = true;
+      if (s.condition) item.condition = s.condition;
+      (buckets[s.category] || buckets.options).push(item);
+    });
+
+    const fmtItem = (it) => {
+      const parts = [`id:${JSON.stringify(it.id)}`, `name:${JSON.stringify(it.name)}`];
+      if (it.sub) parts.push(`sub:${JSON.stringify(it.sub)}`);
+      parts.push(`price:${it.price}`);
+      if (it.max) parts.push(`max:${it.max}`);
+      if (it.countsAsInternet === false) parts.push('countsAsInternet:false');
+      if (it.oneshot) parts.push('oneshot:true');
+      if (it.custom) parts.push('custom:true');
+      if (it.condition) parts.push(`condition:${JSON.stringify(it.condition)}`);
+      return `  { ${parts.join(', ')} }`;
+    };
+
+    let productsCode = 'const productList = {\n';
+    ['internet', 'tv', 'mobile', 'netflix', 'disney'].forEach(cat => {
+      productsCode += `  ${cat}: [\n${buckets[cat].map(fmtItem).join(',\n')}\n  ],\n`;
+    });
+    productsCode += `};\n\nconst options = [\n${buckets.options.map(fmtItem).join(',\n')}\n];`;
+
+    // Promotions : même style de "span" que celui appliqué en direct (wrapPromoName) sur les
+    // promos chargées depuis Firestore, reproduit ici pour que le code de secours ait un rendu identique.
+    const wrapName = (name) => `<span style="font-size:18px;font-weight:500;font-family:Arial,sans-serif;line-height:1.4;color:#222;">${escapeHtml(name || '')}</span>`;
+    const permanentList = [], tempList = [];
+    promoSnap.forEach(docSnap => {
+      const p = docSnap.data();
+      if (p.active === false) return; // désactivée : exclue du code de secours
+      const item = { id: docSnap.id, name: wrapName(p.name), sub: p.sub || '', price: Number(p.price) || 0, perAbo: !!p.perAbo };
+      if (p.mobileId) item.mobileId = p.mobileId;
+      if (p.requiresChild) item.requiresChild = true;
+      if (p.duration) item.duration = p.duration;
+      if (p.isUnique) item.isUnique = true;
+      if (Array.isArray(p.autoProducts) && p.autoProducts.length) item.autoProducts = p.autoProducts;
+      if (Array.isArray(p.autoProductsAny) && p.autoProductsAny.length) item.autoProductsAny = p.autoProductsAny;
+      if (p.category === 'permanente') {
+        permanentList.push(item);
+      } else {
+        item.family = p.productFamily || (p.perAbo ? 'mobile' : ((p.name || '').toLowerCase().includes('internet') ? 'internet' : 'options'));
+        tempList.push(item);
+      }
+    });
+
+    const fmtPromo = (it) => {
+      const parts = [`id:${JSON.stringify(it.id)}`, `name:${JSON.stringify(it.name)}`, `sub:${JSON.stringify(it.sub)}`, `price:${it.price}`, `perAbo:${it.perAbo}`];
+      if (it.mobileId) parts.push(`mobileId:${JSON.stringify(it.mobileId)}`);
+      if (it.requiresChild) parts.push('requiresChild:true');
+      if (it.duration) parts.push(`duration:${it.duration}`);
+      if (it.isUnique) parts.push('isUnique:true');
+      if (it.family) parts.push(`family:${JSON.stringify(it.family)}`);
+      if (it.autoProducts) parts.push(`autoProducts:${JSON.stringify(it.autoProducts)}`);
+      if (it.autoProductsAny) parts.push(`autoProductsAny:${JSON.stringify(it.autoProductsAny)}`);
+      return `  { ${parts.join(', ')} }`;
+    };
+    const promosCode = `const promosPermanent = [\n${permanentList.map(fmtPromo).join(',\n')}\n];\n\nconst promos = [\n${tempList.map(fmtPromo).join(',\n')}\n];`;
+
+    const fullCode = `// ===== CODE DE SECOURS — généré depuis l'admin le ${new Date().toLocaleString('fr-BE')} =====\n// À coller dans le chat Claude pour mise à jour de wp_orange.html (tableaux productList/options/promosPermanent/promos).\n\n${productsCode}\n\n${promosCode}\n`;
+
+    await navigator.clipboard.writeText(fullCode);
+    showToast('📋 Code de secours copié — colle-le dans le chat Claude.');
+  } catch (err) {
+    alert('Erreur lors de la génération: ' + err.message);
   }
 };
 
@@ -6917,7 +7039,7 @@ const ORANGE_BANNERS_DEFS = [
   { key: 'mobileInfo', label: 'Bandeau — Mobile', icon: '📱', color: '#1e88e5',
     text: 'Ajoutez un ou plusieurs forfaits mobiles à votre offre.' },
   { key: 'fraisUniques', label: 'Bandeau — Frais uniques (activation Orange)', icon: 'ℹ️', color: '#fb8c00',
-    text: "Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée." },
+    text: "Pense à ajouter les <strong>Frais d'activation Orange</strong> pour toute nouvelle installation, si nécessaire." },
   { key: 'optionsMensuelles', label: 'Bandeau — Options mensuelles', icon: '📅', color: '#fb8c00',
     text: 'Options additionnelles pouvant être ajoutées à votre abonnement Internet.' },
   { key: 'remisesLove', label: 'Bandeau — Remises Love (calcul automatique)', icon: '🧡', color: '#fb8c00',

@@ -179,7 +179,7 @@
     </div>
 
 <div id="banner-frais-uniques" style="margin-top:8px;margin-bottom:12px;background:#fff8f4;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#cc4400;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
-<span id="banner-frais-uniques-icon" style="flex-shrink:0;line-height:1.4;">ℹ️</span> <span id="banner-frais-uniques-text" style="line-height:1.4;">Les frais d'activation Orange (<strong>39€</strong>) sont automatiquement ajoutés à chaque nouvelle installation. Ils peuvent être annulés si la promotion <strong>🎁 Frais d'activation offerts</strong> est accordée.</span>
+<span id="banner-frais-uniques-icon" style="flex-shrink:0;line-height:1.4;">ℹ️</span> <span id="banner-frais-uniques-text" style="line-height:1.4;">Pense à ajouter les <strong>Frais d'activation Orange</strong> pour toute nouvelle installation, si nécessaire.</span>
 </div>
 <div id="options-unique-rows"></div>
 
@@ -1364,8 +1364,8 @@ function calcProducts() {
 function calcOptionsBase() {
   let t = 0;
   // Toute option "brute" (booster/confort/carte surf...) sauf les frais uniques (flag `oneshot`,
-  // réglable depuis l'admin) et opt_install_m, géré à part car auto-déclenché par hasInternet().
-  options.filter(o => !o.oneshot && o.id !== 'opt_install_m').forEach(o => {
+  // réglable depuis l'admin), gérés à part dans calcFraisUniques().
+  options.filter(o => !o.oneshot).forEach(o => {
     t += o.price * (qtyMap[o.id] || 0);
   });
   return t;
@@ -1373,21 +1373,12 @@ function calcOptionsBase() {
 
 function calcFraisUniques() {
   let frais = 0;
-
-  // Frais d'activation Orange : auto-ajouté dès qu'il y a de l'internet, au prix RÉELLEMENT
-  // configuré (Firestore via admin.html) — plus jamais un "39" codé en dur qui ignorait toute
-  // modification de prix faite côté admin.
-  if (hasInternet()) {
-    const installOpt = options.find(o => o.id === 'opt_install_m');
-    frais += installOpt ? installOpt.price : 39;
-  }
-
-  // Tous les autres frais uniques (opt_raccord + tout nouveau frais unique créé depuis l'admin
-  // avec la case "Frais unique" cochée), selon leur quantité choisie par le consultant.
-  options.filter(o => o.oneshot && o.id !== 'opt_install_m').forEach(o => {
+  // Tous les frais uniques (Frais d'activation, Frais de Raccordement, et tout nouveau frais
+  // unique créé depuis l'admin), ajoutés manuellement par le consultant selon la quantité choisie —
+  // plus aucun ajout automatique : c'est l'admin/le consultant qui décide, jamais le code.
+  options.filter(o => o.oneshot).forEach(o => {
     frais += o.price * (qtyMap[o.id] || 0);
   });
-
   return frais;
 }
 function calcPromos() {
@@ -1629,7 +1620,7 @@ function renderProductSections() {
   const elOptInternet = document.getElementById('options-internet-rows');
   if (elOptInternet) {
     elOptInternet.innerHTML = '';
-    buildQtyRows('options-internet-rows', [...options.filter(o => !o.oneshot && o.id !== 'opt_install_m'), ...internetItems.filter(p => p.custom)]);
+    buildQtyRows('options-internet-rows', [...options.filter(o => !o.oneshot), ...internetItems.filter(p => p.custom)]);
   }
 
   const elOptTv = document.getElementById('options-tv-rows');
@@ -1641,11 +1632,11 @@ function renderProductSections() {
     buildQtyRows('options-films-rows', [...(productList.netflix || []), ...(productList.disney || [])]);
   }
 
-  // opt_install_m reste exclu de l'affichage : c'est un frais auto-déclenché (banner d'info),
-  // pas une ligne à quantité manuelle — tout autre frais unique (opt_raccord + nouveaux créés
-  // depuis l'admin avec la case "Frais unique") apparaît ici automatiquement.
+  // Tout produit marqué "Frais unique" (flag oneshot, réglable depuis l'admin) s'affiche ici avec
+  // sa propre quantité — Frais d'activation et Frais de Raccordement compris, ajoutés manuellement
+  // par le consultant, plus aucun ajout automatique.
   const elUnique = document.getElementById('options-unique-rows');
-  if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.oneshot && o.id !== 'opt_install_m')); }
+  if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.oneshot)); }
 }
 
 function buildToggleRows(containerId, items) {
