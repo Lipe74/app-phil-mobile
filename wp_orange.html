@@ -355,6 +355,7 @@ import {
   getDoc,
   collection,
   getDocs,
+  onSnapshot,
   query,
   where
 }
@@ -379,6 +380,11 @@ window.db = db;
 window.auth = auth;
 window.collection = collection;
 window.getDocs = getDocs;
+window.query = query;
+window.where = where;
+window.doc = doc;
+window.getDoc = getDoc;
+window.onSnapshot = onSnapshot;
 
 // Infos par défaut (fallback si aucun consultant identifié dans l'URL)
 window.consultantInfo = {
@@ -481,15 +487,19 @@ function formatDateFrOrange(isoDate) {
 }
 
 async function loadPromosFromFirestore() {
-  try {
-    let tries = 0;
-    while ((!window.buildToggleRows || !window.promos || !window.promosPermanent) && tries < 30) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    if (!window.buildToggleRows) throw new Error('Script principal pas encore prêt');
+  let tries = 0;
+  while ((!window.buildToggleRows || !window.promos || !window.promosPermanent) && tries < 30) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.buildToggleRows) { console.log('Chargement promos Firestore impossible : script principal pas encore prêt'); return; }
 
-    const snap = await getDocs(collection(db, 'promosOrange'));
+  // Écoute en temps réel (au lieu d'une lecture unique) : toute modification faite depuis l'admin
+  // (ajout/édition/activation/désactivation d'une promo) se répercute automatiquement ici, sans
+  // que le consultant ait besoin de recharger la page.
+  onSnapshot(collection(db, 'promosOrange'), async (snap) => {
+   try {
+    const prevTogMap = { ...window.togMap };
     const fetchedTemp = [];
     const fetchedPermanent = [];
 
@@ -575,7 +585,11 @@ async function loadPromosFromFirestore() {
     window.promosPermanent.push(...fetchedPermanent);
 
     Object.keys(window.togMap).forEach(k => delete window.togMap[k]);
-    [...window.promos, ...window.promosPermanent].forEach(p => window.togMap[p.id] = false);
+    // Conserve l'état (activé/désactivé) des promos déjà présentes lors d'une mise à jour live,
+    // pour ne pas perdre la sélection en cours du consultant si l'admin modifie autre chose entre-temps.
+    [...window.promos, ...window.promosPermanent].forEach(p => {
+      window.togMap[p.id] = prevTogMap.hasOwnProperty(p.id) ? prevTogMap[p.id] : false;
+    });
 
     document.getElementById('promos-rows').innerHTML = '';
     document.getElementById('promos-permanent-rows').innerHTML = '';
@@ -584,9 +598,12 @@ async function loadPromosFromFirestore() {
     window._promoGroupOrder = buildPromoGroupOrder(secOrderForPromos);
     window.buildGroupedPromoRows('promos-rows', window.promos);
     window.renderOrangeApp();
-  } catch (err) {
-    console.log('Chargement promos Firestore impossible, conservation des promos par défaut:', err.message);
-  }
+   } catch (err) {
+    console.log('Traitement des promos Firestore impossible:', err.message);
+   }
+  }, (err) => {
+    console.log('Écoute des promos Firestore impossible, conservation des promos par défaut:', err.message);
+  });
 }
 
 // --- Produits Orange dynamiques depuis Firestore (admin.html) ---
@@ -595,41 +612,59 @@ async function loadPromosFromFirestore() {
 // Si la lecture échoue ou que la collection est vide, les produits codés en dur dans le script
 // classique plus bas (variable `productList` / `options`) restent affichés tel quel : aucun risque de page vide.
 async function loadProductsFromFirestore() {
-  try {
-    let tries = 0;
-    while ((!window.productList || !window.options || !window.buildQtyRows) && tries < 30) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    if (!window.productList) throw new Error('Script principal pas encore prêt');
+  let tries = 0;
+  while ((!window.productList || !window.options || !window.buildQtyRows) && tries < 30) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.productList) { console.log('Chargement produits Firestore impossible : script principal pas encore prêt'); return; }
 
-    const snap = await getDocs(collection(db, 'produitsOrange'));
+  // Copie figée des valeurs par défaut (codées en dur), prise une seule fois avant toute
+  // modification — sert de base propre à chaque mise à jour reçue en direct (voir onSnapshot
+  // ci-dessous), pour ne jamais faire dériver les tableaux après plusieurs cycles
+  // masquer/réafficher/supprimer reçus dans une même session.
+  if (!window._defaultProductList) window._defaultProductList = JSON.parse(JSON.stringify(window.productList));
+  if (!window._defaultOptions) window._defaultOptions = JSON.parse(JSON.stringify(window.options));
+
+  // Écoute en temps réel : toute modification faite depuis l'admin (produit ajouté, renommé,
+  // masqué/réaffiché, supprimé, frais unique coché...) se répercute automatiquement ici, sans
+  // que le consultant ait besoin de recharger la page.
+  onSnapshot(collection(db, 'produitsOrange'), (snap) => {
+   try {
     if (snap.empty) return; // rien d'importé côté admin : on garde les valeurs par défaut codées en dur
+
+    // Reconstruit un état propre à chaque mise à jour, à partir des valeurs par défaut figées +
+    // des documents Firestore actuels (jamais un simple "patch" du tableau précédent).
+    const freshProductList = JSON.parse(JSON.stringify(window._defaultProductList));
+    const freshOptions = JSON.parse(JSON.stringify(window._defaultOptions));
 
     snap.forEach(docSnap => {
       const d = docSnap.data();
       const id = docSnap.id;
       const isOption = d.category === 'options';
-      const arr = isOption ? window.options : window.productList[d.category];
+      const arr = isOption ? freshOptions : freshProductList[d.category];
       if (!arr) return;
       let target = arr.find(x => x.id === id);
       if (target) {
-        // Produit existant : mise à jour nom/sous-titre/prix/ordre/visibilité/condition
+        // Produit existant : mise à jour nom/sous-titre/prix/ordre/visibilité/condition/frais unique
         if (d.name) target.name = d.name;
         if (d.sub !== undefined) target.sub = d.sub;
         if (d.price !== undefined) target.price = Number(d.price);
         if (d.order !== undefined) target.order = Number(d.order);
-        if (d.hidden) target.hidden = true;
+        target.hidden = !!d.hidden;
         if (d.condition !== undefined) target.condition = d.condition;
+        if (d.oneshot !== undefined) target.oneshot = !!d.oneshot;
       } else {
-        // Nouveau produit ajouté depuis l'admin : ajout à la liste + initialisation de sa quantité
-        target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true };
+        // Nouveau produit ajouté depuis l'admin : ajout à la liste
+        target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true, oneshot: !!d.oneshot, hidden: !!d.hidden };
         if (d.order !== undefined) target.order = Number(d.order);
         if (d.condition) target.condition = d.condition;
         if (d.category === 'internet') target.countsAsInternet = d.countsAsInternet !== false;
         arr.push(target);
-        window.qtyMap[id] = 0;
       }
+      // Initialise la quantité seulement à la toute première apparition du produit — ne jamais
+      // écraser une quantité déjà choisie par le consultant lors d'une mise à jour live suivante.
+      if (window.qtyMap[id] === undefined) window.qtyMap[id] = 0;
     });
 
     // Retire les produits masqués depuis l'admin et retrie chaque catégorie selon l'ordre défini
@@ -641,22 +676,23 @@ async function loadProductsFromFirestore() {
         .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
         .map(x => x.p);
     };
-    Object.keys(window.productList).forEach(cat => {
-      if (window.productList[cat]) window.productList[cat] = sortByOrder(window.productList[cat]);
+    Object.keys(freshProductList).forEach(cat => {
+      window.productList[cat] = sortByOrder(freshProductList[cat]);
     });
     // Important : on modifie le tableau "options" en place (et non une réaffectation) car
     // le reste du script y fait référence directement via la variable locale `options`,
     // qui ne verrait jamais un remplacement de window.options par un nouveau tableau.
-    const sortedOptions = sortByOrder(window.options);
     window.options.length = 0;
-    window.options.push(...sortedOptions);
+    window.options.push(...sortByOrder(freshOptions));
 
     window.renderProductSections();
-
     window.renderOrangeApp();
-  } catch (err) {
-    console.log('Chargement produits Firestore impossible, conservation des valeurs par défaut:', err.message);
-  }
+   } catch (err) {
+    console.log('Traitement des produits Firestore impossible:', err.message);
+   }
+  }, (err) => {
+    console.log('Écoute des produits Firestore impossible, conservation des valeurs par défaut:', err.message);
+  });
 }
 
 // --- Bandeaux d'info éditables depuis l'admin (settings/promoBanners) ---
@@ -1212,7 +1248,7 @@ const productList = {
 };
 
 const options = [
-  { id:'opt_install_m', name:"Frais d'activation",         sub:'Frais Unique',   price:39 },
+  { id:'opt_install_m', name:"Frais d'activation",         sub:'Frais Unique',   price:39, oneshot:true },
   { id:'opt_raccord',   name:'Frais de Raccordement',        sub:'Si pas de cable dans la maison (Frais d\'installation)', price:99, oneshot:true },
   { id:'opt_booster',   name:'WiFi Booster',                 sub:'Prix / booster', price:3, max:5 },
   { id:'opt_confort',   name:'Option WiFi Confort',          sub:'3 Booster + Boitier 4G (Prix / mois)', price:10 },
@@ -1327,22 +1363,30 @@ function calcProducts() {
 }
 function calcOptionsBase() {
   let t = 0;
-  // Toute option "brute" (booster/confort/carte surf) sauf les frais uniques gérés à part.
-  options.filter(o => !['opt_install_m', 'opt_raccord'].includes(o.id)).forEach(o => {
+  // Toute option "brute" (booster/confort/carte surf...) sauf les frais uniques (flag `oneshot`,
+  // réglable depuis l'admin) et opt_install_m, géré à part car auto-déclenché par hasInternet().
+  options.filter(o => !o.oneshot && o.id !== 'opt_install_m').forEach(o => {
     t += o.price * (qtyMap[o.id] || 0);
   });
   return t;
 }
 
 function calcFraisUniques() {
-
   let frais = 0;
 
+  // Frais d'activation Orange : auto-ajouté dès qu'il y a de l'internet, au prix RÉELLEMENT
+  // configuré (Firestore via admin.html) — plus jamais un "39" codé en dur qui ignorait toute
+  // modification de prix faite côté admin.
   if (hasInternet()) {
-    frais += 39;
+    const installOpt = options.find(o => o.id === 'opt_install_m');
+    frais += installOpt ? installOpt.price : 39;
   }
 
-  frais += (qtyMap['opt_raccord'] || 0) * 99;
+  // Tous les autres frais uniques (opt_raccord + tout nouveau frais unique créé depuis l'admin
+  // avec la case "Frais unique" cochée), selon leur quantité choisie par le consultant.
+  options.filter(o => o.oneshot && o.id !== 'opt_install_m').forEach(o => {
+    frais += o.price * (qtyMap[o.id] || 0);
+  });
 
   return frais;
 }
@@ -1585,7 +1629,7 @@ function renderProductSections() {
   const elOptInternet = document.getElementById('options-internet-rows');
   if (elOptInternet) {
     elOptInternet.innerHTML = '';
-    buildQtyRows('options-internet-rows', [...options.filter(o => !['opt_raccord', 'opt_install_m'].includes(o.id)), ...internetItems.filter(p => p.custom)]);
+    buildQtyRows('options-internet-rows', [...options.filter(o => !o.oneshot && o.id !== 'opt_install_m'), ...internetItems.filter(p => p.custom)]);
   }
 
   const elOptTv = document.getElementById('options-tv-rows');
@@ -1597,8 +1641,11 @@ function renderProductSections() {
     buildQtyRows('options-films-rows', [...(productList.netflix || []), ...(productList.disney || [])]);
   }
 
+  // opt_install_m reste exclu de l'affichage : c'est un frais auto-déclenché (banner d'info),
+  // pas une ligne à quantité manuelle — tout autre frais unique (opt_raccord + nouveaux créés
+  // depuis l'admin avec la case "Frais unique") apparaît ici automatiquement.
   const elUnique = document.getElementById('options-unique-rows');
-  if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.id === 'opt_raccord')); }
+  if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.oneshot && o.id !== 'opt_install_m')); }
 }
 
 function buildToggleRows(containerId, items) {
@@ -1735,7 +1782,7 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
 <script>
 (async () => {
   try {
-    const { signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
+    const { signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js');
 
     // Réutilise la connexion Firebase déjà initialisée plus haut dans le fichier
     // (un 2e appel à initializeApp() ici provoquait une erreur "app/duplicate-app" qui empêchait
@@ -1774,6 +1821,39 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
       </div>
     `;
     
+    const accessBlockedHTML = (reason) => `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
+        <div style="background:white;border-radius:16px;padding:40px;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.1);text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">🔒</div>
+          <div style="font-size:20px;font-weight:bold;color:#222;margin-bottom:10px;">Accès non disponible</div>
+          <div style="font-size:13px;color:#555;margin-bottom:20px;line-height:1.5;">${reason}</div>
+          <div style="font-size:12px;color:#777;">Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.</div>
+          <button onclick="location.reload()" style="margin-top:18px;background:#f97316;color:white;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">Réessayer</button>
+        </div>
+      </div>
+    `;
+
+    // Surveille en temps réel le compte du consultant connecté (désactivation ou expiration
+    // décidée depuis l'admin) : si l'accès est coupé pendant qu'il utilise déjà le simulateur,
+    // il est déconnecté immédiatement, pas seulement à sa prochaine connexion.
+    let accessWatchUnsub = null;
+    function stopAccessWatch() {
+      if (accessWatchUnsub) { try { accessWatchUnsub(); } catch (e) {} accessWatchUnsub = null; }
+    }
+    function isConsultantBlocked(d) {
+      if (!d) return { blocked: false };
+      if (d.active === false) return { blocked: true, reason: "Votre accès a été désactivé. Contactez votre administrateur." };
+      if (d.expirationDate && new Date(d.expirationDate).getTime() < Date.now()) {
+        return { blocked: true, reason: "Votre accès a expiré. Contactez votre administrateur." };
+      }
+      return { blocked: false };
+    }
+    async function forceSignOutBlocked(reason) {
+      stopAccessWatch();
+      window._pmAccessBlockedReason = reason;
+      try { await signOut(auth); } catch (e) {}
+    }
+
     window.orangeAuth = auth;
     window.orangeLogin = async function() {
       const email = document.getElementById('orange-email')?.value;
@@ -1811,20 +1891,48 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
       }
     };
     
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       const loginContainer = document.getElementById('login-container');
       const appDiv = document.getElementById('orange-app');
-      
+
+      stopAccessWatch();
+
       if (!user) {
         if (loginContainer) {
-          loginContainer.innerHTML = loginHTML;
+          loginContainer.innerHTML = window._pmAccessBlockedReason ? accessBlockedHTML(window._pmAccessBlockedReason) : loginHTML;
           loginContainer.style.display = 'block';
         }
         if (appDiv) appDiv.style.display = 'none';
-      } else {
-        if (loginContainer) loginContainer.style.display = 'none';
-        if (appDiv) appDiv.style.display = 'block';
+        window._pmAccessBlockedReason = null;
+        return;
       }
+
+      // Le compte Firebase Auth peut rester valide même si l'accès a été coupé côté admin
+      // (désactivation ou expiration) — le compte n'est volontairement jamais supprimé automatiquement.
+      // On vérifie donc systématiquement, via l'email réellement connecté (jamais via un paramètre
+      // d'URL qui pourrait être falsifié), que l'accès est toujours autorisé.
+      try {
+        const q = window.query(window.collection(window.db, 'consultants'), window.where('email', '==', user.email));
+        const qs = await window.getDocs(q);
+        if (!qs.empty) {
+          const consultantDocId = qs.docs[0].id;
+          const check = isConsultantBlocked(qs.docs[0].data());
+          if (check.blocked) {
+            await forceSignOutBlocked(check.reason);
+            return; // le signOut() redéclenche ce même listener avec user=null, qui affiche l'écran de blocage
+          }
+          // Surveillance continue : si l'admin désactive/expire ce compte pendant la session en cours.
+          accessWatchUnsub = window.onSnapshot(window.doc(window.db, 'consultants', consultantDocId), (snap) => {
+            const liveCheck = isConsultantBlocked(snap.exists() ? snap.data() : null);
+            if (liveCheck.blocked) forceSignOutBlocked(liveCheck.reason);
+          });
+        }
+      } catch (e) {
+        console.log('Vérification accès consultant impossible:', e.message);
+      }
+
+      if (loginContainer) loginContainer.style.display = 'none';
+      if (appDiv) appDiv.style.display = 'block';
     });
   } catch(err) {
     console.error('Firebase init failed:', err);

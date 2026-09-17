@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.15 - Scripts Dynamiques";
+  scope.APP_VERSION = "14.16 - Frais uniques & Synchro live";
 })();
