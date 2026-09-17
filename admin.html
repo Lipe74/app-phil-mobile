@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.17 - Export secours</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.18 - Fix export presse-papier</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -5741,12 +5741,55 @@ window.exportProduitsEtPromosSecours = async function () {
 
     const fullCode = `// ===== CODE DE SECOURS — généré depuis l'admin le ${new Date().toLocaleString('fr-BE')} =====\n// À coller dans le chat Claude pour mise à jour de wp_orange.html (tableaux productList/options/promosPermanent/promos).\n\n${productsCode}\n\n${promosCode}\n`;
 
-    await navigator.clipboard.writeText(fullCode);
-    showToast('📋 Code de secours copié — colle-le dans le chat Claude.');
+    // navigator.clipboard.writeText() peut échouer ("Document is not focused") selon le navigateur,
+    // en particulier juste après une boîte confirm() — on retombe alors sur une fenêtre de copie
+    // manuelle plutôt que de bloquer l'export.
+    try {
+      await navigator.clipboard.writeText(fullCode);
+      showToast('📋 Code de secours copié — colle-le dans le chat Claude.');
+    } catch (copyErr) {
+      showExportFallbackModal(fullCode);
+    }
   } catch (err) {
     alert('Erreur lors de la génération: ' + err.message);
   }
 };
+
+// Fenêtre de secours affichant le code généré dans un champ texte sélectionnable, utilisée quand
+// la copie automatique dans le presse-papier échoue (limitation navigateur).
+function showExportFallbackModal(code) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:20px;max-width:600px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-weight:700;font-size:14px;">📋 Code de secours généré</div>
+      <div style="font-size:12px;color:#777;">La copie automatique a échoué (limitation du navigateur) — clique sur "Copier", ou sélectionne le texte ci-dessous et copie-le manuellement (Ctrl+C).</div>
+      <textarea readonly style="flex:1;min-height:260px;font-family:monospace;font-size:11px;padding:8px;border:1px solid #ddd;border-radius:8px;white-space:pre;"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-secondary" id="export-fallback-close">Fermer</button>
+        <button class="btn btn-primary" id="export-fallback-copy">📋 Copier</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const ta = overlay.querySelector('textarea');
+  ta.value = code; // affecté après coup (jamais via innerHTML) pour ne pas casser le code généré (il contient des balises <span>)
+  ta.focus();
+  ta.select();
+  overlay.querySelector('#export-fallback-close').onclick = () => overlay.remove();
+  overlay.querySelector('#export-fallback-copy').onclick = async () => {
+    ta.focus();
+    ta.select();
+    try {
+      await navigator.clipboard.writeText(code);
+      showToast('📋 Copié.');
+    } catch (e) {
+      // Vieille méthode de secours (fonctionne quasi partout, y compris quand l'API Clipboard est bloquée)
+      document.execCommand('copy');
+      showToast('📋 Copié (méthode de secours).');
+    }
+  };
+}
 
 // ===== GESTION DES COMMISSIONS (collection Firestore "commissions") =====
 // Partagée avec wp_rem.html et wp_contrats.html : montants € du barème par produit et par
