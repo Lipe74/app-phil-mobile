@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.20 - Badge QR";
+  scope.APP_VERSION = "14.21 - Badge Favoris";
 })();

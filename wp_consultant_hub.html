@@ -2473,7 +2473,18 @@ function pmRenderFavoritesList() {
     btn.className = 'menu-item';
     btn.style.flex = '1';
     btn.style.paddingRight = '22px';
-    btn.textContent = orig.textContent.trim();
+    // Libellé sans le badge du bouton d'origine, puis badge "live" propre au favori (mis à jour par qrBadgesRender)
+    var origClone = orig.cloneNode(true);
+    origClone.querySelectorAll('.pm-qr-badge').forEach(function (b) { b.remove(); });
+    btn.textContent = origClone.textContent.trim();
+    var origBadge = orig.querySelector('.pm-qr-badge');
+    if (origBadge && origBadge.id) {
+      var favBadge = document.createElement('span');
+      favBadge.className = 'pm-qr-badge';
+      favBadge.style.display = 'none';
+      favBadge.dataset.qrFor = origBadge.id;
+      btn.appendChild(favBadge);
+    }
     btn.onclick = function () { orig.click(); };
 
     var remove = document.createElement('span');
@@ -2525,6 +2536,8 @@ function pmRenderFavoritesList() {
       pmRenderFavoritesList();
     });
   });
+  // Badges QR des favoris : resynchroniser tout de suite (la liste vient d'être reconstruite)
+  if (typeof qrBadgesRender === 'function') qrBadgesRender();
 }
 
 async function initFavorites() {
@@ -6422,10 +6435,13 @@ var _qrCounts = { pcl: 0, pco: 0 };
 function qrBadgesRender() {
   var total = _qrCounts.pcl + _qrCounts.pco;
   [['qr-badge-pcl', _qrCounts.pcl], ['qr-badge-pco', _qrCounts.pco], ['qr-badge-crm', total], ['qr-badge-outils', total]].forEach(function (x) {
+    var targets = Array.prototype.slice.call(document.querySelectorAll('[data-qr-for="' + x[0] + '"]'));
     var el = document.getElementById(x[0]);
-    if (!el) return;
-    el.textContent = x[1] > 99 ? '99+' : String(x[1]);
-    el.style.display = x[1] > 0 ? 'inline-block' : 'none';
+    if (el) targets.push(el);
+    targets.forEach(function (t) {
+      t.textContent = x[1] > 99 ? '99+' : String(x[1]);
+      t.style.display = x[1] > 0 ? 'inline-block' : 'none';
+    });
   });
 }
 
