@@ -2443,11 +2443,17 @@ window.pmToggleFavorite = function (heartEl, key) {
   pmRenderFavoritesList();
 };
 
+window.pmAddFavSeparator = function () {
+  pmFavorites.push('sep:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
+  pmSaveFavorites();
+  pmRenderFavoritesList();
+};
+
 function pmRenderFavoritesList() {
   var list = document.getElementById('pm-favoris-list');
   if (!list) return;
 
-  if (!pmFavorites.length) {
+  if (!pmFavorites.some(function (k) { return k.indexOf('sep:') !== 0 && pmFavMap[k]; })) {
     list.innerHTML = '<div class="menu-item" style="opacity:.55;cursor:default;font-size:12px;">Clique sur 🤍 pour épingler un menu ici</div>';
     return;
   }
@@ -2455,7 +2461,70 @@ function pmRenderFavoritesList() {
   list.innerHTML = '';
   var pmDragSrcKey = null;
 
+  function pmAttachFavDrag(item) {
+    // Drag & drop HTML5
+    item.addEventListener('dragstart', function (e) {
+      pmDragSrcKey = item.dataset.key;
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(function () { item.style.opacity = '0.4'; }, 0);
+    });
+    item.addEventListener('dragend', function () {
+      item.style.opacity = '';
+      list.querySelectorAll('.pm-fav-item').forEach(function (i) { i.classList.remove('drag-over'); });
+    });
+    item.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.pm-fav-item').forEach(function (i) { i.classList.remove('drag-over'); });
+      if (item.dataset.key !== pmDragSrcKey) item.classList.add('drag-over');
+    });
+    item.addEventListener('drop', function (e) {
+      e.preventDefault();
+      if (!pmDragSrcKey || pmDragSrcKey === item.dataset.key) return;
+      var srcIdx = pmFavorites.indexOf(pmDragSrcKey);
+      var dstIdx = pmFavorites.indexOf(item.dataset.key);
+      if (srcIdx === -1 || dstIdx === -1) return;
+      pmFavorites.splice(srcIdx, 1);
+      pmFavorites.splice(dstIdx, 0, pmDragSrcKey);
+      pmDragSrcKey = null;
+      pmSaveFavorites();
+      pmRenderFavoritesList();
+    });
+
+  }
+
   pmFavorites.forEach(function (key) {
+    // Séparation : simple ligne déplaçable / supprimable
+    if (key.indexOf('sep:') === 0) {
+      var sepItem = document.createElement('div');
+      sepItem.className = 'pm-fav-item';
+      sepItem.draggable = true;
+      sepItem.dataset.key = key;
+      var sepHandle = document.createElement('span');
+      sepHandle.className = 'pm-fav-drag-handle';
+      sepHandle.textContent = '⠿⠿';
+      sepHandle.title = 'Déplacer';
+      var sepLine = document.createElement('div');
+      sepLine.style.cssText = 'flex:1;border-top:1px solid #f5c9a3;margin:8px 22px 8px 4px;';
+      var sepRemove = document.createElement('span');
+      sepRemove.className = 'pm-fav-remove';
+      sepRemove.textContent = '✕';
+      sepRemove.title = 'Retirer la séparation';
+      sepRemove.onclick = function (e) {
+        e.stopPropagation();
+        var i = pmFavorites.indexOf(key);
+        if (i !== -1) pmFavorites.splice(i, 1);
+        pmSaveFavorites();
+        pmRenderFavoritesList();
+      };
+      sepItem.appendChild(sepHandle);
+      sepItem.appendChild(sepLine);
+      sepItem.appendChild(sepRemove);
+      list.appendChild(sepItem);
+      pmAttachFavDrag(sepItem);
+      return;
+    }
+
     var orig = pmFavMap[key];
     if (!orig) return;
 
@@ -2507,35 +2576,18 @@ function pmRenderFavoritesList() {
     item.appendChild(remove);
     list.appendChild(item);
 
-    // Drag & drop HTML5
-    item.addEventListener('dragstart', function (e) {
-      pmDragSrcKey = item.dataset.key;
-      e.dataTransfer.effectAllowed = 'move';
-      setTimeout(function () { item.style.opacity = '0.4'; }, 0);
-    });
-    item.addEventListener('dragend', function () {
-      item.style.opacity = '';
-      list.querySelectorAll('.pm-fav-item').forEach(function (i) { i.classList.remove('drag-over'); });
-    });
-    item.addEventListener('dragover', function (e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      list.querySelectorAll('.pm-fav-item').forEach(function (i) { i.classList.remove('drag-over'); });
-      if (item.dataset.key !== pmDragSrcKey) item.classList.add('drag-over');
-    });
-    item.addEventListener('drop', function (e) {
-      e.preventDefault();
-      if (!pmDragSrcKey || pmDragSrcKey === item.dataset.key) return;
-      var srcIdx = pmFavorites.indexOf(pmDragSrcKey);
-      var dstIdx = pmFavorites.indexOf(item.dataset.key);
-      if (srcIdx === -1 || dstIdx === -1) return;
-      pmFavorites.splice(srcIdx, 1);
-      pmFavorites.splice(dstIdx, 0, pmDragSrcKey);
-      pmDragSrcKey = null;
-      pmSaveFavorites();
-      pmRenderFavoritesList();
-    });
+    pmAttachFavDrag(item);
   });
+  // Bouton "Séparation" en fin de liste
+  var addRow = document.createElement('div');
+  addRow.style.cssText = 'margin:2px 0 8px 18px;';
+  var addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.textContent = '➕ Séparation';
+  addBtn.style.cssText = 'background:none;border:1px dashed #f5c9a3;color:#f97316;border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer;';
+  addBtn.onclick = function () { window.pmAddFavSeparator(); };
+  addRow.appendChild(addBtn);
+  list.appendChild(addRow);
   // Badges QR des favoris : resynchroniser tout de suite (la liste vient d'être reconstruite)
   if (typeof qrBadgesRender === 'function') qrBadgesRender();
 }

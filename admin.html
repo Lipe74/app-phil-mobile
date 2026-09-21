@@ -202,6 +202,11 @@
   .fav-group-arrow { font-size: 10px; transition: transform .15s; }
   .fav-group-toggle.closed .fav-group-arrow { transform: rotate(-90deg); }
   .fav-badge .count-badge, .fav-group-badge .count-badge { margin-left: 6px; }
+  .fav-sep-line { flex: 1; border-top: 1px solid #f5c9a3; margin: 8px 24px 8px 2px; }
+  .fav-add-sep {
+    background: none; border: 1px dashed #f5c9a3; color: #f97316; border-radius: 6px;
+    font-family: inherit; font-size: 11px; padding: 3px 8px; margin: 0 0 6px 18px; cursor: pointer; width: auto;
+  }
 
   /* Étoile sur chaque menu item favoritable */
   .menu-star-wrap { position: relative; display: flex; align-items: center; }
@@ -229,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.22 - Favoris groupés</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.23 - Séparations</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -7478,7 +7483,8 @@ const FAV_ITEMS = {
   'menu-smart-stats':          { label: '📊 Mes stats Smart (perso)',      panelId: 'panel-smart-stats' },
 };
 
-let favIds = [];          // ordre des favoris (IDs boutons)
+let favIds = [];          // ordre des favoris (IDs boutons) + séparations 'sep:<groupe>:<id>'
+const isFavSep = id => typeof id === 'string' && id.indexOf('sep:') === 0;
 let dragSrcId = null;     // drag & drop
 let favStarsReady = false;// guard contre double init
 
@@ -7490,7 +7496,7 @@ async function loadFavs() {
       if (snap.exists()) {
         const data = snap.data();
         if (Array.isArray(data.favoriMenuAdmin)) {
-          favIds = data.favoriMenuAdmin.filter(id => FAV_ITEMS[id]);
+          favIds = data.favoriMenuAdmin.filter(id => FAV_ITEMS[id] || isFavSep(id));
           try { localStorage.setItem('adminFavorites', JSON.stringify(favIds)); } catch (e) {}
           return;
         }
@@ -7501,7 +7507,7 @@ async function loadFavs() {
   }
   // Fallback : localStorage
   try { favIds = JSON.parse(localStorage.getItem('adminFavorites') || '[]'); } catch (e) { favIds = []; }
-  favIds = favIds.filter(id => FAV_ITEMS[id]);
+  favIds = favIds.filter(id => FAV_ITEMS[id] || isFavSep(id));
 }
 
 // Sauvegarde Firestore (cross-device) + localStorage (cache offline immédiat).
@@ -7542,9 +7548,16 @@ try {
 } catch (e) {}
 
 function favGroupOf(id) {
+  if (isFavSep(id)) return id.split(':')[1] === 'web' ? 'web' : 'app';
   const b = document.getElementById(id);
   return (b && b.closest('#web-section-content')) ? 'web' : 'app';
 }
+
+window.addFavSep = function (group) {
+  favIds.push('sep:' + group + ':' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
+  saveFavs();
+  renderFavs();
+};
 
 window.toggleFavGroup = function (key) {
   favGroupOpen[key] = !favGroupOpen[key];
@@ -7586,7 +7599,7 @@ function renderFavs() {
   const section = document.getElementById('fav-section');
   if (!section) return;
 
-  if (favIds.length === 0) {
+  if (!favIds.some(id => FAV_ITEMS[id])) {
     section.innerHTML = `
       <div class="fav-section-label">⭐ Favoris</div>
       <div class="fav-empty">Cliquez sur ☆ pour épingler un menu</div>
@@ -7596,8 +7609,8 @@ function renderFavs() {
 
   let html = '';
   FAV_GROUPS.forEach(g => {
-    const ids = favIds.filter(id => FAV_ITEMS[id] && favGroupOf(id) === g.key);
-    if (!ids.length) return;
+    const ids = favIds.filter(id => (FAV_ITEMS[id] || isFavSep(id)) && favGroupOf(id) === g.key);
+    if (!ids.some(id => FAV_ITEMS[id])) return;
     const open = favGroupOpen[g.key] !== false;
     html += `<div class="fav-group">
       <button type="button" class="fav-group-toggle ${open ? '' : 'closed'}" aria-expanded="${open}" onclick="toggleFavGroup('${g.key}')">
@@ -7606,6 +7619,14 @@ function renderFavs() {
       </button>
       <div id="fav-body-${g.key}" style="${open ? '' : 'display:none;'}">`;
     ids.forEach(id => {
+      if (isFavSep(id)) {
+        html += `<div class="fav-item fav-sep" draggable="true" data-id="${id}">
+          <span class="fav-handle" title="Déplacer">⠿⠿</span>
+          <div class="fav-sep-line"></div>
+          <button class="fav-remove" title="Retirer la séparation" onclick="toggleFav('${id}')">✕</button>
+        </div>`;
+        return;
+      }
       const item = FAV_ITEMS[id];
       const srcBtn = document.getElementById(id);
       const counter = srcBtn ? srcBtn.querySelector('span[id]') : null;
@@ -7615,6 +7636,7 @@ function renderFavs() {
         <button class="fav-remove" title="Retirer" onclick="toggleFav('${id}')">✕</button>
       </div>`;
     });
+    html += `<button type="button" class="fav-add-sep" onclick="addFavSep('${g.key}')">➕ Séparation</button>`;
     html += '</div></div>';
   });
   html += '<div style="border-top:1px solid #e5e5e5;margin:10px 4px 10px;"></div>';
