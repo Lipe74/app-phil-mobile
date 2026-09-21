@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.19 - QR Prospects</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.20 - Pilotes QR</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -353,8 +353,8 @@
               <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="all" onchange="onQrModeChange()"> ✅ Tous les consultants actifs</label>
             </div>
             <div class="form-row" id="qr-pilot-row">
-              <label>Consultants pilotes (identifiants séparés par des virgules)</label>
-              <input type="text" id="qr-pilot-ids" placeholder="delta835">
+              <label>Consultants pilotes</label>
+              <div id="qr-pilot-list" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;max-height:260px;overflow-y:auto;background:#fff;"><div class="empty">Chargement...</div></div>
             </div>
             <button class="btn btn-primary" onclick="saveQrMode()">Enregistrer le mode</button>
             <div id="qr-status" class="meta" style="margin-top:10px;"></div>
@@ -4734,6 +4734,30 @@ window.onQrModeChange = function () {
   document.getElementById('qr-pilot-row').style.display = mode === 'pilot' ? 'block' : 'none';
 };
 
+// Liste à cocher des consultants pilotes (actifs d'abord). Les identifiants déjà enregistrés mais introuvables restent affichés.
+async function renderQrPilotList(selectedIds) {
+  const box = document.getElementById('qr-pilot-list');
+  const snap = await getDocs(collection(db, 'consultants'));
+  const list = [];
+  snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+  list.sort((a, b) => (b.active === true) - (a.active === true) || (a.fullName || a.name || a.id).localeCompare(b.fullName || b.name || b.id));
+  const known = new Set(list.map(c => c.id));
+  const now = Date.now();
+  const rows = list.map(c => {
+    const expired = c.expirationDate && Date.parse(c.expirationDate) < now;
+    const tag = c.active !== true ? ' <span style="color:#c0392b;font-size:11px;">(inactif)</span>'
+      : expired ? ' <span style="color:#B45309;font-size:11px;">(expiré)</span>' : '';
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;">
+      <input type="checkbox" value="${escapeHtml(c.id)}" ${selectedIds.includes(c.id) ? 'checked' : ''}>
+      <span><strong>${escapeHtml(c.fullName || c.name || c.id)}</strong> <span style="color:#888;font-size:11px;">${escapeHtml(c.id)}</span>${tag}</span>
+    </label>`;
+  });
+  selectedIds.filter(id => !known.has(id)).forEach(id => {
+    rows.push(`<label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" value="${escapeHtml(id)}" checked><span>${escapeHtml(id)} <span style="color:#c0392b;font-size:11px;">(consultant introuvable)</span></span></label>`);
+  });
+  box.innerHTML = rows.join('') || '<div class="empty">Aucun consultant.</div>';
+}
+
 async function loadQrAdmin() {
   const status = document.getElementById('qr-status');
   try {
@@ -4747,7 +4771,7 @@ async function loadQrAdmin() {
     const q = snap.data();
     const radio = document.querySelector('input[name="qr-mode"][value="' + (q.mode === 'all' ? 'all' : 'pilot') + '"]');
     if (radio) radio.checked = true;
-    document.getElementById('qr-pilot-ids').value = (q.pilotIds || []).join(', ');
+    await renderQrPilotList(q.pilotIds || []);
     onQrModeChange();
     if (status) status.textContent = q.mode === 'all' ? '✅ Actif pour tous les consultants actifs.' : '🧪 Mode pilote : ' + ((q.pilotIds || []).join(', ') || 'aucun pilote');
   } catch (err) {
@@ -4758,9 +4782,9 @@ async function loadQrAdmin() {
 
 window.saveQrMode = async function () {
   const mode = document.querySelector('input[name="qr-mode"]:checked').value;
-  const pilotIds = document.getElementById('qr-pilot-ids').value.split(',').map(x => x.trim()).filter(Boolean);
+  const pilotIds = Array.from(document.querySelectorAll('#qr-pilot-list input[type=checkbox]:checked')).map(x => x.value);
   if (mode === 'pilot' && pilotIds.length === 0) {
-    alert('Indique au moins un consultant pilote (ex : ton identifiant).');
+    alert('Coche au moins un consultant pilote.');
     return;
   }
   if (mode === 'all' && !confirm('Activer le QR Code pour TOUS les consultants actifs ?\n\nLeur bouton « Mon QR Code » apparaîtra dans le hub.')) {

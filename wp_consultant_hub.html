@@ -702,7 +702,7 @@ Version stable : <span id="app-version-1">…</span>
 </div>
 
 <!-- MES OUTILS -->
-<button class="pm-sec-toggle" onclick="toggleSection('sec-outils')"><span>🧰 Mes Outils</span><span class="pm-sec-arrow" id="arrow-sec-outils">▸</span></button>
+<button class="pm-sec-toggle" onclick="toggleSection('sec-outils')"><span>🧰 Mes Outils <span id="qr-badge-outils" class="pm-qr-badge" style="display:none;"></span></span><span class="pm-sec-arrow" id="arrow-sec-outils">▸</span></button>
 <div id="sec-outils" class="pm-sec-body">
 
 <button onclick="toggleMenu('monProfilMenu')" class="menu-item group-toggle">👤 Mon Profil</button>
@@ -711,17 +711,17 @@ Version stable : <span id="app-version-1">…</span>
 </div>
 
 <button onclick="toggleMenu('crmMenu')" class="menu-item group-toggle">
-📊 Gestion Clients et Prospects
+📊 Gestion Clients et Prospects <span id="qr-badge-crm" class="pm-qr-badge" style="display:none;"></span>
 </button>
 <div id="crmMenu" class="submenu">
   <button onclick="showCrmPanel('panel-contrats')" class="menu-item" id="btn-contrats">
     📋 Gestion des contrats
   </button>
   <button onclick="showProspPanel('clients')" class="menu-item" id="btn-prosp-clients">
-    🎯 Prospects Clients
+    🎯 Prospects Clients <span id="qr-badge-pcl" class="pm-qr-badge" style="display:none;"></span>
   </button>
   <button onclick="showProspPanel('consultants')" class="menu-item" id="btn-prosp-consultants">
-    🚀 Prospects Consultants
+    🚀 Prospects Consultants <span id="qr-badge-pco" class="pm-qr-badge" style="display:none;"></span>
   </button>
   <button onclick="showCrmPanel('panel-mon-qr')" class="menu-item" id="btn-mon-qr" style="display:none;">
     📱 Mon QR Code
@@ -6415,6 +6415,47 @@ function pcoQrExtras(p) {
   return out;
 }
 
+// Compteurs "nouvelles fiches QR" : fiches origine QR au statut Nouveau, en direct (onSnapshot), propres au consultant connecté
+var _qrBadgeStarted = false;
+var _qrCounts = { pcl: 0, pco: 0 };
+
+function qrBadgesRender() {
+  var total = _qrCounts.pcl + _qrCounts.pco;
+  [['qr-badge-pcl', _qrCounts.pcl], ['qr-badge-pco', _qrCounts.pco], ['qr-badge-crm', total], ['qr-badge-outils', total]].forEach(function (x) {
+    var el = document.getElementById(x[0]);
+    if (!el) return;
+    el.textContent = x[1] > 99 ? '99+' : String(x[1]);
+    el.style.display = x[1] > 0 ? 'inline-block' : 'none';
+  });
+}
+
+function startQrBadges(user) {
+  if (_qrBadgeStarted || !user || !window.onSnapshot) return;
+  _qrBadgeStarted = true;
+  var st = document.createElement('style');
+  st.textContent = '.pm-qr-badge{background:#e11d48;color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:800;line-height:1.5;margin-left:6px;letter-spacing:0;text-transform:none;vertical-align:middle;}';
+  document.head.appendChild(st);
+
+  [['prospectsClients', 'pcl', 'panel-prosp-clients', pclLoadList], ['prospectsConsultants', 'pco', 'panel-prosp-consultants', pcoLoadList]].forEach(function (cfg) {
+    var first = true;
+    var q = window.query(window.collection(window.db, cfg[0]),
+      window.where('consultantId', '==', user.id),
+      window.where('origine', '==', 'QR'),
+      window.where('statut', '==', 'Nouveau'));
+    window.onSnapshot(q, function (snap) {
+      _qrCounts[cfg[1]] = snap.size;
+      qrBadgesRender();
+      if (first) { first = false; return; }
+      var added = snap.docChanges().some(function (c) { return c.type === 'added'; });
+      if (added) {
+        pcToast('📱 Nouvelle fiche reçue !');
+        var panel = document.getElementById(cfg[2]);
+        if (panel && panel.style.display === 'block') cfg[3]();
+      }
+    }, function (err) { console.log('Compteur QR indisponible (' + cfg[0] + '):', err.message); });
+  });
+}
+
 var MON_QR_BASE = 'https://app.phil-mobile.be/wp_contact.html';
 var _monQrType = 'client';
 
@@ -6427,6 +6468,7 @@ function initMonQr(user) {
       var allowed = !!q && (q.mode === 'all' || (Array.isArray(q.pilotIds) && q.pilotIds.indexOf(user.id) >= 0));
       var btn = document.getElementById('btn-mon-qr');
       if (btn) btn.style.display = allowed ? '' : 'none';
+      if (allowed) startQrBadges(user);
     } catch (e) { console.log('Mon QR indisponible:', e.message); }
   });
 }
