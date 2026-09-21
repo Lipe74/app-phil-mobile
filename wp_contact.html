@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#062B68">
+  <title>Prendre contact · Phil-Mobile</title>
+  <link rel="icon" href="images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #062B68;
+      --orange: #f97316;
+      --green: #16a34a;
+      --blue: #1d4ed8;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #dbe1ea;
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --danger: #c0392b;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .top {
+      background: var(--navy);
+      height: 92px;
+      position: relative;
+    }
+    .top::after {
+      content: '';
+      position: absolute; left: 0; right: 0; bottom: 0; height: 5px;
+      background: linear-gradient(90deg, var(--orange) 0 34%, var(--green) 34% 67%, var(--blue) 67% 100%);
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 0 16px 40px; }
+
+    /* Carte de visite du consultant */
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: 0 6px 24px rgba(6, 43, 104, .10);
+      padding: 20px;
+    }
+    .who { margin-top: -8px; position: relative; text-align: center; }
+    .plain { margin-top: 24px; text-align: center; }
+    .avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      border: 4px solid #fff; background: var(--navy); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 30px; margin: -64px auto 10px;
+      object-fit: cover; overflow: hidden;
+    }
+    .who h1 { margin: 0; font-size: 21px; font-weight: 800; }
+    .who .role { margin: 2px 0 14px; color: var(--muted); font-size: 14px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .act {
+      flex: 1 1 30%; min-width: 96px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 8px; border-radius: 10px; border: 1.5px solid var(--line);
+      background: #fff; color: var(--navy); font: inherit; font-size: 13px; font-weight: 700;
+      text-decoration: none; cursor: pointer;
+    }
+    .act.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+    /* Formulaire */
+    h2 { font-size: 18px; font-weight: 800; margin: 0 0 4px; }
+    .lead { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+    .seg button {
+      border: 0; border-radius: 9px; padding: 10px 6px; font: inherit; font-size: 14px; font-weight: 700;
+      background: transparent; color: var(--muted); cursor: pointer;
+    }
+    .seg button[aria-pressed="true"] { background: #fff; color: var(--navy); box-shadow: 0 1px 6px rgba(6, 43, 104, .15); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .full { grid-column: 1 / -1; }
+    label.f { display: block; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    label.f small { font-weight: 400; color: var(--muted); }
+    input[type=text], input[type=tel], input[type=email], input[type=number], input[type=month], select, textarea {
+      width: 100%; padding: 12px; border: 1.5px solid var(--line); border-radius: 10px;
+      font: inherit; font-size: 16px; color: var(--ink); background: #fff; appearance: none; -webkit-appearance: none;
+    }
+    select {
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+      background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 32px;
+    }
+    textarea { min-height: 84px; resize: vertical; }
+    :focus-visible { outline: 3px solid rgba(249, 115, 22, .55); outline-offset: 1px; }
+    [aria-invalid="true"] { border-color: var(--danger); }
+    .err { color: var(--danger); font-size: 12px; margin-top: 3px; min-height: 0; }
+    .sep { border: 0; border-top: 1px solid var(--line); margin: 18px 0; }
+    details { border: 1.5px solid var(--line); border-radius: 12px; padding: 0 12px; margin-top: 4px; }
+    details summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 12px 0; color: var(--navy); }
+    details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+    details .grid { padding-bottom: 14px; }
+    .choice { display: flex; gap: 8px; }
+    .choice label {
+      position: relative; flex: 1; text-align: center; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 6px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .choice input { position: absolute; opacity: 0; pointer-events: none; }
+    .choice input:checked + span { color: var(--navy); }
+    .choice label:has(input:checked) { border-color: var(--orange); background: #fff7ed; color: var(--navy); }
+    .choice label:has(input:focus-visible) { outline: 3px solid rgba(249, 115, 22, .55); }
+    .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--muted); margin: 16px 0 4px; }
+    .consent input { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: var(--orange); }
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    .submit {
+      width: 100%; margin-top: 14px; border: 0; border-radius: 12px; padding: 15px;
+      background: var(--orange); color: #fff; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+    }
+    .submit[disabled] { opacity: .6; cursor: default; }
+    .notice { font-size: 12px; color: var(--muted); margin-top: 12px; }
+    .state { text-align: center; padding: 30px 8px; }
+    .state h2 { margin-bottom: 8px; }
+    .state p { margin: 0 0 16px; color: var(--muted); }
+    .tick {
+      width: 56px; height: 56px; border-radius: 50%; background: #dcfce7; color: var(--green);
+      display: inline-flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; margin-bottom: 12px;
+    }
+    .spin { width: 30px; height: 30px; border: 3px solid var(--line); border-top-color: var(--orange); border-radius: 50%; margin: 24px auto; animation: r 0.8s linear infinite; }
+    @keyframes r { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+    [hidden] { display: none !important; }
+    @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="top"></div>
+  <main class="wrap">
+
+    <div id="view-loading" class="card plain" style="text-align:center;"><div class="spin" role="status" aria-label="Chargement"></div></div>
+
+    <div id="view-unavailable" class="card plain" hidden>
+      <div class="state">
+        <h2>Ce lien n'est plus disponible</h2>
+        <p>Le formulaire de contact associé à ce lien est indisponible pour le moment. Vous pouvez nous joindre directement.</p>
+        <div class="actions">
+          <a class="act primary" href="mailto:infos@phil-mobile.be">Écrire à Phil-Mobile</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-main" hidden>
+      <section class="card who" aria-label="Votre conseiller">
+        <div id="avatar" class="avatar" aria-hidden="true"></div>
+        <h1 id="c-name"></h1>
+        <p class="role">Conseiller Phil-Mobile · Smart SN</p>
+        <div class="actions">
+          <a id="a-call" class="act primary" href="#">Appeler</a>
+          <a id="a-wa" class="act" href="#" target="_blank" rel="noopener">WhatsApp</a>
+          <button id="a-vcard" class="act" type="button">Enregistrer le contact</button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:14px;" id="form-card">
+        <h2>Laissez-moi vos coordonnées</h2>
+        <p class="lead">Ça prend une minute. Je vous recontacte rapidement.</p>
+
+        <div class="seg" role="group" aria-label="Je suis intéressé par">
+          <button type="button" id="seg-client" aria-pressed="true">Mes abonnements</button>
+          <button type="button" id="seg-consultant" aria-pressed="false">Devenir consultant</button>
+        </div>
+
+        <form id="form" novalidate autocomplete="on">
+          <div class="hp" aria-hidden="true"><label>Ne pas remplir <input type="text" name="website" id="hp" tabindex="-1" autocomplete="off"></label></div>
+
+          <div class="grid">
+            <div>
+              <label class="f" for="prenom">Prénom</label>
+              <input type="text" id="prenom" name="given-name" autocomplete="given-name" maxlength="50" required>
+              <div class="err" data-err="prenom"></div>
+            </div>
+            <div>
+              <label class="f" for="nom">Nom</label>
+              <input type="text" id="nom" name="family-name" autocomplete="family-name" maxlength="50" required>
+              <div class="err" data-err="nom"></div>
+            </div>
+            <div class="full">
+              <label class="f" for="tel">Téléphone</label>
+              <input type="tel" id="tel" name="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="0470 12 34 56" required>
+              <div class="err" data-err="tel"></div>
+            </div>
+            <div class="full">
+              <label class="f" for="email">E-mail</label>
+              <input type="email" id="email" name="email" autocomplete="email" inputmode="email" maxlength="100" required>
+              <div class="err" data-err="email"></div>
+            </div>
+          </div>
+
+          <!-- ===== CLIENT ===== -->
+          <div id="part-client">
+            <hr class="sep">
+            <div class="grid">
+              <div class="full">
+                <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Vous êtes</span>
+                <div class="choice">
+                  <label><input type="radio" name="typeClient" value="Particulier" checked><span>Client privé</span></label>
+                  <label><input type="radio" name="typeClient" value="Société"><span>Indépendant / société</span></label>
+                </div>
+              </div>
+              <div class="full grid" id="soc-row" hidden style="padding:0;">
+                <div>
+                  <label class="f" for="societe">Nom de la société <small>(facultatif)</small></label>
+                  <input type="text" id="societe" maxlength="100" autocomplete="organization">
+                </div>
+                <div>
+                  <label class="f" for="tvaClient">N° de TVA <small>(facultatif)</small></label>
+                  <input type="text" id="tvaClient" maxlength="20" placeholder="BE0123456789">
+                  <div class="err" data-err="tvaClient"></div>
+                </div>
+              </div>
+              <div class="full">
+                <label class="f" for="interet">Ça m'intéresse</label>
+                <select id="interet">
+                  <option value="Orange">Mobile, internet, TV</option>
+                  <option value="Eneco">Énergie (électricité, gaz)</option>
+                  <option value="Orange + Eneco">Les deux</option>
+                </select>
+              </div>
+            </div>
+
+            <details>
+              <summary>Mes abonnements actuels (facultatif)</summary>
+              <div class="grid">
+                <div>
+                  <label class="f" for="opMobile">Opérateur mobile</label>
+                  <select id="opMobile">
+                    <option value="">Choisir</option>
+                    <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
+                    <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
+                    <option>Odido</option><option>Youfone</option><option>Simyo</option><option>Autre</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="f" for="montantMobile">Montant mobile <small>(€/mois)</small></label>
+                  <input type="number" id="montantMobile" inputmode="decimal" min="0" max="9999" step="0.01" placeholder="ex. 25">
+                  <div class="err" data-err="montantMobile"></div>
+                </div>
+                <div class="full">
+                  <label class="f" for="numMobile">N° client chez mon opérateur mobile</label>
+                  <input type="text" id="numMobile" maxlength="40">
+                </div>
+                <div>
+                  <label class="f" for="opInternet">Opérateur internet</label>
+                  <select id="opInternet">
+                    <option value="">Choisir</option>
+                    <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
+                    <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="f" for="montantInternet">Montant internet <small>(€/mois)</small></label>
+                  <input type="number" id="montantInternet" inputmode="decimal" min="0" max="9999" step="0.01" placeholder="ex. 45">
+                  <div class="err" data-err="montantInternet"></div>
+                </div>
+                <div class="full">
+                  <label class="f" for="numInternet">N° client chez mon opérateur internet</label>
+                  <input type="text" id="numInternet" maxlength="40">
+                </div>
+                <div class="full">
+                  <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Ligne fixe (téléphone)</span>
+                  <div class="choice">
+                    <label><input type="radio" name="fixe" value="Oui"><span>Oui</span></label>
+                    <label><input type="radio" name="fixe" value="Non"><span>Non</span></label>
+                  </div>
+                </div>
+                <div>
+                  <label class="f" for="finContrat">Fin d'engagement <small>(mois/année)</small></label>
+                  <input type="month" id="finContrat" placeholder="AAAA-MM">
+                  <div class="err" data-err="finContrat"></div>
+                </div>
+                <div>
+                  <label class="f" for="energie">Fournisseur d'énergie</label>
+                  <select id="energie">
+                    <option value="">Choisir</option>
+                    <option>Eneco</option><option>Engie</option><option>TotalEnergies</option><option>Luminus</option>
+                    <option>Mega</option><option>Autre</option><option>Je ne sais pas</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+
+            <div style="margin-top:12px;">
+              <label class="f" for="msgClient">Un message ? <small>(facultatif)</small></label>
+              <textarea id="msgClient" maxlength="800"></textarea>
+            </div>
+          </div>
+
+          <!-- ===== FUTUR CONSULTANT ===== -->
+          <div id="part-consultant" hidden>
+            <hr class="sep">
+            <div class="grid">
+              <div class="full">
+                <label class="f" for="statutPro">Ma situation actuelle</label>
+                <select id="statutPro">
+                  <option value="">Choisir</option>
+                  <option>Salarié</option><option>Indépendant</option><option>Chômage</option>
+                  <option>Autres revenus</option><option>Sans revenus</option>
+                </select>
+                <div class="err" data-err="statutPro"></div>
+              </div>
+              <div class="full" id="tva-row" hidden>
+                <label class="f" for="tvaConsultant">N° de TVA <small>(facultatif)</small></label>
+                <input type="text" id="tvaConsultant" maxlength="20" placeholder="BE0123456789">
+                <div class="err" data-err="tvaConsultant"></div>
+              </div>
+              <div>
+                <label class="f" for="province">Province</label>
+                <select id="province">
+                  <option value="">Choisir</option>
+                  <option>Anvers</option><option>Brabant flamand</option><option>Brabant wallon</option>
+                  <option>Bruxelles-Capitale</option><option>Flandre occidentale</option><option>Flandre orientale</option>
+                  <option>Hainaut</option><option>Liège</option><option>Limbourg</option><option>Luxembourg</option><option>Namur</option>
+                </select>
+                <div class="err" data-err="province"></div>
+              </div>
+              <div>
+                <label class="f" for="dispo">Disponibilité <small>(facultatif)</small></label>
+                <select id="dispo">
+                  <option value="">Choisir</option>
+                  <option>Immédiatement</option><option>Dans le mois</option><option>Dans 3 mois</option><option>Plus tard</option>
+                </select>
+              </div>
+              <div class="full">
+                <label class="f" for="msgConsultant">Message / motivation <small>(facultatif)</small></label>
+                <textarea id="msgConsultant" maxlength="800"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <label class="consent">
+            <input type="checkbox" id="consent">
+            <span>J'accepte que mes données soient utilisées par Phil-Mobile pour me recontacter au sujet de ma demande. Je peux demander leur suppression à tout moment (infos@phil-mobile.be).</span>
+          </label>
+          <div class="err" data-err="consent"></div>
+
+          <button type="submit" class="submit" id="submit">Envoyer</button>
+          <div class="err" id="form-error" role="alert" style="text-align:center;margin-top:8px;"></div>
+        </form>
+      </section>
+    </div>
+
+    <div id="view-done" class="card plain" hidden>
+      <div class="state">
+        <div class="tick" aria-hidden="true">✓</div>
+        <h2>Merci, c'est bien reçu</h2>
+        <p id="done-text">Je vous recontacte très vite.</p>
+        <div class="actions">
+          <button id="done-vcard" class="act primary" type="button">Enregistrer mon contact</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
+  authDomain: "phil-mobile.firebaseapp.com",
+  projectId: "phil-mobile",
+  storageBucket: "phil-mobile.firebasestorage.app",
+  messagingSenderId: "193213939481",
+  appId: "1:193213939481:web:f8a750e89f0e645b62cf88"
+};
+const app = initializeApp(firebaseConfig);
+// App Check : même clé que le hub (utile si l'application est activée côté Firestore, sans effet sinon)
+try {
+  initializeAppCheck(app, { provider: new ReCaptchaV3Provider("6LfMXVYtAAAAAJgXbh8X_e9Bgfx5ZBTkdA9gT0Rx"), isTokenAutoRefreshEnabled: true });
+} catch (e) { console.warn('App Check indisponible:', e.message); }
+const db = getFirestore(app);
+
+const $ = (id) => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const cid = (params.get('c') || '').trim();
+let currentType = params.get('type') === 'consultant' ? 'consultant' : 'client';
+let profil = null;
+const openedAt = Date.now();
+
+function show(view) {
+  ['view-loading', 'view-unavailable', 'view-main', 'view-done'].forEach(v => { $(v).hidden = (v !== view); });
+}
+
+/* ---------- Chargement du profil + vérification de disponibilité ---------- */
+async function init() {
+  if (!/^[A-Za-z0-9_-]{2,40}$/.test(cid)) { show('view-unavailable'); return; }
+  try {
+    const [pSnap, qSnap] = await Promise.all([
+      getDoc(doc(db, 'profilsPublics', cid)),
+      getDoc(doc(db, 'settings', 'qrMode'))
+    ]);
+    if (!pSnap.exists() || !qSnap.exists()) { show('view-unavailable'); return; }
+    const p = pSnap.data(), q = qSnap.data();
+    const notExpired = (p.expiresAtMs == null) || (Date.now() < p.expiresAtMs);
+    const allowed = q.mode === 'all' || (Array.isArray(q.pilotIds) && q.pilotIds.indexOf(cid) >= 0);
+    if (p.active !== true || !notExpired || !allowed) { show('view-unavailable'); return; }
+    profil = p;
+    renderProfil();
+    applyType();
+    show('view-main');
+  } catch (e) {
+    console.warn('Profil indisponible:', e.message);
+    show('view-unavailable');
+  }
+}
+
+function cleanTel(t) { return (t || '').replace(/[^\d+]/g, ''); }
+function initials(name) {
+  return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join('');
+}
+
+function renderProfil() {
+  const name = profil.fullName || profil.name || '';
+  $('c-name').textContent = name;
+  document.title = 'Contacter ' + name + ' · Phil-Mobile';
+  const av = $('avatar');
+  av.textContent = initials(name);
+  const src = profil.photoURL || ('images/' + cid + '.png');
+  const img = new Image();
+  img.alt = '';
+  img.className = 'avatar';
+  img.style.margin = '-64px auto 10px';
+  img.onload = () => { av.replaceWith(img); img.id = 'avatar'; };
+  img.src = src;
+  const tel = cleanTel(profil.phone);
+  if (tel) {
+    $('a-call').href = 'tel:' + tel;
+    $('a-wa').href = 'https://wa.me/' + tel.replace(/^\+/, '').replace(/^00/, '').replace(/^0/, '32');
+  } else {
+    $('a-call').hidden = true; $('a-wa').hidden = true;
+  }
+  $('a-vcard').onclick = downloadVcard;
+  $('done-vcard').onclick = downloadVcard;
+}
+
+function downloadVcard() {
+  const name = profil.fullName || profil.name || 'Phil-Mobile';
+  const parts = name.trim().split(/\s+/);
+  const last = parts.length > 1 ? parts[parts.length - 1] : '';
+  const first = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
+  const lines = ['BEGIN:VCARD', 'VERSION:3.0',
+    'N:' + last + ';' + first + ';;;', 'FN:' + name, 'ORG:Phil-Mobile'];
+  if (profil.phone) lines.push('TEL;TYPE=CELL:' + cleanTel(profil.phone));
+  if (profil.email) lines.push('EMAIL:' + profil.email);
+  lines.push('URL:https://phil-mobile.be', 'END:VCARD');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/vcard;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/[^\w-]+/g, '_') + '.vcf';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------- Bascule Client / Futur consultant ---------- */
+function applyType() {
+  $('seg-client').setAttribute('aria-pressed', currentType === 'client');
+  $('seg-consultant').setAttribute('aria-pressed', currentType === 'consultant');
+  $('part-client').hidden = currentType !== 'client';
+  $('part-consultant').hidden = currentType !== 'consultant';
+  clearErrors();
+}
+$('seg-client').onclick = () => { currentType = 'client'; applyType(); };
+$('seg-consultant').onclick = () => { currentType = 'consultant'; applyType(); };
+document.querySelectorAll('input[name=typeClient]').forEach(r => r.addEventListener('change', () => {
+  $('soc-row').hidden = document.querySelector('input[name=typeClient]:checked').value !== 'Société';
+}));
+$('statutPro').addEventListener('change', () => { $('tva-row').hidden = $('statutPro').value !== 'Indépendant'; });
+
+/* ---------- Validation ---------- */
+function setErr(key, msg) {
+  const el = document.querySelector('[data-err="' + key + '"]');
+  if (el) el.textContent = msg || '';
+  const input = $(key);
+  if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+}
+function clearErrors() {
+  document.querySelectorAll('[data-err]').forEach(e => { e.textContent = ''; });
+  document.querySelectorAll('[aria-invalid]').forEach(e => e.removeAttribute('aria-invalid'));
+  $('form-error').textContent = '';
+}
+// TVA belge : BE + 10 chiffres (0 ou 1 en tête), clé de contrôle modulo 97
+function normalizeTva(v) {
+  let s = (v || '').toUpperCase().replace(/[\s.\-]/g, '');
+  if (s.startsWith('BE')) s = s.slice(2);
+  if (/^\d{9}$/.test(s)) s = '0' + s;
+  return s;
+}
+function tvaValid(v) {
+  const s = normalizeTva(v);
+  if (!/^[01]\d{9}$/.test(s)) return false;
+  const base = parseInt(s.slice(0, 8), 10), key = parseInt(s.slice(8), 10);
+  return 97 - (base % 97) === key;
+}
+function num(v) {
+  if (v === '' || v == null) return null;
+  const n = parseFloat(String(v).replace(',', '.'));
+  return isNaN(n) ? NaN : n;
+}
+function monthToDate(v) {
+  v = (v || '').trim();
+  if (!v) return '';
+  let m = v.match(/^(\d{4})-(\d{2})$/);
+  if (!m) { const m2 = v.match(/^(\d{1,2})\/(\d{4})$/); if (m2) m = [null, m2[2], ('0' + m2[1]).slice(-2)]; }
+  if (!m || +m[2] < 1 || +m[2] > 12) return null;
+  return m[1] + '-' + m[2] + '-01';
+}
+
+function validate() {
+  clearErrors();
+  let firstBad = null;
+  const bad = (key, msg) => { setErr(key, msg); if (!firstBad) firstBad = key; };
+  if (!$('prenom').value.trim()) bad('prenom', 'Prénom requis');
+  if (!$('nom').value.trim()) bad('nom', 'Nom requis');
+  const telDigits = $('tel').value.replace(/\D/g, '');
+  if (telDigits.length < 8 || telDigits.length > 15) bad('tel', 'Numéro de téléphone invalide');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($('email').value.trim())) bad('email', 'Adresse e-mail invalide');
+
+  if (currentType === 'client') {
+    const isSoc = document.querySelector('input[name=typeClient]:checked').value === 'Société';
+    if (isSoc && $('tvaClient').value.trim() && !tvaValid($('tvaClient').value)) bad('tvaClient', 'N° de TVA invalide');
+    ['montantMobile', 'montantInternet'].forEach(k => {
+      const n = num($(k).value);
+      if (Number.isNaN(n) || (n !== null && (n < 0 || n > 9999))) bad(k, 'Montant invalide');
+    });
+    if (monthToDate($('finContrat').value) === null) bad('finContrat', 'Format AAAA-MM');
+  } else {
+    if (!$('statutPro').value) bad('statutPro', 'Merci de choisir');
+    if ($('statutPro').value === 'Indépendant' && $('tvaConsultant').value.trim() && !tvaValid($('tvaConsultant').value)) bad('tvaConsultant', 'N° de TVA invalide');
+    if (!$('province').value) bad('province', 'Merci de choisir');
+  }
+  if (!$('consent').checked) bad('consent', 'Votre accord est nécessaire pour envoyer le formulaire');
+  if (firstBad) { const el = $(firstBad); if (el) el.focus(); return false; }
+  return true;
+}
+
+/* ---------- Envoi ---------- */
+function buildPayload() {
+  const now = new Date().toISOString();
+  const prenom = $('prenom').value.trim();
+  const nomFamille = $('nom').value.trim();
+  const base = {
+    consultantId: cid,
+    nom: (prenom + ' ' + nomFamille).trim(),
+    prenom, nomFamille,
+    tel: $('tel').value.trim(),
+    email: $('email').value.trim(),
+    statut: 'Nouveau',
+    origine: 'QR',
+    consentementRGPD: true,
+    consentementDate: now,
+    dateCreation: now,
+    dateMaj: now
+  };
+  if (currentType === 'client') {
+    const isSoc = document.querySelector('input[name=typeClient]:checked').value === 'Société';
+    const fixe = document.querySelector('input[name=fixe]:checked');
+    return ['prospectsClients', Object.assign(base, {
+      type: isSoc ? 'Société' : 'Particulier',
+      societe: isSoc ? $('societe').value.trim() : '',
+      tva: isSoc && $('tvaClient').value.trim() ? normalizeTva($('tvaClient').value) : '',
+      source: $('interet').value,
+      provenance: 'Terrain',
+      opMobile: $('opMobile').value,
+      numMobile: $('numMobile').value.trim(),
+      montantMobile: num($('montantMobile').value),
+      opInternet: $('opInternet').value,
+      numInternet: $('numInternet').value.trim(),
+      montantInternet: num($('montantInternet').value),
+      aFixe: fixe ? fixe.value : '',
+      dateFinContrat: monthToDate($('finContrat').value) || '',
+      fournisseurEnergie: $('energie').value,
+      commentaire: $('msgClient').value.trim()
+    })];
+  }
+  const stat = $('statutPro').value;
+  return ['prospectsConsultants', Object.assign(base, {
+    source: 'QR Code',
+    statutPro: stat,
+    tva: stat === 'Indépendant' && $('tvaConsultant').value.trim() ? normalizeTva($('tvaConsultant').value) : '',
+    province: $('province').value,
+    disponibilite: $('dispo').value,
+    presentation: 'Non présentée',
+    commentaire: $('msgConsultant').value.trim()
+  })];
+}
+
+$('form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  if ($('hp').value) return;                       // honeypot : les robots remplissent ce champ
+  if (Date.now() - openedAt < 2500) { $('form-error').textContent = 'Un instant, veuillez réessayer.'; return; }
+  if (!validate()) return;
+  const btn = $('submit');
+  btn.disabled = true; btn.textContent = 'Envoi…';
+  try {
+    const [col, data] = buildPayload();
+    await addDoc(collection(db, col), data);
+    $('done-text').textContent = (profil.name || 'Votre conseiller') + ' vous recontacte très vite. Vous pouvez enregistrer son contact dans votre téléphone.';
+    show('view-done');
+    window.scrollTo(0, 0);
+  } catch (e) {
+    console.warn('Envoi impossible:', e.message);
+    $('form-error').textContent = "Envoi impossible pour le moment. Vérifiez votre connexion et réessayez, ou contactez-moi directement.";
+    btn.disabled = false; btn.textContent = 'Envoyer';
+  }
+});
+
+init();
+</script>
+</body>
+</html>

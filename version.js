@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.18 - Secours à jour & bandeau frais";
+  scope.APP_VERSION = "14.19 - QR Prospects";
 })();

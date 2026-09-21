@@ -723,6 +723,9 @@ Version stable : <span id="app-version-1">…</span>
   <button onclick="showProspPanel('consultants')" class="menu-item" id="btn-prosp-consultants">
     🚀 Prospects Consultants
   </button>
+  <button onclick="showCrmPanel('panel-mon-qr')" class="menu-item" id="btn-mon-qr" style="display:none;">
+    📱 Mon QR Code
+  </button>
   <button onclick="showCrmPanel('panel-crm-clients')" class="menu-item" id="btn-crm-clients">
     🧑 Gestion Clients
   </button>
@@ -1292,6 +1295,33 @@ STATUT: independant
             <div id="crm-co-list" style="font-size:13px;color:#666;">Chargement...</div>
           </div>
 
+          <!-- Panel Mon QR Code (prospects clients / futurs consultants) -->
+          <div id="panel-mon-qr" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 6px;font-size:16px;">📱 Mon QR Code</h2>
+            <div style="font-size:12px;color:#666;margin-bottom:12px;">Montre ce QR à la personne : elle le scanne, remplit le formulaire et la fiche arrive directement dans ton CRM.</div>
+            <div id="mqr-status" style="font-size:12px;border-radius:8px;padding:8px 10px;margin-bottom:12px;background:#fff7ed;color:#9a3412;display:none;"></div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f3f4f6;border-radius:12px;padding:4px;max-width:360px;margin:0 auto 14px;">
+              <button id="mqr-seg-client" onclick="monQrSetType('client')" style="border:0;border-radius:9px;padding:9px 6px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:#062B68;box-shadow:0 1px 5px rgba(0,0,0,.12);">🎯 Client</button>
+              <button id="mqr-seg-consultant" onclick="monQrSetType('consultant')" style="border:0;border-radius:9px;padding:9px 6px;font-size:13px;font-weight:700;cursor:pointer;background:transparent;color:#6b7280;">🚀 Futur consultant</button>
+            </div>
+
+            <div style="max-width:300px;margin:0 auto;background:#fff;border:1px solid #fdba74;border-radius:14px;padding:14px;">
+              <div id="mqr-canvas" style="width:100%;"></div>
+            </div>
+            <style>#mqr-canvas img, #mqr-canvas canvas { width:100% !important; height:auto !important; display:block; }</style>
+
+            <div style="max-width:420px;margin:14px auto 0;">
+              <div id="mqr-url" style="font-size:11px;color:#555;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;word-break:break-all;"></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+                <button onclick="monQrCopy()" style="flex:1;min-width:110px;background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copier le lien</button>
+                <button onclick="monQrShare()" style="flex:1;min-width:110px;background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;">📤 Partager</button>
+                <button onclick="monQrDownload()" style="flex:1;min-width:110px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer;">⬇️ Image PNG</button>
+              </div>
+              <div style="font-size:11px;color:#888;margin-top:12px;">Les fiches reçues apparaissent dans <b>🎯 Prospects Clients</b> ou <b>🚀 Prospects Consultants</b> avec le badge 📱 QR.</div>
+            </div>
+          </div>
+
           <!-- Panel Prospects Clients -->
           <div id="panel-prosp-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🎯 Prospects Clients</h2>
@@ -1558,6 +1588,7 @@ OPERATEUR: Proximus
                       <option value="Recommandation">🤝 Recommandation</option>
                       <option value="Terrain">🚶 Terrain</option>
                       <option value="Site Web">🌐 Site Web</option>
+                      <option value="QR Code">📱 QR Code</option>
                       <option value="Autre">✨ Autre</option>
                     </select>
                   </div>
@@ -1567,6 +1598,10 @@ OPERATEUR: Proximus
                       <option value="Indépendant">💼 Indépendant</option>
                       <option value="Société">🏢 Société</option>
                       <option value="Employé">👔 Employé</option>
+                      <option value="Salarié">👔 Salarié</option>
+                      <option value="Chômage">🗂 Chômage</option>
+                      <option value="Autres revenus">💶 Autres revenus</option>
+                      <option value="Sans revenus">📄 Sans revenus</option>
                       <option value="Étudiant">🎓 Étudiant</option>
                       <option value="Sans activité">📄 Sans activité</option>
                     </select>
@@ -4849,6 +4884,8 @@ function doUnlock(user) {
   initMessages();
   // Chat online : badge non-lus dès la connexion (même sans ouvrir le panel)
   subscribeChatOnlineBadge();
+  // QR Code prospects : bouton visible selon le mode (Pilote / Tous) défini dans l'admin
+  initMonQr(user);
 }
 
 // Remplit le panel "Contacts" (sidebar) avec les coordonnées du vrai upline du consultant connecté.
@@ -5911,6 +5948,7 @@ window.showCrmPanel = function(panelId) {
   if (panelId === 'panel-crm-clients') crmLoadClients();
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
   if (panelId === 'panel-contrats' && typeof ctrInit === 'function') ctrInit();
+  if (panelId === 'panel-mon-qr') monQrOpen();
 };
 
 // ===== Promotions (lecture seule, synchronisée avec admin.html) =====
@@ -6346,6 +6384,136 @@ window.showProspPanel = function (type) {
   if (type === 'clients') pclLoadList(); else pcoLoadList();
 };
 
+// --- QR Code prospects : affichage des fiches reçues via wp_contact.html + écran "Mon QR Code" ---
+function pcQrBadge(p) {
+  return p && p.origine === 'QR'
+    ? ' <span style="display:inline-block;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:4px;background:#ede9fe;color:#5b21b6;">📱 QR</span>'
+    : '';
+}
+function pcMoney(v) {
+  return (v === null || v === undefined || v === '' || isNaN(Number(v))) ? '' : Number(v).toLocaleString('fr-BE') + ' €/mois';
+}
+function pclQrExtras(p) {
+  if (!p || p.origine !== 'QR') return '';
+  var out = '';
+  var mm = pcMoney(p.montantMobile), mi = pcMoney(p.montantInternet);
+  if (mm) out += '<div style="font-size:12px;color:#555;">💶 Mobile : ' + pcEsc(mm) + '</div>';
+  if (mi) out += '<div style="font-size:12px;color:#555;">💶 Internet : ' + pcEsc(mi) + '</div>';
+  if (p.aFixe) out += '<div style="font-size:12px;color:#555;">☎️ Ligne fixe : ' + pcEsc(p.aFixe) + '</div>';
+  if (p.dateFinContrat) {
+    var d = new Date(p.dateFinContrat);
+    if (!isNaN(d)) out += '<div style="font-size:12px;color:#555;">⏳ Fin d\'engagement : ' + pcEsc(d.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' })) + '</div>';
+  }
+  if (p.fournisseurEnergie) out += '<div style="font-size:12px;color:#555;">⚡ Énergie : ' + pcEsc(p.fournisseurEnergie) + '</div>';
+  return out;
+}
+function pcoQrExtras(p) {
+  if (!p || p.origine !== 'QR') return '';
+  var out = '';
+  if (p.province) out += '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.province) + '</div>';
+  if (p.disponibilite) out += '<div style="font-size:12px;color:#555;">🕒 Disponibilité : ' + pcEsc(p.disponibilite) + '</div>';
+  return out;
+}
+
+var MON_QR_BASE = 'https://app.phil-mobile.be/wp_contact.html';
+var _monQrType = 'client';
+
+// Affiche le bouton "Mon QR Code" si le mode admin (settings/qrMode) l'autorise pour ce consultant
+function initMonQr(user) {
+  crmReady(async function () {
+    try {
+      var snap = await window.getDoc(window.doc(window.db, 'settings', 'qrMode'));
+      var q = snap.exists() ? snap.data() : null;
+      var allowed = !!q && (q.mode === 'all' || (Array.isArray(q.pilotIds) && q.pilotIds.indexOf(user.id) >= 0));
+      var btn = document.getElementById('btn-mon-qr');
+      if (btn) btn.style.display = allowed ? '' : 'none';
+    } catch (e) { console.log('Mon QR indisponible:', e.message); }
+  });
+}
+
+function monQrUrl() {
+  return MON_QR_BASE + '?c=' + encodeURIComponent(window.pmCurrentUser.id) + '&type=' + _monQrType;
+}
+
+function monQrLoadLib(cb) {
+  if (window.QRCode) { cb(); return; }
+  var sc = document.createElement('script');
+  sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  sc.onload = cb;
+  sc.onerror = function () { pcToast('QR indisponible : vérifie ta connexion.'); };
+  document.head.appendChild(sc);
+}
+
+window.monQrRender = function () {
+  var url = monQrUrl();
+  var urlEl = document.getElementById('mqr-url');
+  if (urlEl) urlEl.textContent = url;
+  monQrLoadLib(function () {
+    var box = document.getElementById('mqr-canvas');
+    if (!box) return;
+    box.innerHTML = '';
+    new window.QRCode(box, { text: url, width: 512, height: 512, colorDark: '#062B68', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+  });
+};
+
+window.monQrSetType = function (t) {
+  _monQrType = (t === 'consultant') ? 'consultant' : 'client';
+  var on = 'background:#fff;color:#062B68;box-shadow:0 1px 5px rgba(0,0,0,.12);';
+  var off = 'background:transparent;color:#6b7280;box-shadow:none;';
+  var base = 'border:0;border-radius:9px;padding:9px 6px;font-size:13px;font-weight:700;cursor:pointer;';
+  document.getElementById('mqr-seg-client').style.cssText = base + (_monQrType === 'client' ? on : off);
+  document.getElementById('mqr-seg-consultant').style.cssText = base + (_monQrType === 'consultant' ? on : off);
+  window.monQrRender();
+};
+
+window.monQrOpen = async function () {
+  var u = window.pmCurrentUser;
+  if (!u) return;
+  var st = document.getElementById('mqr-status');
+  var msg = '';
+  try {
+    var res = await Promise.all([
+      window.getDoc(window.doc(window.db, 'profilsPublics', u.id)),
+      window.getDoc(window.doc(window.db, 'settings', 'qrMode'))
+    ]);
+    var p = res[0].exists() ? res[0].data() : null;
+    var q = res[1].exists() ? res[1].data() : null;
+    if (!p) msg = '⚠️ Ton profil public n\'est pas encore synchronisé : le lien affichera « indisponible ». Demande à l\'admin de synchroniser les profils.';
+    else if (p.active !== true) msg = '⚠️ Ton profil est inactif : ton QR n\'accepte pas de nouvelles fiches.';
+    else if (p.expiresAtMs != null && Date.now() > p.expiresAtMs) msg = '⚠️ Ton accès est expiré : ton QR n\'accepte pas de nouvelles fiches.';
+    else if (q && q.mode !== 'all') msg = '🧪 Mode pilote : seuls les consultants pilotes peuvent utiliser le QR pour le moment.';
+  } catch (e) { msg = '⚠️ Vérification impossible : ' + e.message; }
+  if (st) { st.style.display = msg ? 'block' : 'none'; st.textContent = msg; }
+  window.monQrSetType(_monQrType);
+};
+
+window.monQrCopy = function () {
+  var url = monQrUrl();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function () { pcToast('✅ Lien copié.'); }, function () { prompt('Copie ce lien :', url); });
+  } else { prompt('Copie ce lien :', url); }
+};
+
+window.monQrShare = function () {
+  var url = monQrUrl();
+  if (navigator.share) { navigator.share({ title: 'Phil-Mobile — prendre contact', url: url }).catch(function () {}); }
+  else { window.monQrCopy(); }
+};
+
+window.monQrDownload = function () {
+  var src = document.querySelector('#mqr-canvas canvas');
+  if (!src) { pcToast('QR pas encore prêt.'); return; }
+  var pad = 48, out = document.createElement('canvas');
+  out.width = src.width + pad * 2; out.height = src.height + pad * 2;
+  var ctx = out.getContext('2d');
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(src, pad, pad);
+  var a = document.createElement('a');
+  a.href = out.toDataURL('image/png');
+  a.download = 'QR-' + window.pmCurrentUser.id + '-' + _monQrType + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
 // --- Prospects Clients ---
 window._pclData = [];
 var pclEditId = null;
@@ -6525,7 +6693,7 @@ function pclRenderList(list) {
       : '<button onclick="pclConvertToClient(\'' + p.docId + '\')" style="background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Créer le contrat</button>';
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
       + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
-      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>'
+      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
       + pclQuickActions(p)
       + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcEsc(p.tel) + '</div>' : '')
       + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
@@ -6533,6 +6701,7 @@ function pclRenderList(list) {
       + (p.type === 'Société' ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc(p.societe || '-') + '</div>' : '')
       + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcEsc(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(p.numMobile) : '') + '</div>' : '')
       + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcEsc(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(p.numInternet) : '') + '</div>' : '')
+      + pclQrExtras(p)
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
       + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
@@ -6925,12 +7094,13 @@ function pcoRenderList(list) {
   el.innerHTML = filtered.map(function (p) {
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
       + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
-      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>'
+      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
       + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:4px;">📞 ' + pcEsc(p.tel) + '</div>' : '')
       + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
       + (p.tva ? '<div style="font-size:12px;color:#555;">💳 ' + pcEsc(p.tva) + '</div>' : '')
       + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(p.source || '-') + '</div>'
       + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(p.statutPro) + '</div>' : '')
+      + pcoQrExtras(p)
       + (p.presentation && p.presentation !== 'Non présentée' ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.presentation) + '</div>' : '')
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'

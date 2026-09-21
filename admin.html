@@ -217,7 +217,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.18 - Fix export presse-papier</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.19 - QR Prospects</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -266,6 +266,7 @@
           </div>
           <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
           <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
+          <button onclick="showAdminPanel('panel-qr', this)" class="menu-item" id="menu-qr">📱 QR Code prospects</button>
           <button onclick="showAdminPanel('panel-scripts', this)" class="menu-item" id="menu-scripts">📜 Gestion des Scripts</button>
         </div>
 
@@ -337,6 +338,35 @@
             <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button>
           </div>
           <div id="consultants-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-qr">
+          <div class="section-title">📱 QR Code prospects</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:12px;">
+              Chaque consultant peut afficher un QR (hub &gt; Gestion Clients et Prospects &gt; Mon QR Code). Le prospect scanne, remplit un formulaire public et la fiche arrive dans le CRM du consultant.
+              Un consultant inactif ou expiré n'accepte plus de fiches, quel que soit le mode.
+            </div>
+            <div class="form-row">
+              <label>Mode d'activation</label>
+              <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="pilot" checked onchange="onQrModeChange()"> 🧪 Pilote : uniquement les consultants pilotes ci-dessous</label>
+              <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="all" onchange="onQrModeChange()"> ✅ Tous les consultants actifs</label>
+            </div>
+            <div class="form-row" id="qr-pilot-row">
+              <label>Consultants pilotes (identifiants séparés par des virgules)</label>
+              <input type="text" id="qr-pilot-ids" placeholder="delta835">
+            </div>
+            <button class="btn btn-primary" onclick="saveQrMode()">Enregistrer le mode</button>
+            <div id="qr-status" class="meta" style="margin-top:10px;"></div>
+          </div>
+          <div class="card" style="margin-top:12px;">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Les coordonnées affichées sur la page publique viennent d'une copie allégée (nom, téléphone, e-mail, photo, statut). Elle se met à jour automatiquement quand tu crées, modifies ou désactives un consultant.
+              Ce bouton fait une copie initiale pour les consultants existants.
+            </div>
+            <button class="btn btn-secondary" onclick="syncAllProfilsPublics()">🔄 Synchroniser les profils publics</button>
+            <div id="qr-sync-result" class="meta" style="margin-top:10px;"></div>
+          </div>
         </div>
 
         <div class="admin-panel" id="panel-app-info">
@@ -1778,6 +1808,7 @@ onAuthStateChanged(auth, async (user) => {
   loadNewsItemsAdmin();
   loadConcoursAdmin();
   loadConsultants();
+  loadQrAdmin();
   loadMessagesAdmin();
   loadAvisWebAdmin();
   loadGlobalRatingAdmin();
@@ -1981,6 +2012,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-bot-pending') loadBotPending();
   if (panelId === 'panel-bot-stats') loadBotStats();
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
+  if (panelId === 'panel-qr') loadQrAdmin();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   if (panelId === 'panel-blogphil-list') loadBlogPhilAdmin();
   if (panelId === 'panel-smart-stats') loadSmartStatsAdmin();
@@ -4539,6 +4571,8 @@ window.confirmActivate = async function () {
       payStatus, paidDate,
       expirationDate, isTestAccount, isTeamsAccount, accountType
     });
+    // Copie allégée pour la page publique QR (non bloquant)
+    await syncProfilPublicFromDoc(id);
 
   } catch (err) {
     suspendAuthCheck = false;
@@ -4662,8 +4696,102 @@ async function loadConsultants() {
 
 window.toggleActive = async function (docId, newState) {
   await updateDoc(doc(db, 'consultants', docId), { active: newState });
+  await syncProfilPublicFromDoc(docId);
   showToast(newState ? 'Consultant réactivé.' : 'Consultant désactivé.');
   loadConsultants();
+};
+
+// --- QR Code prospects : mode Pilote / Tous + profils publics ---
+// settings/qrMode = { mode: 'pilot' | 'all', pilotIds: [...] } — lu par le hub et par wp_contact.html (lecture publique).
+// profilsPublics/{id} = copie allégée du consultant (aucune donnée sensible) affichée sur la page publique.
+function profilPublicFromConsultant(c, docId) {
+  const exp = c.expirationDate ? Date.parse(c.expirationDate) : NaN;
+  return {
+    id: c.id || docId,
+    name: c.name || '',
+    fullName: c.fullName || c.name || '',
+    phone: c.phone || '',
+    email: c.email || '',
+    photoURL: c.photoURL || '',
+    active: c.active === true,
+    expiresAtMs: isNaN(exp) ? null : exp,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function syncProfilPublicFromDoc(docId) {
+  try {
+    const snap = await getDoc(doc(db, 'consultants', docId));
+    if (!snap.exists()) return;
+    await setDoc(doc(db, 'profilsPublics', docId), profilPublicFromConsultant(snap.data(), docId));
+  } catch (err) {
+    console.warn('Synchro profil public impossible (' + docId + '):', err.message);
+  }
+}
+
+window.onQrModeChange = function () {
+  const mode = document.querySelector('input[name="qr-mode"]:checked').value;
+  document.getElementById('qr-pilot-row').style.display = mode === 'pilot' ? 'block' : 'none';
+};
+
+async function loadQrAdmin() {
+  const status = document.getElementById('qr-status');
+  try {
+    const ref = doc(db, 'settings', 'qrMode');
+    let snap = await getDoc(ref);
+    if (!snap.exists()) {
+      // Valeur par défaut : Pilote, uniquement l'admin connecté
+      await setDoc(ref, { mode: 'pilot', pilotIds: adminOwnId ? [adminOwnId] : [] });
+      snap = await getDoc(ref);
+    }
+    const q = snap.data();
+    const radio = document.querySelector('input[name="qr-mode"][value="' + (q.mode === 'all' ? 'all' : 'pilot') + '"]');
+    if (radio) radio.checked = true;
+    document.getElementById('qr-pilot-ids').value = (q.pilotIds || []).join(', ');
+    onQrModeChange();
+    if (status) status.textContent = q.mode === 'all' ? '✅ Actif pour tous les consultants actifs.' : '🧪 Mode pilote : ' + ((q.pilotIds || []).join(', ') || 'aucun pilote');
+  } catch (err) {
+    console.log('Lecture QR impossible:', err.message);
+    if (status) status.textContent = '⚠️ Lecture impossible : ' + err.message + ' (règles Firestore à publier ?)';
+  }
+}
+
+window.saveQrMode = async function () {
+  const mode = document.querySelector('input[name="qr-mode"]:checked').value;
+  const pilotIds = document.getElementById('qr-pilot-ids').value.split(',').map(x => x.trim()).filter(Boolean);
+  if (mode === 'pilot' && pilotIds.length === 0) {
+    alert('Indique au moins un consultant pilote (ex : ton identifiant).');
+    return;
+  }
+  if (mode === 'all' && !confirm('Activer le QR Code pour TOUS les consultants actifs ?\n\nLeur bouton « Mon QR Code » apparaîtra dans le hub.')) {
+    return;
+  }
+  try {
+    await setDoc(doc(db, 'settings', 'qrMode'), { mode, pilotIds });
+    showToast(mode === 'all' ? '✅ QR activé pour tous.' : '✅ Mode pilote enregistré.');
+    loadQrAdmin();
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+window.syncAllProfilsPublics = async function () {
+  const out = document.getElementById('qr-sync-result');
+  out.textContent = 'Synchronisation en cours...';
+  try {
+    const snap = await getDocs(collection(db, 'consultants'));
+    let ok = 0;
+    const noPhone = [];
+    for (const d of snap.docs) {
+      const c = d.data();
+      await setDoc(doc(db, 'profilsPublics', d.id), profilPublicFromConsultant(c, d.id));
+      ok++;
+      if (c.active && !c.phone) noPhone.push(c.fullName || c.name || d.id);
+    }
+    out.textContent = '✅ ' + ok + ' profil(s) synchronisé(s).' + (noPhone.length ? ' ⚠️ Sans téléphone (boutons d\'appel masqués) : ' + noPhone.join(', ') : '');
+  } catch (err) {
+    out.textContent = '⚠️ Erreur : ' + err.message;
+  }
 };
 
 let currentEditDocId = null;
@@ -4793,6 +4921,7 @@ window.confirmEdit = async function () {
     // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)
     if (editPhotoPendingUrl) updatePayload.photoURL = editPhotoPendingUrl;
     await updateDoc(doc(db, 'consultants', currentEditDocId), updatePayload);
+    await syncProfilPublicFromDoc(currentEditDocId);
     closeEditModal();
     showToast('✅ Consultant mis à jour.');
     loadConsultants();
