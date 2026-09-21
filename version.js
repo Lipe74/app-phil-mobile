@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.21 - Badge Favoris";
+  scope.APP_VERSION = "14.22 - Favoris Admin";
 })();

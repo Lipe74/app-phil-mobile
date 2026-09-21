@@ -191,6 +191,18 @@
   }
   .fav-item:hover .fav-remove { opacity: 1; }
 
+  /* Groupes de favoris (Site web / Application) repliables + pastilles miroir */
+  .fav-group + .fav-group { margin-top: 8px; }
+  .fav-group-toggle {
+    display: flex; width: 100%; align-items: center; justify-content: space-between;
+    background: none; border: none; border-radius: 0; box-shadow: none; cursor: pointer;
+    padding: 4px; margin: 0 0 4px; font-family: inherit; text-align: left;
+    font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .08em;
+  }
+  .fav-group-arrow { font-size: 10px; transition: transform .15s; }
+  .fav-group-toggle.closed .fav-group-arrow { transform: rotate(-90deg); }
+  .fav-badge .count-badge, .fav-group-badge .count-badge { margin-left: 6px; }
+
   /* Étoile sur chaque menu item favoritable */
   .menu-star-wrap { position: relative; display: flex; align-items: center; }
   .menu-star-wrap > .menu-item { flex: 1; padding-right: 26px; }
@@ -217,7 +229,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.20 - Pilotes QR</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.22 - Favoris groupés</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -349,15 +361,15 @@
             </div>
             <div class="form-row">
               <label>Mode d'activation</label>
-              <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="pilot" checked onchange="onQrModeChange()"> 🧪 Pilote : uniquement les consultants pilotes ci-dessous</label>
-              <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="all" onchange="onQrModeChange()"> ✅ Tous les consultants actifs</label>
+              <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="pilot" checked onchange="onQrModeChange()" style="width:auto;margin:0 6px 0 0;padding:0;"> 🧪 Pilote : uniquement les consultants pilotes ci-dessous</label>
+              <label style="display:block;font-weight:600;margin:6px 0;cursor:pointer;"><input type="radio" name="qr-mode" value="all" onchange="onQrModeChange()" style="width:auto;margin:0 6px 0 0;padding:0;"> ✅ Tous les consultants actifs</label>
             </div>
             <div class="form-row" id="qr-pilot-row">
               <label>Consultants pilotes</label>
               <div id="qr-pilot-list" style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;max-height:260px;overflow-y:auto;background:#fff;"><div class="empty">Chargement...</div></div>
             </div>
             <button class="btn btn-primary" onclick="saveQrMode()">Enregistrer le mode</button>
-            <div id="qr-status" class="meta" style="margin-top:10px;"></div>
+            <div id="qr-status" style="margin-top:10px;font-size:12px;color:#666;"></div>
           </div>
           <div class="card" style="margin-top:12px;">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
@@ -365,7 +377,7 @@
               Ce bouton fait une copie initiale pour les consultants existants.
             </div>
             <button class="btn btn-secondary" onclick="syncAllProfilsPublics()">🔄 Synchroniser les profils publics</button>
-            <div id="qr-sync-result" class="meta" style="margin-top:10px;"></div>
+            <div id="qr-sync-result" style="margin-top:10px;font-size:12px;color:#666;"></div>
           </div>
         </div>
 
@@ -4748,12 +4760,12 @@ async function renderQrPilotList(selectedIds) {
     const tag = c.active !== true ? ' <span style="color:#c0392b;font-size:11px;">(inactif)</span>'
       : expired ? ' <span style="color:#B45309;font-size:11px;">(expiré)</span>' : '';
     return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;">
-      <input type="checkbox" value="${escapeHtml(c.id)}" ${selectedIds.includes(c.id) ? 'checked' : ''}>
+      <input type="checkbox" value="${escapeHtml(c.id)}" ${selectedIds.includes(c.id) ? 'checked' : ''} style="width:auto;flex:none;margin:0;padding:0;">
       <span><strong>${escapeHtml(c.fullName || c.name || c.id)}</strong> <span style="color:#888;font-size:11px;">${escapeHtml(c.id)}</span>${tag}</span>
     </label>`;
   });
   selectedIds.filter(id => !known.has(id)).forEach(id => {
-    rows.push(`<label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" value="${escapeHtml(id)}" checked><span>${escapeHtml(id)} <span style="color:#c0392b;font-size:11px;">(consultant introuvable)</span></span></label>`);
+    rows.push(`<label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" value="${escapeHtml(id)}" checked style="width:auto;flex:none;margin:0;padding:0;"><span>${escapeHtml(id)} <span style="color:#c0392b;font-size:11px;">(consultant introuvable)</span></span></label>`);
   });
   box.innerHTML = rows.join('') || '<div class="empty">Aucun consultant.</div>';
 }
@@ -7462,6 +7474,8 @@ const FAV_ITEMS = {
   'menu-documents':            { label: '📄 Gestion des documents',         panelId: 'panel-documents' },
   'menu-liens':                { label: '🌐 Gestion des liens',            panelId: 'panel-liens' },
   'menu-scripts':              { label: '📜 Gestion des Scripts',          panelId: 'panel-scripts' },
+  'menu-qr':                   { label: '📱 QR Code prospects',            panelId: 'panel-qr' },
+  'menu-smart-stats':          { label: '📊 Mes stats Smart (perso)',      panelId: 'panel-smart-stats' },
 };
 
 let favIds = [];          // ordre des favoris (IDs boutons)
@@ -7516,6 +7530,58 @@ function updateFavStars() {
   });
 }
 
+// Groupe d'un favori : "web" si son bouton est dans la section 🌐 Phil-Mobile (Web), sinon "app"
+const FAV_GROUPS = [
+  { key: 'web', label: '🌐 Favoris — Site web' },
+  { key: 'app', label: '📱 Favoris — Application' }
+];
+let favGroupOpen = { web: true, app: true };
+try {
+  const savedOpen = JSON.parse(localStorage.getItem('adminFavGroupsOpen') || 'null');
+  if (savedOpen) favGroupOpen = Object.assign(favGroupOpen, savedOpen);
+} catch (e) {}
+
+function favGroupOf(id) {
+  const b = document.getElementById(id);
+  return (b && b.closest('#web-section-content')) ? 'web' : 'app';
+}
+
+window.toggleFavGroup = function (key) {
+  favGroupOpen[key] = !favGroupOpen[key];
+  try { localStorage.setItem('adminFavGroupsOpen', JSON.stringify(favGroupOpen)); } catch (e) {}
+  renderFavs();
+};
+
+// Recopie les pastilles de notification du menu (Demandes du site, Messages, Bugs...) dans les favoris,
+// + pastille combinée sur le titre d'un groupe replié.
+function syncFavBadges() {
+  document.querySelectorAll('.fav-badge[data-src]').forEach(m => {
+    const src = document.getElementById(m.dataset.src);
+    m.innerHTML = src ? src.innerHTML : '';
+  });
+  FAV_GROUPS.forEach(g => {
+    const head = document.querySelector('.fav-group-badge[data-group="' + g.key + '"]');
+    if (!head) return;
+    let total = 0;
+    document.querySelectorAll('#fav-body-' + g.key + ' .fav-badge[data-src]').forEach(m => {
+      const n = parseInt((m.textContent || '').replace(/\D/g, ''), 10);
+      if (!isNaN(n)) total += n;
+    });
+    head.innerHTML = (total > 0 && !favGroupOpen[g.key]) ? `<span class="count-badge">${total}</span>` : '';
+  });
+}
+
+let favBadgeObs = null;
+function initFavBadgeObserver() {
+  if (favBadgeObs) return;
+  favBadgeObs = new MutationObserver(syncFavBadges);
+  Object.keys(FAV_ITEMS).forEach(id => {
+    const b = document.getElementById(id);
+    const c = b && b.querySelector('span[id]');
+    if (c) favBadgeObs.observe(c, { childList: true, characterData: true, subtree: true });
+  });
+}
+
 function renderFavs() {
   const section = document.getElementById('fav-section');
   if (!section) return;
@@ -7528,20 +7594,33 @@ function renderFavs() {
     return;
   }
 
-  let html = '<div class="fav-section-label">⭐ Favoris</div>';
-  favIds.forEach(id => {
-    const item = FAV_ITEMS[id];
-    if (!item) return;
-    html += `<div class="fav-item" draggable="true" data-id="${id}">
-      <span class="fav-handle" title="Déplacer">⠿⠿</span>
-      <button class="fav-btn" id="fav-btn-${id}" onclick="activateFav('${id}', this)">${item.label}</button>
-      <button class="fav-remove" title="Retirer" onclick="toggleFav('${id}')">✕</button>
-    </div>`;
+  let html = '';
+  FAV_GROUPS.forEach(g => {
+    const ids = favIds.filter(id => FAV_ITEMS[id] && favGroupOf(id) === g.key);
+    if (!ids.length) return;
+    const open = favGroupOpen[g.key] !== false;
+    html += `<div class="fav-group">
+      <button type="button" class="fav-group-toggle ${open ? '' : 'closed'}" aria-expanded="${open}" onclick="toggleFavGroup('${g.key}')">
+        <span>${g.label} <span class="fav-group-badge" data-group="${g.key}"></span></span>
+        <span class="fav-group-arrow">▼</span>
+      </button>
+      <div id="fav-body-${g.key}" style="${open ? '' : 'display:none;'}">`;
+    ids.forEach(id => {
+      const item = FAV_ITEMS[id];
+      const srcBtn = document.getElementById(id);
+      const counter = srcBtn ? srcBtn.querySelector('span[id]') : null;
+      html += `<div class="fav-item" draggable="true" data-id="${id}">
+        <span class="fav-handle" title="Déplacer">⠿⠿</span>
+        <button class="fav-btn" id="fav-btn-${id}" onclick="activateFav('${id}', this)">${item.label}${counter ? `<span class="fav-badge" data-src="${counter.id}"></span>` : ''}</button>
+        <button class="fav-remove" title="Retirer" onclick="toggleFav('${id}')">✕</button>
+      </div>`;
+    });
+    html += '</div></div>';
   });
   html += '<div style="border-top:1px solid #e5e5e5;margin:10px 4px 10px;"></div>';
   section.innerHTML = html;
 
-  // Drag & drop HTML5
+  // Drag & drop HTML5 (réordonnancement à l'intérieur d'un même groupe)
   section.querySelectorAll('.fav-item').forEach(el => {
     el.addEventListener('dragstart', e => {
       dragSrcId = el.dataset.id;
@@ -7556,11 +7635,12 @@ function renderFavs() {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       section.querySelectorAll('.fav-item').forEach(i => i.classList.remove('drag-over'));
-      if (el.dataset.id !== dragSrcId) el.classList.add('drag-over');
+      if (el.dataset.id !== dragSrcId && dragSrcId && favGroupOf(dragSrcId) === favGroupOf(el.dataset.id)) el.classList.add('drag-over');
     });
     el.addEventListener('drop', e => {
       e.preventDefault();
       if (!dragSrcId || dragSrcId === el.dataset.id) return;
+      if (favGroupOf(dragSrcId) !== favGroupOf(el.dataset.id)) { dragSrcId = null; renderFavs(); return; }
       const srcIdx = favIds.indexOf(dragSrcId);
       const dstIdx = favIds.indexOf(el.dataset.id);
       if (srcIdx === -1 || dstIdx === -1) return;
@@ -7571,6 +7651,8 @@ function renderFavs() {
       renderFavs();
     });
   });
+
+  syncFavBadges();
 }
 
 // Clic sur un favori : ouvre le panel + appel extra si besoin
@@ -7626,6 +7708,7 @@ async function initFavoritesSystem() {
   restoreWebSection();
   renderFavs();
   initFavStars();
+  initFavBadgeObserver();
 }
 
 // ===== PÉRIODE GLOBALE DES OFFRES EN COURS (promos temporaires, settings/promoGlobalDate) =====
