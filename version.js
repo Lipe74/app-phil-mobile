@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.25 - Onglet actif QR";
+  scope.APP_VERSION = "14.26 - Recommandations";
 })();

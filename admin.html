@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.23 - Séparations</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.24 - Recommandations</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -282,6 +282,7 @@
             <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
           </div>
           <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
+          <button onclick="showAdminPanel('panel-recommendations', this)" class="menu-item" id="menu-recommendations">🤝 Recommandations <span id="reco-count"></span></button>
           <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
           <button onclick="showAdminPanel('panel-qr', this)" class="menu-item" id="menu-qr">📱 QR Code prospects</button>
           <button onclick="showAdminPanel('panel-scripts', this)" class="menu-item" id="menu-scripts">📜 Gestion des Scripts</button>
@@ -342,6 +343,12 @@
         <div class="admin-panel" id="panel-prospects">
           <div class="section-title">📝 Demandes en attente</div>
           <div id="prospects-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-recommendations">
+          <div class="section-title">🤝 Recommandations</div>
+          <div id="reco-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+          <div id="reco-admin-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-feedback">
@@ -1817,6 +1824,7 @@ onAuthStateChanged(auth, async (user) => {
   loadAgendaAdmin();
   onAgendaCategoryChange();
   loadProspects();
+  loadRecommendations();
   loadFeedback();
   loadPromosAdmin();
   onPromoTypeChange();
@@ -2050,7 +2058,7 @@ window.showAdminPanel = function (panelId, btn) {
 // Badge combiné sur le groupe CRM (repliable) : somme des compteurs de ses sous-items,
 // pour que la notification reste visible même quand le groupe est replié.
 function updateCrmBadge() {
-  const ids = ['feedback-count', 'messages-count', 'prospects-count', 'bot-pending-count'];
+  const ids = ['feedback-count', 'messages-count', 'prospects-count', 'reco-count', 'bot-pending-count'];
   let total = 0;
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -3421,6 +3429,7 @@ function loadProspects() {
           <div class="meta">${escapeHtml(p.company || '—')} · ${escapeHtml(p.email || '')} · ${escapeHtml(p.phone || '')}</div>
           <div class="meta">ASP actuel: ${escapeHtml(String(p.asp ?? '—'))} · Entrée Smart: ${escapeHtml(p.startDate || '—')}</div>
           <div class="meta">Upline: ${escapeHtml(p.upline || '—')} (${escapeHtml(p.uplinePhone || '—')})</div>
+          ${p.recommendedBy ? `<div class="meta">🤝 Recommandé par : <strong>${escapeHtml(p.recommendedBy)}</strong></div>` : ''}
           ${p.comment ? `<div class="meta">💬 ${escapeHtml(p.comment)}</div>` : ''}
         </div>
         <div class="card-actions">
@@ -3444,6 +3453,149 @@ window.dismissProspect = async function (docId) {
   await updateDoc(doc(db, 'prospects', docId), { status: 'dismissed' });
   showToast('Demande ignorée.');
   // (liste mise à jour automatiquement par le listener temps réel)
+};
+
+// --- Recommandations (sponsor → nouveau consultant) : Nouveau → Converti → Payé ---
+let recoUnsub = null;
+let recoFilter = 'all';
+let recoData = [];
+const RECO_STATUS = {
+  new:       { label: 'Nouveau',  style: 'background:#fff3e8;color:#f97316;' },
+  converted: { label: 'Converti', style: 'background:#dcfce7;color:#15803d;' },
+  paid:      { label: 'Payé',     style: 'background:#e0f2fe;color:#0369a1;' }
+};
+const recoNormPhone = v => String(v || '').replace(/\D/g, '');
+const recoNormEmail = v => String(v || '').trim().toLowerCase();
+
+function loadRecommendations() {
+  if (recoUnsub) { try { recoUnsub(); } catch (e) {} recoUnsub = null; }
+  recoUnsub = onSnapshot(collection(db, 'recommendations'), (snap) => {
+    recoData = [];
+    snap.forEach(d => recoData.push({ docId: d.id, ...d.data() }));
+    recoData.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    const nbNew = recoData.filter(r => (r.status || 'new') === 'new').length;
+    const countEl = document.getElementById('reco-count');
+    if (countEl) countEl.innerHTML = nbNew > 0 ? `<span class="count-badge">${nbNew}</span>` : '';
+    updateCrmBadge();
+    renderRecommendations();
+  }, (err) => {
+    const c = document.getElementById('reco-admin-list');
+    if (c) c.innerHTML = '<div class="empty">Erreur de chargement (vérifie les règles Firestore de la collection recommendations).</div>';
+    console.log('Chargement recommandations impossible:', err.message);
+  });
+}
+
+window.setRecoFilter = function (f) { recoFilter = f; renderRecommendations(); };
+
+async function renderRecommendations() {
+  const container = document.getElementById('reco-admin-list');
+  const filters = document.getElementById('reco-filters');
+  if (!container) return;
+
+  // Filtres
+  const counts = { all: recoData.length, new: 0, converted: 0, paid: 0 };
+  recoData.forEach(r => { counts[r.status || 'new']++; });
+  const chips = [['all', 'Tous'], ['new', 'Nouveau'], ['converted', 'Converti'], ['paid', 'Payé']];
+  filters.innerHTML = chips.map(([k, l]) =>
+    `<button class="btn ${recoFilter === k ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setRecoFilter('${k}')">${l} (${counts[k]})</button>`
+  ).join('');
+
+  const list = recoData.filter(r => recoFilter === 'all' || (r.status || 'new') === recoFilter);
+  if (!list.length) { container.innerHTML = '<div class="empty">Aucune recommandation.</div>'; return; }
+
+  // Rapprochement avec les demandes d'accès (email, GSM ou ID Smart)
+  let prospects = [];
+  try {
+    const ps = await getDocs(collection(db, 'prospects'));
+    ps.forEach(d => prospects.push(d.data()));
+  } catch (e) { console.log('Rapprochement demandes impossible:', e.message); }
+
+  container.innerHTML = '';
+  list.forEach(r => {
+    const st = r.status || 'new';
+    const meta = RECO_STATUS[st] || RECO_STATUS.new;
+    const email = recoNormEmail(r.recommendedEmail);
+    const phone = recoNormPhone(r.recommendedPhone);
+    const sid = String(r.recommendedSmartId || '').toLowerCase();
+
+    // Doublons : même personne recommandée plusieurs fois
+    const dups = recoData.filter(o => o.docId !== r.docId && (
+      (email && recoNormEmail(o.recommendedEmail) === email) ||
+      (phone && recoNormPhone(o.recommendedPhone) === phone) ||
+      (sid && String(o.recommendedSmartId || '').toLowerCase() === sid)
+    ));
+    const dupHtml = dups.length
+      ? `<div class="meta" style="color:#b91c1c;font-weight:700;">⚠️ Doublon : déjà recommandé par ${dups.map(o => escapeHtml(o.recommenderName || o.recommenderId || '?')).join(', ')}</div>` : '';
+
+    // Demande d'accès correspondante
+    const match = prospects.find(p =>
+      (email && recoNormEmail(p.email) === email) ||
+      (phone && recoNormPhone(p.phone) === phone) ||
+      (sid && String(p.smartId || '').toLowerCase() === sid)
+    );
+    const matchLabel = { pending: 'en attente', activated: 'activée', dismissed: 'ignorée' };
+    const matchHtml = match
+      ? `<div class="meta" style="color:#15803d;">📩 Demande d'accès reçue (${matchLabel[match.status || 'pending'] || 'en attente'})</div>`
+      : '<div class="meta" style="color:#9ca3af;">Aucune demande d\'accès reçue pour l\'instant</div>';
+
+    const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-BE') : '—';
+    const convDate = r.convertedAt ? new Date(r.convertedAt).toLocaleDateString('fr-BE') : '';
+    const paidInfo = st === 'paid'
+      ? `<div class="meta">💶 Payé le ${escapeHtml(r.paidDate ? new Date(r.paidDate).toLocaleDateString('fr-BE') : '—')} · ${escapeHtml(String(r.paidAmount ?? '—'))} €</div>` : '';
+
+    let actions = '';
+    if (st === 'new') {
+      actions = `<button class="btn btn-primary" onclick="recoSetConverted('${r.docId}')">✅ Converti</button>`;
+    } else if (st === 'converted') {
+      actions = `<button class="btn btn-primary" onclick="recoSetPaid('${r.docId}')">💶 Payé</button>
+                 <button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
+    } else {
+      actions = `<button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <div class="card-info">
+          <strong>${escapeHtml(r.recommendedFirstName || '')} ${escapeHtml(r.recommendedLastName || '')}</strong>
+          ${r.recommendedSmartId ? `<span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(r.recommendedSmartId)}</span>` : ''}
+          <span class="badge" style="${meta.style}">${meta.label}</span>
+          <div class="meta">${escapeHtml(r.recommendedEmail || '')} · ${escapeHtml(r.recommendedPhone || '')}</div>
+          <div class="meta">🤝 Recommandé par <strong>${escapeHtml(r.recommenderName || '—')}</strong> (${escapeHtml(r.recommenderId || '—')}) · ${escapeHtml(r.recommenderPhone || '')} · ${escapeHtml(r.recommenderEmail || '')}</div>
+          <div class="meta">Reçue le ${escapeHtml(date)}${convDate ? ` · Convertie le ${escapeHtml(convDate)}` : ''}</div>
+          ${matchHtml}${dupHtml}${paidInfo}
+        </div>
+        <div class="card-actions">${actions}</div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+window.recoSetConverted = async function (docId) {
+  await updateDoc(doc(db, 'recommendations', docId), { status: 'converted', convertedAt: new Date().toISOString() });
+  showToast('Recommandation marquée comme convertie.');
+};
+
+window.recoSetPaid = async function (docId) {
+  const r = recoData.find(x => x.docId === docId);
+  if (!r || (r.status || 'new') !== 'converted') { showToast('Marque d\'abord la recommandation comme convertie.'); return; }
+  const raw = prompt('Montant de la commission payée (€) :', '50');
+  if (raw === null) return;
+  const amount = parseFloat(String(raw).replace(',', '.'));
+  if (isNaN(amount) || amount < 0) { alert('Montant invalide.'); return; }
+  await updateDoc(doc(db, 'recommendations', docId), { status: 'paid', paidAmount: amount, paidDate: new Date().toISOString() });
+  showToast('Commission marquée comme payée.');
+};
+
+window.recoStepBack = async function (docId) {
+  const r = recoData.find(x => x.docId === docId);
+  if (!r) return;
+  const st = r.status || 'new';
+  if (!confirm(st === 'paid' ? 'Annuler le paiement et repasser en Converti ?' : 'Repasser cette recommandation en Nouveau ?')) return;
+  if (st === 'paid') await updateDoc(doc(db, 'recommendations', docId), { status: 'converted', paidAmount: null, paidDate: null });
+  else await updateDoc(doc(db, 'recommendations', docId), { status: 'new', convertedAt: null });
+  showToast('Statut mis à jour.');
 };
 
 // --- Bugs & Suggestions (feedback envoyé par les consultants via le contact "Phil-Mobile") ---
@@ -7459,6 +7611,7 @@ const FAV_ITEMS = {
   'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
   'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },
   'menu-prospects':            { label: '🆕 Demandes d\'accès',             panelId: 'panel-prospects' },
+  'menu-recommendations':      { label: '🤝 Recommandations',              panelId: 'panel-recommendations' },
   'menu-consultants':          { label: '👥 Gestion des consultants',       panelId: 'panel-consultants' },
   'menu-agenda-create':        { label: '➕ Créer un événement',           panelId: 'panel-agenda-create' },
   'menu-agenda-list':          { label: '📅 Tous les événements',          panelId: 'panel-agenda-list' },
