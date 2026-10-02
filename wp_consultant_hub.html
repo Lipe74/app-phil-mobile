@@ -1332,6 +1332,7 @@ STATUT: independant
           <div id="panel-recommander" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 6px;font-size:16px;">🤝 Recommander l'application</h2>
             <div style="font-size:12px;color:#666;margin-bottom:14px;">Tu connais un consultant qui devrait utiliser l'application ? Envoie sa fiche ici. Il fait ensuite sa demande d'accès comme d'habitude.</div>
+            <div style="font-size:12px;font-weight:700;color:#9a3412;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:8px 10px;margin-bottom:14px;">ℹ️ Parrainage uniquement avec vos Directs (N1) — dans le doute, demandez-moi :)</div>
 
             <div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">👤 Vos coordonnées</div>
             <input id="reco-self-id" readonly placeholder="Votre ID Smart" style="width:100%;margin:4px 0;padding:10px;background:#f3f4f6;box-sizing:border-box;">
@@ -6091,8 +6092,10 @@ window.recoLoadList = async function () {
     if (!_recoList.length) { box.textContent = 'Aucune recommandation envoyée pour le moment.'; return; }
     var st = {
       new:       { l: '🕓 Envoyée',            s: 'background:#fff3e8;color:#f97316;' },
+      testing:   { l: '🧪 En test',            s: 'background:#f3e8ff;color:#7e22ce;' },
       converted: { l: '✅ Converti',           s: 'background:#dcfce7;color:#15803d;' },
-      paid:      { l: '💶 Commission payée',   s: 'background:#e0f2fe;color:#0369a1;' }
+      paid:      { l: '💶 Commission payée',   s: 'background:#e0f2fe;color:#0369a1;' },
+      lost:      { l: '❌ Annulée',            s: 'background:#fee2e2;color:#b91c1c;' }
     };
     box.innerHTML = _recoList.map(function (r) {
       var m = st[r.status] || st['new'];
