@@ -6251,7 +6251,11 @@ window.recoOpenInvoice = function (docId) {
     '<div style="font-size:16px;font-weight:800;color:#f97316;margin-bottom:4px;">🧾 Ma facture d\'apporteur d\'affaires</div>' +
     '<div style="font-size:12px;color:#666;margin-bottom:10px;">Apport : <b>' + crmEsc(who) + '</b> (' + crmEsc(reco.recommendedSmartId || '') + ') — 50 € TVAC. Ta facture est transmise directement à Phil-Mobile et tu en reçois une copie.</div>' +
     '<input id="rinv-name" placeholder="Nom ou société *" value="' + crmEsc(saved.name || u.fullName || '') + '" style="' + inp + '">' +
-    '<input id="rinv-address" placeholder="Adresse complète * (rue, n°, CP, ville)" value="' + crmEsc(saved.address || '') + '" style="' + inp + '">' +
+    '<input id="rinv-street" placeholder="Rue et numéro *" value="' + crmEsc(saved.street || '') + '" style="' + inp + '">' +
+    '<div style="display:flex;gap:6px;">' +
+    '<input id="rinv-zip" inputmode="numeric" maxlength="4" placeholder="Code postal *" value="' + crmEsc(saved.zip || '') + '" style="' + inp + 'flex:1;min-width:0;width:auto;">' +
+    '<input id="rinv-city" placeholder="Ville *" value="' + crmEsc(saved.city || '') + '" style="' + inp + 'flex:2;min-width:0;width:auto;">' +
+    '</div>' +
     '<div style="font-size:12px;font-weight:700;color:#9a3412;margin:8px 0 2px;">Es-tu franchisé de TVA ?</div>' +
     '<label style="margin-right:14px;font-size:13px;cursor:pointer;"><input type="radio" name="rinv-fr" value="yes" ' + (fr ? 'checked' : '') + ' onchange="recoInvToggle()"> Oui</label>' +
     '<label style="font-size:13px;cursor:pointer;"><input type="radio" name="rinv-fr" value="no" ' + (fr ? '' : 'checked') + ' onchange="recoInvToggle()"> Non</label>' +
@@ -6287,8 +6291,9 @@ window.recoGenerateInvoice = function (docId) {
   if (!reco) return;
   var g = function (id) { return (document.getElementById(id).value || '').trim(); };
   var fr = document.querySelector('input[name="rinv-fr"]:checked').value === 'yes';
-  var name = g('rinv-name'), address = g('rinv-address'), iban = g('rinv-iban'), vat = g('rinv-vat');
-  if (!name || !address) { alert('⚠️ Merci de compléter ton nom et ton adresse.'); return; }
+  var name = g('rinv-name'), street = g('rinv-street'), zip = g('rinv-zip'), city = g('rinv-city'), iban = g('rinv-iban'), vat = g('rinv-vat');
+  if (!name || !street || !city) { alert('⚠️ Merci de compléter ton nom, ta rue et ta ville.'); return; }
+  if (!/^\d{4}$/.test(zip)) { alert('⚠️ Merci de saisir un code postal belge à 4 chiffres.'); return; }
   if (!fr && !recoVatOk(vat)) { alert('⚠️ Ton numéro de TVA semble invalide (format BE0123456789).'); return; }
   if (!recoIbanOk(iban)) { alert('⚠️ Ton IBAN semble invalide. Vérifie les chiffres.'); return; }
 
@@ -6313,7 +6318,7 @@ window.recoGenerateInvoice = function (docId) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(150);
       doc.text('ÉMETTEUR', L, y); doc.text('FACTURÉ À', 110, y);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30);
-      var from = [name].concat(doc.splitTextToSize(address, 80));
+      var from = [name].concat(doc.splitTextToSize(street, 80)).concat([zip + ' ' + city]);
       from.push(fr ? 'TVA non applicable' : 'TVA : ' + recoVatFmt(vat));
       from.push('IBAN : ' + recoIbanFmt(iban));
       var to = [RECO_BILLTO.name, RECO_BILLTO.address, 'TVA : ' + RECO_BILLTO.vat, RECO_BILLTO.email];
@@ -6367,7 +6372,7 @@ window.recoGenerateInvoice = function (docId) {
       }).then(function () {
         recoNotifyAdmin(reco, number, now.toISOString()).catch(function (e) { console.log('Notification admin impossible:', e.message); });
         // Seuls le nom, l'adresse, la TVA et le régime sont mémorisés sur l'appareil (jamais l'IBAN)
-        try { localStorage.setItem('pm_reco_invoice', JSON.stringify({ name: name, address: address, vat: fr ? '' : recoVatFmt(vat), franchise: fr })); } catch (e) {}
+        try { localStorage.setItem('pm_reco_invoice', JSON.stringify({ name: name, street: street, zip: zip, city: city, vat: fr ? '' : recoVatFmt(vat), franchise: fr })); } catch (e) {}
         var modal = document.getElementById('reco-inv-modal');
         if (modal) modal.remove();
         pcToast('✅ Facture envoyée à Phil-Mobile !');
