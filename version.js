@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.28 - Reco temps réel";
+  scope.APP_VERSION = "14.30 - Facture PDF directe";
 })();

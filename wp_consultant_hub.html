@@ -535,7 +535,7 @@ Version stable : <span id="app-version-1">…</span>
         <div style="text-align:left;">
           <div style="font-size:12px;font-weight:800;color:#b45309;">Référencement</div>
           <div style="font-size:11px;color:#78350f;margin-top:2px;">Parraine <strong>3 consultants</strong> qui achètent l'application → reçois une <strong>licence gratuite d'un an</strong>.</div>
-          <div style="font-size:11px;color:#78350f;margin-top:4px;">Tu veux aller plus loin ? Sur présentation d'une <strong>facture d'apporteur d'affaires</strong>, reçois <strong>50 € HTVA</strong> par nouveau consultant supplémentaire parrainé.</div>
+          <div style="font-size:11px;color:#78350f;margin-top:4px;">Tu veux aller plus loin ? Sur présentation d'une <strong>facture d'apporteur d'affaires</strong>, reçois <strong>50 € TVAC</strong> par nouveau consultant supplémentaire parrainé.</div>
         </div>
       </div>
 
@@ -6048,7 +6048,7 @@ var _recoUnsub = null;
 var RECO_ST = {
   new:       { l: '🕓 Envoyée',            s: 'background:#fff3e8;color:#f97316;' },
   testing:   { l: '🧪 En test',            s: 'background:#f3e8ff;color:#7e22ce;' },
-  converted: { l: '✅ Converti',           s: 'background:#dcfce7;color:#15803d;' },
+  converted: { l: '✅ Acheté',             s: 'background:#dcfce7;color:#15803d;' },
   paid:      { l: '💶 Commission payée',   s: 'background:#e0f2fe;color:#0369a1;' },
   lost:      { l: '❌ Annulée',            s: 'background:#fee2e2;color:#b91c1c;' }
 };
@@ -6059,11 +6059,24 @@ function recoRender() {
   if (!_recoList.length) { box.textContent = 'Aucune recommandation envoyée pour le moment.'; return; }
   box.innerHTML = _recoList.map(function (r) {
     var m = RECO_ST[r.status] || RECO_ST['new'];
+    var btnCss = 'border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;';
+    var extra = '';
+    if (r.status === 'converted') {
+      if (r.invoiceSentAt) {
+        m = { l: '📨 Facture envoyée', s: 'background:#e0f2fe;color:#0369a1;' };
+      } else if (r.invoiceRequestedAt) {
+        m = { l: '🧾 Facture à envoyer', s: 'background:#fef9c3;color:#a16207;' };
+        extra = '<button onclick="recoOpenInvoice(\'' + r.docId + '\')" style="' + btnCss + 'background:#f97316;color:#fff;border:none;">🧾 Créer et envoyer ma facture</button>';
+      }
+    }
     var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-BE') : '';
-    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid #fde8cc;background:#fffaf7;border-radius:10px;padding:8px 12px;margin-bottom:6px;">' +
+    return '<div style="border:1px solid #fde8cc;background:#fffaf7;border-radius:10px;padding:8px 12px;margin-bottom:6px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
       '<div><div style="font-weight:700;color:#1a1a1a;">' + crmEsc((r.recommendedFirstName || '') + ' ' + (r.recommendedLastName || '')) + '</div>' +
       '<div style="font-size:11px;color:#888;">' + crmEsc(r.recommendedSmartId || '') + (date ? ' · ' + date : '') + '</div></div>' +
-      '<span style="font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;white-space:nowrap;' + m.s + '">' + m.l + '</span></div>';
+      '<span style="font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px;white-space:nowrap;' + m.s + '">' + m.l + '</span></div>' +
+      (extra ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + extra + '</div>' : '') +
+      '</div>';
   }).join('');
 }
 
@@ -6075,7 +6088,7 @@ window.recoLoadList = function () {
       window.query(window.collection(window.db, 'recommendations'), window.where('recommenderId', '==', window.pmCurrentUser.id)),
       function (snap) {
         _recoList = [];
-        snap.forEach(function (d) { _recoList.push(d.data()); });
+        snap.forEach(function (d) { _recoList.push(Object.assign({ docId: d.id }, d.data())); });
         _recoList.sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
         recoRender();
       },
@@ -6142,6 +6155,236 @@ window.recoSubmit = async function () {
     btn.disabled = false;
   }
 };
+// ===== Facture d'apporteur d'affaires (PDF généré dans le navigateur, envoyé dans Firebase Storage : factures/<id>/<numéro>.pdf) =====
+var RECO_BILLTO = {
+  name: 'Phil-Mobile By Zen-Connect',
+  address: 'Oudesmisestraat 20, 1700 Dilbeek',
+  vat: 'BE1035199737',
+  email: 'facturation@zen-connect.be'
+};
+var RECO_FEE_TTC = 50;
+
+function recoMoney(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+
+function recoIbanOk(v) {
+  var s = String(v || '').replace(/\s+/g, '').toUpperCase();
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(s)) return false;
+  var r = s.slice(4) + s.slice(0, 4), n = '';
+  for (var i = 0; i < r.length; i++) { var c = r.charCodeAt(i); n += (c >= 65 && c <= 90) ? (c - 55) : r[i]; }
+  var rem = 0;
+  for (var k = 0; k < n.length; k++) rem = (rem * 10 + Number(n[k])) % 97;
+  return rem === 1;
+}
+function recoIbanFmt(v) { return String(v || '').replace(/\s+/g, '').toUpperCase().replace(/(.{4})/g, '$1 ').trim(); }
+
+function recoVatOk(v) {
+  var d = String(v || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, '');
+  return /^[01]\d{9}$/.test(d) && (97 - (Number(d.slice(0, 8)) % 97)) === Number(d.slice(8, 10));
+}
+function recoVatFmt(v) { return 'BE' + String(v || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, ''); }
+
+function recoLoadPdfLib(cb) {
+  if (window.jspdf && window.jspdf.jsPDF) { cb(); return; }
+  var sc = document.createElement('script');
+  sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  sc.onload = cb;
+  sc.onerror = function () { alert('❌ Impossible de charger le générateur de PDF. Vérifie ta connexion.'); };
+  document.head.appendChild(sc);
+}
+
+function recoInvoiceNumberFor(reco) {
+  if (reco.invoiceNumber) return reco.invoiceNumber;
+  var year = new Date().getFullYear();
+  var prefix = window.pmCurrentUser.id + '-' + year + '-';
+  var n = _recoList.filter(function (x) { return x.invoiceNumber && String(x.invoiceNumber).indexOf(prefix) === 0; }).length + 1;
+  return prefix + ('00' + n).slice(-3);
+}
+
+async function recoUploadInvoice(path, blob) {
+  var tries = 0;
+  while ((!window.storage || !window.storageRef || !window.uploadBytes) && tries < 30) {
+    await new Promise(function (r) { setTimeout(r, 100); });
+    tries++;
+  }
+  if (!window.storage) throw new Error('Firebase Storage non disponible');
+  await window.uploadBytes(window.storageRef(window.storage, path), blob, { contentType: 'application/pdf' });
+}
+
+// Message interne au demandeur (admin) pour signaler que la facture est déposée
+async function recoNotifyAdmin(reco, number, nowIso) {
+  var u = window.pmCurrentUser;
+  var adminId = reco.invoiceRequestedBy || '';
+  if (!adminId && typeof PM_USERS !== 'undefined') {
+    var a = Object.keys(PM_USERS).map(function (k) { return PM_USERS[k]; }).filter(function (x) { return x.isAdmin; })[0];
+    adminId = a ? a.id : '';
+  }
+  if (!adminId) return;
+  var who = ((reco.recommendedFirstName || '') + ' ' + (reco.recommendedLastName || '')).trim();
+  var text = '📨 <b>Facture envoyée</b><br>Ma facture d\'apporteur d\'affaires <b>' + crmEsc(number) + '</b> pour ' + crmEsc(who) + ' est disponible dans ton admin (Recommandations).';
+  var plain = 'Facture ' + number + ' envoyée pour ' + who + '.';
+  var convId = pmConversationId(u.id, adminId);
+  await window.addDoc(window.collection(window.db, 'conversations', convId, 'messages'), {
+    senderId: u.id, senderName: u.fullName || u.name || u.id, text: text, createdAt: nowIso
+  });
+  await window.setDoc(window.doc(window.db, 'conversations', convId), {
+    participants: [u.id, adminId].sort(), lastMessage: plain.slice(0, 120), lastMessageAt: nowIso,
+    unreadBy: window.arrayUnion(adminId)
+  }, { merge: true });
+}
+
+window.recoOpenInvoice = function (docId) {
+  var reco = _recoList.filter(function (x) { return x.docId === docId; })[0];
+  if (!reco) return;
+  var old = document.getElementById('reco-inv-modal');
+  if (old) old.remove();
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem('pm_reco_invoice') || '{}') || {}; } catch (e) {}
+  var u = window.pmCurrentUser || {};
+  var who = ((reco.recommendedFirstName || '') + ' ' + (reco.recommendedLastName || '')).trim();
+  var fr = saved.franchise === true;
+  var inp = 'width:100%;margin:4px 0;padding:10px;box-sizing:border-box;';
+  var m = document.createElement('div');
+  m.id = 'reco-inv-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:12px;';
+  m.innerHTML =
+    '<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;max-height:92vh;overflow-y:auto;padding:18px;box-sizing:border-box;">' +
+    '<div style="font-size:16px;font-weight:800;color:#f97316;margin-bottom:4px;">🧾 Ma facture d\'apporteur d\'affaires</div>' +
+    '<div style="font-size:12px;color:#666;margin-bottom:10px;">Apport : <b>' + crmEsc(who) + '</b> (' + crmEsc(reco.recommendedSmartId || '') + ') — 50 € TVAC. Ta facture est transmise directement à Phil-Mobile et tu en reçois une copie.</div>' +
+    '<input id="rinv-name" placeholder="Nom ou société *" value="' + crmEsc(saved.name || u.fullName || '') + '" style="' + inp + '">' +
+    '<input id="rinv-address" placeholder="Adresse complète * (rue, n°, CP, ville)" value="' + crmEsc(saved.address || '') + '" style="' + inp + '">' +
+    '<div style="font-size:12px;font-weight:700;color:#9a3412;margin:8px 0 2px;">Es-tu franchisé de TVA ?</div>' +
+    '<label style="margin-right:14px;font-size:13px;cursor:pointer;"><input type="radio" name="rinv-fr" value="yes" ' + (fr ? 'checked' : '') + ' onchange="recoInvToggle()"> Oui</label>' +
+    '<label style="font-size:13px;cursor:pointer;"><input type="radio" name="rinv-fr" value="no" ' + (fr ? '' : 'checked') + ' onchange="recoInvToggle()"> Non</label>' +
+    '<input id="rinv-vat" placeholder="Ton n° de TVA * (BE0123456789)" value="' + crmEsc(saved.vat || '') + '" style="' + inp + '">' +
+    '<input id="rinv-iban" placeholder="Ton IBAN * (pour recevoir le paiement)" style="' + inp + '">' +
+    '<div id="rinv-amounts" style="font-size:12px;background:#fff7ed;border:1px solid #fdba74;border-radius:8px;padding:8px 10px;margin:8px 0;"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:10px;">' +
+    '<button onclick="document.getElementById(\'reco-inv-modal\').remove()" style="flex:1;background:#f3f4f6;color:#444;border:none;border-radius:10px;padding:11px;font-weight:700;cursor:pointer;">Annuler</button>' +
+    '<button id="rinv-generate" onclick="recoGenerateInvoice(\'' + docId + '\')" style="flex:2;background:#f97316;color:#fff;border:none;border-radius:10px;padding:11px;font-weight:700;cursor:pointer;">📄 Générer et envoyer</button>' +
+    '</div></div>';
+  document.body.appendChild(m);
+  recoInvToggle();
+};
+
+window.recoInvToggle = function () {
+  var checked = document.querySelector('input[name="rinv-fr"]:checked');
+  var fr = !!checked && checked.value === 'yes';
+  var vat = document.getElementById('rinv-vat');
+  if (vat) vat.style.display = fr ? 'none' : 'block';
+  var box = document.getElementById('rinv-amounts');
+  if (!box) return;
+  if (fr) {
+    box.innerHTML = '<b>Total : ' + recoMoney(RECO_FEE_TTC) + '</b><br><span style="color:#666;">Franchisé : pas de TVA sur la facture.</span>';
+  } else {
+    var ht = Math.round(RECO_FEE_TTC / 1.21 * 100) / 100;
+    var tva = Math.round((RECO_FEE_TTC - ht) * 100) / 100;
+    box.innerHTML = 'Total HTVA : ' + recoMoney(ht) + '<br>TVA 21 % : ' + recoMoney(tva) + '<br><b>Total TVAC : ' + recoMoney(RECO_FEE_TTC) + '</b>';
+  }
+};
+
+window.recoGenerateInvoice = function (docId) {
+  var reco = _recoList.filter(function (x) { return x.docId === docId; })[0];
+  if (!reco) return;
+  var g = function (id) { return (document.getElementById(id).value || '').trim(); };
+  var fr = document.querySelector('input[name="rinv-fr"]:checked').value === 'yes';
+  var name = g('rinv-name'), address = g('rinv-address'), iban = g('rinv-iban'), vat = g('rinv-vat');
+  if (!name || !address) { alert('⚠️ Merci de compléter ton nom et ton adresse.'); return; }
+  if (!fr && !recoVatOk(vat)) { alert('⚠️ Ton numéro de TVA semble invalide (format BE0123456789).'); return; }
+  if (!recoIbanOk(iban)) { alert('⚠️ Ton IBAN semble invalide. Vérifie les chiffres.'); return; }
+
+  var number = recoInvoiceNumberFor(reco);
+  var now = new Date();
+  var dateTxt = now.toLocaleDateString('fr-BE');
+  var who = ((reco.recommendedFirstName || '') + ' ' + (reco.recommendedLastName || '')).trim();
+  var ht = Math.round(RECO_FEE_TTC / 1.21 * 100) / 100;
+  var tva = Math.round((RECO_FEE_TTC - ht) * 100) / 100;
+
+  recoLoadPdfLib(function () {
+    try {
+      var doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      var L = 18, R = 192, y = 22;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(249, 115, 22);
+      doc.text('FACTURE', L, y);
+      doc.setFontSize(10); doc.setTextColor(60);
+      doc.setFont('helvetica', 'bold'); doc.text('N° ' + number, R, y - 6, { align: 'right' });
+      doc.setFont('helvetica', 'normal'); doc.text('Date : ' + dateTxt, R, y, { align: 'right' });
+
+      y = 40;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(150);
+      doc.text('ÉMETTEUR', L, y); doc.text('FACTURÉ À', 110, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30);
+      var from = [name].concat(doc.splitTextToSize(address, 80));
+      from.push(fr ? 'TVA non applicable' : 'TVA : ' + recoVatFmt(vat));
+      from.push('IBAN : ' + recoIbanFmt(iban));
+      var to = [RECO_BILLTO.name, RECO_BILLTO.address, 'TVA : ' + RECO_BILLTO.vat, RECO_BILLTO.email];
+      from.forEach(function (t, i) { doc.text(t, L, y + 6 + i * 5.5); });
+      to.forEach(function (t, i) { doc.text(t, 110, y + 6 + i * 5.5); });
+
+      y = 90;
+      doc.setDrawColor(249, 115, 22); doc.setLineWidth(0.6); doc.line(L, y, R, y);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(60);
+      doc.text('Description', L, y + 7); doc.text('Montant', R, y + 7, { align: 'right' });
+      doc.setLineWidth(0.2); doc.setDrawColor(200); doc.line(L, y + 10, R, y + 10);
+
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(30);
+      var desc = doc.splitTextToSize('Apport d\'affaires : présentation du consultant ' + who + ' (ID Smart ' + (reco.recommendedSmartId || '') + ') — acquisition de l\'application Phil-Mobile.', 120);
+      desc.forEach(function (t, i) { doc.text(t, L, y + 18 + i * 5.5); });
+      doc.text(recoMoney(fr ? RECO_FEE_TTC : ht), R, y + 18, { align: 'right' });
+
+      y = y + 18 + desc.length * 5.5 + 10;
+      doc.setDrawColor(200); doc.line(110, y, R, y);
+      doc.setFontSize(10.5);
+      if (fr) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total à payer', 110, y + 8); doc.text(recoMoney(RECO_FEE_TTC), R, y + 8, { align: 'right' });
+        y += 20;
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(90);
+        doc.text(doc.splitTextToSize('Régime de franchise de la taxe — TVA non applicable (art. 56bis du Code de la TVA).', 170), L, y);
+      } else {
+        doc.text('Total HTVA', 110, y + 8); doc.text(recoMoney(ht), R, y + 8, { align: 'right' });
+        doc.text('TVA 21 %', 110, y + 14); doc.text(recoMoney(tva), R, y + 14, { align: 'right' });
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total TVAC', 110, y + 22); doc.text(recoMoney(RECO_FEE_TTC), R, y + 22, { align: 'right' });
+        y += 30;
+      }
+
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30);
+      doc.text(doc.splitTextToSize('Paiement par virement sur le compte ' + recoIbanFmt(iban) + ' — communication : ' + number + '.', 170), L, y + 8);
+
+      var fileName = 'Facture-' + number + '.pdf';
+      var blob = doc.output('blob');
+      var path = 'factures/' + window.pmCurrentUser.id + '/' + number + '.pdf';
+      doc.save(fileName); // copie pour le sponsor
+
+      var genBtn = document.getElementById('rinv-generate');
+      if (genBtn) { genBtn.disabled = true; genBtn.textContent = 'Envoi en cours…'; }
+
+      // Envoi dans Storage, puis marquage "envoyée" (seulement si l'envoi a réussi)
+      recoUploadInvoice(path, blob).then(function () {
+        var upd = { invoiceFranchise: fr, invoicePdfPath: path, invoiceSentAt: now.toISOString() };
+        if (!reco.invoiceNumber) { upd.invoiceNumber = number; upd.invoiceDate = now.toISOString(); }
+        return window.updateDoc(window.doc(window.db, 'recommendations', docId), upd);
+      }).then(function () {
+        recoNotifyAdmin(reco, number, now.toISOString()).catch(function (e) { console.log('Notification admin impossible:', e.message); });
+        // Seuls le nom, l'adresse, la TVA et le régime sont mémorisés sur l'appareil (jamais l'IBAN)
+        try { localStorage.setItem('pm_reco_invoice', JSON.stringify({ name: name, address: address, vat: fr ? '' : recoVatFmt(vat), franchise: fr })); } catch (e) {}
+        var modal = document.getElementById('reco-inv-modal');
+        if (modal) modal.remove();
+        pcToast('✅ Facture envoyée à Phil-Mobile !');
+      }).catch(function (err) {
+        console.error(err);
+        if (genBtn) { genBtn.disabled = false; genBtn.textContent = '📄 Générer et envoyer'; }
+        alert("❌ Envoi impossible : ta facture n'a pas été transmise (vérifie ta connexion). Une copie PDF a été téléchargée sur ton appareil, tu peux réessayer.");
+      });
+    } catch (err) {
+      console.error(err);
+      alert('❌ Erreur lors de la génération du PDF.');
+    }
+  });
+};
+
+// ===== FIN FACTURE =====
+
 // ===== FIN RECOMMANDATIONS =====
 
 // ===== Promotions (lecture seule, synchronisée avec admin.html) =====

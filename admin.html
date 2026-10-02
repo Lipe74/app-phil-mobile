@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.25 - Recos test/perdu</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.27 - Facture PDF</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -3455,14 +3455,14 @@ window.dismissProspect = async function (docId) {
   // (liste mise à jour automatiquement par le listener temps réel)
 };
 
-// --- Recommandations (sponsor → nouveau consultant) : Nouveau → Converti → Payé ---
+// --- Recommandations (sponsor → nouveau consultant) : Nouveau → En test → Acheté → Payé (+ Perdu) ---
 let recoUnsub = null;
 let recoFilter = 'all';
 let recoData = [];
 const RECO_STATUS = {
   new:       { label: 'Nouveau',  style: 'background:#fff3e8;color:#f97316;' },
   testing:   { label: 'En test',  style: 'background:#f3e8ff;color:#7e22ce;' },
-  converted: { label: 'Converti', style: 'background:#dcfce7;color:#15803d;' },
+  converted: { label: 'Acheté',   style: 'background:#dcfce7;color:#15803d;' },
   paid:      { label: 'Payé',     style: 'background:#e0f2fe;color:#0369a1;' },
   lost:      { label: 'Perdu',    style: 'background:#fee2e2;color:#b91c1c;' }
 };
@@ -3497,7 +3497,7 @@ async function renderRecommendations() {
   // Filtres
   const counts = { all: recoData.length, new: 0, testing: 0, converted: 0, paid: 0, lost: 0 };
   recoData.forEach(r => { const k = r.status || 'new'; counts[k] = (counts[k] || 0) + 1; });
-  const chips = [['all', 'Tous'], ['new', 'Nouveau'], ['testing', 'En test'], ['converted', 'Converti'], ['paid', 'Payé'], ['lost', 'Perdu']];
+  const chips = [['all', 'Tous'], ['new', 'Nouveau'], ['testing', 'En test'], ['converted', 'Acheté'], ['paid', 'Payé'], ['lost', 'Perdu']];
   filters.innerHTML = chips.map(([k, l]) =>
     `<button class="btn ${recoFilter === k ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setRecoFilter('${k}')">${l} (${counts[k]})</button>`
   ).join('');
@@ -3545,6 +3545,9 @@ async function renderRecommendations() {
     const paidInfo = st === 'paid'
       ? `<div class="meta">💶 Payé le ${escapeHtml(r.paidDate ? new Date(r.paidDate).toLocaleDateString('fr-BE') : '—')} · ${escapeHtml(String(r.paidAmount ?? '—'))} €</div>` : '';
 
+    const fmtD = v => v ? new Date(v).toLocaleDateString('fr-BE') : '';
+    const invoiceInfo = (st === 'converted' || st === 'paid') && r.invoiceRequestedAt
+      ? `<div class="meta" style="color:#0369a1;">🧾 Facture demandée le ${escapeHtml(fmtD(r.invoiceRequestedAt))}${r.invoiceSentAt ? ` · <strong>📨 envoyée le ${escapeHtml(fmtD(r.invoiceSentAt))}</strong>` : ' · en attente du sponsor'}${r.invoiceNumber ? ` · n° ${escapeHtml(r.invoiceNumber)}` : ''}${r.invoiceFranchise === true ? ' · franchisé' : r.invoiceFranchise === false ? ' · TVA 21 %' : ''}</div>` : '';
     const testInfo = st === 'testing' && r.testingAt ? `<div class="meta">🧪 En test depuis le ${escapeHtml(new Date(r.testingAt).toLocaleDateString('fr-BE'))}</div>` : '';
     const lostInfo = st === 'lost'
       ? `<div class="meta" style="color:#b91c1c;">❌ Perdu le ${escapeHtml(r.lostAt ? new Date(r.lostAt).toLocaleDateString('fr-BE') : '—')}${r.lostReason ? ' · ' + escapeHtml(r.lostReason) : ''}</div>` : '';
@@ -3552,17 +3555,22 @@ async function renderRecommendations() {
     let actions = '';
     if (st === 'new') {
       actions = `<button class="btn btn-primary" onclick="recoSetTesting('${r.docId}')">🧪 En test</button>
-                 <button class="btn btn-primary" onclick="recoSetConverted('${r.docId}')">✅ Converti</button>
+                 <button class="btn btn-primary" onclick="recoSetConverted('${r.docId}')">✅ Acheté</button>
                  <button class="btn btn-secondary" onclick="recoSetLost('${r.docId}')">❌ Perdu</button>`;
     } else if (st === 'testing') {
-      actions = `<button class="btn btn-primary" onclick="recoSetConverted('${r.docId}')">✅ Converti</button>
+      actions = `<button class="btn btn-primary" onclick="recoSetConverted('${r.docId}')">✅ Acheté</button>
                  <button class="btn btn-secondary" onclick="recoSetLost('${r.docId}')">❌ Perdu</button>
                  <button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
     } else if (st === 'converted') {
-      actions = `<button class="btn btn-primary" onclick="recoSetPaid('${r.docId}')">💶 Payé</button>
+      actions = `${!r.invoiceRequestedAt ? `<button class="btn btn-primary" onclick="recoRequestInvoice('${r.docId}')">🧾 Demander la facture</button>` : r.invoiceSentAt ? `<button class="btn btn-secondary" onclick="recoRequestInvoice('${r.docId}')">🔁 Redemander</button>` : ''}
+                 <button class="btn btn-primary" onclick="recoSetPaid('${r.docId}')">💶 Payé</button>
                  <button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
     } else {
       actions = `<button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
+    }
+
+    if (r.invoicePdfPath && (st === 'converted' || st === 'paid')) {
+      actions = `<button class="btn btn-primary" onclick="recoDownloadInvoice('${r.docId}')">📄 Télécharger la facture</button>` + actions;
     }
 
     const card = document.createElement('div');
@@ -3575,8 +3583,8 @@ async function renderRecommendations() {
           <span class="badge" style="${meta.style}">${meta.label}</span>
           <div class="meta">${escapeHtml(r.recommendedEmail || '')} · ${escapeHtml(r.recommendedPhone || '')}</div>
           <div class="meta">🤝 Recommandé par <strong>${escapeHtml(r.recommenderName || '—')}</strong> (${escapeHtml(r.recommenderId || '—')}) · ${escapeHtml(r.recommenderPhone || '')} · ${escapeHtml(r.recommenderEmail || '')}</div>
-          <div class="meta">Reçue le ${escapeHtml(date)}${convDate ? ` · Convertie le ${escapeHtml(convDate)}` : ''}</div>
-          ${matchHtml}${dupHtml}${testInfo}${lostInfo}${paidInfo}
+          <div class="meta">Reçue le ${escapeHtml(date)}${convDate ? ` · Acheté le ${escapeHtml(convDate)}` : ''}</div>
+          ${matchHtml}${dupHtml}${testInfo}${invoiceInfo}${lostInfo}${paidInfo}
         </div>
         <div class="card-actions">${actions}</div>
       </div>`;
@@ -3591,7 +3599,54 @@ window.recoSetTesting = async function (docId) {
 
 window.recoSetConverted = async function (docId) {
   await updateDoc(doc(db, 'recommendations', docId), { status: 'converted', convertedAt: new Date().toISOString() });
-  showToast('Recommandation marquée comme convertie.');
+  showToast('Recommandation marquée comme achetée.');
+};
+
+// Télécharge la facture PDF du sponsor depuis Firebase Storage
+window.recoDownloadInvoice = async function (docId) {
+  const r = recoData.find(x => x.docId === docId);
+  if (!r || !r.invoicePdfPath) { showToast('Aucune facture disponible.'); return; }
+  const w = window.open('', '_blank');
+  try {
+    const url = await getDownloadURL(storageRef(storage, r.invoicePdfPath));
+    if (w) w.location.href = url; else window.location.href = url;
+  } catch (err) {
+    if (w) w.close();
+    console.log('Téléchargement facture impossible:', err.message);
+    alert('❌ Facture introuvable ou accès refusé (vérifie les règles Firebase Storage).');
+  }
+};
+
+// Demande de facture : message interne au sponsor + marquage de la fiche
+window.recoRequestInvoice = async function (docId) {
+  const r = recoData.find(x => x.docId === docId);
+  if (!r || (r.status || 'new') !== 'converted') { showToast('La demande de facture se fait sur une fiche « Acheté ».'); return; }
+  if (!r.recommenderId || !adminOwnId) { showToast('Sponsor ou compte admin introuvable.'); return; }
+  const who = `${r.recommendedFirstName || ''} ${r.recommendedLastName || ''}`.trim() || 'Ton recommandé';
+  const askMsg = r.invoiceSentAt
+    ? `Le sponsor a déjà envoyé une facture pour ${who}. Lui demander de la refaire (même numéro, remplace l'ancienne) ?`
+    : `Envoyer au sponsor (${r.recommenderName || r.recommenderId}) la demande de facture pour ${who} ?`;
+  if (!confirm(askMsg)) return;
+  const now = new Date().toISOString();
+  const text = `🧾 <b>Facture d'apporteur d'affaires</b><br>${escapeHtml(who)} a acheté l'application. Merci de m'envoyer ta facture de <b>50 € TVAC</b>.<br>Tu peux la générer directement dans <b>Recommander l'application → Mes recommandations</b>, puis cliquer sur « J'ai envoyé ma facture ». Merci ! 🙏`;
+  const plain = `Facture d'apporteur d'affaires : ${who} a acheté l'application. Merci d'envoyer ta facture de 50 € TVAC.`;
+  try {
+    const convId = pmConvId(adminOwnId, r.recommenderId);
+    await addDoc(collection(db, 'conversations', convId, 'messages'), {
+      senderId: adminOwnId, senderName: 'Phil-Mobile', text, createdAt: now
+    });
+    await setDoc(doc(db, 'conversations', convId), {
+      participants: [adminOwnId, r.recommenderId].sort(),
+      lastMessage: plain.slice(0, 120),
+      lastMessageAt: now,
+      unreadBy: arrayUnion(r.recommenderId)
+    }, { merge: true });
+    await updateDoc(doc(db, 'recommendations', docId), { invoiceRequestedAt: now, invoiceRequestedBy: adminOwnId, invoiceSentAt: null });
+    showToast('Demande de facture envoyée au sponsor.');
+  } catch (err) {
+    console.log('Demande de facture impossible:', err.message);
+    alert('❌ Impossible d\'envoyer la demande. Réessaie.');
+  }
 };
 
 window.recoSetLost = async function (docId) {
@@ -3603,7 +3658,7 @@ window.recoSetLost = async function (docId) {
 
 window.recoSetPaid = async function (docId) {
   const r = recoData.find(x => x.docId === docId);
-  if (!r || (r.status || 'new') !== 'converted') { showToast('Marque d\'abord la recommandation comme convertie.'); return; }
+  if (!r || (r.status || 'new') !== 'converted') { showToast('Marque d\'abord la recommandation comme achetée.'); return; }
   const raw = prompt('Montant de la commission payée (€) :', '50');
   if (raw === null) return;
   const amount = parseFloat(String(raw).replace(',', '.'));
@@ -3616,9 +3671,9 @@ window.recoStepBack = async function (docId) {
   const r = recoData.find(x => x.docId === docId);
   if (!r) return;
   const st = r.status || 'new';
-  if (!confirm(st === 'paid' ? 'Annuler le paiement et repasser en Converti ?' : 'Repasser cette recommandation en Nouveau ?')) return;
+  if (!confirm(st === 'paid' ? 'Annuler le paiement et repasser en Acheté ?' : 'Repasser cette recommandation en Nouveau ?')) return;
   if (st === 'paid') await updateDoc(doc(db, 'recommendations', docId), { status: 'converted', paidAmount: null, paidDate: null });
-  else await updateDoc(doc(db, 'recommendations', docId), { status: 'new', convertedAt: null, testingAt: null, lostAt: null, lostReason: null });
+  else await updateDoc(doc(db, 'recommendations', docId), { status: 'new', convertedAt: null, testingAt: null, lostAt: null, lostReason: null, invoiceRequestedAt: null, invoiceRequestedBy: null, invoiceSentAt: null, invoiceNumber: null, invoiceDate: null, invoiceFranchise: null, invoicePdfPath: null });
   showToast('Statut mis à jour.');
 };
 
