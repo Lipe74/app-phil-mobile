@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.27 - Recos test/perdu";
+  scope.APP_VERSION = "14.28 - Reco temps réel";
 })();
