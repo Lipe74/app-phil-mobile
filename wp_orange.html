@@ -654,6 +654,8 @@ async function loadProductsFromFirestore() {
         target.hidden = !!d.hidden;
         if (d.condition !== undefined) target.condition = d.condition;
         if (d.oneshot !== undefined) target.oneshot = !!d.oneshot;
+        // Quantité maximale réglable depuis l'admin (valable aussi pour les produits d'origine)
+        if (d.max !== undefined && d.max !== null && Number(d.max) >= 1) target.max = Number(d.max);
       } else {
         // Nouveau produit ajouté depuis l'admin : ajout à la liste
         target = { id, name: d.name || id, sub: d.sub || '', price: Number(d.price) || 0, max: Number(d.max) || 9, custom: true, oneshot: !!d.oneshot, hidden: !!d.hidden };
@@ -665,6 +667,8 @@ async function loadProductsFromFirestore() {
       // Initialise la quantité seulement à la toute première apparition du produit — ne jamais
       // écraser une quantité déjà choisie par le consultant lors d'une mise à jour live suivante.
       if (window.qtyMap[id] === undefined) window.qtyMap[id] = 0;
+      // Si le maximum a été baissé depuis l'admin, on ramène une quantité déjà choisie à ce maximum
+      if (target.max && window.qtyMap[id] > target.max) window.qtyMap[id] = target.max;
     });
 
     // Retire les produits masqués depuis l'admin et retrie chaque catégorie selon l'ordre défini
@@ -1224,7 +1228,7 @@ const productList = {
   { id:"inet_fixe", name:"Ligne Fixe", sub:"La ligne fixe Orange destinée aux particuliers, ou Soho", price:12, max:2, countsAsInternet:false, condition:"Attention : Pas compatible avec les systèmes d’alarme, ni avec les fax ou modems analogiques" }
   ],
   tv: [
-  { id:"tv_deco", name:"Extra décodeur TV", sub:"L’Extra décodeur TV permet de profiter de la télévision digitale Orange sur un deuxième téléviseur, dans une autre pièce.", price:9 },
+  { id:"tv_deco", name:"Extra décodeur TV", sub:"L’Extra décodeur TV permet de profiter de la télévision digitale Orange sur un deuxième téléviseur, dans une autre pièce.", price:9, max:5 },
   { id:"tv_light", name:"Orange TV Lite", sub:"<div style=\"text-align: justify;\">Version économique pour regarder les chaînes principales uniquement via <b>l'application mobile</b> ou la tablette</div>", price:10, condition:"Nécessite une TV Smart pour l'installation de l'application Orange TV" },
   { id:"tv_orange", name:"Orange TV classique", sub:"<div style=\"text-align: justify;\">Accès complet à plus de <b>70 chaînes</b> avec l'installation d'un décodeur TV traditionnel pour votre salon</div>", price:20 },
   { id:"custom_tv_orange-sport-orange-football_mslqu04d", name:"Orange Sport / Orange Football", sub:"<div style=\"text-align: justify;\">Orange Sports réunit les anciennes offres Orange Sport et Orange Football avec huit chaînes consacrées au sport belge et international.</div><div style=\"text-align: justify;\">L’offre permet de suivre la Jupiler Pro League, les grands championnats européens et d’autres sports, sur la TV ou via Orange TV Go.</div>", price:25, max:9, custom:true },
@@ -1232,11 +1236,11 @@ const productList = {
   { id:"custom_tv_orange-tv-plus_mtllkmu2", name:"Orange TV Plus", sub:"<div style=\"text-align: justify;\">Orange TV Plus réunit jusqu’à 70 chaînes, Netflix Standard et un décodeur TV de dernière génération pour profiter d’un large choix de divertissements.</div><div style=\"text-align: justify;\">Les programmes sont également accessibles en déplacement via l’application Orange TV Go.</div>", price:12, max:1, custom:true }
   ],
   mobile: [
-  { id:"mob_small", name:"Mobile Small", sub:"<div style=\"text-align: justify;\">Orange Mobile Small coûte 15 €/mois et comprend 12 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div>", price:15, max:9, condition:"Après 12 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
-  { id:"mob_medium", name:"Mobile Medium", sub:"<div style=\"text-align: justify;\">Orange Mobile Medium coûte 23 €/mois et comprend 70 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:23, max:9, condition:"Après 70 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
-  { id:"mob_large", name:"Mobile Large", sub:"<div style=\"text-align: justify;\">Orange Mobile Large coûte 29 €/mois et comprend 140 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:29, max:9, condition:"Après 140 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
-  { id:"mob_unlim", name:"Mobile Unlimited", sub:"<div style=\"text-align: justify;\">Orange Mobile Unlimited coûte 40 €/mois et comprend les appels, SMS et données illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:40, max:9, condition:"Après 300 Go, la vitesse est réduite à 512 kb/s ; 500 Mo sont aussi inclus dans certaines destinations hors UE." },
-  { id:"mob_child", name:"Mobile Child", sub:"<div style=\"text-align: justify;\">Orange Mobile Child coûte 5 €/mois et comprend 3 Go, 150 minutes d’appels et les SMS illimités, avec protection en ligne et hors forfait bloqué.</div>", price:5, max:9, condition:"Attention le Child doit être accompagné d'un autre Plan tarifaire récent (Small, Medium, Large ou Unlimited). Limitation 2 Child par compte Client" },
+  { id:"mob_small", name:"Mobile Small", sub:"<div style=\"text-align: justify;\">Orange Mobile Small coûte 15 €/mois et comprend 12 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div>", price:15, max:8, condition:"Après 12 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
+  { id:"mob_medium", name:"Mobile Medium", sub:"<div style=\"text-align: justify;\">Orange Mobile Medium coûte 23 €/mois et comprend 70 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:23, max:8, condition:"Après 70 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
+  { id:"mob_large", name:"Mobile Large", sub:"<div style=\"text-align: justify;\">Orange Mobile Large coûte 29 €/mois et comprend 140 Go, ainsi que les appels et SMS illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:29, max:8, condition:"Après 140 Go, la vitesse est réduite à 512 kb/s jusqu’au prochain cycle de facturation." },
+  { id:"mob_unlim", name:"Mobile Unlimited", sub:"<div style=\"text-align: justify;\">Orange Mobile Unlimited coûte 40 €/mois et comprend les appels, SMS et données illimités en Belgique et dans l’UE.</div><div style=\"text-align: justify;\"><br></div>", price:40, max:8, condition:"Après 300 Go, la vitesse est réduite à 512 kb/s ; 500 Mo sont aussi inclus dans certaines destinations hors UE." },
+  { id:"mob_child", name:"Mobile Child", sub:"<div style=\"text-align: justify;\">Orange Mobile Child coûte 5 €/mois et comprend 3 Go, 150 minutes d’appels et les SMS illimités, avec protection en ligne et hors forfait bloqué.</div>", price:5, max:8, condition:"Attention le Child doit être accompagné d'un autre Plan tarifaire récent (Small, Medium, Large ou Unlimited). Limitation 2 Child par compte Client" },
   { id:"custom_mobile_carte-extra-surf-mobile_mtllux5f", name:"Carte Extra Surf Mobile", sub:"La Surf Extra Card d'Orange Belgique est une seconde carte SIM physique ou virtuelle reliée à votre abonnement mobile principal. Elle sert uniquement à partager le volume internet (data) de votre forfait avec un autre appareil.", price:3, max:3, custom:true, condition:"Maximum 3 cartes par Numéro." }
   ],
   netflix: [

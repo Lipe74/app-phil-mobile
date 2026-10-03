@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.27 - Facture PDF</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.28 - Qté max produits</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -5713,6 +5713,9 @@ const PRODUITS_ORANGE_CATEGORIES = [
   { key: 'disney', label: '✨ Disney+' },
   { key: 'options', label: '⚙️ Options & Frais' }
 ];
+// Quantité maximale par défaut des produits d'origine (tout produit absent de cette liste = 1).
+// Réglable produit par produit depuis "Produits & tarifs" (champ Qté max, enregistré dans Firestore).
+const PRODUITS_ORANGE_DEFAULT_MAX = { inet_start: 2, inet_zen: 2, inet_giga: 2, inet_fixe: 2, tv_deco: 5, mob_small: 8, mob_medium: 8, mob_large: 8, mob_unlim: 8, mob_child: 8, opt_booster: 5, opt_surf: 9 };
 const PRODUITS_ORANGE_DEFAULTS = [
   { id: 'inet_start', category: 'internet', name: 'Internet Start', sub: "Vitesse jusqu'à 200MB", price: 49 },
   { id: 'inet_zen', category: 'internet', name: 'Internet Zen', sub: "Vitesse jusqu'à 500MB", price: 58 },
@@ -5794,7 +5797,7 @@ function loadProduitsOrangeAdmin() {
       name: (stored[def.id] && stored[def.id].name) || def.name,
       sub: (stored[def.id] && stored[def.id].sub !== undefined) ? stored[def.id].sub : def.sub,
       price: (stored[def.id] && stored[def.id].price !== undefined) ? stored[def.id].price : def.price,
-      max: (stored[def.id] && stored[def.id].max) || 9,
+      max: (stored[def.id] && Number(stored[def.id].max) >= 1) ? Number(stored[def.id].max) : (PRODUITS_ORANGE_DEFAULT_MAX[def.id] || 1),
       order: (stored[def.id] && stored[def.id].order !== undefined) ? stored[def.id].order : idx,
       hidden: !!(stored[def.id] && stored[def.id].hidden),
       condition: (stored[def.id] && stored[def.id].condition) || '',
@@ -5836,6 +5839,10 @@ function loadProduitsOrangeAdmin() {
           <div style="flex:1;min-width:90px;">
             <label style="font-size:11px;">Prix (€)</label>
             <input type="number" step="0.01" id="po-${p.id}-price" value="${p.price}">
+          </div>
+          <div style="flex:1;min-width:70px;">
+            <label style="font-size:11px;" title="Nombre maximum que le consultant peut ajouter (1 à 99)">Qté max</label>
+            <input type="number" min="1" max="99" step="1" id="po-${p.id}-max" value="${p.max}">
           </div>
           <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:6px 0;">
             <label style="display:flex;align-items:center;gap:5px;font-size:11px;white-space:nowrap;cursor:pointer;">
@@ -6004,6 +6011,15 @@ window.moveProduitOrange = async function (categoryKey, id, direction) {
 
 window.saveProduitsOrangeCategorie = async function (categoryKey) {
   const items = (window._produitsOrangeMerged || []).filter(p => p.category === categoryKey && !p.hidden);
+  // Contrôle des quantités max avant d'enregistrer (1 à 99)
+  for (const p of items) {
+    const mEl = document.getElementById(`po-${p.id}-max`);
+    const raw = mEl ? mEl.value.trim() : '';
+    if (raw !== '') {
+      const v = Number(raw);
+      if (!Number.isInteger(v) || v < 1 || v > 99) { alert(`Quantité max invalide pour « ${p.name} » : saisis un nombre entier de 1 à 99.`); return; }
+    }
+  }
   try {
     await Promise.all(items.map(p => {
       const name = document.getElementById(`po-${p.id}-name`).value.trim();
@@ -6014,13 +6030,16 @@ window.saveProduitsOrangeCategorie = async function (categoryKey) {
       const data = {
         category: p.category, name: name || p.name, sub, price: isNaN(price) ? p.price : price, condition
       };
+      const maxVal = parseInt(document.getElementById(`po-${p.id}-max`).value, 10);
+      const maxOk = !isNaN(maxVal) && maxVal >= 1 && maxVal <= 99;
+      if (maxOk) data.max = maxVal;
       if (categoryKey === 'options') {
         const oneshotEl = document.getElementById(`po-${p.id}-oneshot`);
         data.oneshot = oneshotEl ? oneshotEl.checked : !!p.oneshot;
       }
       if (p.custom) {
         data.custom = true;
-        data.max = p.max;
+        data.max = maxOk ? maxVal : p.max;
         if (categoryKey === 'internet') data.countsAsInternet = p.countsAsInternet !== false;
       }
       return setDoc(doc(db, 'produitsOrange', p.id), data, { merge: true });
@@ -6052,7 +6071,6 @@ window.exportProduitsEtPromosSecours = async function () {
     // Qté max des produits d'origine : jamais modifiable ni stockée depuis cet admin aujourd'hui —
     // restituée ici pour générer un code fidèle à celui déjà en place dans wp_orange.html. À adapter
     // manuellement ici si ces limites changent un jour dans wp_orange.html.
-    const DEFAULT_MAX = { inet_start: 2, inet_zen: 2, inet_giga: 2, inet_fixe: 2, opt_booster: 5, opt_surf: 9 };
     const DEFAULT_COUNTS_AS_INTERNET_FALSE = new Set(['inet_fixe']);
 
     const buckets = { internet: [], tv: [], mobile: [], netflix: [], disney: [], options: [] };
@@ -6067,7 +6085,8 @@ window.exportProduitsEtPromosSecours = async function () {
         sub: (s && s.sub !== undefined) ? s.sub : def.sub,
         price: (s && s.price !== undefined) ? Number(s.price) : def.price
       };
-      if (DEFAULT_MAX[def.id]) item.max = DEFAULT_MAX[def.id];
+      const mx = (s && Number(s.max) >= 1) ? Number(s.max) : PRODUITS_ORANGE_DEFAULT_MAX[def.id];
+      if (mx) item.max = mx;
       if (DEFAULT_COUNTS_AS_INTERNET_FALSE.has(def.id)) item.countsAsInternet = false;
       if ((s && s.oneshot !== undefined) ? !!s.oneshot : !!def.oneshot) item.oneshot = true;
       const condition = (s && s.condition) || '';

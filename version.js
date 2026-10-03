@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.31 - Adresse facture";
+  scope.APP_VERSION = "14.32 - Qté max produits";
 })();
