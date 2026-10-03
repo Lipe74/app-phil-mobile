@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.34 - Cadres simulateur";
+  scope.APP_VERSION = "14.35 - Cadres tricolores blocs";
 })();
