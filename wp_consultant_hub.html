@@ -6045,6 +6045,7 @@ window.recoOpen = function () {
 };
 
 var _recoUnsub = null;
+var _recoResend = {};
 var RECO_ST = {
   new:       { l: '🕓 Envoyée',            s: 'background:#fff3e8;color:#f97316;' },
   testing:   { l: '🧪 En test',            s: 'background:#f3e8ff;color:#7e22ce;' },
@@ -6061,6 +6062,16 @@ function recoRender() {
     var m = RECO_ST[r.status] || RECO_ST['new'];
     var btnCss = 'border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;';
     var extra = '';
+    if (r.status === 'new' || r.status === 'testing') {
+      if (r.invitationSentAt && !_recoResend[r.docId]) {
+        extra = '<span style="font-size:12px;color:#15803d;font-weight:600;">📲 Invitation envoyée le ' + new Date(r.invitationSentAt).toLocaleDateString('fr-BE') +
+                (r.invitationChannel === 'mail' ? ' (mail)' : ' (WhatsApp)') + '</span>' +
+                '<button onclick="recoResend(\'' + r.docId + '\')" style="background:none;border:none;color:#9ca3af;font-size:11px;text-decoration:underline;cursor:pointer;padding:0 4px;">Renvoyer</button>';
+      } else {
+        extra = '<button onclick="recoInvite(\'' + r.docId + '\',\'wa\')" style="' + btnCss + 'background:#16a34a;color:#fff;border:none;">💬 Inviter sur WhatsApp</button>' +
+                '<button onclick="recoInvite(\'' + r.docId + '\',\'mail\')" style="' + btnCss + 'background:#fff;color:#f97316;border:1px solid #f97316;">✉️ Inviter par mail</button>';
+      }
+    }
     if (r.status === 'converted') {
       if (r.invoiceSentAt) {
         m = { l: '📨 Facture envoyée', s: 'background:#e0f2fe;color:#0369a1;' };
@@ -6147,7 +6158,7 @@ window.recoSubmit = async function () {
     });
     ['reco-smartid', 'reco-firstname', 'reco-lastname', 'reco-phone', 'reco-email'].forEach(function (id) { document.getElementById(id).value = ''; });
     document.getElementById('reco-consent').checked = false;
-    pcToast('✅ Recommandation envoyée !');
+    pcToast('✅ Recommandation envoyée ! Invite maintenant la personne depuis la liste ci-dessous.');
   } catch (err) {
     console.error(err);
     alert("❌ Erreur lors de l'envoi de la recommandation.");
@@ -6155,6 +6166,71 @@ window.recoSubmit = async function () {
     btn.disabled = false;
   }
 };
+// ===== Invitation du recommandé (WhatsApp / mail, sans service d'envoi : le sponsor valide l'envoi lui-même) =====
+var RECO_APP_URL = 'https://app.phil-mobile.be/wp_consultant_hub.html';
+
+// GSM belge (0475 24 02 05, +32 475…, 0032 475…) -> format international sans "+" attendu par wa.me
+function recoWaNumber(raw) {
+  var d = String(raw || '').replace(/\D/g, '');
+  if (d.indexOf('00') === 0) d = d.slice(2);
+  else if (d.charAt(0) === '0') d = '32' + d.slice(1);
+  return (d.length >= 9 && d.length <= 15) ? d : '';
+}
+
+function recoInviteText(r) {
+  var first = String(r.recommendedFirstName || '').trim();
+  var sponsor = String(r.recommenderName || '').trim().split(/\s+/)[0] || 'Un consultant';
+  return 'Salut ' + first + ' ! ' + sponsor + " t'a recommandé l'application Phil-Mobile, l'outil des consultants Smart SN. " +
+    "Tu peux maintenant t'inscrire : démo gratuite de 3 jours ou accès standard 👉 " +
+    RECO_APP_URL + '?reco=' + encodeURIComponent(r.recommenderId || '');
+}
+
+window.recoResend = function (docId) { _recoResend[docId] = true; recoRender(); };
+
+window.recoInvite = function (docId, channel) {
+  var r = _recoList.filter(function (x) { return x.docId === docId; })[0];
+  if (!r || r.status === 'lost') return;
+  var text = recoInviteText(r);
+  if (channel === 'mail') {
+    var subject = (String(r.recommenderName || '').trim().split(/\s+/)[0] || 'Un consultant') + " t'a recommandé l'application Phil-Mobile";
+    window.location.href = 'mailto:' + encodeURIComponent(String(r.recommendedEmail || '').trim()).replace(/%40/g, '@') +
+      '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
+  } else {
+    var num = recoWaNumber(r.recommendedPhone);
+    window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+  }
+  // Mémorise l'invitation (le sponsor valide l'envoi dans son application, l'app ne peut pas le vérifier)
+  delete _recoResend[docId];
+  window.updateDoc(window.doc(window.db, 'recommendations', docId), {
+    invitationSentAt: new Date().toISOString(),
+    invitationChannel: channel === 'mail' ? 'mail' : 'whatsapp'
+  }).catch(function (e) { console.log('Enregistrement invitation impossible:', e.message); });
+};
+
+// Lien d'invitation ?reco=ID_SPONSOR : pré-remplit "Recommandé par" et ouvre les tarifs sur la page de connexion
+(function recoDeepLink() {
+  try {
+    var id = new URLSearchParams(window.location.search).get('reco');
+    if (!id || !/^[A-Za-z0-9_-]{2,40}$/.test(id)) return;
+    var run = function () {
+      var inp = document.getElementById('req-recommended-by');
+      if (inp && !inp.value) inp.value = id;
+      var w = document.getElementById('info-section-wrapper');
+      var b = document.getElementById('btn-info-toggle');
+      if (w && (w.style.maxHeight === '' || w.style.maxHeight === '0px')) {
+        w.style.maxHeight = w.scrollHeight + 'px';
+        if (b) b.innerHTML = '✕ Fermer &nbsp;▴';
+      }
+      setTimeout(function () {
+        if (w) w.style.maxHeight = w.scrollHeight + 'px';
+        if (b) b.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 600);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+  } catch (e) { /* lien sans effet : le formulaire reste utilisable normalement */ }
+})();
+// ===== FIN INVITATION =====
+
 // ===== Facture d'apporteur d'affaires (PDF généré dans le navigateur, envoyé dans Firebase Storage : factures/<id>/<numéro>.pdf) =====
 var RECO_BILLTO = {
   name: 'Phil-Mobile By Zen-Connect',
