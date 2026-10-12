@@ -1,0 +1,210 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Formulaire public
+    match /prospects/{document} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+    // Recommandations d'application (hub > Recommander l'application, suivi dans admin.html)
+    // Creation : consultant connecte uniquement, champs limites, statut force a 'new' (impossible de s'auto-marquer Converti/Paye).
+    // Lecture / modification / suppression : connectes uniquement (la liste du hub est filtree sur recommenderId).
+    match /recommendations/{docId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'recommenderId', 'recommenderName', 'recommenderPhone', 'recommenderEmail',
+          'recommendedSmartId', 'recommendedFirstName', 'recommendedLastName',
+          'recommendedPhone', 'recommendedEmail', 'consent', 'status', 'createdAt'
+        ])
+        && request.resource.data.status == 'new'
+        && request.resource.data.consent == true
+        && request.resource.data.recommenderId is string
+        && request.resource.data.recommendedSmartId is string
+        && request.resource.data.recommendedSmartId.size() > 0
+        && request.resource.data.recommendedEmail is string
+        && request.resource.data.recommendedEmail.size() <= 100;
+      allow read, update, delete: if request.auth != null;
+    }
+    // Prolongations / achats de comptes existants (hub public : "Prolonger mon app", ecran d'expiration)
+    // Creation publique STRICTEMENT limitee : champs fixes, statut 'pending', montants imposes (36,18 ou 180,29 TVAC).
+    // Aucune verification publique de l'ID Smart : l'admin controle a la validation du paiement.
+    // Lecture / modification / suppression : connectes uniquement.
+    match /renewals/{docId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'kind', 'smartId', 'fullName', 'company', 'email', 'street', 'zip', 'city', 'vat',
+          'amountHtva', 'amountTvac', 'ogm', 'status', 'createdAt'
+        ])
+        && request.resource.data.status == 'pending'
+        && ((request.resource.data.kind == 'renewal' && request.resource.data.amountHtva == 29.9 && request.resource.data.amountTvac == 36.18)
+         || (request.resource.data.kind == 'upgrade' && request.resource.data.amountHtva == 149 && request.resource.data.amountTvac == 180.29))
+        && request.resource.data.smartId is string && request.resource.data.smartId.size() >= 2 && request.resource.data.smartId.size() <= 40
+        && request.resource.data.fullName is string && request.resource.data.fullName.size() >= 2 && request.resource.data.fullName.size() <= 120
+        && request.resource.data.company is string && request.resource.data.company.size() <= 120
+        && request.resource.data.email is string && request.resource.data.email.size() >= 5 && request.resource.data.email.size() <= 100
+        && request.resource.data.street is string && request.resource.data.street.size() >= 2 && request.resource.data.street.size() <= 120
+        && request.resource.data.zip is string && request.resource.data.zip.size() == 4
+        && request.resource.data.city is string && request.resource.data.city.size() >= 1 && request.resource.data.city.size() <= 80
+        && request.resource.data.vat is string && request.resource.data.vat.size() == 12
+        && request.resource.data.ogm is string && request.resource.data.ogm.size() == 20;
+      allow read, update, delete: if request.auth != null;
+    }
+    // Compteur central des numeros de facture (admin.html) : connectes uniquement (regle generale)
+    // Demandes du site phil-mobile.be (formulaires publics, sans login)
+    match /webLeads/{document} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+    // Avis clients phil-mobile.be : lecture publique (site), ecriture reservee a l'admin
+    match /avisWeb/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Video de recrutement phil-mobile.be : lecture publique (site), ecriture reservee a l'admin
+    match /settings/recrutementVideo {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Video de vente phil-mobile.be : lecture publique (site), ecriture reservee a l'admin
+    match /settings/venteVideo {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Video des promotions phil-mobile.be (page videos.html) : lecture publique (site), ecriture reservee a l'admin
+    match /settings/promotionVideo {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Bandeaux d'info promotions (wp_orange.html) : lecture publique (site), ecriture reservee a l'admin
+    match /settings/promoBanners {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Periode globale des promos temporaires (wp_orange.html) : lecture publique (site), ecriture reservee a l'admin
+    match /settings/promoGlobalDate {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ===== QR Code prospects (wp_contact.html) =====
+    // Mode Pilote / Tous : lecture publique (page de contact), ecriture reservee aux connectes (admin.html)
+    match /settings/qrMode {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Copie allegee des consultants (nom, tel, email, photo, actif, expiration) : lecture publique
+    match /profilsPublics/{cid} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Le consultant doit etre actif, non expire, et le mode doit l'autoriser (Tous, ou dans la liste pilote)
+    function qrProfilOk(cid) {
+      let p = get(/databases/$(database)/documents/profilsPublics/$(cid)).data;
+      let q = get(/databases/$(database)/documents/settings/qrMode).data;
+      return p.active == true
+        && (p.expiresAtMs == null || request.time.toMillis() < p.expiresAtMs)
+        && (q.mode == 'all' || cid in q.pilotIds);
+    }
+    // Champ texte optionnel : chaine de taille limitee
+    function qrStr(d, k, max) {
+      return d.get(k, '') is string && d.get(k, '').size() <= max;
+    }
+    // Controles communs aux fiches clients et futurs consultants
+    function qrCommonOk(d) {
+      return d.consentementRGPD == true
+        && d.origine == 'QR'
+        && d.statut == 'Nouveau'
+        && d.consultantId is string
+        && d.nom is string && d.nom.size() > 1 && d.nom.size() <= 120
+        && qrStr(d, 'prenom', 60) && qrStr(d, 'nomFamille', 60)
+        && d.tel is string && d.tel.size() >= 8 && d.tel.size() <= 24
+        && d.email is string && d.email.size() >= 5 && d.email.size() <= 100
+        && qrStr(d, 'commentaire', 1000)
+        && qrProfilOk(d.consultantId);
+    }
+    function qrClientOk(d) {
+      return qrCommonOk(d)
+        && d.type in ['Particulier', 'Société']
+        && d.source in ['Orange', 'Eneco', 'Orange + Eneco']
+        && d.provenance == 'Terrain'
+        && qrStr(d, 'societe', 100) && qrStr(d, 'tva', 20)
+        && qrStr(d, 'opMobile', 40) && qrStr(d, 'numMobile', 40)
+        && qrStr(d, 'opInternet', 40) && qrStr(d, 'numInternet', 40)
+        && qrStr(d, 'aFixe', 5) && qrStr(d, 'dateFinContrat', 10)
+        && qrStr(d, 'fournisseurEnergie', 40)
+        && (d.get('montantMobile', null) == null || d.get('montantMobile', null) is number)
+        && (d.get('montantInternet', null) == null || d.get('montantInternet', null) is number);
+    }
+    function qrConsultantOk(d) {
+      return qrCommonOk(d)
+        && d.source == 'QR Code'
+        && d.presentation == 'Non présentée'
+        && d.statutPro in ['Salarié', 'Indépendant', 'Chômage', 'Autres revenus', 'Sans revenus']
+        && d.province is string && d.province.size() > 0 && d.province.size() <= 40
+        && qrStr(d, 'tva', 20) && qrStr(d, 'disponibilite', 40);
+    }
+    // Creation publique UNIQUEMENT via le QR (champs limites + controles ci-dessus).
+    // Lecture / modification / suppression : connectes uniquement (regle generale en bas du fichier).
+    match /prospectsClients/{docId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'consultantId', 'nom', 'prenom', 'nomFamille', 'tel', 'email', 'statut', 'origine',
+          'consentementRGPD', 'consentementDate', 'dateCreation', 'dateMaj',
+          'type', 'societe', 'tva', 'source', 'provenance',
+          'opMobile', 'numMobile', 'montantMobile', 'opInternet', 'numInternet', 'montantInternet',
+          'aFixe', 'dateFinContrat', 'fournisseurEnergie', 'commentaire'
+        ]) && qrClientOk(request.resource.data);
+    }
+    match /prospectsConsultants/{docId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'consultantId', 'nom', 'prenom', 'nomFamille', 'tel', 'email', 'statut', 'origine',
+          'consentementRGPD', 'consentementDate', 'dateCreation', 'dateMaj',
+          'source', 'statutPro', 'tva', 'province', 'disponibilite', 'presentation', 'commentaire'
+        ]) && qrConsultantOk(request.resource.data);
+    }
+
+    // Fidelite : acces public pour les clients
+    match /lylou_vely/fidelite/clients/{document} {
+      allow read, write: if true;
+    }
+    // Marches : lecture publique (site), ecriture reservee a l'admin
+    match /lylou_vely/marches/items/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Avis Google : lecture publique (site), ecriture reservee a l'admin
+    match /lylou_vely/avis/items/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Articles boutique : lecture publique (site boutique), ecriture reservee a l'admin
+    match /lylou_vely/articles {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Commandes boutique en ligne : creation publique (client passe commande), lecture/modification reservees a l'admin
+    match /lylou_vely/commandes/items/{document} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+    // Caisse Lylou-Vely - auth requise
+    match /lylou_vely/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Produits "Le Sans Gluten de Christine" : lecture publique (boutique), ecriture reservee a l'admin
+    match /christine/produits/items/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Avis Google "Le Sans Gluten de Christine" : lecture publique (site), ecriture reservee a l'admin
+    match /christine/avis/items/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Tout le reste reserve aux utilisateurs connectes
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

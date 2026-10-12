@@ -501,6 +501,7 @@ Version stable : <span id="app-version-1">…</span>
         <div style="font-size:10px;font-weight:700;color:#9a3412;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🔑 Achat licence</div>
         <div style="font-size:28px;font-weight:800;color:#f97316;line-height:1.1;">149 €</div>
         <div style="font-size:11px;font-weight:600;color:#9a3412;">HTVA · paiement unique</div>
+        <div style="font-size:10px;color:#b45309;margin-top:2px;">soit 180,29 € TVAC · 1<sup>re</sup> année incluse</div>
       </div>
 
       <div style="width:1px;background:#fde8cc;align-self:stretch;margin:4px 0;"></div>
@@ -508,46 +509,24 @@ Version stable : <span id="app-version-1">…</span>
       <!-- Renouvellement -->
       <div style="flex:1;min-width:130px;padding:0 14px;">
         <div style="font-size:10px;font-weight:700;color:#9a3412;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px;">🔄 Renouvellement annuel</div>
-        <div style="font-size:13px;font-weight:600;color:#ccc;text-decoration:line-through;line-height:1.2;">49,99 € HTVA</div>
-        <div style="font-size:28px;font-weight:800;color:#f97316;line-height:1.1;">29,99 €</div>
+        <div style="font-size:28px;font-weight:800;color:#f97316;line-height:1.1;">29,90 €</div>
         <div style="font-size:11px;font-weight:600;color:#9a3412;">HTVA · MAJ incluses</div>
-        <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;border-radius:20px;margin-top:4px;">🏷️ Promo sans date de fin</div>
+        <div style="font-size:10px;color:#b45309;margin-top:2px;">soit 36,18 € TVAC</div>
       </div>
     </div>
 
     <div style="font-size:11px;color:#9a3412;margin-bottom:12px;">Facture · Dépense professionnelle déductible</div>
 
-    <!-- Ligne 2 : Offres spéciales -->
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-
-      <!-- -10% 2e licence -->
-      <div style="background:#fff;border:1px solid #fde8cc;border-radius:10px;padding:9px 14px;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">👥</span>
-        <div style="text-align:left;">
-          <div style="font-size:12px;font-weight:700;color:#ea580c;">-10% sur la 2<sup>e</sup> licence</div>
-          <div style="font-size:11px;color:#777;">Tu parraines un 2<sup>e</sup> consultant ? Il bénéficie de -10% à l'achat.</div>
-        </div>
-      </div>
-
-      <!-- Référencement -->
-      <div style="background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid #f59e0b;border-radius:10px;padding:9px 14px;display:flex;align-items:flex-start;gap:10px;">
-        <span style="font-size:22px;">🤝</span>
-        <div style="text-align:left;">
-          <div style="font-size:12px;font-weight:800;color:#b45309;">Référencement</div>
-          <div style="font-size:11px;color:#78350f;margin-top:2px;">Parraine <strong>3 consultants</strong> qui achètent l'application → reçois une <strong>licence gratuite d'un an</strong>.</div>
-          <div style="font-size:11px;color:#78350f;margin-top:4px;">Tu veux aller plus loin ? Sur présentation d'une <strong>facture d'apporteur d'affaires</strong>, reçois <strong>50 € TVAC</strong> par nouveau consultant supplémentaire parrainé.</div>
-        </div>
-      </div>
-
-    </div>
-
     <!-- Boutons -->
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;">
-      <button onclick="openAccessFormWith('demo')" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+      <button onclick="openAccessFormWith('demo')" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
         🧪 Essai 3 jours
       </button>
-      <button onclick="toggleAccessForm()" style="background:#f97316;color:#fff;border:1.5px solid #f97316;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
-        🛒 Commander l'app
+      <button onclick="openAccessFormWith('achat')" style="background:#f97316;color:#fff;border:1.5px solid #f97316;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+        🛒 Commander l'application
+      </button>
+      <button onclick="renewOpen({kind:'renewal'})" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+        🔄 Prolonger mon app pour un an
       </button>
     </div>
 
@@ -591,6 +570,16 @@ Version stable : <span id="app-version-1">…</span>
 
   <input id="req-recommended-by" placeholder="Recommandé par (ID Smart) — facultatif" style="width:100%;margin:10px 0 5px;padding:10px;">
 
+  <!-- Adresse de facturation : uniquement pour une commande de l'application -->
+  <div id="req-address-block" style="display:none;margin-top:10px;">
+    <h4 style="margin:6px 0;">Adresse de facturation</h4>
+    <input id="req-street" placeholder="Rue et numéro *" style="width:100%;margin:5px 0;padding:10px;">
+    <div style="display:flex;gap:6px;">
+      <input id="req-zip" inputmode="numeric" maxlength="4" placeholder="Code postal *" style="width:38%;margin:5px 0;padding:10px;">
+      <input id="req-city" placeholder="Ville *" style="width:100%;margin:5px 0;padding:10px;">
+    </div>
+  </div>
+
   <h4 style="margin-top:15px;">Upline</h4>
 
   <input id="req-upline" placeholder="Nom de l'Upline" style="width:100%;margin:5px 0;padding:10px;">
@@ -608,16 +597,21 @@ Version stable : <span id="app-version-1">…</span>
     <div style="font-weight:700;color:#ea580c;margin-bottom:8px;">🎯 Demande d'essai de l'application</div>
     <div style="font-size:12px;color:#9ca3af;margin-bottom:10px;">Facultatif — laissez sur "Accès standard" pour une demande normale.</div>
     <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;cursor:pointer;font-size:14px;">
-      <input type="radio" name="req-access-type" id="req-access-none" value="none" checked style="margin-top:2px;accent-color:#f97316;">
+      <input type="radio" name="req-access-type" id="req-access-none" value="none" checked onchange="accessTypeChanged()" style="margin-top:2px;accent-color:#f97316;">
       <span>Accès standard</span>
     </label>
     <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;cursor:pointer;font-size:14px;">
-      <input type="radio" name="req-access-type" id="req-access-demo" value="demo" style="margin-top:2px;accent-color:#f97316;">
+      <input type="radio" name="req-access-type" id="req-access-demo" value="demo" onchange="accessTypeChanged()" style="margin-top:2px;accent-color:#f97316;">
       <span>🧪 <strong>Démo de 3 jours</strong></span>
+    </label>
+    <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;cursor:pointer;font-size:14px;">
+      <input type="radio" name="req-access-type" id="req-access-achat" value="achat" onchange="accessTypeChanged()" style="margin-top:2px;accent-color:#f97316;">
+      <span>🛒 <strong>Commander l'application</strong> — 149,00 € HTVA (180,29 € TVAC), 1<sup>re</sup> année incluse</span>
     </label>
   </div>
 
   <button
+    id="req-submit"
     onclick="submitAccessRequest()"
     style="margin-top:15px;width:100%;background:#16a34a;color:white;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;">
     Envoyer ma demande
@@ -2055,11 +2049,18 @@ window.checkAndApplyExpiration = async function(consultantId) {
     if (!snap.exists()) return { expired: false, daysLeft: null };
 
     const data = snap.data();
+    // Consultant "À vie" (case cochée dans l'admin) : jamais bloqué, aucun bandeau
+    if (data.lifetime === true) return { expired: false, daysLeft: null, lifetime: true };
     if (!data.expirationDate) return { expired: false, daysLeft: null };
 
     const expDate = new Date(data.expirationDate);
     const now = new Date();
     const daysLeft = Math.ceil((expDate - now) / 86400000);
+    const consultant = {
+      id: consultantId, name: data.name || '', fullName: data.fullName || data.name || '', email: data.email || '',
+      payStatus: data.payStatus || (Number(data.paidAmount) > 0 ? 'paid' : 'none'),
+      isTest: !!data.isTestAccount || ['test2j', 'newbc30'].indexOf(data.accountType) !== -1
+    };
 
     if (daysLeft < 0) {
       try {
@@ -2067,10 +2068,10 @@ window.checkAndApplyExpiration = async function(consultantId) {
       } catch(e) {
         console.log('Désactivation automatique impossible:', e.message);
       }
-      return { expired: true, daysLeft, isTestAccount: !!data.isTestAccount, accountType: data.accountType || 'standard' };
+      return { expired: true, daysLeft, isTestAccount: !!data.isTestAccount, accountType: data.accountType || 'standard', consultant, expirationDate: data.expirationDate };
     }
 
-    return { expired: false, daysLeft, isTestAccount: !!data.isTestAccount, accountType: data.accountType || 'standard' };
+    return { expired: false, daysLeft, isTestAccount: !!data.isTestAccount, accountType: data.accountType || 'standard', consultant, expirationDate: data.expirationDate };
 
   } catch(e) {
     console.log('Vérification expiration impossible:', e.message);
@@ -2083,7 +2084,7 @@ function pmExpirationMsg(info) {
   if (info.expired) {
     if (t === 'test2j')   return "⏱️ Votre période d'essai est terminée. Merci de procéder au paiement afin de prolonger votre utilisation.";
     if (t === 'newbc30')  return "⏱️ Votre période d'essai de 30 jours est terminée. Merci de procéder au paiement afin de prolonger votre utilisation.";
-    return "🔒 Votre accès a expiré. Merci de contacter l'administrateur pour le renouveler.";
+    return "🔒 Votre accès a expiré. Renouvelez-le ci-dessous pour retrouver l'accès à l'application.";
   }
   // Bannière avertissement (pas encore expiré)
   const j = info.daysLeft;
@@ -2091,13 +2092,13 @@ function pmExpirationMsg(info) {
                                      : `⏱️ Période d'essai : encore ${j} jour(s). Procédez au paiement pour continuer après l'essai.`;
   if (t === 'newbc30') return j <= 0 ? "⏱️ Votre période de 30 jours se termine aujourd'hui. Procédez au paiement pour continuer."
                                      : `⏱️ Période 30 jours : encore ${j} jour(s). Procédez au paiement pour prolonger votre accès.`;
-  return `⚠️ Votre abonnement expire dans ${j} jour(s). Contactez l'administrateur pour le renouveler.`;
+  return `⚠️ Votre accès expire dans ${j} jour(s)` + (info.expirationDate ? ` (le ${new Date(info.expirationDate).toLocaleDateString('fr-BE')})` : '') + '. Renouvelez-le en quelques clics.';
 }
 
 function showExpirationBanner(info) {
   if (info.daysLeft === null) return;
 
-  const threshold = (info.accountType === 'test2j' || info.isTestAccount) ? 999 : 14;
+  const threshold = (info.accountType === 'test2j' || info.isTestAccount) ? 999 : 30;
   if (info.daysLeft > threshold) return;
 
   const existing = document.getElementById('expiration-banner');
@@ -2112,7 +2113,20 @@ function showExpirationBanner(info) {
     border-top:1px solid ${info.daysLeft <= 3 ? '#ef4444' : '#f97316'};
     border-bottom:1px solid ${info.daysLeft <= 3 ? '#ef4444' : '#f97316'};
   `;
-  banner.textContent = pmExpirationMsg(info);
+  banner.textContent = pmExpirationMsg(info) + ' ';
+  // Bouton de renouvellement / commande selon le type de compte (données du consultant déjà préremplies)
+  const c = info.consultant || null;
+  window._payConsultant = c;
+  const isTest = !!(c && c.isTest), isPaid = !!(c && c.payStatus === 'paid');
+  const mkBtn = (label, kind) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = 'margin:0 4px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;';
+    b.onclick = () => window.payOpenFor(kind);
+    banner.appendChild(b);
+  };
+  if (isTest || !isPaid) mkBtn('🛒 Commander (' + payMoney(PAY.purchase.tvac) + ' TVAC)', 'upgrade');
+  if (!isTest) mkBtn('🔄 Renouveler (' + payMoney(PAY.renewal.tvac) + ' TVAC)', 'renewal');
 
   const newsBanner = document.getElementById('news-banner');
   if (newsBanner && newsBanner.parentNode) {
@@ -4918,6 +4932,7 @@ function startExpirationWatcher(consultantId) {
         clearInterval(pmExpirationIntervalId);
         pmExpirationIntervalId = null;
         alert(pmExpirationMsg(check));
+        pmStoreRenewalWall(check);
         if (window.signOut) await window.signOut();
         location.reload();
       }
@@ -5897,6 +5912,17 @@ window.submitAccessRequest = async function(){
   // Type d'accès demandé
   const accessType = document.querySelector('input[name="req-access-type"]:checked')?.value || 'none';
 
+  // Commande de l'application : adresse obligatoire + communication structurée pour le virement
+  const isPurchase = accessType === 'achat';
+  const street = (document.getElementById('req-street')?.value || '').trim();
+  const zip = (document.getElementById('req-zip')?.value || '').trim();
+  const city = (document.getElementById('req-city')?.value || '').trim();
+  if (isPurchase) {
+    if (!street || !city) { alert("⚠️ Merci de compléter l'adresse de facturation (rue et ville)."); return; }
+    if (!/^\d{4}$/.test(zip)) { alert("⚠️ Code postal belge à 4 chiffres attendu."); return; }
+  }
+  const ogm = isPurchase ? payOgm() : null;
+
   try {
 
     await window.addDoc(window.collection(window.db, "prospects"), {
@@ -5930,6 +5956,11 @@ window.submitAccessRequest = async function(){
 
       recommendedBy: document.getElementById('req-recommended-by').value.trim(),
 
+      ...(isPurchase ? {
+        street: street, zip: zip, city: city,
+        amountHtva: PAY.purchase.htva, amountTvac: PAY.purchase.tvac, ogm: ogm.display
+      } : {}),
+
       status: "pending",
       createdAt: new Date().toISOString()
 
@@ -5939,7 +5970,8 @@ window.submitAccessRequest = async function(){
     [
       'req-smartid', 'req-firstname', 'req-lastname', 'req-company', 'req-vat',
       'req-email', 'req-phone', 'req-asp', 'req-startdate',
-      'req-upline', 'req-upline-id', 'req-upline-phone', 'req-upline-email', 'req-comment', 'req-recommended-by'
+      'req-upline', 'req-upline-id', 'req-upline-phone', 'req-upline-email', 'req-comment', 'req-recommended-by',
+      'req-street', 'req-zip', 'req-city'
     ].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
@@ -5950,10 +5982,20 @@ window.submitAccessRequest = async function(){
     });
     const radioNone = document.getElementById('req-access-none');
     if (radioNone) radioNone.checked = true;
+    if (window.accessTypeChanged) window.accessTypeChanged();
 
-    alert(
-      "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
-    );
+    if (isPurchase) {
+      payShowQr({
+        title: '🛒 Commande enregistrée',
+        intro: 'Règle <strong>' + payMoney(PAY.purchase.tvac) + '</strong> par virement pour activer ton accès (licence + 1re année).',
+        amount: PAY.purchase.tvac, ogm: ogm.display, digits: ogm.digits,
+        after: 'Ta facture te sera envoyée par WhatsApp ou par e-mail. Dès réception du paiement, ton compte est activé et tu reçois tes accès.'
+      });
+    } else {
+      alert(
+        "✅ Votre demande a bien été enregistrée. Nous vous recontacterons prochainement."
+      );
+    }
 
   } catch(err){
 
@@ -6465,6 +6507,201 @@ window.recoGenerateInvoice = function (docId) {
 };
 
 // ===== FIN FACTURE =====
+
+// ===== ACHAT / RENOUVELLEMENT : QR de paiement (virement SEPA) + demandes de prolongation =====
+// Les montants sont aussi recalculés et revérifiés côté admin au moment de la facture.
+var PAY = {
+  iban: 'BE08732086423213', ibanFmt: 'BE08 7320 8642 3213', name: 'Zen-Connect',
+  purchase: { htva: 149, tva: 31.29, tvac: 180.29 },
+  renewal:  { htva: 29.9, tva: 6.28,  tvac: 36.18 }
+};
+function payEsc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function payMoney(n) { return Number(n).toFixed(2).replace('.', ',') + ' €'; }
+function payVatOk(v) {
+  var d = String(v || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, '');
+  return /^[01]\d{9}$/.test(d) && (97 - (Number(d.slice(0, 8)) % 97)) === Number(d.slice(8, 10));
+}
+function payVatFmt(v) { return 'BE' + String(v || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, ''); }
+
+// Communication structurée belge : 10 chiffres + 2 chiffres de contrôle (modulo 97) -> +++123/4567/89012+++
+function payOgm() {
+  var base = String(Date.now()).slice(-7) + ('00' + Math.floor(Math.random() * 1000)).slice(-3);
+  var r = Number(base) % 97;
+  var digits = base + ('0' + (r === 0 ? 97 : r)).slice(-2);
+  return { digits: digits, display: '+++' + digits.slice(0, 3) + '/' + digits.slice(3, 7) + '/' + digits.slice(7) + '+++' };
+}
+
+// Contenu du QR de virement (norme EPC / SEPA Credit Transfer, version 002, UTF-8, ASCII uniquement ici)
+function payEpc(amount, digits) {
+  return ['BCD', '002', '1', 'SCT', '', PAY.name, PAY.iban, 'EUR' + Number(amount).toFixed(2), '', digits].join('\n');
+}
+
+function payLoadQrLib(cb) {
+  if (window.QRCode) { cb(); return; }
+  var sc = document.createElement('script');
+  sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  sc.onload = cb;
+  sc.onerror = function () { var b = document.getElementById('pay-qr'); if (b) b.textContent = 'QR indisponible : utilise l\'IBAN ci-dessous.'; };
+  document.head.appendChild(sc);
+}
+
+function payCopy(txt, btn) {
+  var done = function () { if (btn) { var o = btn.textContent; btn.textContent = '✅ Copié'; setTimeout(function () { btn.textContent = o; }, 1500); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function () {});
+  else { var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
+}
+window.payCopyIban = function (b) { payCopy(PAY.ibanFmt, b); };
+window.payCopyOgm = function (b) { payCopy(b.getAttribute('data-ogm'), b); };
+
+window.payClose = function () { var m = document.getElementById('pay-modal'); if (m) m.remove(); };
+
+function payOpenModal(inner) {
+  payClose();
+  var m = document.createElement('div');
+  m.id = 'pay-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;overflow:auto;padding:16px;box-sizing:border-box;';
+  m.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px;box-sizing:border-box;font-family:Arial,sans-serif;color:#1a1a1a;margin:20px auto;text-align:left;">' + inner + '</div>';
+  document.body.appendChild(m);
+  return m;
+}
+
+// Écran de paiement : QR + IBAN + montant + communication
+function payShowQr(o) {
+  var btn = 'border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#fff3e8;color:#f97316;';
+  payOpenModal(
+    '<div style="font-size:17px;font-weight:800;color:#f97316;margin-bottom:4px;">' + payEsc(o.title) + '</div>' +
+    '<div style="font-size:13px;color:#555;margin-bottom:12px;">' + o.intro + '</div>' +
+    '<div id="pay-qr" style="display:flex;justify-content:center;margin:6px 0 10px;min-height:220px;align-items:center;"></div>' +
+    '<div style="text-align:center;font-size:12px;color:#6b7280;margin-bottom:10px;">Scanne avec l\'application de ta banque (virement)</div>' +
+    '<div style="background:#f8f8f8;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;">' +
+      '<div>Montant : <strong>' + payMoney(o.amount) + ' TVAC</strong></div>' +
+      '<div>Bénéficiaire : <strong>' + PAY.name + '</strong></div>' +
+      '<div>IBAN : <strong>' + PAY.ibanFmt + '</strong> <button style="' + btn + '" onclick="payCopyIban(this)">Copier</button></div>' +
+      '<div>Communication : <strong>' + payEsc(o.ogm) + '</strong> <button style="' + btn + '" data-ogm="' + payEsc(o.ogm) + '" onclick="payCopyOgm(this)">Copier</button></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:#555;margin-top:10px;">' + o.after + '</div>' +
+    '<button onclick="payClose()" style="margin-top:14px;width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">J\'ai compris</button>'
+  );
+  payLoadQrLib(function () {
+    var box = document.getElementById('pay-qr');
+    if (!box) return;
+    box.innerHTML = '';
+    new window.QRCode(box, { text: payEpc(o.amount, o.digits), width: 220, height: 220, colorDark: '#000000', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+  });
+}
+
+// ----- Formulaire de prolongation / achat (consultant existant) -----
+// opts : { kind: 'renewal' | 'upgrade', prefill: { smartId, fullName, email } }
+window.renewOpen = function (opts) {
+  opts = opts || {};
+  var kind = opts.kind === 'upgrade' ? 'upgrade' : 'renewal';
+  var p = Object.assign({}, opts.prefill || {});
+  try { var saved = JSON.parse(localStorage.getItem('pm_pay_data') || '{}'); ['company', 'street', 'zip', 'city', 'vat', 'fullName', 'email', 'smartId'].forEach(function (k) { if (!p[k] && saved[k]) p[k] = saved[k]; }); } catch (e) {}
+  var price = kind === 'upgrade' ? PAY.purchase : PAY.renewal;
+  var inp = 'width:100%;margin:4px 0;padding:10px;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;font-size:14px;';
+  payOpenModal(
+    '<div style="font-size:17px;font-weight:800;color:#f97316;margin-bottom:4px;">' + (kind === 'upgrade' ? '🛒 Commander l\'application' : '🔄 Prolonger mon app pour un an') + '</div>' +
+    '<div style="font-size:13px;color:#555;margin-bottom:10px;">' +
+      (kind === 'upgrade'
+        ? 'Licence + 1re année : <strong>' + payMoney(PAY.purchase.htva) + ' HTVA</strong> (' + payMoney(price.tvac) + ' TVAC).'
+        : 'Renouvellement annuel : <strong>' + payMoney(PAY.renewal.htva) + ' HTVA</strong> (' + payMoney(price.tvac) + ' TVAC), mises à jour incluses.') +
+      ' Complète ces informations pour ta facture, puis tu verras le QR de paiement.</div>' +
+    '<input id="rn-smartid" placeholder="Ton ID Smart *" value="' + payEsc(p.smartId || '') + '" style="' + inp + '">' +
+    '<input id="rn-name" placeholder="Prénom et nom *" value="' + payEsc(p.fullName || '') + '" style="' + inp + '">' +
+    '<input id="rn-company" placeholder="Société (facultatif)" value="' + payEsc(p.company || '') + '" style="' + inp + '">' +
+    '<input id="rn-email" type="email" placeholder="Email *" value="' + payEsc(p.email || '') + '" style="' + inp + '">' +
+    '<input id="rn-street" placeholder="Rue et numéro *" value="' + payEsc(p.street || '') + '" style="' + inp + '">' +
+    '<div style="display:flex;gap:6px;"><input id="rn-zip" inputmode="numeric" maxlength="4" placeholder="Code postal *" value="' + payEsc(p.zip || '') + '" style="' + inp + 'width:38%;">' +
+    '<input id="rn-city" placeholder="Ville *" value="' + payEsc(p.city || '') + '" style="' + inp + '"></div>' +
+    '<input id="rn-vat" placeholder="N° de TVA * (ex : BE0123456789)" value="' + payEsc(p.vat || '') + '" style="' + inp + '">' +
+    '<div style="display:flex;gap:8px;margin-top:10px;">' +
+      '<button onclick="payClose()" style="flex:1;background:#fff;color:#6b7280;border:1px solid #ddd;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;">Annuler</button>' +
+      '<button id="rn-submit" onclick="renewSubmit(\'' + kind + '\')" style="flex:2;background:#f97316;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">Afficher le QR de paiement</button>' +
+    '</div>'
+  );
+};
+
+window.renewSubmit = async function (kind) {
+  var g = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  var d = { smartId: g('rn-smartid'), fullName: g('rn-name'), company: g('rn-company'), email: g('rn-email'), street: g('rn-street'), zip: g('rn-zip'), city: g('rn-city'), vat: g('rn-vat') };
+  if (!d.smartId || !d.fullName || !d.email || !d.street || !d.zip || !d.city || !d.vat) { alert('⚠️ Merci de compléter tous les champs obligatoires (*).'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) { alert('⚠️ Adresse email invalide.'); return; }
+  if (!/^\d{4}$/.test(d.zip)) { alert('⚠️ Code postal belge à 4 chiffres attendu.'); return; }
+  if (!payVatOk(d.vat)) { alert('⚠️ Le numéro de TVA semble invalide (format BE0123456789).'); return; }
+  var price = kind === 'upgrade' ? PAY.purchase : PAY.renewal;
+  var ogm = payOgm();
+  var btn = document.getElementById('rn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Envoi…'; }
+  try {
+    await window.addDoc(window.collection(window.db, 'renewals'), {
+      kind: kind, smartId: d.smartId, fullName: d.fullName, company: d.company, email: d.email,
+      street: d.street, zip: d.zip, city: d.city, vat: payVatFmt(d.vat),
+      amountHtva: price.htva, amountTvac: price.tvac, ogm: ogm.display,
+      status: 'pending', createdAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error(err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Afficher le QR de paiement'; }
+    alert('❌ Envoi impossible. Vérifie ta connexion et réessaie.');
+    return;
+  }
+  try { localStorage.setItem('pm_pay_data', JSON.stringify({ smartId: d.smartId, fullName: d.fullName, company: d.company, email: d.email, street: d.street, zip: d.zip, city: d.city, vat: payVatFmt(d.vat) })); } catch (e) {}
+  payShowQr({
+    title: kind === 'upgrade' ? '🛒 Commande enregistrée' : '🔄 Demande de prolongation enregistrée',
+    intro: kind === 'upgrade' ? 'Règle <strong>' + payMoney(price.tvac) + '</strong> par virement pour activer ton accès.' : 'Règle <strong>' + payMoney(price.tvac) + '</strong> par virement pour prolonger ton accès d\'un an.',
+    amount: price.tvac, ogm: ogm.display, digits: ogm.digits,
+    after: 'Ta facture te sera envoyée par WhatsApp ou par e-mail. Dès réception du paiement, ton accès est ' + (kind === 'upgrade' ? 'activé' : 'prolongé de 12 mois') + '.'
+  });
+};
+
+// ----- Choix achat / renouvellement selon le compte -----
+// Compte d'essai : achat seulement. Compte déjà payé : renouvellement seulement. Sinon : les deux.
+function payPrefillFrom(c) { return c ? { smartId: c.id || '', fullName: c.fullName || c.name || '', email: c.email || '' } : {}; }
+window.payOpenFor = function (kind) { renewOpen({ kind: kind, prefill: payPrefillFrom(window._payConsultant) }); };
+
+// Mur de renouvellement : affiché sur l'écran de connexion quand l'accès est expiré (la session est fermée)
+window.pmShowRenewalWall = function (info) {
+  var c = (info && info.consultant) || null;
+  window._payConsultant = c;
+  var host = document.getElementById('rem-error');
+  if (!host) return;
+  var box = document.getElementById('rem-renew-box');
+  if (!box) { box = document.createElement('div'); box.id = 'rem-renew-box'; host.parentNode.insertBefore(box, host.nextSibling); }
+  var isTest = !!(c && c.isTest), isPaid = !!(c && c.payStatus === 'paid');
+  var b = 'display:block;width:100%;max-width:260px;margin:6px auto;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;';
+  var html = '';
+  if (isTest || !isPaid) html += '<button style="' + b + 'background:#f97316;color:#fff;" onclick="payOpenFor(\'upgrade\')">🛒 Commander l\'application — ' + payMoney(PAY.purchase.tvac) + ' TVAC</button>';
+  if (!isTest) html += '<button style="' + b + (isPaid ? 'background:#f97316;color:#fff;' : 'background:#fff;color:#f97316;border:1.5px solid #f97316;') + '" onclick="payOpenFor(\'renewal\')">🔄 Renouveler mon app — ' + payMoney(PAY.renewal.tvac) + ' TVAC / an</button>';
+  if (!isTest && !isPaid) html += '<div style="font-size:11px;color:#6b7280;max-width:260px;margin:2px auto 8px;">Renouvellement : si tu as déjà acheté l\'application.</div>';
+  box.innerHTML = html;
+};
+window.pmStoreRenewalWall = function (info) { try { sessionStorage.setItem('pm_wall', JSON.stringify({ consultant: info.consultant || null, msg: pmExpirationMsg(info) })); } catch (e) {} };
+(function pmRestoreRenewalWall() {
+  var run = function () {
+    try {
+      var raw = sessionStorage.getItem('pm_wall');
+      if (!raw) return;
+      sessionStorage.removeItem('pm_wall');
+      var w = JSON.parse(raw);
+      var err = document.getElementById('rem-error');
+      if (err) { err.textContent = w.msg; err.style.display = 'block'; }
+      pmShowRenewalWall({ consultant: w.consultant });
+    } catch (e) {}
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
+
+// ----- Formulaire d'accès public : option "Commander l'application" -----
+window.accessTypeChanged = function () {
+  var t = (document.querySelector('input[name="req-access-type"]:checked') || {}).value || 'none';
+  var blk = document.getElementById('req-address-block');
+  if (blk) blk.style.display = t === 'achat' ? 'block' : 'none';
+  var sb = document.getElementById('req-submit');
+  if (sb) sb.textContent = t === 'achat' ? '🛒 Commander et voir le QR de paiement' : 'Envoyer ma demande';
+  var wrapper = document.getElementById('info-section-wrapper');
+  if (wrapper && wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '') wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+};
+// ===== FIN ACHAT / RENOUVELLEMENT =====
 
 // ===== FIN RECOMMANDATIONS =====
 
@@ -8692,11 +8929,13 @@ onAuthStateChanged(auth, async (user) => {
   if (expirationCheck.expired) {
     document.getElementById('rem-error').textContent = pmExpirationMsg(expirationCheck);
     document.getElementById('rem-error').style.display = 'block';
+    pmShowRenewalWall(expirationCheck);
     await signOut(auth);
     return;
   }
-
   doUnlock(consultant);
+  window._expirationInfo = expirationCheck;
+  showExpirationBanner(expirationCheck);
   loadTeamsLink();
   loadHubDocuments();
   loadHubLinks();
@@ -8741,6 +8980,7 @@ window.firebaseLogin = async function(){
     if (expirationCheck.expired) {
       document.getElementById('rem-error').textContent = pmExpirationMsg(expirationCheck);
       document.getElementById('rem-error').style.display = 'block';
+      pmShowRenewalWall(expirationCheck);
       await signOut(auth);
       return;
     }
@@ -8793,6 +9033,7 @@ window.openSimulator = async function(url, btn) {
       const check = await window.checkAndApplyExpiration(pmCurrentUser.id);
       if (check.expired) {
         alert(pmExpirationMsg(check));
+        pmStoreRenewalWall(check);
         if (window.signOut) await window.signOut();
         location.reload();
         return;

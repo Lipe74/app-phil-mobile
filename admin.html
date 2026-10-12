@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.29 - Invitations reco</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.30 - Achat & prolongations</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -282,6 +282,7 @@
             <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
           </div>
           <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
+          <button onclick="showAdminPanel('panel-renewals', this)" class="menu-item" id="menu-renewals">🔄 Prolongations <span id="renewals-count"></span></button>
           <button onclick="showAdminPanel('panel-recommendations', this)" class="menu-item" id="menu-recommendations">🤝 Recommandations <span id="reco-count"></span></button>
           <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
           <button onclick="showAdminPanel('panel-qr', this)" class="menu-item" id="menu-qr">📱 QR Code prospects</button>
@@ -343,6 +344,11 @@
         <div class="admin-panel" id="panel-prospects">
           <div class="section-title">📝 Demandes en attente</div>
           <div id="prospects-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-renewals">
+          <div class="section-title">🔄 Prolongations &amp; achats de comptes existants</div>
+          <div id="renewals-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-recommendations">
@@ -1618,6 +1624,7 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
         <option value="philmobile">🤝 Phil-Mobile — n'expire jamais</option>
       </select>
     </div>
+    <div class="checkbox-row"><input type="checkbox" id="e-lifetime"> ♾️ Consultant « À vie » (jamais bloqué, aucun bandeau de renouvellement)</div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
       <button class="btn btn-primary" onclick="confirmEdit()">Enregistrer les modifications</button>
@@ -1729,7 +1736,8 @@ import {
   query,
   orderBy,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  runTransaction
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import {
@@ -1825,6 +1833,7 @@ onAuthStateChanged(auth, async (user) => {
   onAgendaCategoryChange();
   loadProspects();
   loadRecommendations();
+  loadRenewals();
   loadFeedback();
   loadPromosAdmin();
   onPromoTypeChange();
@@ -1863,7 +1872,7 @@ async function checkExpiredConsultants() {
     const now = new Date();
     snap.forEach(d => {
       const c = d.data();
-      if (!c.active || !c.expirationDate) return;
+      if (!c.active || !c.expirationDate || c.lifetime === true) return;
       const expDate = new Date(c.expirationDate);
       if (expDate < now) expiredActive.push(c.fullName || c.name || d.id);
     });
@@ -2058,7 +2067,7 @@ window.showAdminPanel = function (panelId, btn) {
 // Badge combiné sur le groupe CRM (repliable) : somme des compteurs de ses sous-items,
 // pour que la notification reste visible même quand le groupe est replié.
 function updateCrmBadge() {
-  const ids = ['feedback-count', 'messages-count', 'prospects-count', 'reco-count', 'bot-pending-count'];
+  const ids = ['feedback-count', 'messages-count', 'prospects-count', 'reco-count', 'renewals-count', 'bot-pending-count'];
   let total = 0;
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -3407,6 +3416,7 @@ function loadProspects() {
     if (p.status === 'pending' || !p.status) pending.push({ docId: d.id, ...p });
   });
 
+  window._prospectsCache = pending;
   const countEl = document.getElementById('prospects-count');
   if (countEl) countEl.innerHTML = pending.length > 0 ? `<span class="count-badge">${pending.length}</span>` : '';
   updateCrmBadge();
@@ -3425,15 +3435,19 @@ function loadProspects() {
         <div class="card-info">
           <strong>${escapeHtml(p.firstName || '')} ${escapeHtml(p.lastName || '')}</strong>
           ${p.smartId ? `<span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(p.smartId)}</span>` : ''}
+          ${p.accessType === 'achat' ? '<span class="badge" style="background:#dcfce7;color:#15803d;">🛒 Achat</span>' : ''}
           ${p.accessType === 'demo' ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🧪 Démo 3 jours</span>' : p.accessType === 'trial' ? '<span class="badge" style="background:#f0fdf4;color:#16a34a;">🎁 Mois offert</span>' : ''}
           <div class="meta">${escapeHtml(p.company || '—')} · ${escapeHtml(p.email || '')} · ${escapeHtml(p.phone || '')}</div>
           <div class="meta">ASP actuel: ${escapeHtml(String(p.asp ?? '—'))} · Entrée Smart: ${escapeHtml(p.startDate || '—')}</div>
           <div class="meta">Upline: ${escapeHtml(p.upline || '—')} (${escapeHtml(p.uplinePhone || '—')})</div>
           ${p.recommendedBy ? `<div class="meta">🤝 Recommandé par : <strong>${escapeHtml(p.recommendedBy)}</strong></div>` : ''}
           ${p.comment ? `<div class="meta">💬 ${escapeHtml(p.comment)}</div>` : ''}
+          ${p.accessType === 'achat' ? invCardParts('prospects', p).info : ''}
         </div>
         <div class="card-actions">
-          <button class="btn btn-primary" onclick="openActivateModal('${p.docId}')">✅ Activer</button>
+          ${p.accessType === 'achat'
+            ? invCardParts('prospects', p).actions + `<button class="btn btn-primary" style="background:#16a34a;" onclick="invPaidActivate('${p.docId}')">💶 Payé — activer</button>`
+            : `<button class="btn btn-primary" onclick="openActivateModal('${p.docId}')">✅ Activer</button>`}
           <button class="btn btn-secondary" onclick="dismissProspect('${p.docId}')">Ignorer</button>
         </div>
       </div>
@@ -3455,6 +3469,349 @@ window.dismissProspect = async function (docId) {
   // (liste mise à jour automatiquement par le listener temps réel)
 };
 
+// ===== ACHATS & PROLONGATIONS : facture PDF (QR SEPA + communication structurée), envoi, paiement =====
+// Prix et TVA toujours recalculés ici (jamais repris du formulaire public, qui peut être falsifié).
+const INV_ISSUER = { name: 'Phil-Mobile By Zen-Connect', street: 'Oudesmisestraat 20', city: '1700 Dilbeek', vat: 'BE1035199737', email: 'facturation@zen-connect.be', iban: 'BE08732086423213', ibanFmt: 'BE08 7320 8642 3213' };
+const INV_PRICES = {
+  purchase: { htva: 149,  tva: 31.29, tvac: 180.29, label: "Licence de l'application Phil-Mobile — accès 12 mois, mises à jour incluses" },
+  renewal:  { htva: 29.9, tva: 6.28,  tvac: 36.18,  label: "Renouvellement annuel de l'application Phil-Mobile — mises à jour incluses" }
+};
+const invMoney = n => Number(n).toFixed(2).replace('.', ',') + ' €';
+const invFmtD = v => v ? new Date(v).toLocaleDateString('fr-BE') : '—';
+
+function invLoadLibs() {
+  const load = (test, src) => new Promise((res, rej) => {
+    if (test()) return res();
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error('Chargement impossible : ' + src));
+    document.head.appendChild(s);
+  });
+  return Promise.all([
+    load(() => window.jspdf && window.jspdf.jsPDF, 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+    load(() => window.QRCode, 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js')
+  ]);
+}
+function invQrDataUrl(text) {
+  return new Promise(res => {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(box);
+    new window.QRCode(box, { text, width: 300, height: 300, colorDark: '#000000', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+    setTimeout(() => {
+      let u = '';
+      try { const cv = box.querySelector('canvas'); const im = box.querySelector('img'); u = cv ? cv.toDataURL('image/png') : (im ? im.src : ''); } catch (e) {}
+      box.remove(); res(u);
+    }, 60);
+  });
+}
+
+// Communication structurée belge (10 chiffres + contrôle modulo 97)
+function invOgmDigits(v) { return String(v || '').replace(/\D/g, ''); }
+function invOgmValid(v) {
+  const d = invOgmDigits(v);
+  if (d.length !== 12) return false;
+  const r = Number(d.slice(0, 10)) % 97;
+  return Number(d.slice(10)) === (r === 0 ? 97 : r);
+}
+function invOgmNew() {
+  const base = String(Date.now()).slice(-7) + ('00' + Math.floor(Math.random() * 1000)).slice(-3);
+  const r = Number(base) % 97;
+  const digits = base + ('0' + (r === 0 ? 97 : r)).slice(-2);
+  return '+++' + digits.slice(0, 3) + '/' + digits.slice(3, 7) + '/' + digits.slice(7) + '+++';
+}
+// Contenu du QR de virement SEPA (norme EPC, version 002)
+function invEpc(amount, digits) {
+  return ['BCD', '002', '1', 'SCT', '', 'Zen-Connect', INV_ISSUER.iban, 'EUR' + Number(amount).toFixed(2), '', digits].join('\n');
+}
+
+// Numéro de facture séquentiel (transaction Firestore : jamais deux fois le même numéro)
+async function invNextNumber() {
+  const year = new Date().getFullYear();
+  const ref = doc(db, 'counters', 'invoice-' + year);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    const raw = prompt('Première facture Phil-Mobile générée ici (année ' + year + ').\nQuel numéro veux-tu pour la 1re facture ? (dernier numéro utilisé + 1)', '1');
+    if (raw === null) return null;
+    const start = parseInt(raw, 10);
+    if (isNaN(start) || start < 1) { alert('Numéro invalide.'); return null; }
+    await setDoc(ref, { n: start - 1, year });
+  }
+  const n = await runTransaction(db, async (tx) => {
+    const s = await tx.get(ref);
+    const next = (s.exists() ? Number(s.data().n) || 0 : 0) + 1;
+    tx.set(ref, { n: next, year });
+    return next;
+  });
+  return 'ZC-' + year + '-' + ('00' + n).slice(-3);
+}
+
+function invItem(coll, d) {
+  const isP = coll === 'prospects';
+  const type = isP ? 'purchase' : (d.kind === 'upgrade' ? 'purchase' : 'renewal');
+  return Object.assign({
+    type, coll, docId: d.docId,
+    name: isP ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.fullName || ''),
+    company: d.company || '', street: d.street || '', zip: d.zip || '', city: d.city || '',
+    vat: d.vat || '', email: d.email || '', phone: d.phone || '', smartId: d.smartId || '', ogm: d.ogm || '',
+    number: d.invoiceNumber || '', date: d.invoiceDate || ''
+  }, INV_PRICES[type]);
+}
+
+function invBuildPdf(it, periodTxt) {
+  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+  const L = 18, R = 192;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(249, 115, 22);
+  doc.text('FACTURE', L, 22);
+  doc.setFontSize(10); doc.setTextColor(60);
+  doc.text('N° ' + it.number, R, 16, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text('Date : ' + invFmtD(it.date), R, 22, { align: 'right' });
+  doc.text('Paiement à réception par virement', R, 28, { align: 'right' });
+
+  let y = 42;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(150);
+  doc.text('ÉMETTEUR', L, y); doc.text('FACTURÉ À', 110, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30);
+  const from = [INV_ISSUER.name, INV_ISSUER.street, INV_ISSUER.city, 'TVA : ' + INV_ISSUER.vat.replace(/^BE(\d{4})(\d{3})(\d{3})$/, 'BE$1.$2.$3'), INV_ISSUER.email];
+  const to = [it.name];
+  if (it.company) to.push(it.company);
+  to.push(it.street, it.zip + ' ' + it.city, 'TVA : ' + it.vat, it.email);
+  from.forEach((t, i) => doc.text(t, L, y + 6 + i * 5.5));
+  to.forEach((t, i) => doc.text(doc.splitTextToSize(t, 82)[0], 110, y + 6 + i * 5.5));
+
+  y = 92;
+  doc.setDrawColor(249, 115, 22); doc.setLineWidth(0.6); doc.line(L, y, R, y);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(60);
+  doc.text('Description', L, y + 7); doc.text('Montant HTVA', R, y + 7, { align: 'right' });
+  doc.setLineWidth(0.2); doc.setDrawColor(200); doc.line(L, y + 10, R, y + 10);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(30);
+  const desc = doc.splitTextToSize(it.label + (periodTxt ? ' — ' + periodTxt : '') + ' (ID Smart ' + it.smartId + ').', 120);
+  desc.forEach((t, i) => doc.text(t, L, y + 18 + i * 5.5));
+  doc.text(invMoney(it.htva), R, y + 18, { align: 'right' });
+
+  y = y + 18 + desc.length * 5.5 + 8;
+  doc.setDrawColor(200); doc.line(110, y, R, y);
+  doc.setFontSize(10.5);
+  doc.text('Total HTVA', 110, y + 8); doc.text(invMoney(it.htva), R, y + 8, { align: 'right' });
+  doc.text('TVA 21 %', 110, y + 14); doc.text(invMoney(it.tva), R, y + 14, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('Total TVAC à payer', 110, y + 22); doc.text(invMoney(it.tvac), R, y + 22, { align: 'right' });
+
+  // Bloc de paiement : coordonnées + QR SEPA
+  y = y + 38;
+  doc.setDrawColor(249, 115, 22); doc.setLineWidth(0.5); doc.roundedRect(L, y, R - L, 50, 3, 3);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(249, 115, 22);
+  doc.text('Paiement par virement', L + 6, y + 9);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30);
+  [['Bénéficiaire', 'Zen-Connect'], ['IBAN', INV_ISSUER.ibanFmt], ['Montant', invMoney(it.tvac)], ['Communication', it.ogm]].forEach((r, i) => {
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(110); doc.text(r[0], L + 6, y + 19 + i * 7);
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(30); doc.text(r[1], L + 36, y + 19 + i * 7);
+  });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+  doc.text('Merci de reprendre la communication structurée ci-dessus.', L + 6, y + 46);
+  return { doc, qrBox: { x: R - 42, y: y + 5, size: 40 } };
+}
+
+// Génère (ou régénère à l'identique) la facture d'une demande, puis la télécharge
+window.invGenerate = async function (coll, docId) {
+  const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
+  const d = src.find(x => x.docId === docId);
+  if (!d) { showToast('Demande introuvable.'); return; }
+  const it = invItem(coll, d);
+  if (!it.name || !it.street || !it.zip || !it.city || !it.vat) { alert("⚠️ Données de facturation incomplètes (nom, adresse ou TVA)."); return; }
+  try {
+    await invLoadLibs();
+    const upd = {};
+    if (!invOgmValid(it.ogm)) { it.ogm = invOgmNew(); upd.ogm = it.ogm; }
+    if (!it.number) {
+      const num = await invNextNumber();
+      if (!num) return;
+      it.number = num; it.date = new Date().toISOString();
+      upd.invoiceNumber = it.number; upd.invoiceDate = it.date;
+    }
+    if (Object.keys(upd).length) await updateDoc(doc(db, coll, docId), upd);
+
+    // Période couverte (renouvellement) : de l'ancienne expiration à +12 mois
+    let period = '';
+    if (it.type === 'renewal') {
+      const c = ((window._consultantsCache || []).find(x => String(x.docId).toLowerCase() === it.smartId.toLowerCase()) || {});
+      if (c.expirationDate) {
+        const s = new Date(c.expirationDate); const e = new Date(s); e.setFullYear(e.getFullYear() + 1);
+        period = 'période du ' + invFmtD(s) + ' au ' + invFmtD(e);
+      }
+    }
+    const { doc: pdf, qrBox } = invBuildPdf(it, period);
+    const qr = await invQrDataUrl(invEpc(it.tvac, invOgmDigits(it.ogm)));
+    if (qr) pdf.addImage(qr, 'PNG', qrBox.x, qrBox.y, qrBox.size, qrBox.size);
+    pdf.save('Facture-' + it.number + '.pdf');
+    showToast('📄 Facture ' + it.number + ' générée.');
+  } catch (err) {
+    console.error(err);
+    alert('❌ Erreur lors de la génération de la facture : ' + err.message);
+  }
+};
+
+// Message d'envoi de la facture (WhatsApp / mail) — le PDF téléchargé est à joindre à la main
+window.invSend = async function (coll, docId, channel) {
+  const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
+  const d = src.find(x => x.docId === docId);
+  if (!d || !d.invoiceNumber) { showToast("Génère d'abord la facture."); return; }
+  const it = invItem(coll, d);
+  const first = (it.name.split(/\s+/)[0] || '').trim();
+  const text = `Bonjour ${first},\n\nVoici ta facture Phil-Mobile n° ${it.number} de ${invMoney(it.tvac)} TVAC (${it.type === 'purchase' ? "achat de l'application" : 'renouvellement annuel'}).\nPaiement par virement sur ${INV_ISSUER.ibanFmt} (Zen-Connect), communication ${it.ogm}.\nTu peux aussi scanner le QR code présent sur la facture.\n\nMerci ! Philippe — Phil-Mobile`;
+  if (channel === 'mail') {
+    window.location.href = 'mailto:' + (it.email || '') + '?subject=' + encodeURIComponent('Facture Phil-Mobile n° ' + it.number) + '&body=' + encodeURIComponent(text);
+  } else {
+    let ph = invOgmDigits(it.phone);
+    if (!ph) { const c = (window._consultantsCache || []).find(x => String(x.docId).toLowerCase() === it.smartId.toLowerCase()); ph = invOgmDigits(c && (c.phone || '')); }
+    if (ph.indexOf('00') === 0) ph = ph.slice(2); else if (ph.charAt(0) === '0') ph = '32' + ph.slice(1);
+    window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+  }
+  try { await updateDoc(doc(db, coll, docId), { invoiceSentAt: new Date().toISOString(), invoiceSentChannel: channel === 'mail' ? 'mail' : 'whatsapp' }); } catch (e) { console.log(e.message); }
+};
+
+// Bloc commun aux cartes (achat dans "Demandes d'accès", prolongations)
+function invCardParts(coll, p) {
+  const it = invItem(coll, p);
+  const btn = 'btn btn-secondary';
+  const hasInv = !!p.invoiceNumber;
+  const addr = `${escapeHtml(it.street)}, ${escapeHtml(it.zip)} ${escapeHtml(it.city)} · TVA ${escapeHtml(it.vat)}`;
+  const info = `
+    <div class="meta">🏠 ${addr}</div>
+    <div class="meta">💶 <strong>${invMoney(it.tvac)} TVAC</strong> (${invMoney(it.htva)} HTVA) · Communication <strong>${escapeHtml(it.ogm)}</strong></div>
+    ${hasInv ? `<div class="meta" style="color:#0369a1;">🧾 Facture <strong>${escapeHtml(p.invoiceNumber)}</strong> du ${escapeHtml(invFmtD(p.invoiceDate))}${p.invoiceSentAt ? ` · <strong>📤 envoyée le ${escapeHtml(invFmtD(p.invoiceSentAt))}</strong> (${p.invoiceSentChannel === 'mail' ? 'mail' : 'WhatsApp'})` : ' · pas encore envoyée'}</div>` : '<div class="meta" style="color:#9ca3af;">Facture pas encore générée</div>'}`;
+  const actions = hasInv
+    ? `<button class="btn btn-primary" onclick="invGenerate('${coll}','${p.docId}')">⬇️ Facture ${escapeHtml(p.invoiceNumber)}</button>
+       <button class="${btn}" onclick="invSend('${coll}','${p.docId}','wa')">💬 WhatsApp</button>
+       <button class="${btn}" onclick="invSend('${coll}','${p.docId}','mail')">✉️ Mail</button>`
+    : `<button class="btn btn-primary" onclick="invGenerate('${coll}','${p.docId}')">📄 Générer la facture</button>`;
+  return { info, actions };
+}
+
+// ----- Achat (prospect) : paiement reçu -> activation du compte (12 mois) -----
+window.invPaidActivate = function (docId) {
+  const p = (window._prospectsCache || []).find(x => x.docId === docId);
+  if (!p) return;
+  if (!confirm(`As-tu bien reçu le virement de ${invMoney(INV_PRICES.purchase.tvac)} (communication ${p.ogm || '—'}) de ${p.firstName || ''} ${p.lastName || ''} ?\n\nLe compte sera créé avec un accès de 12 mois.`)) return;
+  openActivateModal(docId);
+};
+
+// ----- Prolongations -----
+let renewalsUnsub = null;
+function loadRenewals() {
+  if (renewalsUnsub) { try { renewalsUnsub(); } catch (e) {} renewalsUnsub = null; }
+  renewalsUnsub = onSnapshot(collection(db, 'renewals'), (snap) => {
+    const all = [];
+    snap.forEach(d => all.push({ docId: d.id, ...d.data() }));
+    all.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    window._renewalsCache = all;
+    const open = all.filter(r => (r.status || 'pending') === 'pending');
+    const countEl = document.getElementById('renewals-count');
+    if (countEl) countEl.innerHTML = open.length > 0 ? `<span class="count-badge">${open.length}</span>` : '';
+    updateCrmBadge();
+    renderRenewals();
+  }, (err) => {
+    const c = document.getElementById('renewals-list');
+    if (c) c.innerHTML = '<div class="empty">Erreur de chargement (vérifie les règles Firestore de la collection renewals).</div>';
+    console.log('Chargement prolongations impossible:', err.message);
+  });
+}
+
+function renderRenewals() {
+  const container = document.getElementById('renewals-list');
+  if (!container) return;
+  const all = (window._renewalsCache || []).filter(r => r.status !== 'dismissed');
+  const open = all.filter(r => (r.status || 'pending') === 'pending');
+  const paid = all.filter(r => r.status === 'paid').slice(0, 15);
+  if (!open.length && !paid.length) { container.innerHTML = '<div class="empty">Aucune demande de prolongation.</div>'; return; }
+  container.innerHTML = '';
+  const cons = window._consultantsCache || [];
+  const mk = (r, isPaid) => {
+    const it = invItem('renewals', r);
+    const c = cons.find(x => String(x.docId).toLowerCase() === String(r.smartId || '').toLowerCase());
+    let cInfo;
+    if (!c) cInfo = '<div class="meta" style="color:#b91c1c;font-weight:700;">⚠️ ID Smart inconnu parmi les consultants — à vérifier avant tout</div>';
+    else {
+      const emailDiff = c.email && r.email && c.email.toLowerCase() !== String(r.email).toLowerCase();
+      const cur = c.lifetime ? '♾️ À vie' : (c.expirationDate ? invFmtD(c.expirationDate) : 'indéfinie');
+      cInfo = `<div class="meta" style="color:#15803d;">✅ Consultant trouvé : ${escapeHtml(c.fullName || c.name || c.docId)} · expiration actuelle : <strong>${escapeHtml(cur)}</strong></div>` +
+        (emailDiff ? `<div class="meta" style="color:#b91c1c;font-weight:700;">⚠️ Email différent de la fiche consultant (${escapeHtml(c.email)})</div>` : '');
+    }
+    const kindBadge = r.kind === 'upgrade'
+      ? '<span class="badge" style="background:#dcfce7;color:#15803d;">🛒 Achat (compte existant)</span>'
+      : '<span class="badge" style="background:#e0f2fe;color:#0369a1;">🔄 Prolongation</span>';
+    const parts = invCardParts('renewals', r);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <div class="card-info">
+          <strong>${escapeHtml(r.fullName || '')}</strong>
+          <span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(r.smartId || '')}</span>
+          ${kindBadge}
+          ${isPaid ? '<span class="badge badge-active">Payé</span>' : ''}
+          <div class="meta">${escapeHtml(r.company || '—')} · ${escapeHtml(r.email || '')}</div>
+          <div class="meta">Demande reçue le ${escapeHtml(invFmtD(r.createdAt))}</div>
+          ${cInfo}${parts.info}
+          ${isPaid ? `<div class="meta" style="color:#0369a1;">💶 Payé le ${escapeHtml(invFmtD(r.paidAt))} · nouvelle expiration : <strong>${escapeHtml(invFmtD(r.newExpiration))}</strong></div>` : ''}
+        </div>
+        <div class="card-actions">
+          ${parts.actions}
+          ${isPaid ? '' : `<button class="btn btn-primary" style="background:#16a34a;" onclick="renewalPaid('${r.docId}')">💶 Payé (+12 mois)</button>
+          <button class="btn btn-secondary" onclick="renewalDismiss('${r.docId}')">Ignorer</button>`}
+        </div>
+      </div>`;
+    container.appendChild(card);
+  };
+  open.forEach(r => mk(r, false));
+  if (paid.length) {
+    const h = document.createElement('div');
+    h.className = 'section-title'; h.style.marginTop = '18px'; h.textContent = '✅ Déjà payées (15 dernières)';
+    container.appendChild(h);
+    paid.forEach(r => mk(r, true));
+  }
+}
+
+window.renewalDismiss = async function (docId) {
+  if (!confirm('Ignorer cette demande de prolongation ?')) return;
+  await updateDoc(doc(db, 'renewals', docId), { status: 'dismissed' });
+  showToast('Demande ignorée.');
+};
+
+// Paiement reçu : prolonge de 12 mois à partir de l'ancienne date d'expiration (achat : à partir d'aujourd'hui)
+window.renewalPaid = async function (docId) {
+  const r = (window._renewalsCache || []).find(x => x.docId === docId);
+  if (!r) return;
+  try {
+    let cSnap = await getDoc(doc(db, 'consultants', r.smartId));
+    if (!cSnap.exists()) cSnap = await getDoc(doc(db, 'consultants', String(r.smartId).toLowerCase()));
+    if (!cSnap.exists()) { alert("❌ Aucun consultant avec l'ID Smart « " + r.smartId + " ». Vérifie la demande avant de valider."); return; }
+    const c = cSnap.data();
+    if (c.lifetime === true || c.accountType === 'philmobile') { alert('Ce consultant est « À vie » : aucune prolongation nécessaire.'); return; }
+    const now = new Date();
+    let base = now;
+    if (r.kind !== 'upgrade' && c.expirationDate) {
+      const old = new Date(c.expirationDate);
+      const oldPlus = new Date(old); oldPlus.setFullYear(oldPlus.getFullYear() + 1);
+      if (oldPlus > now) base = old;   // si l'ancienne date est dépassée de plus d'un an, on repart d'aujourd'hui
+    }
+    const newExp = new Date(base); newExp.setFullYear(newExp.getFullYear() + 1);
+    const amount = INV_PRICES[r.kind === 'upgrade' ? 'purchase' : 'renewal'].tvac;
+    if (!confirm(`As-tu bien reçu ${invMoney(amount)} de ${r.fullName} (communication ${r.ogm || '—'}) ?\n\nExpiration actuelle : ${c.expirationDate ? invFmtD(c.expirationDate) : 'aucune'}\nNouvelle expiration : ${invFmtD(newExp)}`)) return;
+    const upd = { expirationDate: newExp.toISOString(), active: true, payStatus: 'paid', paidDate: now.toLocaleDateString('fr-FR'), lastPaymentAt: now.toISOString() };
+    if (r.kind === 'upgrade') { upd.accountType = 'standard'; upd.isTestAccount = false; }
+    await updateDoc(doc(db, 'consultants', cSnap.id), upd);
+    await updateDoc(doc(db, 'renewals', docId), { status: 'paid', paidAt: now.toISOString(), prevExpiration: c.expirationDate || null, newExpiration: newExp.toISOString() });
+    await syncProfilPublicFromDoc(cSnap.id);
+    showToast('✅ Accès prolongé jusqu\'au ' + invFmtD(newExp));
+    loadConsultants();
+  } catch (err) {
+    console.error(err);
+    alert('❌ Erreur : ' + err.message);
+  }
+};
+// ===== FIN ACHATS & PROLONGATIONS =====
+
 // --- Recommandations (sponsor → nouveau consultant) : Nouveau → En test → Acheté → Payé (+ Perdu) ---
 let recoUnsub = null;
 let recoFilter = 'all';
@@ -3475,7 +3832,7 @@ function loadRecommendations() {
     recoData = [];
     snap.forEach(d => recoData.push({ docId: d.id, ...d.data() }));
     recoData.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
-    const nbNew = recoData.filter(r => (r.status || 'new') === 'new').length;
+    const nbNew = recoData.filter(r => !r.archived && (r.status || 'new') === 'new').length;
     const countEl = document.getElementById('reco-count');
     if (countEl) countEl.innerHTML = nbNew > 0 ? `<span class="count-badge">${nbNew}</span>` : '';
     updateCrmBadge();
@@ -3495,14 +3852,17 @@ async function renderRecommendations() {
   if (!container) return;
 
   // Filtres
-  const counts = { all: recoData.length, new: 0, testing: 0, converted: 0, paid: 0, lost: 0 };
-  recoData.forEach(r => { const k = r.status || 'new'; counts[k] = (counts[k] || 0) + 1; });
-  const chips = [['all', 'Tous'], ['new', 'Nouveau'], ['testing', 'En test'], ['converted', 'Acheté'], ['paid', 'Payé'], ['lost', 'Perdu']];
+  const active = recoData.filter(r => !r.archived);
+  const counts = { all: active.length, new: 0, testing: 0, converted: 0, paid: 0, lost: 0, archived: recoData.length - active.length };
+  active.forEach(r => { const k = r.status || 'new'; counts[k] = (counts[k] || 0) + 1; });
+  const chips = [['all', 'Tous'], ['new', 'Nouveau'], ['testing', 'En test'], ['converted', 'Acheté'], ['paid', 'Payé'], ['lost', 'Perdu'], ['archived', '🗄️ Archivés']];
   filters.innerHTML = chips.map(([k, l]) =>
     `<button class="btn ${recoFilter === k ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setRecoFilter('${k}')">${l} (${counts[k]})</button>`
   ).join('');
 
-  const list = recoData.filter(r => recoFilter === 'all' || (r.status || 'new') === recoFilter);
+  const list = recoFilter === 'archived'
+    ? recoData.filter(r => r.archived)
+    : active.filter(r => recoFilter === 'all' || (r.status || 'new') === recoFilter);
   if (!list.length) { container.innerHTML = '<div class="empty">Aucune recommandation.</div>'; return; }
 
   // Rapprochement avec les demandes d'accès (email, GSM ou ID Smart)
@@ -3567,6 +3927,11 @@ async function renderRecommendations() {
       actions = `${!r.invoiceRequestedAt ? `<button class="btn btn-primary" onclick="recoRequestInvoice('${r.docId}')">🧾 Demander la facture</button>` : r.invoiceSentAt ? `<button class="btn btn-secondary" onclick="recoRequestInvoice('${r.docId}')">🔁 Redemander</button>` : ''}
                  <button class="btn btn-primary" onclick="recoSetPaid('${r.docId}')">💶 Payé</button>
                  <button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
+    } else if (st === 'lost') {
+      actions = r.archived
+        ? `<button class="btn btn-secondary" onclick="recoArchive('${r.docId}', false)">↩︎ Désarchiver</button>`
+        : `<button class="btn btn-primary" onclick="recoArchive('${r.docId}', true)">🗄️ Archiver</button>
+           <button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
     } else {
       actions = `<button class="btn btn-secondary" onclick="recoStepBack('${r.docId}')">↩︎ Annuler</button>`;
     }
@@ -3658,6 +4023,12 @@ window.recoSetLost = async function (docId) {
   showToast('Recommandation marquée comme perdue.');
 };
 
+// Archivage : masque une recommandation perdue des listes (visible dans le filtre « Archivés »)
+window.recoArchive = async function (docId, flag) {
+  await updateDoc(doc(db, 'recommendations', docId), flag ? { archived: true, archivedAt: new Date().toISOString() } : { archived: false, archivedAt: null });
+  showToast(flag ? 'Recommandation archivée.' : 'Recommandation désarchivée.');
+};
+
 window.recoSetPaid = async function (docId) {
   const r = recoData.find(x => x.docId === docId);
   if (!r || (r.status || 'new') !== 'converted') { showToast('Marque d\'abord la recommandation comme achetée.'); return; }
@@ -3675,7 +4046,7 @@ window.recoStepBack = async function (docId) {
   const st = r.status || 'new';
   if (!confirm(st === 'paid' ? 'Annuler le paiement et repasser en Acheté ?' : 'Repasser cette recommandation en Nouveau ?')) return;
   if (st === 'paid') await updateDoc(doc(db, 'recommendations', docId), { status: 'converted', paidAmount: null, paidDate: null });
-  else await updateDoc(doc(db, 'recommendations', docId), { status: 'new', convertedAt: null, testingAt: null, lostAt: null, lostReason: null, invoiceRequestedAt: null, invoiceRequestedBy: null, invoiceSentAt: null, invoiceNumber: null, invoiceDate: null, invoiceFranchise: null, invoicePdfPath: null });
+  else await updateDoc(doc(db, 'recommendations', docId), { status: 'new', archived: false, archivedAt: null, convertedAt: null, testingAt: null, lostAt: null, lostReason: null, invoiceRequestedAt: null, invoiceRequestedBy: null, invoiceSentAt: null, invoiceNumber: null, invoiceDate: null, invoiceFranchise: null, invoicePdfPath: null });
   showToast('Statut mis à jour.');
 };
 
@@ -4675,13 +5046,13 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-phone').value = p?.phone || '';
   document.getElementById('f-password').value = 'Smart2026!';
   document.getElementById('f-aspinit').value = p?.asp || 0;
-  document.getElementById('f-paystatus').value = 'none';
+  document.getElementById('f-paystatus').value = p?.accessType === 'achat' ? 'paid' : 'none';
   document.getElementById('f-isadmin').checked = false;
   document.getElementById('f-accounttype').value = 'standard';
   // Durée présélectionnée selon le type d'essai demandé (modifiable avant validation)
   document.getElementById('f-duration').value =
     p?.accessType === 'demo'  ? '3'  :
-    p?.accessType === 'trial' ? '30' : '365';
+    p?.accessType === 'trial' ? '30' : '365';   // achat : 12 mois
   document.getElementById('f-duration').disabled = false;
   document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
@@ -4833,7 +5204,8 @@ window.confirmActivate = async function () {
   // Étape secondaire (non bloquante) : marquer le prospect comme activé
   if (currentProspectForActivation) {
     try {
-      await updateDoc(doc(db, 'prospects', currentProspectForActivation), { status: 'activated' });
+      const _pp = (window._prospectsCache || []).find(x => x.docId === currentProspectForActivation);
+      await updateDoc(doc(db, 'prospects', currentProspectForActivation), Object.assign({ status: 'activated' }, _pp && _pp.accessType === 'achat' ? { paidAt: new Date().toISOString() } : {}));
     } catch (err) {
       console.log('Avertissement: le prospect n\'a pas pu être marqué comme activé (le consultant est bien créé):', err.message);
     }
@@ -4872,6 +5244,7 @@ window.confirmReconnect = async function () {
 
 // --- Consultants actifs ---
 function renderExpirationBadge(c) {
+  if (c.lifetime === true) return '<div class="meta" style="color:#15803d;font-weight:700;">♾️ À vie</div>';
   if (!c.expirationDate) return '';
   const expDate = new Date(c.expirationDate);
   const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
@@ -4964,7 +5337,7 @@ function profilPublicFromConsultant(c, docId) {
     email: c.email || '',
     photoURL: c.photoURL || '',
     active: c.active === true,
-    expiresAtMs: isNaN(exp) ? null : exp,
+    expiresAtMs: (c.lifetime === true || isNaN(exp)) ? null : exp,
     updatedAt: new Date().toISOString()
   };
 }
@@ -5114,6 +5487,7 @@ window.openEditModal = function (docId) {
     : '';
   const derivedType = c.accountType || (c.isTestAccount ? 'test2j' : c.isTeamsAccount ? 'philmobile' : 'standard');
   document.getElementById('e-accounttype').value = derivedType;
+  document.getElementById('e-lifetime').checked = c.lifetime === true;
   // Rétrocompatibilité : les anciens consultants avec un paidAmount > 0 sont considérés payés
   document.getElementById('e-paystatus').value = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
   document.getElementById('edit-modal').classList.add('open');
@@ -5140,6 +5514,7 @@ window.confirmEdit = async function () {
   const isTestAccount = accountType === 'test2j';
   const isTeamsAccount = accountType === 'philmobile';
   const payStatus = document.getElementById('e-paystatus').value;
+  const lifetime = document.getElementById('e-lifetime').checked;
   const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
   const upline = document.getElementById('e-upline').value.trim();
   const uplineId = document.getElementById('e-uplineid').value.trim();
@@ -5190,7 +5565,7 @@ window.confirmEdit = async function () {
       : '';
     const updatePayload = {
       name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
-      expirationDate, isTestAccount, isTeamsAccount, accountType, payStatus, paidDate, upline, uplineId, uplineTel, uplineEmail
+      expirationDate, isTestAccount, isTeamsAccount, accountType, payStatus, paidDate, lifetime, upline, uplineId, uplineTel, uplineEmail
     };
     // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)
     if (editPhotoPendingUrl) updatePayload.photoURL = editPhotoPendingUrl;
@@ -7711,6 +8086,7 @@ const FAV_ITEMS = {
   'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
   'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },
   'menu-prospects':            { label: '🆕 Demandes d\'accès',             panelId: 'panel-prospects' },
+  'menu-renewals':             { label: '🔄 Prolongations',                panelId: 'panel-renewals' },
   'menu-recommendations':      { label: '🤝 Recommandations',              panelId: 'panel-recommendations' },
   'menu-consultants':          { label: '👥 Gestion des consultants',       panelId: 'panel-consultants' },
   'menu-agenda-create':        { label: '➕ Créer un événement',           panelId: 'panel-agenda-create' },
