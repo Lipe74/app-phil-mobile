@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.30 - Achat & prolongations</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.31 - Aperçu facture</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -3542,7 +3542,7 @@ async function invNextNumber() {
     tx.set(ref, { n: next, year });
     return next;
   });
-  return 'ZC-' + year + '-' + ('00' + n).slice(-3);
+  return 'ZC-Phil-Mobile-' + year + '-' + ('00' + n).slice(-3);
 }
 
 function invItem(coll, d) {
@@ -3609,6 +3609,14 @@ function invBuildPdf(it, periodTxt) {
   });
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
   doc.text('Merci de reprendre la communication structurée ci-dessus.', L + 6, y + 46);
+  if (it.specimen) {
+    // Filigrane diagonal translucide (le QR en bas reste lisible)
+    doc.saveGraphicsState();
+    doc.setGState(new doc.GState({ opacity: 0.13 }));
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(90); doc.setTextColor(220, 38, 38);
+    doc.text('SPECIMEN', 105, 150, { align: 'center', angle: 35 });
+    doc.restoreGraphicsState();
+  }
   return { doc, qrBox: { x: R - 42, y: y + 5, size: 40 } };
 }
 
@@ -3651,6 +3659,28 @@ window.invGenerate = async function (coll, docId) {
   }
 };
 
+// Aperçu : PDF « SPECIMEN » sans numéro, sans écriture dans Firestore, sans consommer le compteur
+window.invPreview = async function (coll, docId) {
+  const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
+  const d = src.find(x => x.docId === docId);
+  if (!d) { showToast('Demande introuvable.'); return; }
+  const it = invItem(coll, d);
+  if (!it.name || !it.street || !it.zip || !it.city || !it.vat) { alert('⚠️ Données de facturation incomplètes (nom, adresse ou TVA).'); return; }
+  try {
+    await invLoadLibs();
+    if (!invOgmValid(it.ogm)) it.ogm = invOgmNew();
+    it.number = 'SPECIMEN'; it.date = new Date().toISOString(); it.specimen = true;
+    const { doc: pdf, qrBox } = invBuildPdf(it, '');
+    const qr = await invQrDataUrl(invEpc(it.tvac, invOgmDigits(it.ogm)));
+    if (qr) pdf.addImage(qr, 'PNG', qrBox.x, qrBox.y, qrBox.size, qrBox.size);
+    pdf.save('SPECIMEN-facture-' + (it.name.split(/\s+/)[0] || 'client') + '.pdf');
+    showToast('👁️ Aperçu généré (aucun numéro utilisé).');
+  } catch (err) {
+    console.error(err);
+    alert("❌ Erreur lors de l'aperçu : " + err.message);
+  }
+};
+
 // Message d'envoi de la facture (WhatsApp / mail) — le PDF téléchargé est à joindre à la main
 window.invSend = async function (coll, docId, channel) {
   const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
@@ -3684,7 +3714,8 @@ function invCardParts(coll, p) {
     ? `<button class="btn btn-primary" onclick="invGenerate('${coll}','${p.docId}')">⬇️ Facture ${escapeHtml(p.invoiceNumber)}</button>
        <button class="${btn}" onclick="invSend('${coll}','${p.docId}','wa')">💬 WhatsApp</button>
        <button class="${btn}" onclick="invSend('${coll}','${p.docId}','mail')">✉️ Mail</button>`
-    : `<button class="btn btn-primary" onclick="invGenerate('${coll}','${p.docId}')">📄 Générer la facture</button>`;
+    : `<button class="btn btn-primary" onclick="invGenerate('${coll}','${p.docId}')">📄 Générer la facture</button>
+       <button class="${btn}" onclick="invPreview('${coll}','${p.docId}')">👁️ Aperçu (sans numéro)</button>`;
   return { info, actions };
 }
 

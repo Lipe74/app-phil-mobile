@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.37 - Achat et prolongation";
+  scope.APP_VERSION = "14.38 - Aperçu facture";
 })();
