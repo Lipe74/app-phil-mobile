@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.31 - Aperçu facture</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.32 - Liste des factures</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -282,6 +282,7 @@
             <button onclick="showAdminPanel('panel-bot-stats', this)" class="menu-item" id="menu-bot-stats">📊 Statistiques du bot</button>
           </div>
           <button onclick="showAdminPanel('panel-prospects', this)" class="menu-item" id="menu-prospects">🆕 Demandes d'accès (nouveaux consultants) <span id="prospects-count"></span></button>
+          <button onclick="showAdminPanel('panel-invoices', this)" class="menu-item" id="menu-invoices">🧾 Factures</button>
           <button onclick="showAdminPanel('panel-renewals', this)" class="menu-item" id="menu-renewals">🔄 Prolongations <span id="renewals-count"></span></button>
           <button onclick="showAdminPanel('panel-recommendations', this)" class="menu-item" id="menu-recommendations">🤝 Recommandations <span id="reco-count"></span></button>
           <button onclick="showAdminPanel('panel-consultants', this)" class="menu-item" id="menu-consultants">👥 Gestion des consultants</button>
@@ -344,6 +345,12 @@
         <div class="admin-panel" id="panel-prospects">
           <div class="section-title">📝 Demandes en attente</div>
           <div id="prospects-list" style="display:block;"><div class="empty">Chargement...</div></div>
+        </div>
+
+        <div class="admin-panel" id="panel-invoices">
+          <div class="section-title">🧾 Factures</div>
+          <div id="invoices-head"></div>
+          <div id="invoices-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
         <div class="admin-panel" id="panel-renewals">
@@ -1834,6 +1841,7 @@ onAuthStateChanged(auth, async (user) => {
   loadProspects();
   loadRecommendations();
   loadRenewals();
+  loadInvProspects();
   loadFeedback();
   loadPromosAdmin();
   onPromoTypeChange();
@@ -2047,6 +2055,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-bot-stats') loadBotStats();
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-qr') loadQrAdmin();
+  if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   if (panelId === 'panel-blogphil-list') loadBlogPhilAdmin();
   if (panelId === 'panel-smart-stats') loadSmartStatsAdmin();
@@ -3545,6 +3554,13 @@ async function invNextNumber() {
   return 'ZC-Phil-Mobile-' + year + '-' + ('00' + n).slice(-3);
 }
 
+// Retrouve une demande même si elle n'est plus "en attente" (réimpression d'anciennes factures)
+function invFind(coll, docId) {
+  const lists = coll === 'prospects' ? [window._invProspects, window._prospectsCache] : [window._renewalsCache];
+  for (const l of lists) { const f = (l || []).find(x => x.docId === docId); if (f) return f; }
+  return null;
+}
+
 function invItem(coll, d) {
   const isP = coll === 'prospects';
   const type = isP ? 'purchase' : (d.kind === 'upgrade' ? 'purchase' : 'renewal');
@@ -3622,15 +3638,25 @@ function invBuildPdf(it, periodTxt) {
 
 // Génère (ou régénère à l'identique) la facture d'une demande, puis la télécharge
 window.invGenerate = async function (coll, docId) {
-  const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
-  const d = src.find(x => x.docId === docId);
+  const d = invFind(coll, docId);
   if (!d) { showToast('Demande introuvable.'); return; }
   const it = invItem(coll, d);
   if (!it.name || !it.street || !it.zip || !it.city || !it.vat) { alert("⚠️ Données de facturation incomplètes (nom, adresse ou TVA)."); return; }
   try {
     await invLoadLibs();
     const upd = {};
+    const firstTime = !it.number;
     if (!invOgmValid(it.ogm)) { it.ogm = invOgmNew(); upd.ogm = it.ogm; }
+    // Période couverte (renouvellement) : calculée une seule fois à la 1re génération puis mémorisée (réimpression identique)
+    let period = d.invoicePeriod || '';
+    if (firstTime && it.type === 'renewal') {
+      const c = ((window._consultantsCache || []).find(x => String(x.docId).toLowerCase() === it.smartId.toLowerCase()) || {});
+      if (c.expirationDate) {
+        const st = new Date(c.expirationDate); const en = new Date(st); en.setFullYear(en.getFullYear() + 1);
+        period = 'période du ' + invFmtD(st) + ' au ' + invFmtD(en);
+        upd.invoicePeriod = period;
+      }
+    }
     if (!it.number) {
       const num = await invNextNumber();
       if (!num) return;
@@ -3639,15 +3665,6 @@ window.invGenerate = async function (coll, docId) {
     }
     if (Object.keys(upd).length) await updateDoc(doc(db, coll, docId), upd);
 
-    // Période couverte (renouvellement) : de l'ancienne expiration à +12 mois
-    let period = '';
-    if (it.type === 'renewal') {
-      const c = ((window._consultantsCache || []).find(x => String(x.docId).toLowerCase() === it.smartId.toLowerCase()) || {});
-      if (c.expirationDate) {
-        const s = new Date(c.expirationDate); const e = new Date(s); e.setFullYear(e.getFullYear() + 1);
-        period = 'période du ' + invFmtD(s) + ' au ' + invFmtD(e);
-      }
-    }
     const { doc: pdf, qrBox } = invBuildPdf(it, period);
     const qr = await invQrDataUrl(invEpc(it.tvac, invOgmDigits(it.ogm)));
     if (qr) pdf.addImage(qr, 'PNG', qrBox.x, qrBox.y, qrBox.size, qrBox.size);
@@ -3661,8 +3678,7 @@ window.invGenerate = async function (coll, docId) {
 
 // Aperçu : PDF « SPECIMEN » sans numéro, sans écriture dans Firestore, sans consommer le compteur
 window.invPreview = async function (coll, docId) {
-  const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
-  const d = src.find(x => x.docId === docId);
+  const d = invFind(coll, docId);
   if (!d) { showToast('Demande introuvable.'); return; }
   const it = invItem(coll, d);
   if (!it.name || !it.street || !it.zip || !it.city || !it.vat) { alert('⚠️ Données de facturation incomplètes (nom, adresse ou TVA).'); return; }
@@ -3683,8 +3699,7 @@ window.invPreview = async function (coll, docId) {
 
 // Message d'envoi de la facture (WhatsApp / mail) — le PDF téléchargé est à joindre à la main
 window.invSend = async function (coll, docId, channel) {
-  const src = (coll === 'prospects' ? window._prospectsCache : window._renewalsCache) || [];
-  const d = src.find(x => x.docId === docId);
+  const d = invFind(coll, docId);
   if (!d || !d.invoiceNumber) { showToast("Génère d'abord la facture."); return; }
   const it = invItem(coll, d);
   const first = (it.name.split(/\s+/)[0] || '').trim();
@@ -3741,6 +3756,7 @@ function loadRenewals() {
     if (countEl) countEl.innerHTML = open.length > 0 ? `<span class="count-badge">${open.length}</span>` : '';
     updateCrmBadge();
     renderRenewals();
+    renderInvoices();
   }, (err) => {
     const c = document.getElementById('renewals-list');
     if (c) c.innerHTML = '<div class="empty">Erreur de chargement (vérifie les règles Firestore de la collection renewals).</div>';
@@ -3841,6 +3857,150 @@ window.renewalPaid = async function (docId) {
     alert('❌ Erreur : ' + err.message);
   }
 };
+// ===== LISTE DES FACTURES : ventes (clients) et commissions (apporteurs) =====
+let invTab = 'sales', invYear = 'all', invQuery = '';
+let invProspectsUnsub = null;
+
+// Tous les achats (même déjà activés ou ignorés) : sert à retrouver une facture pour la réimprimer
+function loadInvProspects() {
+  if (invProspectsUnsub) { try { invProspectsUnsub(); } catch (e) {} invProspectsUnsub = null; }
+  invProspectsUnsub = onSnapshot(collection(db, 'prospects'), (snap) => {
+    const all = [];
+    snap.forEach(d => { const p = d.data(); if (p.accessType === 'achat') all.push({ docId: d.id, ...p }); });
+    window._invProspects = all;
+    renderInvoices();
+  }, (err) => console.log('Chargement achats impossible:', err.message));
+}
+
+function invRow(coll, d) {
+  const it = invItem(coll, d);
+  const paid = coll === 'prospects' ? (d.status === 'activated' && !!d.paidAt) : d.status === 'paid';
+  const state = paid ? 'Payé' : (d.status === 'dismissed' ? 'Ignorée' : 'En attente de paiement');
+  return {
+    coll, docId: d.docId, number: d.invoiceNumber, date: d.invoiceDate, name: it.name, company: it.company, vat: it.vat, smartId: it.smartId, email: it.email,
+    type: it.type === 'purchase' ? (coll === 'prospects' ? 'Achat' : 'Achat (compte existant)') : 'Prolongation',
+    htva: it.htva, tva: it.tva, tvac: it.tvac, paid, state, paidAt: d.paidAt || '', sentAt: d.invoiceSentAt || ''
+  };
+}
+function invSalesRows() {
+  const rows = [];
+  (window._invProspects || []).forEach(p => { if (p.invoiceNumber) rows.push(invRow('prospects', p)); });
+  (window._renewalsCache || []).forEach(r => { if (r.invoiceNumber) rows.push(invRow('renewals', r)); });
+  return rows;
+}
+// Facture de commission d'un sponsor (50 € TVAC : 41,32 + 8,68 de TVA, ou 50 € sans TVA si franchisé)
+function invCommissionRows() {
+  return (recoData || []).filter(r => r.invoiceNumber && r.invoicePdfPath).map(r => {
+    const fr = r.invoiceFranchise === true;
+    const paid = (r.status || '') === 'paid';
+    return {
+      docId: r.docId, number: r.invoiceNumber, date: r.invoiceDate || r.invoiceSentAt || '',
+      name: r.recommenderName || r.recommenderId || '—', sponsorId: r.recommenderId || '',
+      who: `${r.recommendedFirstName || ''} ${r.recommendedLastName || ''}`.trim(),
+      regime: fr ? 'Franchisé (sans TVA)' : 'TVA 21 %', htva: fr ? 50 : 41.32, tva: fr ? 0 : 8.68, tvac: 50,
+      paid, state: paid ? 'Payé' : 'À payer', paidAt: r.paidDate || ''
+    };
+  });
+}
+
+function invFilteredRows() {
+  const q = invQuery.trim().toLowerCase();
+  let rows = invTab === 'sales' ? invSalesRows() : invCommissionRows();
+  if (invYear !== 'all') rows = rows.filter(r => String(new Date(r.date).getFullYear()) === invYear);
+  if (q) rows = rows.filter(r => [r.number, r.name, r.company, r.smartId, r.email, r.who, r.sponsorId, r.vat].join(' ').toLowerCase().includes(q));
+  rows.sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.number).localeCompare(String(a.number)));
+  return rows;
+}
+
+window.invSetTab = function (t) { invTab = t; renderInvoices(); };
+window.invSetYear = function (y) { invYear = y; renderInvoices(); };
+window.invSetQuery = function (q) { invQuery = q; renderInvoices(true); };
+
+function renderInvoices(keepFocus) {
+  const box = document.getElementById('invoices-list');
+  if (!box) return;
+  const all = invTab === 'sales' ? invSalesRows() : invCommissionRows();
+  const years = Array.from(new Set(all.map(r => String(new Date(r.date).getFullYear())).filter(y => y !== 'NaN'))).sort().reverse();
+  if (invYear !== 'all' && years.indexOf(invYear) === -1) invYear = 'all';
+  const rows = invFilteredRows();
+  const sum = k => rows.reduce((s, r) => s + r[k], 0);
+  const tabBtn = (t, l) => `<button class="btn ${invTab === t ? 'btn-primary' : 'btn-secondary'}" style="padding:5px 12px;font-size:12px;" onclick="invSetTab('${t}')">${l}</button>`;
+  const head = document.getElementById('invoices-head');
+  if (head && !keepFocus) {
+    head.innerHTML = `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+        ${tabBtn('sales', '💶 Ventes (mes factures aux consultants)')}${tabBtn('commissions', '🤝 Commissions (factures des apporteurs)')}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+        <input id="inv-search" type="text" placeholder="Rechercher (n°, nom, ID Smart, TVA…)" value="${escapeHtml(invQuery)}" oninput="invSetQuery(this.value)" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+        <select onchange="invSetYear(this.value)" style="padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;">
+          <option value="all">Toutes les années</option>
+          ${years.map(y => `<option value="${y}" ${invYear === y ? 'selected' : ''}>${y}</option>`).join('')}
+        </select>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="invExportCsv()">⬇️ Export CSV</button>
+      </div>`;
+  }
+  const totals = `<div class="meta" style="margin-bottom:10px;"><strong>${rows.length}</strong> facture(s) · HTVA <strong>${invMoney(sum('htva'))}</strong> · TVA <strong>${invMoney(sum('tva'))}</strong> · TVAC <strong>${invMoney(sum('tvac'))}</strong></div>`;
+  if (!rows.length) { box.innerHTML = totals + '<div class="empty">Aucune facture.</div>'; return; }
+  box.innerHTML = totals;
+  rows.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const stBadge = r.paid ? '<span class="badge badge-active">Payé</span>' : `<span class="badge" style="background:#fff3e8;color:#f97316;">${escapeHtml(r.state)}</span>`;
+    if (invTab === 'sales') {
+      card.innerHTML = `
+        <div class="card-row">
+          <div class="card-info">
+            <strong>${escapeHtml(r.number)}</strong> <span class="badge" style="background:#E3F2FD;color:#1565C0;">${escapeHtml(r.type)}</span> ${stBadge}
+            <div class="meta">${escapeHtml(invFmtD(r.date))} · ${escapeHtml(r.name)}${r.company ? ' · ' + escapeHtml(r.company) : ''} · ID Smart ${escapeHtml(r.smartId)}</div>
+            <div class="meta">HTVA ${invMoney(r.htva)} · TVA ${invMoney(r.tva)} · <strong>TVAC ${invMoney(r.tvac)}</strong>${r.paid && r.paidAt ? ' · payé le ' + escapeHtml(invFmtD(r.paidAt)) : ''}${r.sentAt ? ' · 📤 envoyée le ' + escapeHtml(invFmtD(r.sentAt)) : ''}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" onclick="invGenerate('${r.coll}','${r.docId}')">⬇️ Télécharger</button>
+            <button class="btn btn-secondary" onclick="invSend('${r.coll}','${r.docId}','wa')">💬</button>
+            <button class="btn btn-secondary" onclick="invSend('${r.coll}','${r.docId}','mail')">✉️</button>
+          </div>
+        </div>`;
+    } else {
+      card.innerHTML = `
+        <div class="card-row">
+          <div class="card-info">
+            <strong>${escapeHtml(r.number)}</strong> <span class="badge" style="background:#fef3c7;color:#b45309;">Commission</span> ${stBadge}
+            <div class="meta">${escapeHtml(invFmtD(r.date))} · Sponsor : ${escapeHtml(r.name)} (${escapeHtml(r.sponsorId)}) · pour ${escapeHtml(r.who)}</div>
+            <div class="meta">${escapeHtml(r.regime)} · HTVA ${invMoney(r.htva)} · TVA ${invMoney(r.tva)} · <strong>TVAC ${invMoney(r.tvac)}</strong>${r.paid && r.paidAt ? ' · payé le ' + escapeHtml(invFmtD(r.paidAt)) : ''}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" onclick="recoDownloadInvoice('${r.docId}')">📄 Ouvrir le PDF</button>
+          </div>
+        </div>`;
+    }
+    box.appendChild(card);
+  });
+}
+
+// Export CSV (séparateur ; et virgule décimale : s'ouvre directement dans Excel en français)
+window.invExportCsv = function () {
+  const rows = invFilteredRows();
+  if (!rows.length) { showToast('Aucune facture à exporter.'); return; }
+  const num = n => Number(n).toFixed(2).replace('.', ',');
+  const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const d = v => v ? new Date(v).toLocaleDateString('fr-BE') : '';
+  let head, lines;
+  if (invTab === 'sales') {
+    head = ['Numéro', 'Date', 'Client', 'Société', 'TVA client', 'ID Smart', 'Type', 'HTVA', 'TVA', 'TVAC', 'Statut', 'Date paiement'];
+    lines = rows.map(r => [r.number, d(r.date), r.name, r.company, r.vat, r.smartId, r.type, num(r.htva), num(r.tva), num(r.tvac), r.state, d(r.paidAt)]);
+  } else {
+    head = ['Numéro', 'Date', 'Sponsor', 'ID sponsor', 'Recommandé', 'Régime', 'HTVA', 'TVA', 'TVAC', 'Statut', 'Date paiement'];
+    lines = rows.map(r => [r.number, d(r.date), r.name, r.sponsorId, r.who, r.regime, num(r.htva), num(r.tva), num(r.tvac), r.state, d(r.paidAt)]);
+  }
+  const csv = '﻿' + [head].concat(lines).map(l => l.map(cell).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'factures-' + (invTab === 'sales' ? 'ventes' : 'commissions') + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+// ===== FIN LISTE DES FACTURES =====
+
 // ===== FIN ACHATS & PROLONGATIONS =====
 
 // --- Recommandations (sponsor → nouveau consultant) : Nouveau → En test → Acheté → Payé (+ Perdu) ---
@@ -3868,6 +4028,7 @@ function loadRecommendations() {
     if (countEl) countEl.innerHTML = nbNew > 0 ? `<span class="count-badge">${nbNew}</span>` : '';
     updateCrmBadge();
     renderRecommendations();
+    renderInvoices();
   }, (err) => {
     const c = document.getElementById('reco-admin-list');
     if (c) c.innerHTML = '<div class="empty">Erreur de chargement (vérifie les règles Firestore de la collection recommendations).</div>';
@@ -8117,6 +8278,7 @@ const FAV_ITEMS = {
   'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
   'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },
   'menu-prospects':            { label: '🆕 Demandes d\'accès',             panelId: 'panel-prospects' },
+  'menu-invoices':             { label: '🧾 Factures',                     panelId: 'panel-invoices' },
   'menu-renewals':             { label: '🔄 Prolongations',                panelId: 'panel-renewals' },
   'menu-recommendations':      { label: '🤝 Recommandations',              panelId: 'panel-recommendations' },
   'menu-consultants':          { label: '👥 Gestion des consultants',       panelId: 'panel-consultants' },

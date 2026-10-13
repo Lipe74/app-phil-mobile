@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.38 - Aperçu facture";
+  scope.APP_VERSION = "14.39 - Liste des factures";
 })();
