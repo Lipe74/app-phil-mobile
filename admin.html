@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.34 - Types de compte</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.35 - Prénom, nom, pseudo</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -373,6 +373,7 @@
           <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>👥 Consultants actifs / inactifs</span>
             <span><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openMigration();">🔧 Migration des comptes</button>
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openNameTool();">✂️ Prénoms / noms</button>
             <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button></span>
           </div>
           <div id="consultants-filters" style="margin-bottom:10px;"></div>
@@ -1462,8 +1463,12 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <input type="text" id="f-name">
     </div>
     <div class="form-row">
-      <label>Nom complet</label>
-      <input type="text" id="f-fullname">
+      <label>Nom</label>
+      <input type="text" id="f-lastname">
+    </div>
+    <div class="form-row">
+      <label>Pseudo <span style="font-weight:400;color:#888;">(facultatif — affiché partout à la place du nom)</span></label>
+      <input type="text" id="f-pseudo">
     </div>
     <div class="form-row">
       <label>Email</label>
@@ -1565,8 +1570,12 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <input type="text" id="e-name">
     </div>
     <div class="form-row">
-      <label>Nom complet</label>
-      <input type="text" id="e-fullname">
+      <label>Nom</label>
+      <input type="text" id="e-lastname">
+    </div>
+    <div class="form-row">
+      <label>Pseudo <span style="font-weight:400;color:#888;">(facultatif — affiché partout à la place du nom)</span></label>
+      <input type="text" id="e-pseudo">
     </div>
     <div class="form-row">
       <label>Email</label>
@@ -1867,6 +1876,9 @@ onAuthStateChanged(auth, async (user) => {
   loadPromoGlobalDate();
   checkExpiredConsultants();
   initFavoritesSystem();
+  // Pastille 🔔 si des consultants ont modifié leur nom
+  try { const _l = []; snap.forEach(d => _l.push(d.data())); nmUpdateBadge(_l); } catch (e) {}
+
   // Panneau par défaut à la connexion (sans plein écran mobile)
   showAdminPanel('panel-prospects', null);
 });
@@ -5256,7 +5268,8 @@ window.openActivateModal = function (docId) {
   currentProspectForActivation = docId;
   document.getElementById('f-id').value = p?.smartId || '';
   document.getElementById('f-name').value = p?.firstName || '';
-  document.getElementById('f-fullname').value = `${p?.firstName || ''} ${p?.lastName || ''}`.trim();
+  document.getElementById('f-lastname').value = p?.lastName || '';
+  document.getElementById('f-pseudo').value = '';
   document.getElementById('f-email').value = p?.email || '';
   document.getElementById('f-phone').value = p?.phone || '';
   document.getElementById('f-password').value = 'Smart2026!';
@@ -5281,7 +5294,8 @@ window.openCreateModal = function () {
   currentProspectForActivation = null;
   document.getElementById('f-id').value = '';
   document.getElementById('f-name').value = '';
-  document.getElementById('f-fullname').value = '';
+  document.getElementById('f-lastname').value = '';
+  document.getElementById('f-pseudo').value = '';
   document.getElementById('f-email').value = '';
   document.getElementById('f-phone').value = '';
   document.getElementById('f-password').value = 'Smart2026!';
@@ -5304,7 +5318,9 @@ window.closeActivateModal = function () {
 window.confirmActivate = async function () {
   const id = document.getElementById('f-id').value.trim();
   const name = document.getElementById('f-name').value.trim();
-  const fullName = document.getElementById('f-fullname').value.trim();
+  const lastName = document.getElementById('f-lastname').value.trim();
+  const pseudo = document.getElementById('f-pseudo').value.trim();
+  const fullName = (name + ' ' + lastName).trim();
   const email = document.getElementById('f-email').value.trim();
   const phone = document.getElementById('f-phone').value.trim();
   const password = document.getElementById('f-password').value;
@@ -5323,8 +5339,8 @@ window.confirmActivate = async function () {
   const uplineTel = document.getElementById('f-uplinetel').value.trim();
   const uplineEmail = document.getElementById('f-uplineemail').value.trim();
 
-  if (!id || !name || !email || !password) {
-    alert('ID, prénom, email et mot de passe sont obligatoires.');
+  if (!id || !name || !lastName || !email || !password) {
+    alert('ID, prénom, nom, email et mot de passe sont obligatoires.');
     return;
   }
 
@@ -5363,7 +5379,7 @@ window.confirmActivate = async function () {
     await new Promise(r => setTimeout(r, 600));
 
     await setDoc(doc(db, 'consultants', id), {
-      id, name, fullName, email, phone, startDate, aspInit,
+      id, name, lastName, pseudo, fullName, nameAliases: [], email, phone, startDate, aspInit,
       isAdmin, lifetime, active: true,
       upline, uplineId, uplineTel, uplineEmail,
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
@@ -5496,6 +5512,103 @@ window.archiveConsultant = async function (docId, flag) {
   loadConsultants();
 };
 
+// ===== PRÉNOM / NOM / PSEUDO =====
+// name = prénom, lastName = nom, pseudo = facultatif (affiché partout si rempli), fullName = « Prénom Nom » (vrai nom, jamais le pseudo).
+// nameAliases = anciens « fullName » (conserve le lien avec les contrats déjà saisis sous l'ancien nom).
+const nmNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const nmTitle = s => String(s || '').trim().toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (m, p, l) => p + l.toUpperCase());
+const nmReal = c => String(c.fullName || c.name || '').trim();
+const nmDisplay = c => String(c.pseudo || '').trim() || nmReal(c) || c.id || c.docId || '';
+function nmGuess(c) {
+  if (c.lastName) return { first: c.name || '', last: c.lastName };
+  const full = String(c.fullName || '').trim(), first = String(c.name || '').trim();
+  if (full && first) {
+    const lf = full.toLowerCase(), lfn = first.toLowerCase();
+    if (lf === lfn) return { first, last: '' };
+    if (lf.indexOf(lfn + ' ') === 0) return { first, last: full.slice(first.length).trim() };
+    if (lf.slice(-(lfn.length + 1)) === ' ' + lfn) return { first, last: full.slice(0, full.length - first.length).trim() };
+  }
+  const p = full.split(/\s+/).filter(Boolean);
+  return p.length >= 2 ? { first: p[0], last: p.slice(1).join(' ') } : { first: first || full, last: '' };
+}
+const nmSortKey = c => { const g = nmGuess(c); return nmNorm((g.last || nmReal(c)) + ' ' + g.first); };
+function nmPayload(first, last, pseudo, existing) {
+  const fullName = (first + ' ' + last).trim();
+  const old = String((existing && existing.fullName) || '').trim();
+  const al = (Array.isArray(existing && existing.nameAliases) ? existing.nameAliases : []).filter(x => x && x !== fullName);
+  if (old && old !== fullName && al.indexOf(old) === -1) al.push(old);
+  return { name: first, lastName: last, pseudo, fullName, nameAliases: al };
+}
+let consSort = 'name';
+try { consSort = localStorage.getItem('pm_cons_sort') || 'name'; } catch (e) {}
+window.setConsSort = function (v) { consSort = v; try { localStorage.setItem('pm_cons_sort', v); } catch (e) {} loadConsultants(); };
+const nmDateKey = s => { const p = String(s || '').split('/'); return p.length === 3 ? Number(p[2]) * 10000 + Number(p[1]) * 100 + Number(p[0]) : 0; };
+function nmSort(list) {
+  const cmp = (x, y) => nmSortKey(x).localeCompare(nmSortKey(y), 'fr');
+  if (consSort === 'namedesc') return list.sort((x, y) => cmp(y, x));
+  if (consSort === 'date') return list.sort((x, y) => nmDateKey(y.startDate) - nmDateKey(x.startDate) || cmp(x, y));
+  return list.sort(cmp);
+}
+function nmUpdateBadge(list) {
+  const n = list.filter(c => c.nameChange && c.nameChange.seen === false).length;
+  const b = document.getElementById('menu-consultants');
+  if (b) b.innerHTML = '👥 Gestion des consultants' + (n ? ' <span style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;">🔔 ' + n + '</span>' : '');
+}
+window.ackNameChange = async function (docId) {
+  try { await updateDoc(doc(db, 'consultants', docId), { 'nameChange.seen': true }); } catch (e) { alert('Erreur : ' + e.message); return; }
+  loadConsultants();
+};
+
+// ----- Outil « Prénoms / noms » : sépare le nom complet des fiches existantes (aperçu éditable puis application) -----
+window.openNameTool = async function () {
+  await loadConsultants();
+  const rows = (window._consultantsCache || []).filter(c => !c.lastName).map(c => {
+    const g = nmGuess(c);
+    return { c, first: nmTitle(g.first), last: nmTitle(g.last) };
+  });
+  window._nmRows = rows;
+  const inp = 'width:100%;padding:5px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;';
+  const box = document.createElement('div');
+  box.className = 'modal-overlay open'; box.id = 'nm-modal';
+  box.innerHTML = `<div class="modal-box" style="max-width:760px;width:96%;max-height:90vh;overflow:auto;">
+    <h3>✂️ Prénoms / noms</h3>
+    <div class="meta" style="margin-bottom:8px;">Proposition automatique pour les fiches qui n'ont pas encore de « Nom » séparé. Corrige les champs si besoin (inversions…), puis « Appliquer ». Rien n'est modifié avant.</div>
+    ${rows.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <tr style="text-align:left;color:#888;"><th></th><th>Actuellement</th><th>Prénom</th><th>Nom</th></tr>
+      ${rows.map((r, i) => `<tr style="border-top:1px solid #eee;">
+        <td><input type="checkbox" id="nm-ck-${i}" checked style="width:auto;"></td>
+        <td><strong>${escapeHtml(nmReal(r.c))}</strong><br><span style="color:#888;">${escapeHtml(r.c.docId)}</span></td>
+        <td><input id="nm-f-${i}" value="${escapeHtml(r.first)}" style="${inp}"></td>
+        <td><input id="nm-l-${i}" value="${escapeHtml(r.last)}" style="${inp}"></td></tr>`).join('')}
+    </table>` : '<div class="empty">Toutes les fiches ont déjà un prénom et un nom séparés.</div>'}
+    <div class="form-actions" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('nm-modal').remove()">Fermer</button>
+      ${rows.length ? '<button class="btn btn-primary" id="nm-apply" onclick="applyNameTool()">✅ Appliquer</button>' : ''}
+    </div></div>`;
+  document.body.appendChild(box);
+};
+window.applyNameTool = async function () {
+  const todo = [];
+  (window._nmRows || []).forEach((r, i) => {
+    const ck = document.getElementById('nm-ck-' + i);
+    if (!ck || !ck.checked) return;
+    const first = document.getElementById('nm-f-' + i).value.trim(), last = document.getElementById('nm-l-' + i).value.trim();
+    if (first && last) todo.push({ c: r.c, first, last });
+  });
+  if (!todo.length) { alert('Rien à appliquer : le prénom et le nom doivent être remplis sur les lignes cochées.'); return; }
+  if (!confirm('Enregistrer prénom / nom sur ' + todo.length + ' fiche(s) ?')) return;
+  const btn = document.getElementById('nm-apply'); if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+  let ok = 0, ko = 0;
+  for (const t of todo) {
+    try { await updateDoc(doc(db, 'consultants', t.c.docId), nmPayload(t.first, t.last, t.c.pseudo || '', t.c)); await syncProfilPublicFromDoc(t.c.docId); ok++; }
+    catch (e) { console.log('Prénom/nom impossible pour', t.c.docId, e.message); ko++; }
+  }
+  const m = document.getElementById('nm-modal'); if (m) m.remove();
+  showToast('✅ ' + ok + ' fiche(s) mise(s) à jour' + (ko ? ', ' + ko + ' erreur(s)' : ''));
+  loadConsultants();
+};
+// ===== FIN PRÉNOM / NOM / PSEUDO =====
+
 // ----- Migration des comptes existants (aperçu puis application) -----
 const MIG_GROUPS = {
   philmobile: ['Sylvie Delahaye', 'Claire Bolsée', 'Julien Couvreur'],
@@ -5610,8 +5723,11 @@ async function loadConsultants() {
   const fl = document.getElementById('consultants-filters');
   if (fl) fl.innerHTML =
     `<button class="btn ${consFilter === 'active' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setConsFilter('active')">Actifs / inactifs (${all.length - nbArch})</button> ` +
-    `<button class="btn ${consFilter === 'archived' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setConsFilter('archived')">🗄️ Archivés (${nbArch})</button>`;
-  const list = all.filter(c => (c.archived === true) === (consFilter === 'archived'));
+    `<button class="btn ${consFilter === 'archived' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setConsFilter('archived')">🗄️ Archivés (${nbArch})</button> ` +
+    `<label style="font-size:11px;color:#666;margin-left:6px;">Trier par <select onchange="setConsSort(this.value)" style="padding:3px 6px;font-size:11px;border:1px solid #ddd;border-radius:6px;width:auto;">` +
+    [['name', 'Nom A→Z'], ['namedesc', 'Nom Z→A'], ['date', "Date d'entrée (récents)"]].map(o => `<option value="${o[0]}"${consSort === o[0] ? ' selected' : ''}>${o[1]}</option>`).join('') + `</select></label>`;
+  nmUpdateBadge(all);
+  const list = nmSort(all.filter(c => (c.archived === true) === (consFilter === 'archived')));
 
   if (list.length === 0) {
     container.innerHTML = '<div class="empty">' + (consFilter === 'archived' ? 'Aucun compte archivé.' : 'Aucun consultant.') + '</div>';
@@ -5627,12 +5743,13 @@ async function loadConsultants() {
     card.innerHTML = `
       <div class="card-row">
         <div class="card-info">
-          <strong>${escapeHtml(c.fullName || c.name || '')}</strong>
+          <strong>${escapeHtml(nmDisplay(c))}</strong>${c.pseudo && nmNorm(c.pseudo) !== nmNorm(nmReal(c)) && nmReal(c) ? ` <span style="color:#888;font-size:12px;">(${escapeHtml(nmReal(c))})</span>` : ''}
           <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
           ${type === 'admin' ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">🛡️ Admin</span>' : ''}
           ${type === 'philmobile' ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🤝 Team</span>' : ''}
           ${type === 'sponsor' ? '<span class="badge" style="background:#fef3c7;color:#b45309;">⭐ Sponsor</span>' : ''}
           ${type === 'test2j' ? '<span class="badge" style="background:#fef9c3;color:#854d0e;">🧪 Test</span>' : ''}
+          ${c.nameChange && c.nameChange.seen === false ? `<div class="meta" style="color:#b45309;font-weight:700;">🔔 Nom modifié par le consultant${c.nameChange.at ? ' le ' + escapeHtml(new Date(c.nameChange.at).toLocaleDateString('fr-FR')) : ''} : « ${escapeHtml(c.nameChange.from || '—')} » → « ${escapeHtml(c.nameChange.to || '—')} » <button class="btn btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="ackNameChange('${c.docId}')">✔ Vu</button></div>` : ''}
           <div class="meta">${escapeHtml(c.email || '')} · ${c.phone ? '📞 ' + escapeHtml(c.phone) : '<span style="color:#c0392b;">📞 Tél. manquant</span>'} · ID: ${escapeHtml(c.id || c.docId)}</div>
           <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP actuel: ${escapeHtml(String(c.aspInit ?? 0))}</div>
           <div class="meta">
@@ -5707,7 +5824,7 @@ async function renderQrPilotList(selectedIds) {
   const snap = await getDocs(collection(db, 'consultants'));
   const list = [];
   snap.forEach(d => { if (d.data().archived !== true) list.push({ id: d.id, ...d.data() }); });
-  list.sort((a, b) => (b.active === true) - (a.active === true) || (a.fullName || a.name || a.id).localeCompare(b.fullName || b.name || b.id));
+  list.sort((a, b) => (b.active === true) - (a.active === true) || nmSortKey(a).localeCompare(nmSortKey(b), 'fr'));
   const known = new Set(list.map(c => c.id));
   const now = Date.now();
   const rows = list.map(c => {
@@ -5716,7 +5833,7 @@ async function renderQrPilotList(selectedIds) {
       : expired ? ' <span style="color:#B45309;font-size:11px;">(expiré)</span>' : '';
     return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;">
       <input type="checkbox" value="${escapeHtml(c.id)}" ${selectedIds.includes(c.id) ? 'checked' : ''} style="width:auto;flex:none;margin:0;padding:0;">
-      <span><strong>${escapeHtml(c.fullName || c.name || c.id)}</strong> <span style="color:#888;font-size:11px;">${escapeHtml(c.id)}</span>${tag}</span>
+      <span><strong>${escapeHtml(nmDisplay(c))}</strong> <span style="color:#888;font-size:11px;">${escapeHtml(c.id)}</span>${tag}</span>
     </label>`;
   });
   selectedIds.filter(id => !known.has(id)).forEach(id => {
@@ -5813,8 +5930,10 @@ window.openEditModal = function (docId) {
   document.getElementById('e-photo-status').textContent = '';
   document.getElementById('edit-name-display').textContent =
     'ID: ' + (c.id || c.docId);
-  document.getElementById('e-name').value = c.name || '';
-  document.getElementById('e-fullname').value = c.fullName || '';
+  const _g = nmGuess(c);
+  document.getElementById('e-name').value = _g.first || '';
+  document.getElementById('e-lastname').value = _g.last || '';
+  document.getElementById('e-pseudo').value = c.pseudo || '';
   document.getElementById('e-email').value = c.email || '';
   document.getElementById('e-phone').value = c.phone || c.uplineTel || '';
   document.getElementById('e-startdate').value = c.startDate || '';
@@ -5844,7 +5963,8 @@ window.confirmEdit = async function () {
   if (!currentEditDocId) return;
 
   const name = document.getElementById('e-name').value.trim();
-  const fullName = document.getElementById('e-fullname').value.trim();
+  const lastName = document.getElementById('e-lastname').value.trim();
+  const pseudo = document.getElementById('e-pseudo').value.trim();
   const email = document.getElementById('e-email').value.trim();
   const phone = document.getElementById('e-phone').value.trim();
   const startDate = document.getElementById('e-startdate').value.trim();
@@ -5871,8 +5991,8 @@ window.confirmEdit = async function () {
     return;
   }
 
-  if (!name || !fullName) {
-    alert('Le prénom et le nom complet sont obligatoires.');
+  if (!name || !lastName) {
+    alert('Le prénom et le nom sont obligatoires.');
     return;
   }
 
@@ -5909,7 +6029,7 @@ window.confirmEdit = async function () {
       ? (existing.payStatus === 'paid' && existing.paidDate ? existing.paidDate : new Date().toLocaleDateString('fr-FR'))
       : '';
     const updatePayload = {
-      name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
+      ...nmPayload(name, lastName, pseudo, existing), email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
       expirationDate, isTestAccount, isTeamsAccount, isAdmin, accountType, payStatus, paidDate, lifetime, upline, uplineId, uplineTel, uplineEmail
     };
     // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)

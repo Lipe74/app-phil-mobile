@@ -2300,6 +2300,8 @@ async function loadPMUsers() {
       PM_USERS[c.id || docSnap.id] = {
         id: c.id || docSnap.id,
         name: c.name,
+        lastName: c.lastName || '',
+        nameAliases: Array.isArray(c.nameAliases) ? c.nameAliases : [],
         fullName: c.fullName,
         email: c.email,
         agent: c.fullName,
@@ -2987,10 +2989,16 @@ async function saveMonProfilInfo() {
   }
 
   const fullName = `${prenom} ${nom}`.trim();
+  // Changement de nom / pseudo : on garde l'ancien nom (contrats déjà saisis) et on prévient l'admin
+  const oldFull = String(pmCurrentUser.fullName || '').trim();
+  const oldPseudo = String(pmCurrentUser.pseudo || '').trim();
+  const aliases = (pmCurrentUser.nameAliases || []).filter(x => x && x !== fullName);
+  if (oldFull && oldFull !== fullName && aliases.indexOf(oldFull) === -1) aliases.push(oldFull);
   const updateObj = {
     name: prenom,
     lastName: nom,
     fullName: fullName,
+    nameAliases: aliases,
     pseudo: pseudo,
     phone: gsm,
     emailOffres: emailOffres,
@@ -3001,16 +3009,22 @@ async function saveMonProfilInfo() {
     aspDeclareDate: aspDeclareDate
   };
   if (startDateISO) updateObj.startDate = pmDateISOtoFR(startDateISO);
+  if ((oldFull && oldFull !== fullName) || oldPseudo !== pseudo) {
+    const shown = (f, p) => p ? p + (f ? ' (' + f + ')' : '') : f;
+    updateObj.nameChange = { from: shown(oldFull, oldPseudo), to: shown(fullName, pseudo), at: new Date().toISOString(), seen: false };
+  }
 
   try {
     await window.updateDoc(window.doc(window.db, 'consultants', id), updateObj);
 
     // Rafraîchir les caches locaux (avatar, upline, suivi contrats...)
-    if (PM_USERS[id]) Object.assign(PM_USERS[id], { name: prenom, fullName, agent: fullName, pseudo, phone: gsm, emailOffres, pqsValidated: pqs, fastSCValidated: fastsc, fastECValidated: fastec });
+    if (PM_USERS[id]) Object.assign(PM_USERS[id], { name: prenom, lastName: nom, nameAliases: aliases, fullName, agent: fullName, pseudo, phone: gsm, emailOffres, pqsValidated: pqs, fastSCValidated: fastsc, fastECValidated: fastec });
     pmCurrentUser.name = prenom;
     pmCurrentUser.fullName = fullName;
     pmCurrentUser.agent = fullName;
     pmCurrentUser.pseudo = pseudo;
+    pmCurrentUser.lastName = nom;
+    pmCurrentUser.nameAliases = aliases;
     pmCurrentUser.phone = gsm;
     pmCurrentUser.emailOffres = emailOffres;
     pmNiveauAgent = fullName;
@@ -4213,7 +4227,7 @@ function buildMessageContacts() {
 
   Object.values(PM_USERS).forEach(u => {
     if (u.isAdmin && !seen.has(u.id)) {
-      pmMessageContacts.push({ id: u.id, name: u.fullName || u.name || 'Phil-Mobile', role: 'Phil-Mobile' });
+      pmMessageContacts.push({ id: u.id, name: u.pseudo || u.fullName || u.name || 'Phil-Mobile', role: 'Phil-Mobile' });
       seen.add(u.id);
     }
   });
@@ -4223,7 +4237,7 @@ function buildMessageContacts() {
     .filter(u => u.uplineId === myId && !seen.has(u.id))
     .sort((a, b) => (a.fullName || a.name || '').localeCompare(b.fullName || b.name || ''))
     .forEach(u => {
-      pmMessageContacts.push({ id: u.id, name: u.fullName || u.name || u.id, role: 'Votre BC' });
+      pmMessageContacts.push({ id: u.id, name: u.pseudo || u.fullName || u.name || u.id, role: 'Votre BC' });
       seen.add(u.id);
     });
 }
@@ -4372,7 +4386,7 @@ window.sendMessage = async function() {
       window.collection(window.db, 'conversations', pmActiveConversationId, 'messages'),
       {
         senderId: pmCurrentUser.id,
-        senderName: pmCurrentUser.fullName || pmCurrentUser.name || '',
+        senderName: pmCurrentUser.pseudo || pmCurrentUser.fullName || pmCurrentUser.name || '',
         text,
         createdAt: new Date().toISOString()
       }
@@ -4644,7 +4658,7 @@ window.sendChatOnline = async function() {
 
   const payload = {
     senderId: pmCurrentUser.id,
-    senderName: pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id,
+    senderName: pmCurrentUser.pseudo || pmCurrentUser.fullName || pmCurrentUser.name || pmCurrentUser.id,
     text,
     createdAt: new Date().toISOString()
   };
@@ -5121,7 +5135,7 @@ window.sendUplineMessage = async function() {
       window.collection(window.db, 'conversations', pmUplineConversationId, 'messages'),
       {
         senderId: pmCurrentUser.id,
-        senderName: pmCurrentUser.fullName || pmCurrentUser.name || '',
+        senderName: pmCurrentUser.pseudo || pmCurrentUser.fullName || pmCurrentUser.name || '',
         text,
         createdAt: new Date().toISOString()
       }
@@ -5598,7 +5612,7 @@ function pmRenderStats() {
   const allMC = pmGetMC(pmCurYear, pmCurMonth);
   // Julien voit uniquement ses contrats
   const mc = pmCurrentUser && !pmCurrentUser.isAdmin
-    ? allMC.filter(c => c.agent === pmCurrentUser.agent)
+    ? allMC.filter(c => c.agent === pmCurrentUser.agent || (pmCurrentUser.nameAliases || []).indexOf(c.agent) !== -1)
     : allMC;
   const byProd={};mc.forEach(c=>{byProd[c.product]=(byProd[c.product]||0)+1;});
   const totalO=PM_ALL_O.reduce((s,p)=>s+(byProd[p]||0)+(byProd[p+' SoHo']||0),0);
@@ -6350,7 +6364,7 @@ async function recoNotifyAdmin(reco, number, nowIso) {
   var plain = 'Facture ' + number + ' envoyée pour ' + who + '.';
   var convId = pmConversationId(u.id, adminId);
   await window.addDoc(window.collection(window.db, 'conversations', convId, 'messages'), {
-    senderId: u.id, senderName: u.fullName || u.name || u.id, text: text, createdAt: nowIso
+    senderId: u.id, senderName: u.pseudo || u.fullName || u.name || u.id, text: text, createdAt: nowIso
   });
   await window.setDoc(window.doc(window.db, 'conversations', convId), {
     participants: [u.id, adminId].sort(), lastMessage: plain.slice(0, 120), lastMessageAt: nowIso,

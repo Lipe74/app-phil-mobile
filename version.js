@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.41 - Types de compte";
+  scope.APP_VERSION = "14.42 - Prénom, nom, pseudo";
 })();
