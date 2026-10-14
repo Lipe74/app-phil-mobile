@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.32 - Liste des factures</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.33 - Saisie propre</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -3561,6 +3561,27 @@ function invFind(coll, docId) {
   return null;
 }
 
+// Majuscules automatiques : seulement si le texte est saisi tout en minuscules ou tout en majuscules (sinon on respecte la saisie)
+function invTitle(s) {
+  s = String(s || '').trim().replace(/\s+/g, ' ');
+  if (!s || (s !== s.toLowerCase() && s !== s.toUpperCase())) return s;
+  var small = ['de', 'du', 'des', 'la', 'le', 'les', 'van', 'der', 'den', 'von', 'et', 'en', 'sur', 'sous', 'aux', 'au', 'd', 'l', 'te', 'ten', 'ter'];
+  return s.toLowerCase().split(' ').map(function (w, i) {
+    return w.split('-').map(function (p, j) {
+      return p.split("'").map(function (q, k) {
+        if (!q) return q;
+        if (i > 0 && j === 0 && k === 0 && small.indexOf(q) !== -1) return q;
+        return q.charAt(0).toUpperCase() + q.slice(1);
+      }).join("'");
+    }).join('-');
+  }).join(' ');
+}
+// TVA belge lisible : BE0123.456.789
+function invVatFmt(v) {
+  const d = String(v || '').toUpperCase().replace(/^BE/, '').replace(/\D/g, '');
+  return d.length === 10 ? 'BE' + d.slice(0, 4) + '.' + d.slice(4, 7) + '.' + d.slice(7) : String(v || '');
+}
+
 function invItem(coll, d) {
   const isP = coll === 'prospects';
   const type = isP ? 'purchase' : (d.kind === 'upgrade' ? 'purchase' : 'renewal');
@@ -3589,9 +3610,9 @@ function invBuildPdf(it, periodTxt) {
   doc.text('ÉMETTEUR', L, y); doc.text('FACTURÉ À', 110, y);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(30);
   const from = [INV_ISSUER.name, INV_ISSUER.street, INV_ISSUER.city, 'TVA : ' + INV_ISSUER.vat.replace(/^BE(\d{4})(\d{3})(\d{3})$/, 'BE$1.$2.$3'), INV_ISSUER.email];
-  const to = [it.name];
+  const to = [invTitle(it.name)];
   if (it.company) to.push(it.company);
-  to.push(it.street, it.zip + ' ' + it.city, 'TVA : ' + it.vat, it.email);
+  to.push(invTitle(it.street), it.zip + ' ' + invTitle(it.city), 'TVA : ' + invVatFmt(it.vat), String(it.email).toLowerCase());
   from.forEach((t, i) => doc.text(t, L, y + 6 + i * 5.5));
   to.forEach((t, i) => doc.text(doc.splitTextToSize(t, 82)[0], 110, y + 6 + i * 5.5));
 

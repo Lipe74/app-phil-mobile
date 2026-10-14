@@ -573,10 +573,10 @@ Version stable : <span id="app-version-1">…</span>
   <!-- Adresse de facturation : uniquement pour une commande de l'application -->
   <div id="req-address-block" style="display:none;margin-top:10px;">
     <h4 style="margin:6px 0;">Adresse de facturation</h4>
-    <input id="req-street" placeholder="Rue et numéro *" style="width:100%;margin:5px 0;padding:10px;">
+    <input id="req-street" autocapitalize="words" placeholder="Rue et numéro * (ex : Rue de la Gare 12)" style="width:100%;margin:5px 0;padding:10px;">
     <div style="display:flex;gap:6px;">
       <input id="req-zip" inputmode="numeric" maxlength="4" placeholder="Code postal *" style="width:38%;margin:5px 0;padding:10px;">
-      <input id="req-city" placeholder="Ville *" style="width:100%;margin:5px 0;padding:10px;">
+      <input id="req-city" autocapitalize="words" placeholder="Ville *" style="width:100%;margin:5px 0;padding:10px;">
     </div>
   </div>
 
@@ -5889,9 +5889,15 @@ window.submitAccessRequest = async function(){
     return;
   }
 
-  const email = document.getElementById('req-email').value.trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const email = document.getElementById('req-email').value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(email)) {
     alert("⚠️ Merci de saisir une adresse email valide.");
+    return;
+  }
+  const firstNameN = payTitle(document.getElementById('req-firstname').value);
+  const lastNameN = payTitle(document.getElementById('req-lastname').value);
+  if (firstNameN.length < 2 || lastNameN.length < 2) {
+    alert("⚠️ Merci d'indiquer ton prénom ET ton nom (en entier).");
     return;
   }
 
@@ -5914,12 +5920,12 @@ window.submitAccessRequest = async function(){
 
   // Commande de l'application : adresse obligatoire + communication structurée pour le virement
   const isPurchase = accessType === 'achat';
-  const street = (document.getElementById('req-street')?.value || '').trim();
+  const street = payTitle(document.getElementById('req-street')?.value || '');
   const zip = (document.getElementById('req-zip')?.value || '').trim();
-  const city = (document.getElementById('req-city')?.value || '').trim();
+  const city = payTitle(document.getElementById('req-city')?.value || '');
   if (isPurchase) {
-    if (!street || !city) { alert("⚠️ Merci de compléter l'adresse de facturation (rue et ville)."); return; }
-    if (!/^\d{4}$/.test(zip)) { alert("⚠️ Code postal belge à 4 chiffres attendu."); return; }
+    const idErr = payCheckIdentity({ fullName: firstNameN + ' ' + lastNameN, email: email, street: street, zip: zip, city: city });
+    if (idErr) { alert(idErr); return; }
   }
   const ogm = isPurchase ? payOgm() : null;
 
@@ -5929,13 +5935,13 @@ window.submitAccessRequest = async function(){
 
       smartId: document.getElementById('req-smartid').value.trim(),
 
-      firstName: document.getElementById('req-firstname').value.trim(),
-      lastName: document.getElementById('req-lastname').value.trim(),
+      firstName: firstNameN,
+      lastName: lastNameN,
 
       company: document.getElementById('req-company').value.trim(),
       vat: 'BE' + vatDigits,
 
-      email: document.getElementById('req-email').value.trim(),
+      email: email,
       phone: document.getElementById('req-phone').value.trim(),
 
       asp: document.getElementById('req-asp').value.trim(),
@@ -6521,6 +6527,31 @@ function payVatOk(v) {
   var d = String(v || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, '');
   return /^[01]\d{9}$/.test(d) && (97 - (Number(d.slice(0, 8)) % 97)) === Number(d.slice(8, 10));
 }
+// Majuscules automatiques : seulement si le texte est saisi tout en minuscules ou tout en majuscules (sinon on respecte la saisie)
+function payTitle(s) {
+  s = String(s || '').trim().replace(/\s+/g, ' ');
+  if (!s || (s !== s.toLowerCase() && s !== s.toUpperCase())) return s;
+  var small = ['de', 'du', 'des', 'la', 'le', 'les', 'van', 'der', 'den', 'von', 'et', 'en', 'sur', 'sous', 'aux', 'au', 'd', 'l', 'te', 'ten', 'ter'];
+  return s.toLowerCase().split(' ').map(function (w, i) {
+    return w.split('-').map(function (p, j) {
+      return p.split("'").map(function (q, k) {
+        if (!q) return q;
+        if (i > 0 && j === 0 && k === 0 && small.indexOf(q) !== -1) return q;
+        return q.charAt(0).toUpperCase() + q.slice(1);
+      }).join("'");
+    }).join('-');
+  }).join(' ');
+}
+// Contrôles de saisie communs (achat et prolongation) : renvoie un message d'erreur ou ''
+function payCheckIdentity(d) {
+  var words = String(d.fullName || '').trim().split(/\s+/);
+  if (words.length < 2 || words[0].length < 2 || words[words.length - 1].length < 2) return '⚠️ Merci d\'indiquer ton prénom ET ton nom (en entier).';
+  if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(d.email)) return '⚠️ Adresse email invalide.';
+  if (!/\d/.test(d.street) || d.street.length < 5) return '⚠️ Merci d\'indiquer la rue ET le numéro (ex : Rue de la Gare 12).';
+  if (!/^[1-9]\d{3}$/.test(d.zip)) return '⚠️ Code postal belge à 4 chiffres attendu.';
+  if (!/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]+$/.test(d.city)) return '⚠️ Merci d\'indiquer une ville valide (lettres uniquement).';
+  return '';
+}
 function payVatFmt(v) { return 'BE' + String(v || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, ''); }
 
 // Communication structurée belge : 10 chiffres + 2 chiffres de contrôle (modulo 97) -> +++123/4567/89012+++
@@ -6607,12 +6638,12 @@ window.renewOpen = function (opts) {
         : 'Renouvellement annuel : <strong>' + payMoney(PAY.renewal.htva) + ' HTVA</strong> (' + payMoney(price.tvac) + ' TVAC), mises à jour incluses.') +
       ' Complète ces informations pour ta facture, puis tu verras le QR de paiement.</div>' +
     '<input id="rn-smartid" placeholder="Ton ID Smart *" value="' + payEsc(p.smartId || '') + '" style="' + inp + '">' +
-    '<input id="rn-name" placeholder="Prénom et nom *" value="' + payEsc(p.fullName || '') + '" style="' + inp + '">' +
+    '<input id="rn-name" autocapitalize="words" placeholder="Prénom et nom *" value="' + payEsc(p.fullName || '') + '" style="' + inp + '">' +
     '<input id="rn-company" placeholder="Société (facultatif)" value="' + payEsc(p.company || '') + '" style="' + inp + '">' +
-    '<input id="rn-email" type="email" placeholder="Email *" value="' + payEsc(p.email || '') + '" style="' + inp + '">' +
-    '<input id="rn-street" placeholder="Rue et numéro *" value="' + payEsc(p.street || '') + '" style="' + inp + '">' +
+    '<input id="rn-email" type="email" autocapitalize="off" placeholder="Email *" value="' + payEsc(p.email || '') + '" style="' + inp + '">' +
+    '<input id="rn-street" autocapitalize="words" placeholder="Rue et numéro * (ex : Rue de la Gare 12)" value="' + payEsc(p.street || '') + '" style="' + inp + '">' +
     '<div style="display:flex;gap:6px;"><input id="rn-zip" inputmode="numeric" maxlength="4" placeholder="Code postal *" value="' + payEsc(p.zip || '') + '" style="' + inp + 'width:38%;">' +
-    '<input id="rn-city" placeholder="Ville *" value="' + payEsc(p.city || '') + '" style="' + inp + '"></div>' +
+    '<input id="rn-city" autocapitalize="words" placeholder="Ville *" value="' + payEsc(p.city || '') + '" style="' + inp + '"></div>' +
     '<input id="rn-vat" placeholder="N° de TVA * (ex : BE0123456789)" value="' + payEsc(p.vat || '') + '" style="' + inp + '">' +
     '<div style="display:flex;gap:8px;margin-top:10px;">' +
       '<button onclick="payClose()" style="flex:1;background:#fff;color:#6b7280;border:1px solid #ddd;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;">Annuler</button>' +
@@ -6623,10 +6654,10 @@ window.renewOpen = function (opts) {
 
 window.renewSubmit = async function (kind) {
   var g = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
-  var d = { smartId: g('rn-smartid'), fullName: g('rn-name'), company: g('rn-company'), email: g('rn-email'), street: g('rn-street'), zip: g('rn-zip'), city: g('rn-city'), vat: g('rn-vat') };
+  var d = { smartId: g('rn-smartid'), fullName: payTitle(g('rn-name')), company: g('rn-company'), email: g('rn-email').toLowerCase(), street: payTitle(g('rn-street')), zip: g('rn-zip'), city: payTitle(g('rn-city')), vat: g('rn-vat') };
   if (!d.smartId || !d.fullName || !d.email || !d.street || !d.zip || !d.city || !d.vat) { alert('⚠️ Merci de compléter tous les champs obligatoires (*).'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) { alert('⚠️ Adresse email invalide.'); return; }
-  if (!/^\d{4}$/.test(d.zip)) { alert('⚠️ Code postal belge à 4 chiffres attendu.'); return; }
+  var idErr = payCheckIdentity(d);
+  if (idErr) { alert(idErr); return; }
   if (!payVatOk(d.vat)) { alert('⚠️ Le numéro de TVA semble invalide (format BE0123456789).'); return; }
   var price = kind === 'upgrade' ? PAY.purchase : PAY.renewal;
   var ogm = payOgm();
