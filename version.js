@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.40 - Saisie propre";
+  scope.APP_VERSION = "14.41 - Types de compte";
 })();

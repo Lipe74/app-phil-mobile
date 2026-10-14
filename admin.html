@@ -234,7 +234,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.33 - Saisie propre</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.34 - Types de compte</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -372,8 +372,10 @@
         <div class="admin-panel" id="panel-consultants">
           <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>👥 Consultants actifs / inactifs</span>
-            <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button>
+            <span><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openMigration();">🔧 Migration des comptes</button>
+            <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button></span>
           </div>
+          <div id="consultants-filters" style="margin-bottom:10px;"></div>
           <div id="consultants-list" style="display:block;"><div class="empty">Chargement...</div></div>
         </div>
 
@@ -1484,29 +1486,27 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <input type="number" id="f-aspinit" value="0">
     </div>
     <div class="form-row">
-      <label>Paiement</label>
-      <select id="f-paystatus">
-        <option value="none" selected>⚪ Non payé</option>
-        <option value="paid">✅ Payé</option>
-        <option value="promo30">🏷️ Promo 30 jours</option>
-        <option value="parrainage">🤝 Licence offerte (parrainage)</option>
-      </select>
-    </div>
-    <div class="checkbox-row"><input type="checkbox" id="f-isadmin"> Administrateur (accès admin · sans date de fin)</div>
-    <div class="form-row">
       <label>Type de compte</label>
       <select id="f-accounttype" onchange="onAccountTypeChange('f')">
         <option value="standard">👤 Consultant standard</option>
-        <option value="test2j">🧪 Test 2 jours — désactivation auto</option>
-        <option value="newbc30">🆕 Nouveau BC — 30 jours — désactivation auto</option>
-        <option value="philmobile">🤝 Phil-Mobile — n'expire jamais</option>
+        <option value="test2j">🧪 Test 3 jours — désactivation auto</option>
+        <option value="sponsor">⭐ Sponsor — renouvellement offert à vie</option>
+        <option value="philmobile">🤝 Team Phil-Mobile — pas d'expiration</option>
+        <option value="admin">🛡️ Administrateur — pas d'expiration</option>
       </select>
     </div>
+    <div class="form-row">
+      <label>Paiement</label>
+      <select id="f-paystatus">
+        <option value="none">⚪ Non payé</option>
+        <option value="paid">✅ Payé (pour 1 an)</option>
+      </select>
+    </div>
+    <div class="checkbox-row"><input type="checkbox" id="f-lifetime"> ♾️ Consultant « À vie » (jamais bloqué, aucun bandeau de renouvellement)</div>
     <div class="form-row" id="f-duration-row">
       <label id="f-duration-label">Durée de l'accès</label>
       <select id="f-duration" onchange="document.getElementById('f-customdate').style.display = this.value === 'custom' ? 'block' : 'none';">
-        <option value="2">2 jours (test)</option>
-        <option value="3">3 jours (essai)</option>
+        <option value="3">3 jours (test)</option>
         <option value="30">30 jours</option>
         <option value="365" selected>12 mois (abonnement)</option>
         <option value="none">♾️ Indéfini</option>
@@ -1613,22 +1613,20 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
       <input type="text" id="e-expirationdate" placeholder="ex: 19/06/2027">
     </div>
     <div class="form-row">
-      <label>Paiement</label>
-      <select id="e-paystatus">
-        <option value="none">⚪ Non payé</option>
-        <option value="paid">✅ Payé</option>
-        <option value="offered">🎁 Offert (ancien)</option>
-        <option value="promo30">🏷️ Promo 30 jours</option>
-        <option value="parrainage">🤝 Licence offerte (parrainage)</option>
+      <label>Type de compte</label>
+      <select id="e-accounttype" onchange="onAccountTypeChange('e')">
+        <option value="standard">👤 Consultant standard</option>
+        <option value="test2j">🧪 Test 3 jours — désactivation auto</option>
+        <option value="sponsor">⭐ Sponsor — renouvellement offert à vie</option>
+        <option value="philmobile">🤝 Team Phil-Mobile — pas d'expiration</option>
+        <option value="admin">🛡️ Administrateur — pas d'expiration</option>
       </select>
     </div>
     <div class="form-row">
-      <label>Type de compte</label>
-      <select id="e-accounttype">
-        <option value="standard">👤 Consultant standard</option>
-        <option value="test2j">🧪 Test 2 jours — désactivation auto</option>
-        <option value="newbc30">🆕 Nouveau BC — 30 jours — désactivation auto</option>
-        <option value="philmobile">🤝 Phil-Mobile — n'expire jamais</option>
+      <label>Paiement</label>
+      <select id="e-paystatus">
+        <option value="none">⚪ Non payé</option>
+        <option value="paid">✅ Payé (pour 1 an)</option>
       </select>
     </div>
     <div class="checkbox-row"><input type="checkbox" id="e-lifetime"> ♾️ Consultant « À vie » (jamais bloqué, aucun bandeau de renouvellement)</div>
@@ -1880,7 +1878,7 @@ async function checkExpiredConsultants() {
     const now = new Date();
     snap.forEach(d => {
       const c = d.data();
-      if (!c.active || !c.expirationDate || c.lifetime === true) return;
+      if (!c.active || !c.expirationDate || c.lifetime === true || c.archived === true || acctLifetimeType(acctTypeOf(c))) return;
       const expDate = new Date(c.expirationDate);
       if (expDate < now) expiredActive.push(c.fullName || c.name || d.id);
     });
@@ -3805,6 +3803,9 @@ function renderRenewals() {
       cInfo = `<div class="meta" style="color:#15803d;">✅ Consultant trouvé : ${escapeHtml(c.fullName || c.name || c.docId)} · expiration actuelle : <strong>${escapeHtml(cur)}</strong></div>` +
         (emailDiff ? `<div class="meta" style="color:#b91c1c;font-weight:700;">⚠️ Email différent de la fiche consultant (${escapeHtml(c.email)})</div>` : '');
     }
+    let warn = '';
+    if (c && r.kind !== 'upgrade' && !acctIsLifetime(c) && !acctIsPaid(c)) warn = '<div class="meta" style="color:#b91c1c;font-weight:700;">⚠️ Compte non payé ou en test : une prolongation à 36,18 € ne convient pas. Il doit commander à 180,29 € — « Payé » sera refusé.</div>';
+    else if (c && r.kind === 'upgrade' && acctIsPaid(c)) warn = '<div class="meta" style="color:#b45309;font-weight:700;">ℹ️ Ce compte est déjà payé : a-t-il voulu renouveler (36,18 €) ? Vérifie le montant reçu.</div>';
     const kindBadge = r.kind === 'upgrade'
       ? '<span class="badge" style="background:#dcfce7;color:#15803d;">🛒 Achat (compte existant)</span>'
       : '<span class="badge" style="background:#e0f2fe;color:#0369a1;">🔄 Prolongation</span>';
@@ -3820,7 +3821,7 @@ function renderRenewals() {
           ${isPaid ? '<span class="badge badge-active">Payé</span>' : ''}
           <div class="meta">${escapeHtml(r.company || '—')} · ${escapeHtml(r.email || '')}</div>
           <div class="meta">Demande reçue le ${escapeHtml(invFmtD(r.createdAt))}</div>
-          ${cInfo}${parts.info}
+          ${cInfo}${warn}${parts.info}
           ${isPaid ? `<div class="meta" style="color:#0369a1;">💶 Payé le ${escapeHtml(invFmtD(r.paidAt))} · nouvelle expiration : <strong>${escapeHtml(invFmtD(r.newExpiration))}</strong></div>` : ''}
         </div>
         <div class="card-actions">
@@ -3855,7 +3856,8 @@ window.renewalPaid = async function (docId) {
     if (!cSnap.exists()) cSnap = await getDoc(doc(db, 'consultants', String(r.smartId).toLowerCase()));
     if (!cSnap.exists()) { alert("❌ Aucun consultant avec l'ID Smart « " + r.smartId + " ». Vérifie la demande avant de valider."); return; }
     const c = cSnap.data();
-    if (c.lifetime === true || c.accountType === 'philmobile') { alert('Ce consultant est « À vie » : aucune prolongation nécessaire.'); return; }
+    if (acctIsLifetime(c)) { alert('Ce consultant est « À vie » (Sponsor, Team, Administrateur ou case cochée) : aucune prolongation nécessaire.'); return; }
+    if (r.kind !== 'upgrade' && !acctIsPaid(c)) { alert("❌ Ce compte n'a pas acheté l'application (non payé ou en test) : une prolongation à 36,18 € est refusée.\n\nDemande-lui de passer par « Commander » (180,29 €), ou passe d'abord son paiement à « Payé » dans sa fiche si c'est une erreur."); return; }
     const now = new Date();
     let base = now;
     if (r.kind !== 'upgrade' && c.expirationDate) {
@@ -3867,7 +3869,7 @@ window.renewalPaid = async function (docId) {
     const amount = INV_PRICES[r.kind === 'upgrade' ? 'purchase' : 'renewal'].tvac;
     if (!confirm(`As-tu bien reçu ${invMoney(amount)} de ${r.fullName} (communication ${r.ogm || '—'}) ?\n\nExpiration actuelle : ${c.expirationDate ? invFmtD(c.expirationDate) : 'aucune'}\nNouvelle expiration : ${invFmtD(newExp)}`)) return;
     const upd = { expirationDate: newExp.toISOString(), active: true, payStatus: 'paid', paidDate: now.toLocaleDateString('fr-FR'), lastPaymentAt: now.toISOString() };
-    if (r.kind === 'upgrade') { upd.accountType = 'standard'; upd.isTestAccount = false; }
+    if (r.kind === 'upgrade') { upd.accountType = 'standard'; upd.isTestAccount = false; upd.archived = false; upd.archivedAt = null; }
     await updateDoc(doc(db, 'consultants', cSnap.id), upd);
     await updateDoc(doc(db, 'renewals', docId), { status: 'paid', paidAt: now.toISOString(), prevExpiration: c.expirationDate || null, newExpiration: newExp.toISOString() });
     await syncProfilPublicFromDoc(cSnap.id);
@@ -5259,16 +5261,15 @@ window.openActivateModal = function (docId) {
   document.getElementById('f-phone').value = p?.phone || '';
   document.getElementById('f-password').value = 'Smart2026!';
   document.getElementById('f-aspinit').value = p?.asp || 0;
-  document.getElementById('f-paystatus').value = p?.accessType === 'achat' ? 'paid' : 'none';
-  document.getElementById('f-isadmin').checked = false;
-  document.getElementById('f-accounttype').value = 'standard';
+  const _t0 = p?.accessType === 'demo' ? 'test2j' : 'standard';
+  document.getElementById('f-accounttype').value = _t0;
   // Durée présélectionnée selon le type d'essai demandé (modifiable avant validation)
   document.getElementById('f-duration').value =
     p?.accessType === 'demo'  ? '3'  :
     p?.accessType === 'trial' ? '30' : '365';   // achat : 12 mois
-  document.getElementById('f-duration').disabled = false;
-  document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
+  // Démo 3 jours -> Test 3 jours (période de test) ; achat -> standard payé ; sinon standard non payé
+  acctApplyType('f', _t0, { pay: p?.accessType === 'achat' ? 'paid' : 'none', lifetime: false, duration: document.getElementById('f-duration').value });
   document.getElementById('f-upline').value = p?.upline || 'Philippe Tomaszewsky';
   document.getElementById('f-uplineid').value = p?.uplineId || '';
   document.getElementById('f-uplinetel').value = p?.uplinePhone || '+32 475 24 02 05';
@@ -5285,48 +5286,15 @@ window.openCreateModal = function () {
   document.getElementById('f-phone').value = '';
   document.getElementById('f-password').value = 'Smart2026!';
   document.getElementById('f-aspinit').value = 0;
-  document.getElementById('f-paystatus').value = 'none';
-  document.getElementById('f-isadmin').checked = false;
   document.getElementById('f-accounttype').value = 'standard';
   document.getElementById('f-duration').value = '365';
-  document.getElementById('f-duration').disabled = false;
-  document.getElementById('f-duration-label').textContent = "Durée de l'accès";
   document.getElementById('f-customdate').style.display = 'none';
+  acctApplyType('f', 'standard', { pay: 'none', lifetime: false, duration: '365' });
   document.getElementById('f-upline').value = 'Philippe Tomaszewsky';
   document.getElementById('f-uplineid').value = '';
   document.getElementById('f-uplinetel').value = '+32 475 24 02 05';
   document.getElementById('f-uplineemail').value = 'infos@phil-mobile.be';
   document.getElementById('activate-modal').classList.add('open');
-};
-
-window.onAccountTypeChange = function (prefix) {
-  const type = document.getElementById(prefix + '-accounttype').value;
-  const durationSel   = document.getElementById(prefix + '-duration');
-  const durationLabel = document.getElementById(prefix + '-duration-label');
-  const customDate    = document.getElementById(prefix + '-customdate');
-  if (!durationSel) return;
-  durationSel.disabled = false;
-  if (customDate) customDate.style.display = 'none';
-  switch (type) {
-    case 'test2j':
-      durationSel.value = '2';
-      durationSel.disabled = true;
-      if (durationLabel) durationLabel.textContent = "Durée de l'accès : 2 jours (test)";
-      break;
-    case 'newbc30':
-      durationSel.value = '30';
-      durationSel.disabled = true;
-      if (durationLabel) durationLabel.textContent = "Durée de l'accès : 30 jours (nouveau BC)";
-      break;
-    case 'philmobile':
-      durationSel.value = 'none';
-      durationSel.disabled = true;
-      if (durationLabel) durationLabel.textContent = "Durée de l'accès : Indéfinie (Phil-Mobile)";
-      break;
-    default:
-      durationSel.value = '365';
-      if (durationLabel) durationLabel.textContent = "Durée de l'accès";
-  }
 };
 
 window.closeActivateModal = function () {
@@ -5342,12 +5310,13 @@ window.confirmActivate = async function () {
   const password = document.getElementById('f-password').value;
   const startDate = document.getElementById('f-startdate').value.trim();
   const aspInit = Number(document.getElementById('f-aspinit').value) || 0;
+  const accountType = document.getElementById('f-accounttype').value;
   const payStatus = document.getElementById('f-paystatus').value;
   const paidDate = payStatus === 'paid' ? new Date().toLocaleDateString('fr-FR') : '';
-  const isAdmin = document.getElementById('f-isadmin').checked;
-  const accountType = document.getElementById('f-accounttype').value;
+  const isAdmin = accountType === 'admin';
   const isTestAccount = accountType === 'test2j';
   const isTeamsAccount = accountType === 'philmobile';
+  const lifetime = acctLifetimeType(accountType) || (accountType === 'standard' && document.getElementById('f-lifetime').checked);
   const duration = document.getElementById('f-duration').value;
   const upline = document.getElementById('f-upline').value.trim();
   const uplineId = document.getElementById('f-uplineid').value.trim();
@@ -5365,12 +5334,9 @@ window.confirmActivate = async function () {
   }
 
   let expirationDate = null;
-  if (accountType === 'philmobile') {
-    // Phil-Mobile : n'expire jamais
+  if (lifetime) {
+    // Sponsor / Team / Administrateur / « À vie » : n'expire jamais
     expirationDate = null;
-  } else if (accountType === 'newbc30') {
-    // Nouveau BC : 30 jours fixes
-    expirationDate = new Date(Date.now() + 30 * 86400000).toISOString();
   } else if (duration === 'none') {
     // Indéfini : pas d'expiration
     expirationDate = null;
@@ -5398,7 +5364,7 @@ window.confirmActivate = async function () {
 
     await setDoc(doc(db, 'consultants', id), {
       id, name, fullName, email, phone, startDate, aspInit,
-      isAdmin, active: true,
+      isAdmin, lifetime, active: true,
       upline, uplineId, uplineTel, uplineEmail,
       calendlyUrl: 'https://calendly.com/infos-phil-mobile/30min',
       pqsValidated: false, fastSCValidated: false, fastECValidated: false,
@@ -5455,14 +5421,172 @@ window.confirmReconnect = async function () {
   }
 };
 
+// ===== TYPES DE COMPTE & PAIEMENT (simplifiés), ARCHIVAGE, MIGRATION =====
+const ACCT_TYPES = [
+  ['standard',   '👤 Consultant standard'],
+  ['test2j',     '🧪 Test 3 jours — désactivation auto'],
+  ['sponsor',    '⭐ Sponsor — renouvellement offert à vie'],
+  ['philmobile', "🤝 Team Phil-Mobile — pas d'expiration"],
+  ['admin',      "🛡️ Administrateur — pas d'expiration"]
+];
+const PAY_LABELS = { none: '⚪ Non payé', paid: '✅ Payé (pour 1 an)', test: '🧪 Période de test', sponsor: '⭐ Sponsor (renouvellement offert)', team: '🤝 Team Phil-Mobile' };
+const acctLifetimeType = t => t === 'sponsor' || t === 'philmobile' || t === 'admin';
+const acctPayChoices = t => t === 'test2j' ? ['test'] : t === 'sponsor' ? ['sponsor'] : (t === 'philmobile' || t === 'admin') ? ['team'] : ['none', 'paid'];
+
+// Type de compte d'une fiche (y compris les anciennes valeurs)
+function acctTypeOf(c) {
+  if (c.isAdmin === true) return 'admin';
+  const t = c.accountType;
+  if (t === 'philmobile' || c.isTeamsAccount) return 'philmobile';
+  if (t === 'sponsor') return 'sponsor';
+  if (t === 'test2j' || t === 'newbc30' || c.isTestAccount) return 'test2j';
+  return 'standard';
+}
+// Statut de paiement d'une fiche (anciennes valeurs converties)
+function acctPayOf(c, type) {
+  type = type || acctTypeOf(c);
+  if (type === 'test2j') return 'test';
+  if (type === 'sponsor') return 'sponsor';
+  if (type === 'philmobile' || type === 'admin') return 'team';
+  const st = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
+  return (st === 'paid' || st === 'offered' || st === 'parrainage') ? 'paid' : 'none';
+}
+const acctIsPaid = c => acctPayOf(c) === 'paid';
+const acctIsLifetime = c => c.lifetime === true || acctLifetimeType(acctTypeOf(c));
+
+// Applique un type de compte sur un formulaire (prefix 'f' = activation/création, 'e' = modification)
+function acctApplyType(prefix, type, state) {
+  state = state || {};
+  const pay = document.getElementById(prefix + '-paystatus');
+  const choices = acctPayChoices(type);
+  const keep = state.pay && choices.indexOf(state.pay) !== -1 ? state.pay : choices[0];
+  pay.innerHTML = choices.map(k => `<option value="${k}">${PAY_LABELS[k]}</option>`).join('');
+  pay.value = keep;
+  pay.disabled = choices.length === 1;
+  const life = document.getElementById(prefix + '-lifetime');
+  if (life) {
+    if (acctLifetimeType(type)) { life.checked = true; life.disabled = true; }
+    else if (type === 'test2j') { life.checked = false; life.disabled = true; }
+    else { life.disabled = false; if (state.lifetime !== undefined) life.checked = !!state.lifetime; }
+  }
+  if (prefix === 'f') {
+    const dur = document.getElementById('f-duration'), lbl = document.getElementById('f-duration-label');
+    dur.disabled = false;
+    document.getElementById('f-customdate').style.display = 'none';
+    if (type === 'test2j') { dur.value = '3'; dur.disabled = true; lbl.textContent = "Durée de l'accès : 3 jours (test)"; }
+    else if (acctLifetimeType(type)) { dur.value = 'none'; dur.disabled = true; lbl.textContent = "Durée de l'accès : indéfinie"; }
+    else { if (state.duration) dur.value = state.duration; else if (dur.value === 'none' || dur.value === '3') dur.value = '365'; lbl.textContent = "Durée de l'accès"; }
+  } else {
+    const exp = document.getElementById('e-expirationdate');
+    if (acctLifetimeType(type)) { exp.value = ''; exp.disabled = true; } else exp.disabled = false;
+  }
+}
+window.onAccountTypeChange = function (prefix) {
+  acctApplyType(prefix, document.getElementById(prefix + '-accounttype').value, { pay: (document.getElementById(prefix + '-paystatus') || {}).value });
+};
+
+// ----- Archivage des consultants (tests qui n'achètent pas, anciens comptes…) -----
+let consFilter = 'active';
+window.setConsFilter = function (f) { consFilter = f; loadConsultants(); };
+window.archiveConsultant = async function (docId, flag) {
+  if (flag && !confirm('Archiver ce compte ? Il disparaît de la liste principale (visible dans « Archivés »), sans être supprimé.')) return;
+  await updateDoc(doc(db, 'consultants', docId), flag ? { archived: true, archivedAt: new Date().toISOString(), active: false } : { archived: false, archivedAt: null });
+  await syncProfilPublicFromDoc(docId);
+  showToast(flag ? 'Compte archivé.' : 'Compte désarchivé (toujours inactif : utilise « Réactiver »).');
+  loadConsultants();
+};
+
+// ----- Migration des comptes existants (aperçu puis application) -----
+const MIG_GROUPS = {
+  philmobile: ['Sylvie Delahaye', 'Claire Bolsée', 'Julien Couvreur'],
+  sponsor: ['Jean Luc Danko', 'Michel Bisseri'],
+  member: ['Jason Monsieur', 'Michel Martial', 'JP Cuvelier']
+};
+const migTokens = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+function migMatch(listed, cons) {
+  const a = migTokens(listed);
+  return cons.filter(c => [c.fullName, c.name, ((c.name || '') + ' ' + (c.fullName || ''))].some(n => {
+    const b = migTokens(n);
+    if (!b.length) return false;
+    // Initiales : « JP Cuvelier » correspond à « Jean-Pierre Cuvelier »
+    if (a.length === 2 && b.length >= 3 && a[0].length <= 3 && a[1] === b[b.length - 1] && b.slice(0, -1).map(t => t[0]).join('') === a[0]) return true;
+    const [small, big] = a.length <= b.length ? [a, b] : [b, a];
+    return small.length >= 2 && small.every(t => big.indexOf(t) !== -1);
+  }));
+}
+function migTarget(c, group) {
+  let type = group === 'philmobile' ? 'philmobile' : group === 'sponsor' ? 'sponsor' : group === 'member' ? 'standard' : acctTypeOf(c);
+  if (group === 'member' && acctTypeOf(c) === 'admin') type = 'admin';
+  const pay = group === 'member' ? 'paid' : acctPayOf(c, type);
+  const life = acctLifetimeType(type) ? true : (type === 'test2j' ? false : c.lifetime === true);
+  return { accountType: type, payStatus: pay, lifetime: life, isTestAccount: type === 'test2j', isTeamsAccount: type === 'philmobile', isAdmin: type === 'admin' ? true : (c.isAdmin === true), expirationDate: acctLifetimeType(type) ? null : (c.expirationDate || null) };
+}
+function migChanged(c, t) {
+  return (c.accountType || 'standard') !== t.accountType || (c.payStatus || 'none') !== t.payStatus || (c.lifetime === true) !== t.lifetime ||
+    !!c.isTestAccount !== t.isTestAccount || !!c.isTeamsAccount !== t.isTeamsAccount || (c.isAdmin === true) !== t.isAdmin || (c.expirationDate || null) !== t.expirationDate;
+}
+const migLabel = (type, pay) => (ACCT_TYPES.find(x => x[0] === type) || ['', type])[1].split(' — ')[0] + ' · ' + PAY_LABELS[pay];
+
+window.openMigration = async function () {
+  await loadConsultants();
+  const cons = (window._consultantsCache || []);
+  const groupOf = new Map();
+  const notFound = [];
+  Object.keys(MIG_GROUPS).forEach(g => MIG_GROUPS[g].forEach(name => {
+    const m = migMatch(name, cons);
+    if (m.length === 1) groupOf.set(m[0].docId, g);
+    else notFound.push(name + (m.length > 1 ? ' (plusieurs correspondances : ' + m.map(x => x.fullName || x.docId).join(', ') + ')' : ' (introuvable)'));
+  }));
+  const rows = [];
+  cons.forEach(c => {
+    const t = migTarget(c, groupOf.get(c.docId));
+    if (migChanged(c, t)) rows.push({ c, t });
+  });
+  window._migRows = rows;
+  const box = document.createElement('div');
+  box.className = 'modal-overlay open'; box.id = 'mig-modal';
+  box.innerHTML = `<div class="modal-box" style="max-width:760px;width:96%;max-height:90vh;overflow:auto;">
+    <h3>🔧 Migration des comptes</h3>
+    <div class="meta" style="margin-bottom:8px;">Aperçu : rien n'est modifié tant que tu n'as pas cliqué sur « Appliquer ». Décoche une ligne pour l'exclure.</div>
+    ${notFound.length ? `<div class="meta" style="color:#b91c1c;font-weight:700;margin-bottom:8px;">⚠️ Noms de ta liste non trouvés : ${notFound.map(escapeHtml).join(' · ')}<br>→ corrige-les ensuite avec « Modifier ».</div>` : ''}
+    ${rows.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <tr style="text-align:left;color:#888;"><th></th><th>Consultant</th><th>Avant</th><th>Après</th></tr>
+      ${rows.map((r, i) => `<tr style="border-top:1px solid #eee;">
+        <td><input type="checkbox" id="mig-${i}" checked style="width:auto;"></td>
+        <td><strong>${escapeHtml(r.c.fullName || r.c.name || r.c.docId)}</strong><br><span style="color:#888;">${escapeHtml(r.c.docId)}</span></td>
+        <td>${escapeHtml(migLabel(acctTypeOf(r.c), acctPayOf(r.c)))}${r.c.lifetime ? ' · À vie' : ''}</td>
+        <td><strong>${escapeHtml(migLabel(r.t.accountType, r.t.payStatus))}</strong>${r.t.lifetime ? ' · À vie' : ''}</td></tr>`).join('')}
+    </table>` : '<div class="empty">Tous les comptes sont déjà à jour.</div>'}
+    <div class="form-actions" style="margin-top:14px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('mig-modal').remove()">Fermer</button>
+      ${rows.length ? '<button class="btn btn-primary" id="mig-apply" onclick="applyMigration()">✅ Appliquer</button>' : ''}
+    </div></div>`;
+  document.body.appendChild(box);
+};
+window.applyMigration = async function () {
+  const rows = (window._migRows || []).filter((r, i) => { const e = document.getElementById('mig-' + i); return e && e.checked; });
+  if (!rows.length) return;
+  if (!confirm('Appliquer la migration sur ' + rows.length + ' compte(s) ?')) return;
+  const btn = document.getElementById('mig-apply'); if (btn) { btn.disabled = true; btn.textContent = 'Migration…'; }
+  let ok = 0, ko = 0;
+  for (const r of rows) {
+    try { await updateDoc(doc(db, 'consultants', r.c.docId), r.t); await syncProfilPublicFromDoc(r.c.docId); ok++; }
+    catch (e) { console.log('Migration impossible pour', r.c.docId, e.message); ko++; }
+  }
+  const m = document.getElementById('mig-modal'); if (m) m.remove();
+  showToast('✅ Migration terminée : ' + ok + ' compte(s)' + (ko ? ', ' + ko + ' erreur(s)' : ''));
+  loadConsultants();
+};
+// ===== FIN TYPES DE COMPTE =====
+
 // --- Consultants actifs ---
 function renderExpirationBadge(c) {
-  if (c.lifetime === true) return '<div class="meta" style="color:#15803d;font-weight:700;">♾️ À vie</div>';
+  if (c.lifetime === true || acctLifetimeType(acctTypeOf(c))) return '<div class="meta" style="color:#15803d;font-weight:700;">♾️ À vie</div>';
   if (!c.expirationDate) return '';
   const expDate = new Date(c.expirationDate);
   const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
   const dateStr = expDate.toLocaleDateString('fr-FR');
-  const typeMap = { test2j: '🧪 Test · ', newbc30: '🆕 New BC · ', philmobile: '🤝 Phil-Mobile · ' };
+  const typeMap = { test2j: '🧪 Test · ', newbc30: '🧪 Test · ', philmobile: '🤝 Team · ', sponsor: '⭐ Sponsor · ' };
   const testTag = typeMap[c.accountType] || (c.isTestAccount ? '🧪 Test · ' : '');
 
   if (daysLeft < 0) {
@@ -5478,16 +5602,26 @@ async function loadConsultants() {
   const container = document.getElementById('consultants-list');
   container.innerHTML = '<div class="empty">Chargement...</div>';
   const snap = await getDocs(collection(db, 'consultants'));
-  const list = [];
-  snap.forEach(d => list.push({ docId: d.id, ...d.data() }));
+  const all = [];
+  snap.forEach(d => all.push({ docId: d.id, ...d.data() }));
+  window._consultantsCache = all;
+
+  const nbArch = all.filter(c => c.archived === true).length;
+  const fl = document.getElementById('consultants-filters');
+  if (fl) fl.innerHTML =
+    `<button class="btn ${consFilter === 'active' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setConsFilter('active')">Actifs / inactifs (${all.length - nbArch})</button> ` +
+    `<button class="btn ${consFilter === 'archived' ? 'btn-primary' : 'btn-secondary'}" style="padding:4px 10px;font-size:11px;" onclick="setConsFilter('archived')">🗄️ Archivés (${nbArch})</button>`;
+  const list = all.filter(c => (c.archived === true) === (consFilter === 'archived'));
 
   if (list.length === 0) {
-    container.innerHTML = '<div class="empty">Aucun consultant.</div>';
+    container.innerHTML = '<div class="empty">' + (consFilter === 'archived' ? 'Aucun compte archivé.' : 'Aucun consultant.') + '</div>';
     return;
   }
 
   container.innerHTML = '';
   list.forEach(c => {
+    const type = acctTypeOf(c);
+    const canArchive = c.docId !== adminOwnId && type !== 'admin' && (!c.active || type === 'test2j');
     const card = document.createElement('div');
     card.className = 'card';
     card.innerHTML = `
@@ -5495,10 +5629,10 @@ async function loadConsultants() {
         <div class="card-info">
           <strong>${escapeHtml(c.fullName || c.name || '')}</strong>
           <span class="badge ${c.active ? 'badge-active' : 'badge-inactive'}">${c.active ? 'Actif' : 'Inactif'}</span>
-          ${c.isAdmin ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">Admin</span>' : ''}
-          ${c.accountType === 'philmobile' || c.isTeamsAccount ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🤝 Phil-Mobile</span>' : ''}
-          ${c.accountType === 'newbc30' ? '<span class="badge" style="background:#f0fdf4;color:#16a34a;">🆕 New BC</span>' : ''}
-          ${(c.accountType === 'test2j' || c.isTestAccount) && c.accountType !== 'philmobile' && c.accountType !== 'newbc30' ? '<span class="badge" style="background:#fef9c3;color:#854d0e;">🧪 Test</span>' : ''}
+          ${type === 'admin' ? '<span class="badge badge-active" style="background:#FFF3E0;color:#B45309;">🛡️ Admin</span>' : ''}
+          ${type === 'philmobile' ? '<span class="badge" style="background:#fff3e8;color:#f97316;">🤝 Team</span>' : ''}
+          ${type === 'sponsor' ? '<span class="badge" style="background:#fef3c7;color:#b45309;">⭐ Sponsor</span>' : ''}
+          ${type === 'test2j' ? '<span class="badge" style="background:#fef9c3;color:#854d0e;">🧪 Test</span>' : ''}
           <div class="meta">${escapeHtml(c.email || '')} · ${c.phone ? '📞 ' + escapeHtml(c.phone) : '<span style="color:#c0392b;">📞 Tél. manquant</span>'} · ID: ${escapeHtml(c.id || c.docId)}</div>
           <div class="meta">Entrée: ${escapeHtml(c.startDate || '—')} · ASP actuel: ${escapeHtml(String(c.aspInit ?? 0))}</div>
           <div class="meta">
@@ -5507,12 +5641,10 @@ async function loadConsultants() {
             ${c.fastECValidated ? '✅ Fast EC' : '⬜ Fast EC'}
           </div>
           ${(() => {
-            const st = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
-            if (st === 'paid') return `<div class="meta">✅ Payé${c.paidDate ? ' le ' + escapeHtml(c.paidDate) : ''}</div>`;
-            if (st === 'offered') return '<div class="meta">🎁 Offert</div>';
-            if (st === 'promo30') return '<div class="meta">🏷️ Promo 30 jours</div>';
-            if (st === 'parrainage') return '<div class="meta">🤝 Licence offerte (parrainage)</div>';
-            return '<div class="meta" style="color:#c0392b;">⚪ Non payé</div>';
+            const st = acctPayOf(c, type);
+            if (st === 'paid') return `<div class="meta">✅ Payé (pour 1 an)${c.paidDate ? ' le ' + escapeHtml(c.paidDate) : ''}</div>`;
+            if (st === 'none') return '<div class="meta" style="color:#c0392b;">⚪ Non payé</div>';
+            return `<div class="meta">${PAY_LABELS[st]}</div>`;
           })()}
           ${renderExpirationBadge(c)}
         </div>
@@ -5521,17 +5653,16 @@ async function loadConsultants() {
           <button class="btn ${c.active ? 'btn-danger' : 'btn-primary'}" onclick="toggleActive('${c.docId}', ${!c.active})">
             ${c.active ? '⏸ Désactiver' : '▶ Réactiver'}
           </button>
+          ${c.archived === true ? `<button class="btn btn-secondary" onclick="archiveConsultant('${c.docId}', false)">↩︎ Désarchiver</button>` : canArchive ? `<button class="btn btn-secondary" onclick="archiveConsultant('${c.docId}', true)">🗄️ Archiver</button>` : ''}
         </div>
       </div>
     `;
     container.appendChild(card);
   });
-
-  window._consultantsCache = list;
 }
 
 window.toggleActive = async function (docId, newState) {
-  await updateDoc(doc(db, 'consultants', docId), { active: newState });
+  await updateDoc(doc(db, 'consultants', docId), newState ? { active: true, archived: false, archivedAt: null } : { active: false });
   await syncProfilPublicFromDoc(docId);
   showToast(newState ? 'Consultant réactivé.' : 'Consultant désactivé.');
   loadConsultants();
@@ -5575,7 +5706,7 @@ async function renderQrPilotList(selectedIds) {
   const box = document.getElementById('qr-pilot-list');
   const snap = await getDocs(collection(db, 'consultants'));
   const list = [];
-  snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+  snap.forEach(d => { if (d.data().archived !== true) list.push({ id: d.id, ...d.data() }); });
   list.sort((a, b) => (b.active === true) - (a.active === true) || (a.fullName || a.name || a.id).localeCompare(b.fullName || b.name || b.id));
   const known = new Set(list.map(c => c.id));
   const now = Date.now();
@@ -5698,11 +5829,9 @@ window.openEditModal = function (docId) {
   document.getElementById('e-expirationdate').value = c.expirationDate
     ? new Date(c.expirationDate).toLocaleDateString('fr-FR').split('/').join('/')
     : '';
-  const derivedType = c.accountType || (c.isTestAccount ? 'test2j' : c.isTeamsAccount ? 'philmobile' : 'standard');
+  const derivedType = acctTypeOf(c);
   document.getElementById('e-accounttype').value = derivedType;
-  document.getElementById('e-lifetime').checked = c.lifetime === true;
-  // Rétrocompatibilité : les anciens consultants avec un paidAmount > 0 sont considérés payés
-  document.getElementById('e-paystatus').value = c.payStatus || (Number(c.paidAmount) > 0 ? 'paid' : 'none');
+  acctApplyType('e', derivedType, { pay: acctPayOf(c, derivedType), lifetime: c.lifetime === true });
   document.getElementById('edit-modal').classList.add('open');
 };
 
@@ -5726,8 +5855,11 @@ window.confirmEdit = async function () {
   const accountType = document.getElementById('e-accounttype').value;
   const isTestAccount = accountType === 'test2j';
   const isTeamsAccount = accountType === 'philmobile';
+  const isAdmin = accountType === 'admin';
   const payStatus = document.getElementById('e-paystatus').value;
-  const lifetime = document.getElementById('e-lifetime').checked;
+  const lifetime = acctLifetimeType(accountType) || (accountType === 'standard' && document.getElementById('e-lifetime').checked);
+  // Garde-fou : on ne peut pas se retirer soi-même le rôle Administrateur
+  if (currentEditDocId === adminOwnId && !isAdmin) { alert('Tu ne peux pas retirer le rôle Administrateur de ton propre compte.'); return; }
   const expirationDateStr = document.getElementById('e-expirationdate').value.trim();
   const upline = document.getElementById('e-upline').value.trim();
   const uplineId = document.getElementById('e-uplineid').value.trim();
@@ -5761,7 +5893,7 @@ window.confirmEdit = async function () {
   }
 
   let expirationDate = null;
-  if (expirationDateStr) {
+  if (expirationDateStr && !lifetime) {
     const parts = expirationDateStr.split('/');
     if (parts.length === 3) {
       expirationDate = new Date(parts[2], parts[1]-1, parts[0]).toISOString();
@@ -5778,7 +5910,7 @@ window.confirmEdit = async function () {
       : '';
     const updatePayload = {
       name, fullName, email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
-      expirationDate, isTestAccount, isTeamsAccount, accountType, payStatus, paidDate, lifetime, upline, uplineId, uplineTel, uplineEmail
+      expirationDate, isTestAccount, isTeamsAccount, isAdmin, accountType, payStatus, paidDate, lifetime, upline, uplineId, uplineTel, uplineEmail
     };
     // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)
     if (editPhotoPendingUrl) updatePayload.photoURL = editPhotoPendingUrl;

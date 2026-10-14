@@ -2050,7 +2050,7 @@ window.checkAndApplyExpiration = async function(consultantId) {
 
     const data = snap.data();
     // Consultant "À vie" (case cochée dans l'admin) : jamais bloqué, aucun bandeau
-    if (data.lifetime === true) return { expired: false, daysLeft: null, lifetime: true };
+    if (data.lifetime === true || data.isAdmin === true || data.accountType === 'sponsor' || data.accountType === 'philmobile') return { expired: false, daysLeft: null, lifetime: true };
     if (!data.expirationDate) return { expired: false, daysLeft: null };
 
     const expDate = new Date(data.expirationDate);
@@ -2061,6 +2061,8 @@ window.checkAndApplyExpiration = async function(consultantId) {
       payStatus: data.payStatus || (Number(data.paidAmount) > 0 ? 'paid' : 'none'),
       isTest: !!data.isTestAccount || ['test2j', 'newbc30'].indexOf(data.accountType) !== -1
     };
+    // Seuls les comptes qui ont acheté l'application (Payé, y compris anciennes valeurs « offert ») peuvent renouveler
+    consultant.isPaid = !consultant.isTest && ['paid', 'offered', 'parrainage'].indexOf(consultant.payStatus) !== -1;
 
     if (daysLeft < 0) {
       try {
@@ -2117,7 +2119,7 @@ function showExpirationBanner(info) {
   // Bouton de renouvellement / commande selon le type de compte (données du consultant déjà préremplies)
   const c = info.consultant || null;
   window._payConsultant = c;
-  const isTest = !!(c && c.isTest), isPaid = !!(c && c.payStatus === 'paid');
+  const isPaid = !!(c && c.isPaid);
   const mkBtn = (label, kind) => {
     const b = document.createElement('button');
     b.textContent = label;
@@ -2125,8 +2127,8 @@ function showExpirationBanner(info) {
     b.onclick = () => window.payOpenFor(kind);
     banner.appendChild(b);
   };
-  if (isTest || !isPaid) mkBtn('🛒 Commander (' + payMoney(PAY.purchase.tvac) + ' TVAC)', 'upgrade');
-  if (!isTest) mkBtn('🔄 Renouveler (' + payMoney(PAY.renewal.tvac) + ' TVAC)', 'renewal');
+  if (!isPaid) mkBtn('🛒 Commander (' + payMoney(PAY.purchase.tvac) + ' TVAC)', 'upgrade');
+  else mkBtn('🔄 Renouveler (' + payMoney(PAY.renewal.tvac) + ' TVAC)', 'renewal');
 
   const newsBanner = document.getElementById('news-banner');
   if (newsBanner && newsBanner.parentNode) {
@@ -6698,12 +6700,11 @@ window.pmShowRenewalWall = function (info) {
   if (!host) return;
   var box = document.getElementById('rem-renew-box');
   if (!box) { box = document.createElement('div'); box.id = 'rem-renew-box'; host.parentNode.insertBefore(box, host.nextSibling); }
-  var isTest = !!(c && c.isTest), isPaid = !!(c && c.payStatus === 'paid');
+  var isPaid = !!(c && c.isPaid);
   var b = 'display:block;width:100%;max-width:260px;margin:6px auto;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;';
   var html = '';
-  if (isTest || !isPaid) html += '<button style="' + b + 'background:#f97316;color:#fff;" onclick="payOpenFor(\'upgrade\')">🛒 Commander l\'application — ' + payMoney(PAY.purchase.tvac) + ' TVAC</button>';
-  if (!isTest) html += '<button style="' + b + (isPaid ? 'background:#f97316;color:#fff;' : 'background:#fff;color:#f97316;border:1.5px solid #f97316;') + '" onclick="payOpenFor(\'renewal\')">🔄 Renouveler mon app — ' + payMoney(PAY.renewal.tvac) + ' TVAC / an</button>';
-  if (!isTest && !isPaid) html += '<div style="font-size:11px;color:#6b7280;max-width:260px;margin:2px auto 8px;">Renouvellement : si tu as déjà acheté l\'application.</div>';
+  if (!isPaid) html += '<button style="' + b + 'background:#f97316;color:#fff;" onclick="payOpenFor(\'upgrade\')">🛒 Commander l\'application — ' + payMoney(PAY.purchase.tvac) + ' TVAC</button>';
+  else html += '<button style="' + b + 'background:#f97316;color:#fff;" onclick="payOpenFor(\'renewal\')">🔄 Renouveler mon app — ' + payMoney(PAY.renewal.tvac) + ' TVAC / an</button>';
   box.innerHTML = html;
 };
 window.pmStoreRenewalWall = function (info) { try { sessionStorage.setItem('pm_wall', JSON.stringify({ consultant: info.consultant || null, msg: pmExpirationMsg(info) })); } catch (e) {} };
