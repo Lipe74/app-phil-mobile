@@ -2267,6 +2267,46 @@ async function loadFavDefaultsAdmin() {
       current.items.push({ key: favDefaultsKey(btn), label: clone.textContent.replace(/\s+/g, ' ').trim() });
     });
 
+    // Éléments dynamiques de « 📚 Ressources » (liens + documents), générés par le hub depuis Firestore.
+    // Les clés reproduisent exactement l'onclick créé par le hub (loadHubLinks / loadHubDocuments).
+    const normOc = oc => 'oc:' + oc.replace(/\s+/g, ' ').trim();
+    try {
+      const [linksSnap, docsSnap, catsSnap] = await Promise.all([
+        getDocs(collection(db, 'liens')),
+        getDocs(collection(db, 'documents')),
+        getDocs(collection(db, 'documentCategories'))
+      ]);
+      const links = [];
+      linksSnap.forEach(d => links.push(d.data()));
+      links.sort((x, y) => (x.ordre || 0) - (y.ordre || 0));
+      const linkItems = links.filter(l => l.url).map(l => ({
+        key: normOc("window.open('" + l.url + "','_blank')"),
+        label: ((l.icone || '🌐') + ' ' + (l.titre || '')).trim()
+      }));
+      if (linkItems.length) sections.push({ name: '📚 Ressources — 🌐 Sites Web Importants', items: linkItems });
+
+      let cats = [];
+      catsSnap.forEach(d => cats.push(d.data()));
+      cats.sort((x, y) => (x.ordre ?? 0) - (y.ordre ?? 0));
+      cats = cats.length ? cats.filter(c => !c.hidden) : [
+        { label: 'Phil-Mobile', icone: '🟢' }, { label: 'Smart SN', icone: '🔵' }, { label: 'Orange', icone: '🟠' },
+        { label: 'Eneco', icone: '⚡' }, { label: 'Divers', icone: '📁' }
+      ];
+      const docs = [];
+      docsSnap.forEach(d => { const x = d.data(); if (x.url) docs.push(x); });
+      cats.forEach(cat => {
+        const items = docs.filter(x => x.categorie === cat.label)
+          .sort((x, y) => (x.ordre || 0) - (y.ordre || 0))
+          .map(x => ({
+            key: normOc("loadFrame('" + x.url + "#toolbar=0&navpanes=0&view=FitH',this)"),
+            label: ((x.icone || '📄') + ' ' + (x.titre || '')).trim()
+          }));
+        if (items.length) sections.push({ name: '📚 Ressources — ' + (cat.icone || '📁') + ' ' + cat.label, items });
+      });
+    } catch (e) {
+      console.log('Ressources dynamiques indisponibles:', e.message);
+    }
+
     box.innerHTML = '';
     sections.filter(s => s.items.length).forEach(sec => {
       const title = document.createElement('div');
