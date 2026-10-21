@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.47 - Favoris par défaut : favori admin";
+  scope.APP_VERSION = "14.48 - Reset favoris (admin)";
 })();

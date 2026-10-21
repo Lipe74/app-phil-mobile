@@ -373,8 +373,7 @@
         <div class="admin-panel" id="panel-consultants">
           <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>👥 Consultants actifs / inactifs</span>
-            <span><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openMigration();">🔧 Migration des comptes</button>
-            <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openNameTool();">✂️ Prénoms / noms</button>
+            <span><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openNameTool();">✂️ Prénoms / noms</button>
             <button class="btn btn-primary" style="padding:4px 10px;font-size:11px;" onclick="openCreateModal();">➕ Créer</button></span>
           </div>
           <div id="consultants-filters" style="margin-bottom:10px;"></div>
@@ -1759,6 +1758,7 @@ import {
   setDoc,
   doc,
   updateDoc,
+  deleteField,
   getDoc,
   addDoc,
   deleteDoc,
@@ -5746,87 +5746,6 @@ window.applyNameTool = async function () {
 };
 // ===== FIN PRÉNOM / NOM / PSEUDO =====
 
-// ----- Migration des comptes existants (aperçu puis application) -----
-const MIG_GROUPS = {
-  philmobile: ['Sylvie Delahaye', 'Claire Bolsée', 'Julien Couvreur'],
-  sponsor: ['Jean Luc Danko', 'Michel Bisseri'],
-  member: ['Jason Monsieur', 'Michel Martial', 'JP Cuvelier']
-};
-const migTokens = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-function migMatch(listed, cons) {
-  const a = migTokens(listed);
-  return cons.filter(c => [c.fullName, c.name, ((c.name || '') + ' ' + (c.fullName || ''))].some(n => {
-    const b = migTokens(n);
-    if (!b.length) return false;
-    // Initiales : « JP Cuvelier » correspond à « Jean-Pierre Cuvelier »
-    if (a.length === 2 && b.length >= 3 && a[0].length <= 3 && a[1] === b[b.length - 1] && b.slice(0, -1).map(t => t[0]).join('') === a[0]) return true;
-    const [small, big] = a.length <= b.length ? [a, b] : [b, a];
-    return small.length >= 2 && small.every(t => big.indexOf(t) !== -1);
-  }));
-}
-function migTarget(c, group) {
-  let type = group === 'philmobile' ? 'philmobile' : group === 'sponsor' ? 'sponsor' : group === 'member' ? 'standard' : acctTypeOf(c);
-  if (group === 'member' && acctTypeOf(c) === 'admin') type = 'admin';
-  const pay = group === 'member' ? 'paid' : acctPayOf(c, type);
-  const life = acctLifetimeType(type) ? true : (type === 'test2j' ? false : c.lifetime === true);
-  return { accountType: type, payStatus: pay, lifetime: life, isTestAccount: type === 'test2j', isTeamsAccount: type === 'philmobile', isAdmin: type === 'admin' ? true : (c.isAdmin === true), expirationDate: acctLifetimeType(type) ? null : (c.expirationDate || null) };
-}
-function migChanged(c, t) {
-  return (c.accountType || 'standard') !== t.accountType || (c.payStatus || 'none') !== t.payStatus || (c.lifetime === true) !== t.lifetime ||
-    !!c.isTestAccount !== t.isTestAccount || !!c.isTeamsAccount !== t.isTeamsAccount || (c.isAdmin === true) !== t.isAdmin || (c.expirationDate || null) !== t.expirationDate;
-}
-const migLabel = (type, pay) => (ACCT_TYPES.find(x => x[0] === type) || ['', type])[1].split(' — ')[0] + ' · ' + PAY_LABELS[pay];
-
-window.openMigration = async function () {
-  await loadConsultants();
-  const cons = (window._consultantsCache || []);
-  const groupOf = new Map();
-  const notFound = [];
-  Object.keys(MIG_GROUPS).forEach(g => MIG_GROUPS[g].forEach(name => {
-    const m = migMatch(name, cons);
-    if (m.length === 1) groupOf.set(m[0].docId, g);
-    else notFound.push(name + (m.length > 1 ? ' (plusieurs correspondances : ' + m.map(x => x.fullName || x.docId).join(', ') + ')' : ' (introuvable)'));
-  }));
-  const rows = [];
-  cons.forEach(c => {
-    const t = migTarget(c, groupOf.get(c.docId));
-    if (migChanged(c, t)) rows.push({ c, t });
-  });
-  window._migRows = rows;
-  const box = document.createElement('div');
-  box.className = 'modal-overlay open'; box.id = 'mig-modal';
-  box.innerHTML = `<div class="modal-box" style="max-width:760px;width:96%;max-height:90vh;overflow:auto;">
-    <h3>🔧 Migration des comptes</h3>
-    <div class="meta" style="margin-bottom:8px;">Aperçu : rien n'est modifié tant que tu n'as pas cliqué sur « Appliquer ». Décoche une ligne pour l'exclure.</div>
-    ${notFound.length ? `<div class="meta" style="color:#b91c1c;font-weight:700;margin-bottom:8px;">⚠️ Noms de ta liste non trouvés : ${notFound.map(escapeHtml).join(' · ')}<br>→ corrige-les ensuite avec « Modifier ».</div>` : ''}
-    ${rows.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px;">
-      <tr style="text-align:left;color:#888;"><th></th><th>Consultant</th><th>Avant</th><th>Après</th></tr>
-      ${rows.map((r, i) => `<tr style="border-top:1px solid #eee;">
-        <td><input type="checkbox" id="mig-${i}" checked style="width:auto;"></td>
-        <td><strong>${escapeHtml(r.c.fullName || r.c.name || r.c.docId)}</strong><br><span style="color:#888;">${escapeHtml(r.c.docId)}</span></td>
-        <td>${escapeHtml(migLabel(acctTypeOf(r.c), acctPayOf(r.c)))}${r.c.lifetime ? ' · À vie' : ''}</td>
-        <td><strong>${escapeHtml(migLabel(r.t.accountType, r.t.payStatus))}</strong>${r.t.lifetime ? ' · À vie' : ''}</td></tr>`).join('')}
-    </table>` : '<div class="empty">Tous les comptes sont déjà à jour.</div>'}
-    <div class="form-actions" style="margin-top:14px;">
-      <button class="btn btn-secondary" onclick="document.getElementById('mig-modal').remove()">Fermer</button>
-      ${rows.length ? '<button class="btn btn-primary" id="mig-apply" onclick="applyMigration()">✅ Appliquer</button>' : ''}
-    </div></div>`;
-  document.body.appendChild(box);
-};
-window.applyMigration = async function () {
-  const rows = (window._migRows || []).filter((r, i) => { const e = document.getElementById('mig-' + i); return e && e.checked; });
-  if (!rows.length) return;
-  if (!confirm('Appliquer la migration sur ' + rows.length + ' compte(s) ?')) return;
-  const btn = document.getElementById('mig-apply'); if (btn) { btn.disabled = true; btn.textContent = 'Migration…'; }
-  let ok = 0, ko = 0;
-  for (const r of rows) {
-    try { await updateDoc(doc(db, 'consultants', r.c.docId), r.t); await syncProfilPublicFromDoc(r.c.docId); ok++; }
-    catch (e) { console.log('Migration impossible pour', r.c.docId, e.message); ko++; }
-  }
-  const m = document.getElementById('mig-modal'); if (m) m.remove();
-  showToast('✅ Migration terminée : ' + ok + ' compte(s)' + (ko ? ', ' + ko + ' erreur(s)' : ''));
-  loadConsultants();
-};
 // ===== FIN TYPES DE COMPTE =====
 
 // --- Consultants actifs ---
@@ -5903,6 +5822,7 @@ async function loadConsultants() {
           ${renderExpirationBadge(c)}
         </div>
         <div class="card-actions">
+          <button class="btn btn-secondary" onclick="resetFavorites('${c.docId}')" title="Remettre les favoris par défaut">❤️ Reset favoris</button>
           <button class="btn btn-secondary" onclick="openEditModal('${c.docId}')">✏️ Modifier</button>
           <button class="btn ${c.active ? 'btn-danger' : 'btn-primary'}" onclick="toggleActive('${c.docId}', ${!c.active})">
             ${c.active ? '⏸ Désactiver' : '▶ Réactiver'}
@@ -5914,6 +5834,24 @@ async function loadConsultants() {
     container.appendChild(card);
   });
 }
+
+// Remet les favoris du consultant à zéro : à sa prochaine connexion, il reçoit les favoris par défaut
+// (et suit de nouveau les changements de l'admin tant qu'il ne les modifie pas).
+window.resetFavorites = async function (docId) {
+  const c = (window._consultantsCache || []).find(x => x.docId === docId);
+  const nom = c ? (c.fullName || c.name || docId) : docId;
+  if (!confirm('Remettre les favoris par défaut pour ' + nom + ' ?\nSes favoris actuels seront remplacés à sa prochaine connexion.')) return;
+  try {
+    await updateDoc(doc(db, 'consultants', docId), {
+      favoriMenu: deleteField(),
+      favoriMenuSource: deleteField(),
+      favoriMenuDefaultsAt: deleteField()
+    });
+    showToast('❤️ Favoris réinitialisés pour ' + nom + '.');
+  } catch (err) {
+    alert('Erreur lors de la réinitialisation: ' + err.message);
+  }
+};
 
 window.toggleActive = async function (docId, newState) {
   await updateDoc(doc(db, 'consultants', docId), newState ? { active: true, archived: false, archivedAt: null } : { active: false });
