@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.45 - Favoris par défaut : Ressources";
+  scope.APP_VERSION = "14.46 - Favoris par défaut en direct";
 })();

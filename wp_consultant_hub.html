@@ -2453,34 +2453,62 @@ function pmFavKey(btn) {
 
 // Charge les favoris depuis Firestore (source de vérité cross-device),
 // avec fallback localStorage si Firestore est indisponible.
-// Si le consultant n'a aucun favori, on lui applique les favoris par défaut définis
-// par l'admin (Firestore settings/menuDefaults). Ceux qui ont déjà des favoris ne sont jamais touchés.
+// Favoris par défaut définis par l'admin (Firestore settings/menuDefaults : { favorites, updatedAt }).
+// Un consultant dont les favoris viennent des défauts ET qu'il n'a jamais modifiés (favoriMenuSource = 'default')
+// suit automatiquement les changements de l'admin (à la connexion et en direct).
+// Dès qu'il modifie lui-même ses favoris, favoriMenuSource passe à 'user' et on n'y touche plus.
+var pmFavSource = null;      // 'default' | 'user' | null
+var pmFavDefaultsAt = null;  // updatedAt des défauts appliqués
+
 async function pmLoadDefaultFavorites() {
   try {
     var snap = await window.getDoc(window.doc(window.db, 'settings', 'menuDefaults'));
     if (snap.exists() && Array.isArray(snap.data().favorites)) {
-      return snap.data().favorites.filter(function (k) { return typeof k === 'string' && k; });
+      var d = snap.data();
+      return {
+        favorites: d.favorites.filter(function (k) { return typeof k === 'string' && k; }),
+        at: d.updatedAt || ''
+      };
     }
   } catch (e) {
     console.log('Lecture favoris par défaut impossible:', e.message);
   }
-  return [];
+  return null;
+}
+
+// Applique des défauts au consultant courant (sans toucher à l'interface).
+function pmApplyDefaultFavorites(defs) {
+  pmFavorites = defs.favorites.slice();
+  pmFavSource = 'default';
+  pmFavDefaultsAt = defs.at;
+  pmSaveFavorites({ source: 'default', at: defs.at });
 }
 
 async function pmLoadFavorites() {
-  var fsOk = false, fsArr = null;
+  var fsOk = false, fsArr = null, fsData = {};
   if (pmCurrentUser && window.db && window.getDoc && window.doc) {
     try {
       var snap = await window.getDoc(window.doc(window.db, 'consultants', pmCurrentUser.id));
       fsOk = true;
-      if (snap.exists() && Array.isArray(snap.data().favoriMenu)) fsArr = snap.data().favoriMenu;
+      if (snap.exists()) {
+        fsData = snap.data();
+        if (Array.isArray(fsData.favoriMenu)) fsArr = fsData.favoriMenu;
+      }
     } catch (e) {
       console.log('Lecture favoris Firestore impossible:', e.message);
     }
   }
+  pmFavSource = fsData.favoriMenuSource || null;
+  pmFavDefaultsAt = fsData.favoriMenuDefaultsAt || null;
+
   if (fsArr && fsArr.length) {
     pmFavorites = fsArr;
     try { localStorage.setItem('pmFavorites', JSON.stringify(pmFavorites)); } catch (e) {}
+    // Favoris jamais modifiés par le consultant : suivre la dernière sélection de l'admin
+    if (pmFavSource === 'default') {
+      var cur = await pmLoadDefaultFavorites();
+      if (cur && cur.at !== pmFavDefaultsAt) pmApplyDefaultFavorites(cur);
+    }
     return;
   }
   // Pas de favoris côté Firestore : localStorage (hors-ligne / ancien appareil), sinon défauts admin
@@ -2493,9 +2521,8 @@ async function pmLoadFavorites() {
   if (!fsArr && local.length) { pmFavorites = local; return; }
   if (fsOk) {
     var defs = await pmLoadDefaultFavorites();
-    if (defs.length) {
-      pmFavorites = defs.slice();
-      pmSaveFavorites();
+    if (defs && defs.favorites.length) {
+      pmApplyDefaultFavorites(defs);
       return;
     }
   }
@@ -2503,15 +2530,59 @@ async function pmLoadFavorites() {
 }
 
 // Sauvegarde dans Firestore (cross-device) + localStorage (cache offline immédiat).
-function pmSaveFavorites() {
+// Sans argument : modification faite par le consultant -> favoriMenuSource = 'user'.
+// Avec { source:'default', at } : application des défauts de l'admin.
+function pmSaveFavorites(meta) {
+  meta = meta || { source: 'user' };
+  pmFavSource = meta.source;
   try { localStorage.setItem('pmFavorites', JSON.stringify(pmFavorites)); } catch (e) {}
   if (pmCurrentUser && window.db && window.updateDoc && window.doc) {
-    window.updateDoc(
-      window.doc(window.db, 'consultants', pmCurrentUser.id),
-      { favoriMenu: pmFavorites }
-    ).catch(function (e) {
+    var ref = window.doc(window.db, 'consultants', pmCurrentUser.id);
+    window.updateDoc(ref, { favoriMenu: pmFavorites }).catch(function (e) {
       console.log('Sauvegarde favoris Firestore impossible:', e.message);
     });
+    // Métadonnées dans une écriture séparée : si elle échoue, les favoris restent sauvegardés
+    var m = { favoriMenuSource: meta.source };
+    if (meta.source === 'default') m.favoriMenuDefaultsAt = meta.at || '';
+    window.updateDoc(ref, m).catch(function (e) {
+      console.log('Sauvegarde source favoris impossible:', e.message);
+    });
+  }
+}
+
+// Met à jour les cœurs du menu après un changement de favoris venu de l'extérieur (admin en direct).
+function pmRefreshHearts() {
+  Object.keys(pmFavMap).forEach(function (key) {
+    var btn = pmFavMap[key];
+    var row = btn && btn.closest ? btn.closest('.pm-fav-row') : null;
+    var h = row ? row.querySelector('.pm-fav-heart') : null;
+    if (h) h.textContent = pmFavorites.indexOf(key) !== -1 ? '❤️' : '🤍';
+  });
+}
+
+// Écoute en direct des favoris par défaut : les consultants connectés qui n'ont rien modifié
+// reçoivent immédiatement la nouvelle sélection.
+function pmWatchDefaultFavorites() {
+  if (window._pmFavDefaultsUnsub || !window.onSnapshot || !window.db || !window.doc) return;
+  try {
+    window._pmFavDefaultsUnsub = window.onSnapshot(window.doc(window.db, 'settings', 'menuDefaults'), function (snap) {
+      if (!snap.exists() || !Array.isArray(snap.data().favorites)) return;
+      var d = snap.data();
+      var at = d.updatedAt || '';
+      if (at === pmFavDefaultsAt) return;
+      var hasReal = pmFavorites.some(function (k) { return k.indexOf('sep:') !== 0; });
+      // Seulement si les favoris actuels viennent des défauts (ou sont vides sans historique de modification)
+      if (pmFavSource === 'default' || (pmFavSource !== 'user' && !hasReal)) {
+        pmApplyDefaultFavorites({
+          favorites: d.favorites.filter(function (k) { return typeof k === 'string' && k; }),
+          at: at
+        });
+        pmRefreshHearts();
+        pmRenderFavoritesList();
+      }
+    }, function () {});
+  } catch (e) {
+    console.log('Écoute favoris par défaut impossible:', e.message);
   }
 }
 
@@ -2706,6 +2777,7 @@ async function initFavorites() {
     wrap.appendChild(heart);
   });
   pmRenderFavoritesList();
+  pmWatchDefaultFavorites();
 }
 
 function toggleFormation(id){
