@@ -296,6 +296,9 @@ Version stable : <span id="app-version-1">…</span>
          id="rem-email"
          placeholder="Votre adresse e-mail"
          autocomplete="email"
+         autocapitalize="off"
+         autocorrect="off"
+         spellcheck="false"
          style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
 
   <input type="password"
@@ -303,6 +306,9 @@ Version stable : <span id="app-version-1">…</span>
            onkeydown="if(event.key==='Enter') firebaseLogin();"
          placeholder="Votre mot de passe"
          autocomplete="current-password"
+         autocapitalize="off"
+         autocorrect="off"
+         spellcheck="false"
          style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
 
   <div id="rem-error"
@@ -8992,7 +8998,7 @@ onAuthStateChanged(auth, async (user) => {
 window.firebaseLogin = async function(){
 
   const email =
-    document.getElementById('rem-email').value.trim();
+    document.getElementById('rem-email').value.trim().toLowerCase();
 
   const password =
     document.getElementById('rem-password').value;
@@ -9041,14 +9047,26 @@ window.firebaseLogin = async function(){
     loadHubScripts();
 
   }catch(err){
-    document.getElementById('rem-error').style.display='block';
-
+    const code = (err && err.code) ? err.code : 'inconnu';
+    const msgs = {
+      'auth/invalid-credential': 'Adresse e-mail ou mot de passe incorrect.',
+      'auth/wrong-password': 'Adresse e-mail ou mot de passe incorrect.',
+      'auth/user-not-found': 'Adresse e-mail ou mot de passe incorrect.',
+      'auth/invalid-email': "Adresse e-mail invalide.",
+      'auth/user-disabled': 'Compte désactivé. Contactez l\'administrateur.',
+      'auth/too-many-requests': 'Trop de tentatives. Patientez quelques minutes ou réinitialisez le mot de passe.',
+      'auth/network-request-failed': 'Problème de connexion réseau. Réessayez.'
+    };
+    const errEl = document.getElementById('rem-error');
+    errEl.textContent = (msgs[code] || 'Connexion impossible.') + ' (code : ' + code + ')';
+    errEl.style.display = 'block';
+    console.error('firebaseLogin', code, err);
   }
 }
 
 window.firebaseResetPassword = async function(){
   const email =
-    document.getElementById('rem-email').value.trim();
+    document.getElementById('rem-email').value.trim().toLowerCase();
 
   if(!email){
     alert('Entrez votre email');
