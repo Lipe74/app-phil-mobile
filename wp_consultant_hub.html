@@ -2453,27 +2453,53 @@ function pmFavKey(btn) {
 
 // Charge les favoris depuis Firestore (source de vérité cross-device),
 // avec fallback localStorage si Firestore est indisponible.
+// Si le consultant n'a aucun favori, on lui applique les favoris par défaut définis
+// par l'admin (Firestore settings/menuDefaults). Ceux qui ont déjà des favoris ne sont jamais touchés.
+async function pmLoadDefaultFavorites() {
+  try {
+    var snap = await window.getDoc(window.doc(window.db, 'settings', 'menuDefaults'));
+    if (snap.exists() && Array.isArray(snap.data().favorites)) {
+      return snap.data().favorites.filter(function (k) { return typeof k === 'string' && k; });
+    }
+  } catch (e) {
+    console.log('Lecture favoris par défaut impossible:', e.message);
+  }
+  return [];
+}
+
 async function pmLoadFavorites() {
+  var fsOk = false, fsArr = null;
   if (pmCurrentUser && window.db && window.getDoc && window.doc) {
     try {
       var snap = await window.getDoc(window.doc(window.db, 'consultants', pmCurrentUser.id));
-      if (snap.exists()) {
-        var data = snap.data();
-        if (Array.isArray(data.favoriMenu)) {
-          pmFavorites = data.favoriMenu;
-          try { localStorage.setItem('pmFavorites', JSON.stringify(pmFavorites)); } catch (e) {}
-          return;
-        }
-      }
+      fsOk = true;
+      if (snap.exists() && Array.isArray(snap.data().favoriMenu)) fsArr = snap.data().favoriMenu;
     } catch (e) {
       console.log('Lecture favoris Firestore impossible:', e.message);
     }
   }
-  // Fallback : localStorage (hors-ligne ou premier chargement sans Firestore)
+  if (fsArr && fsArr.length) {
+    pmFavorites = fsArr;
+    try { localStorage.setItem('pmFavorites', JSON.stringify(pmFavorites)); } catch (e) {}
+    return;
+  }
+  // Pas de favoris côté Firestore : localStorage (hors-ligne / ancien appareil), sinon défauts admin
+  var local = [];
   try {
     var raw = localStorage.getItem('pmFavorites');
-    pmFavorites = raw ? JSON.parse(raw) : [];
-  } catch (e) { pmFavorites = []; }
+    local = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(local)) local = [];
+  } catch (e) { local = []; }
+  if (!fsArr && local.length) { pmFavorites = local; return; }
+  if (fsOk) {
+    var defs = await pmLoadDefaultFavorites();
+    if (defs.length) {
+      pmFavorites = defs.slice();
+      pmSaveFavorites();
+      return;
+    }
+  }
+  pmFavorites = fsArr ? [] : local;
 }
 
 // Sauvegarde dans Firestore (cross-device) + localStorage (cache offline immédiat).

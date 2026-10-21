@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.43 - Login : code d'erreur et e-mail mobile";
+  scope.APP_VERSION = "14.44 - Favoris par défaut (admin)";
 })();

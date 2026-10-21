@@ -275,6 +275,7 @@
           <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
           <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
           <button onclick="showAdminPanel('panel-teams-link', this)" class="menu-item" id="menu-teams-link">📹 Réunion Teams</button>
+          <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
           <div id="botFaqMenu" class="submenu">
             <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
@@ -1014,6 +1015,21 @@
               <input type="url" id="teams-link" placeholder="https://teams.microsoft.com/meet/...">
             </div>
             <button class="btn btn-primary" onclick="saveTeamsLink()">Enregistrer le lien</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-fav-defaults">
+          <div class="section-title">❤️ Favoris par défaut (menu du hub)</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Coche les menus à épingler automatiquement dans « ❤️ Favoris » des consultants qui n'ont encore aucun favori
+              (nouveaux comptes inclus). Les consultants qui ont déjà des favoris ne sont pas modifiés. L'ordre suit celui du menu.
+            </div>
+            <div id="fav-defaults-list"><div class="empty">Chargement...</div></div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="saveFavDefaults()">Enregistrer</button>
+              <button class="btn btn-secondary" onclick="clearFavDefaults()">Tout décocher</button>
+            </div>
           </div>
         </div>
 
@@ -2065,6 +2081,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-bot-stats') loadBotStats();
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-qr') loadQrAdmin();
+  if (panelId === 'panel-fav-defaults') loadFavDefaultsAdmin();
   if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   if (panelId === 'panel-blogphil-list') loadBlogPhilAdmin();
@@ -2207,6 +2224,86 @@ window.saveTeamsLink = async function () {
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
+};
+
+// --- Favoris par défaut du menu hub (settings/menuDefaults) ---
+// Le catalogue des menus est lu directement dans wp_consultant_hub.html (toujours synchronisé avec le hub).
+// La clé d'un menu doit rester identique à pmFavKey() du hub : id du bouton, sinon son onclick.
+function favDefaultsKey(btn) {
+  if (btn.id) return 'id:' + btn.id;
+  return 'oc:' + (btn.getAttribute('onclick') || '').replace(/\s+/g, ' ').trim();
+}
+
+async function loadFavDefaultsAdmin() {
+  const box = document.getElementById('fav-defaults-list');
+  if (!box) return;
+  box.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const [res, snap] = await Promise.all([
+      fetch('wp_consultant_hub.html?t=' + Date.now(), { cache: 'no-store' }),
+      getDoc(doc(db, 'settings', 'menuDefaults'))
+    ]);
+    if (!res.ok) throw new Error('Hub introuvable (' + res.status + ')');
+    const selected = new Set((snap.exists() && Array.isArray(snap.data().favorites)) ? snap.data().favorites : []);
+    const hub = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const menu = hub.getElementById('pm-left-menu');
+    if (!menu) throw new Error('Menu du hub introuvable');
+
+    const sections = [];
+    let current = null;
+    menu.querySelectorAll('button').forEach(btn => {
+      if (btn.classList.contains('pm-sec-toggle')) {
+        const span = btn.querySelector('span');
+        current = { name: (span ? span.firstChild.textContent : btn.textContent).trim(), items: [] };
+        sections.push(current);
+        return;
+      }
+      if (!btn.classList.contains('menu-item') || btn.classList.contains('group-toggle')) return;
+      if (btn.id === 'menu-dashboard' || btn.closest('#pm-favoris-list')) return;
+      if (!btn.getAttribute('onclick') && !btn.id) return;
+      if (!current) { current = { name: 'Menu', items: [] }; sections.push(current); }
+      const clone = btn.cloneNode(true);
+      clone.querySelectorAll('span').forEach(s => s.remove());
+      current.items.push({ key: favDefaultsKey(btn), label: clone.textContent.replace(/\s+/g, ' ').trim() });
+    });
+
+    box.innerHTML = '';
+    sections.filter(s => s.items.length).forEach(sec => {
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;margin:12px 0 4px;';
+      title.textContent = sec.name;
+      box.appendChild(title);
+      sec.items.forEach(it => {
+        const lab = document.createElement('label');
+        lab.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;cursor:pointer;';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'fav-default-cb';
+        cb.value = it.key;
+        cb.checked = selected.has(it.key);
+        lab.appendChild(cb);
+        lab.appendChild(document.createTextNode(it.label));
+        box.appendChild(lab);
+      });
+    });
+    if (!box.children.length) box.innerHTML = '<div class="empty">Aucun menu trouvé.</div>';
+  } catch (err) {
+    box.innerHTML = '<div class="empty">Erreur de chargement : ' + String(err.message || err).replace(/</g, '&lt;') + '</div>';
+  }
+}
+
+window.saveFavDefaults = async function () {
+  const favorites = Array.from(document.querySelectorAll('.fav-default-cb:checked')).map(cb => cb.value);
+  try {
+    await setDoc(doc(db, 'settings', 'menuDefaults'), { favorites, updatedAt: new Date().toISOString() }, { merge: true });
+    showToast('✅ Favoris par défaut enregistrés (' + favorites.length + ').');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+window.clearFavDefaults = function () {
+  document.querySelectorAll('.fav-default-cb').forEach(cb => { cb.checked = false; });
 };
 
 // --- Historique des News (archive consultable dans le hub, séparée du bandeau ci-dessus) ---
