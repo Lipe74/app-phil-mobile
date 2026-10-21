@@ -647,7 +647,10 @@ Version stable : <span id="app-version-1">…</span>
           <div id="sec-accueil" class="pm-sec-body">
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
-          <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;padding-left:4px;">❤️ Favoris</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;padding-left:4px;">
+            <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;">❤️ Favoris</span>
+            <button type="button" id="pm-fav-reset" onclick="pmResetFavorites()" title="Remettre les favoris proposés par Phil-Mobile" style="display:none;background:none;border:1px solid #f5c9a3;color:#f97316;border-radius:6px;font-size:10px;padding:2px 7px;cursor:pointer;">↺ Réinitialiser</button>
+          </div>
           <div id="pm-favoris-list">
             <div class="menu-item" style="opacity:.55;cursor:default;">Clique sur ♡ à côté d'un bouton pour l'ajouter ici</div>
           </div>
@@ -2562,10 +2565,45 @@ function pmRefreshHearts() {
 
 // Écoute en direct des favoris par défaut : les consultants connectés qui n'ont rien modifié
 // reçoivent immédiatement la nouvelle sélection.
+// Bouton « Réinitialiser » du menu : le consultant remet lui-même les favoris proposés par l'admin
+// (il suit ensuite de nouveau les changements de l'admin tant qu'il ne les modifie pas).
+window.pmResetFavorites = async function () {
+  if (!confirm('Remettre les favoris proposés par Phil-Mobile ?\nTes favoris actuels seront remplacés.')) return;
+  var defs = await pmLoadDefaultFavorites();
+  if (!defs || !defs.favorites.length) return;
+  pmApplyDefaultFavorites(defs);
+  pmRefreshHearts();
+  pmRenderFavoritesList();
+};
+
+// Écoute en direct du profil du consultant : si l'admin réinitialise ses favoris (champ favoriMenu supprimé),
+// il reçoit immédiatement les favoris par défaut, sans rechargement.
+function pmWatchOwnFavorites() {
+  if (window._pmOwnFavUnsub || !window.onSnapshot || !window.db || !window.doc || !pmCurrentUser) return;
+  try {
+    window._pmOwnFavUnsub = window.onSnapshot(window.doc(window.db, 'consultants', pmCurrentUser.id), async function (snap) {
+      if (!snap.exists() || snap.metadata.hasPendingWrites) return;
+      if (snap.data().favoriMenu !== undefined) return; // seulement si le champ a été supprimé
+      var defs = await pmLoadDefaultFavorites();
+      if (!defs) return;
+      pmApplyDefaultFavorites(defs);
+      pmRefreshHearts();
+      pmRenderFavoritesList();
+    }, function () {});
+  } catch (e) {
+    console.log('Écoute profil favoris impossible:', e.message);
+  }
+}
+
 function pmWatchDefaultFavorites() {
   if (window._pmFavDefaultsUnsub || !window.onSnapshot || !window.db || !window.doc) return;
   try {
     window._pmFavDefaultsUnsub = window.onSnapshot(window.doc(window.db, 'settings', 'menuDefaults'), function (snap) {
+      // Le bouton « Réinitialiser » n'apparaît que si l'admin a défini des favoris par défaut
+      var rb = document.getElementById('pm-fav-reset');
+      var has = snap.exists() && Array.isArray(snap.data().favorites) &&
+        snap.data().favorites.some(function (k) { return typeof k === 'string' && k.indexOf('sep:') !== 0; });
+      if (rb) rb.style.display = has ? '' : 'none';
       if (!snap.exists() || !Array.isArray(snap.data().favorites)) return;
       var d = snap.data();
       var at = d.updatedAt || '';
@@ -2778,6 +2816,7 @@ async function initFavorites() {
   });
   pmRenderFavoritesList();
   pmWatchDefaultFavorites();
+  pmWatchOwnFavorites();
 }
 
 function toggleFormation(id){
@@ -9313,6 +9352,26 @@ window.showTeamsMeeting = function () {
 
 let _newsUnsub = null;
 
+function sanitizeBannerHtml(html) {
+  // Ne garde que la mise en forme simple (gras, italique, souligné, retour à la ligne, listes, alignement)
+  const ALLOWED = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, P:1, DIV:1, SPAN:1, UL:1, OL:1, LI:1 };
+  const DROP = { SCRIPT:1, STYLE:1, IFRAME:1, OBJECT:1, EMBED:1, LINK:1, META:1, SVG:1, MATH:1, TEMPLATE:1 };
+  const doc = new DOMParser().parseFromString('<body>' + String(html || '') + '</body>', 'text/html');
+  (function walk(node) {
+    Array.from(node.childNodes).forEach(ch => {
+      if (ch.nodeType === 3) return;
+      if (ch.nodeType !== 1) { ch.remove(); return; }
+      if (DROP[ch.tagName]) { ch.remove(); return; }
+      walk(ch);
+      if (!ALLOWED[ch.tagName]) { while (ch.firstChild) ch.parentNode.insertBefore(ch.firstChild, ch); ch.remove(); return; }
+      const align = ((ch.getAttribute('style') || '').match(/text-align\s*:\s*(left|right|center|justify)/i) || [])[1];
+      Array.from(ch.attributes).forEach(a => ch.removeAttribute(a.name));
+      if (align) ch.setAttribute('style', 'text-align:' + align.toLowerCase());
+    });
+  })(doc.body);
+  return doc.body.innerHTML;
+}
+
 async function loadNews() {
   try {
     // Attendre Firestore + auth
@@ -9356,7 +9415,7 @@ async function loadNews() {
         banner.style.background = meta.bg;
         banner.style.color = meta.color;
         banner.style.border = '1px solid ' + meta.border;
-        banner.innerHTML = meta.icon + ' ' + (meta.label ? meta.label + ' : ' : '') + data.title;
+        banner.innerHTML = meta.icon + ' ' + (meta.label ? meta.label + ' : ' : '') + sanitizeBannerHtml(data.title);
       },
       (err) => { console.log('News onSnapshot erreur:', err.message); }
     );

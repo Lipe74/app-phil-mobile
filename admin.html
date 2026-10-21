@@ -75,6 +75,7 @@
   .count-badge { display: inline-block; background: #f97316; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 4px; vertical-align: middle; }
   .rte-btn { border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 5px 9px; font-size: 12px; cursor: pointer; color: #333; }
   .rte-btn:hover { background: #f3f4f6; }
+  #news-title:empty:before { content: attr(data-placeholder); color: #aaa; }
   .rte-editor:focus { outline: 2px solid #f97316; outline-offset: -1px; }
   .rte-editor:empty:before { content: attr(data-placeholder); color: #999; }
   .rte-editor ul, .rte-editor ol { margin-left: 18px; }
@@ -1022,8 +1023,13 @@
           <div class="card">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
               Coche les menus à épingler automatiquement dans « ❤️ Favoris » des consultants qui n'ont encore aucun favori
-              (nouveaux comptes inclus). Les consultants qui ont déjà des favoris ne sont pas modifiés. L'ordre suit celui du menu.
+              (nouveaux comptes inclus). Ceux qui ont déjà modifié leurs favoris ne sont pas touchés. Réordonne la liste
+              ci-dessous (glisser-déposer ou ▲ ▼) et ajoute des séparations.
             </div>
+            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;margin-bottom:4px;">Ordre des favoris</div>
+            <div id="fav-defaults-order" style="margin-bottom:6px;"></div>
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;margin-bottom:14px;" onclick="favAddSep()">➕ Séparation</button>
+            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;margin-bottom:4px;">Menus disponibles</div>
             <div id="fav-defaults-list"><div class="empty">Chargement...</div></div>
             <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="saveFavDefaults()">Enregistrer</button>
@@ -1041,7 +1047,17 @@
             </div>
             <div class="form-row">
               <label>Message (texte libre, sans préfixe — il est ajouté automatiquement à l'affichage)</label>
-              <input type="text" id="news-title" placeholder="ex: Disney+ arrive chez Orange dès le 22 juin ! Activez-le pour vos clients" oninput="updateNewsPreview()">
+              <div class="rte-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                <button type="button" class="rte-btn" title="Gras" onmousedown="event.preventDefault()" onclick="document.execCommand('bold');updateNewsPreview()"><b>G</b></button>
+                <button type="button" class="rte-btn" title="Italique" onmousedown="event.preventDefault()" onclick="document.execCommand('italic');updateNewsPreview()"><i>I</i></button>
+                <button type="button" class="rte-btn" title="Souligné" onmousedown="event.preventDefault()" onclick="document.execCommand('underline');updateNewsPreview()"><u>S</u></button>
+                <button type="button" class="rte-btn" title="Aligner à gauche" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyLeft');updateNewsPreview()">⬅</button>
+                <button type="button" class="rte-btn" title="Centrer" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyCenter');updateNewsPreview()">↔</button>
+                <button type="button" class="rte-btn" title="Aligner à droite" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyRight');updateNewsPreview()">➡</button>
+                <button type="button" class="rte-btn" title="Justifier" onmousedown="event.preventDefault()" onclick="document.execCommand('justifyFull');updateNewsPreview()">☰</button>
+              </div>
+              <div contenteditable="true" id="news-title" data-placeholder="ex: Disney+ arrive chez Orange dès le 22 juin ! Activez-le pour vos clients" oninput="updateNewsPreview()" onkeydown="newsTitleKey(event)" onpaste="newsTitlePaste(event)" style="width:100%;min-height:60px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Arial,sans-serif;background:#fff;box-sizing:border-box;"></div>
+              <div style="font-size:11px;color:#999;margin-top:4px;">Entrée = retour à la ligne. Sélectionne du texte puis clique sur G, I, S ou un alignement.</div>
             </div>
             <div class="form-row">
               <label>Type</label>
@@ -2152,9 +2168,44 @@ const NEWS_META = {
   alert:  { label: null,                icon: '🔴', bg: '#fef2f2', color: '#991b1b', border: '#ef4444' }
 };
 
+// Message du bandeau : zone éditable (gras, italique, souligné, alignement, retours à la ligne)
+function sanitizeBannerHtml(html) {
+  // Ne garde que la mise en forme simple (gras, italique, souligné, retour à la ligne, listes, alignement)
+  const ALLOWED = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, P:1, DIV:1, SPAN:1, UL:1, OL:1, LI:1 };
+  const DROP = { SCRIPT:1, STYLE:1, IFRAME:1, OBJECT:1, EMBED:1, LINK:1, META:1, SVG:1, MATH:1, TEMPLATE:1 };
+  const doc = new DOMParser().parseFromString('<body>' + String(html || '') + '</body>', 'text/html');
+  (function walk(node) {
+    Array.from(node.childNodes).forEach(ch => {
+      if (ch.nodeType === 3) return;
+      if (ch.nodeType !== 1) { ch.remove(); return; }
+      if (DROP[ch.tagName]) { ch.remove(); return; }
+      walk(ch);
+      if (!ALLOWED[ch.tagName]) { while (ch.firstChild) ch.parentNode.insertBefore(ch.firstChild, ch); ch.remove(); return; }
+      const align = ((ch.getAttribute('style') || '').match(/text-align\s*:\s*(left|right|center|justify)/i) || [])[1];
+      Array.from(ch.attributes).forEach(a => ch.removeAttribute(a.name));
+      if (align) ch.setAttribute('style', 'text-align:' + align.toLowerCase());
+    });
+  })(doc.body);
+  return doc.body.innerHTML;
+}
+
+function newsTitleGet() {
+  const el = document.getElementById('news-title');
+  if (!el || !el.textContent.trim()) return '';
+  return sanitizeBannerHtml(el.innerHTML).trim();
+}
+window.newsTitleKey = function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); document.execCommand('insertLineBreak'); updateNewsPreview(); }
+};
+window.newsTitlePaste = function (e) {
+  e.preventDefault();
+  const txt = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, txt);
+};
+
 window.updateNewsPreview = function () {
   const type = document.getElementById('news-type').value;
-  const title = document.getElementById('news-title').value.trim();
+  const title = newsTitleGet();
   const meta = NEWS_META[type] || NEWS_META.orange;
   const preview = document.getElementById('news-preview');
 
@@ -2171,7 +2222,7 @@ async function loadNewsAdmin() {
     if (snap.exists()) {
       const data = snap.data();
       document.getElementById('news-active').checked = !!data.active;
-      document.getElementById('news-title').value = data.title || '';
+      document.getElementById('news-title').innerHTML = sanitizeBannerHtml(data.title || '');
       document.getElementById('news-type').value = data.type || 'orange';
     }
   } catch (err) {
@@ -2182,7 +2233,7 @@ async function loadNewsAdmin() {
 
 window.saveNews = async function () {
   const active = document.getElementById('news-active').checked;
-  const title = document.getElementById('news-title').value.trim();
+  const title = newsTitleGet();
   const type = document.getElementById('news-type').value;
 
   if (active && !title) {
@@ -2244,7 +2295,9 @@ async function loadFavDefaultsAdmin() {
       getDoc(doc(db, 'settings', 'menuDefaults'))
     ]);
     if (!res.ok) throw new Error('Hub introuvable (' + res.status + ')');
-    const selected = new Set((snap.exists() && Array.isArray(snap.data().favorites)) ? snap.data().favorites : []);
+    window._favOrder = (snap.exists() && Array.isArray(snap.data().favorites)) ? snap.data().favorites.slice() : [];
+    window._favLabels = {};
+    const selected = new Set(window._favOrder);
     const hub = new DOMParser().parseFromString(await res.text(), 'text/html');
     const menu = hub.getElementById('pm-left-menu');
     if (!menu) throw new Error('Menu du hub introuvable');
@@ -2321,29 +2374,110 @@ async function loadFavDefaultsAdmin() {
         cb.className = 'fav-default-cb';
         cb.value = it.key;
         cb.checked = selected.has(it.key);
+        window._favLabels[it.key] = it.label;
+        cb.onchange = () => favToggle(it.key, cb.checked);
         lab.appendChild(cb);
         lab.appendChild(document.createTextNode(it.label));
         box.appendChild(lab);
       });
     });
     if (!box.children.length) box.innerHTML = '<div class="empty">Aucun menu trouvé.</div>';
+    renderFavOrder();
   } catch (err) {
     box.innerHTML = '<div class="empty">Erreur de chargement : ' + String(err.message || err).replace(/</g, '&lt;') + '</div>';
   }
 }
 
+// Liste ordonnée des favoris par défaut (clés de menu + séparations « sep:... »)
+function favToggle(key, checked) {
+  const o = window._favOrder || (window._favOrder = []);
+  const idx = o.indexOf(key);
+  if (checked && idx === -1) o.push(key);
+  if (!checked && idx !== -1) o.splice(idx, 1);
+  renderFavOrder();
+}
+
+function favMove(from, to) {
+  const o = window._favOrder || [];
+  if (to < 0 || to >= o.length || from === to) return;
+  o.splice(to, 0, o.splice(from, 1)[0]);
+  renderFavOrder();
+}
+
+window.favAddSep = function () {
+  (window._favOrder || (window._favOrder = [])).push('sep:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
+  renderFavOrder();
+};
+
+function favRemoveAt(idx) {
+  const o = window._favOrder || [];
+  const key = o[idx];
+  o.splice(idx, 1);
+  // Décocher la case correspondante
+  document.querySelectorAll('.fav-default-cb').forEach(cb => { if (cb.value === key) cb.checked = false; });
+  renderFavOrder();
+}
+
+function renderFavOrder() {
+  const box = document.getElementById('fav-defaults-order');
+  if (!box) return;
+  const o = window._favOrder || [];
+  box.innerHTML = '';
+  if (!o.length) {
+    box.innerHTML = '<div class="empty" style="padding:6px 0;">Aucun favori par défaut : coche des menus ci-dessous.</div>';
+    return;
+  }
+  let dragFrom = null;
+  const btnStyle = 'background:none;border:1px solid #ddd;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;';
+  o.forEach((key, idx) => {
+    const isSep = key.indexOf('sep:') === 0;
+    const row = document.createElement('div');
+    row.draggable = true;
+    row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;margin-bottom:3px;border:1px solid #f5c9a3;border-radius:8px;background:#fff;';
+    row.addEventListener('dragstart', e => { dragFrom = idx; e.dataTransfer.effectAllowed = 'move'; row.style.opacity = '.4'; });
+    row.addEventListener('dragend', () => { row.style.opacity = ''; });
+    row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    row.addEventListener('drop', e => { e.preventDefault(); if (dragFrom !== null) favMove(dragFrom, idx); dragFrom = null; });
+
+    const handle = document.createElement('span');
+    handle.textContent = '⠿';
+    handle.title = 'Glisser pour déplacer';
+    handle.style.cssText = 'cursor:grab;color:#aaa;';
+    const label = document.createElement('span');
+    label.style.cssText = 'flex:1;font-size:13px;';
+    if (isSep) {
+      label.innerHTML = '<span style="display:block;border-top:1px solid #f5c9a3;margin:8px 0;"></span>';
+    } else {
+      label.textContent = (window._favLabels && window._favLabels[key]) || '⚠️ Élément introuvable (' + key + ')';
+    }
+    const up = document.createElement('button'); up.type = 'button'; up.textContent = '▲'; up.style.cssText = btnStyle; up.onclick = () => favMove(idx, idx - 1);
+    const down = document.createElement('button'); down.type = 'button'; down.textContent = '▼'; down.style.cssText = btnStyle; down.onclick = () => favMove(idx, idx + 1);
+    const del = document.createElement('button'); del.type = 'button'; del.textContent = '✕'; del.title = 'Retirer'; del.style.cssText = btnStyle; del.onclick = () => favRemoveAt(idx);
+    row.append(handle, label, up, down, del);
+    box.appendChild(row);
+  });
+}
+
 window.saveFavDefaults = async function () {
-  const favorites = Array.from(document.querySelectorAll('.fav-default-cb:checked')).map(cb => cb.value);
+  // Nettoyage : pas de séparation en tête/en fin ni de doublons consécutifs
+  const isSep = k => k.indexOf('sep:') === 0;
+  let favorites = (window._favOrder || []).slice();
+  favorites = favorites.filter((k, i) => !(isSep(k) && (i === 0 || isSep(favorites[i - 1]))));
+  while (favorites.length && isSep(favorites[favorites.length - 1])) favorites.pop();
   try {
     await setDoc(doc(db, 'settings', 'menuDefaults'), { favorites, updatedAt: new Date().toISOString() }, { merge: true });
-    showToast('✅ Favoris par défaut enregistrés (' + favorites.length + ').');
+    window._favOrder = favorites.slice();
+    renderFavOrder();
+    showToast('✅ Favoris par défaut enregistrés (' + favorites.filter(k => !isSep(k)).length + ' menus).');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
 };
 
 window.clearFavDefaults = function () {
+  window._favOrder = [];
   document.querySelectorAll('.fav-default-cb').forEach(cb => { cb.checked = false; });
+  renderFavOrder();
 };
 
 // --- Historique des News (archive consultable dans le hub, séparée du bandeau ci-dessus) ---

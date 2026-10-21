@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.48 - Reset favoris (admin)";
+  scope.APP_VERSION = "14.51 - Bandeau mis en forme";
 })();
