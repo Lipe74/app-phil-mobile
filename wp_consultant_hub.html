@@ -7314,21 +7314,47 @@ function pclStatusStyle(s) {
 // Statuts proposés dans les listes Prospects (clients et consultants)
 var PC_STATUTS = ['Nouveau', 'Contacté', 'Converti', 'Perdu', 'Test'];
 
-// Fiche visible selon le filtre : "__archives" = uniquement les archivées ; sinon les archivées sont masquées
-function pcVisible(p, statutFilter) {
-  if (statutFilter === '__archives') return p.archive === true;
-  return p.archive !== true && (!statutFilter || p.statut === statutFilter);
+// Statuts qui archivent automatiquement la fiche (Nouveau / Contacté la désarchivent)
+var PC_AUTO_ARCHIVE = ['Converti', 'Perdu', 'Test'];
+
+// Champs à enregistrer lors d'un changement de statut : archivage automatique ou désarchivage
+function pcStatusPatch(newStatus) {
+  var now = new Date().toISOString();
+  var arch = PC_AUTO_ARCHIVE.indexOf(newStatus) >= 0;
+  return { statut: newStatus, archive: arch, dateArchive: arch ? now : null, dateMaj: now };
 }
 
-// Statistiques du bandeau : fiches actives uniquement, archivées comptées à part
+// Fiche visible selon le filtre : "Tous" = fiches actives ; "__archives" = archivées ; un statut précis = toutes les fiches de ce statut (archivées comprises)
+function pcVisible(p, statutFilter) {
+  if (statutFilter === '__archives') return p.archive === true;
+  if (!statutFilter) return p.archive !== true;
+  return p.statut === statutFilter;
+}
+
+// Statistiques du bandeau : total = fiches actives ; chaque statut compte toutes les fiches (archivées comprises) ; archivées comptées à part
 function pcFillStats(prefix, list) {
-  var active = list.filter(function (p) { return p.archive !== true; });
+  var nbActives = list.filter(function (p) { return p.archive !== true; }).length;
   var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0, 'Test': 0 };
-  active.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
+  list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
   var set = function (id, v) { var el = document.getElementById(prefix + '-stat-' + id); if (el) el.textContent = v; };
-  set('total', active.length);
-  set('archives', list.length - active.length);
+  set('total', nbActives);
+  set('archives', list.length - nbActives);
   Object.keys(counts).forEach(function (k) { set(k, counts[k]); });
+}
+
+// Reprise unique des fiches existantes : Converti / Perdu / Test sans champ "archive" sont archivées.
+// Une fiche restaurée à la main (archive:false) n'est jamais ré-archivée.
+async function pcAutoArchiveLegacy(collectionName, list) {
+  var todo = list.filter(function (p) { return PC_AUTO_ARCHIVE.indexOf(p.statut) >= 0 && p.archive === undefined; });
+  if (!todo.length) return;
+  var now = new Date().toISOString(), done = 0;
+  for (var i = 0; i < todo.length; i++) {
+    try {
+      await window.updateDoc(window.doc(window.db, collectionName, todo[i].docId), { archive: true, dateArchive: now });
+      todo[i].archive = true; done++;
+    } catch (e) { console.log('Archivage auto impossible:', e.message); }
+  }
+  if (done) pcToast('📦 ' + done + ' fiche(s) archivée(s) automatiquement');
 }
 
 // Archivage (manuel, réversible) : la fiche reste en base, masquée de la liste normale
@@ -7674,6 +7700,7 @@ function pclLoadList() {
       var list = [];
       snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
       list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
+      await pcAutoArchiveLegacy('prospectsClients', list);
       window._pclData = list;
       pclUpdateStats(list);
       pclRenderList(list);
@@ -7758,7 +7785,7 @@ window.pclArchive = function (docId, flag) { return pcArchive('prospectsClients'
 
 window.pclChangeStatus = async function (docId, newStatus) {
   try {
-    await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), { statut: newStatus, dateMaj: new Date().toISOString() });
+    await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), pcStatusPatch(newStatus));
     pcToast('Statut mis à jour : ' + newStatus);
     if (newStatus === 'Converti') await pclMigrateOne(docId);
     pclLoadList();
@@ -8103,6 +8130,7 @@ function pcoLoadList() {
       var list = [];
       snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
       list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
+      await pcAutoArchiveLegacy('prospectsConsultants', list);
       window._pcoData = list;
       pcoUpdateStats(list);
       pcoRenderList(list);
@@ -8153,7 +8181,7 @@ window.pcoArchive = function (docId, flag) { return pcArchive('prospectsConsulta
 
 window.pcoChangeStatus = async function (docId, newStatus) {
   try {
-    await window.updateDoc(window.doc(window.db, 'prospectsConsultants', docId), { statut: newStatus, dateMaj: new Date().toISOString() });
+    await window.updateDoc(window.doc(window.db, 'prospectsConsultants', docId), pcStatusPatch(newStatus));
     pcToast('Statut mis à jour : ' + newStatus);
     if (newStatus === 'Converti') await pcoMigrateOne(docId);
     pcoLoadList();

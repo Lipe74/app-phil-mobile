@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.54 - CRM statut Test et archivage";
+  scope.APP_VERSION = "14.55 - CRM archivage automatique";
 })();
