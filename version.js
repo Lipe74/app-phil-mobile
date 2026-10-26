@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.51 - Bandeau mis en forme";
+  scope.APP_VERSION = "14.52 - Frais de démarrage recrutement";
 })();

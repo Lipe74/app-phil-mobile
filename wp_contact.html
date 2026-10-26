@@ -122,6 +122,15 @@
     }
     .submit[disabled] { opacity: .6; cursor: default; }
     .notice { font-size: 12px; color: var(--muted); margin-top: 12px; }
+    .fees { border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; background: #f8fafc; }
+    .fees-title { display: block; font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+    .fees ul { list-style: none; margin: 0; padding: 0; }
+    .fees li { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .fees li small { display: block; color: var(--muted); font-size: 12px; }
+    .fees li b { white-space: nowrap; }
+    .fees-total { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 800; color: var(--navy); padding-top: 8px; }
+    .fees-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+    .fees .consent { margin: 12px 0 0; color: var(--ink); }
     .state { text-align: center; padding: 30px 8px; }
     .state h2 { margin-bottom: 8px; }
     .state p { margin: 0 0 16px; color: var(--muted); }
@@ -316,6 +325,14 @@
                 <input type="text" id="tvaConsultant" maxlength="20" placeholder="BE0123456789">
                 <div class="err" data-err="tvaConsultant"></div>
               </div>
+              <div class="full">
+                <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Avez-vous déjà un numéro d'entreprise ?</span>
+                <div class="choice">
+                  <label><input type="radio" name="aEntreprise" value="Oui"><span>Oui</span></label>
+                  <label><input type="radio" name="aEntreprise" value="Non"><span>Non</span></label>
+                </div>
+                <div class="err" data-err="aEntreprise"></div>
+              </div>
               <div>
                 <label class="f" for="province">Province</label>
                 <select id="province">
@@ -336,6 +353,22 @@
               <div class="full">
                 <label class="f" for="msgConsultant">Message / motivation <small>(facultatif)</small></label>
                 <textarea id="msgConsultant" maxlength="800"></textarea>
+              </div>
+              <div class="full">
+                <div class="fees" role="note" aria-label="Frais de démarrage">
+                  <span class="fees-title">Frais de démarrage (uniques)</span>
+                  <ul>
+                    <li><span>Starter kit (licence et package)<small>80,16 € HTVA</small></span><b id="fee-starter"></b></li>
+                    <li id="fee-bce-row"><span>Numéro d'entreprise (inscription BCE)<small>111,50 € HTVA</small></span><b id="fee-bce"></b></li>
+                  </ul>
+                  <div class="fees-total" id="fees-total-row" hidden><span>Total à prévoir (TVA comprise)</span><b id="fees-total"></b></div>
+                  <p class="fees-note">Montants TVA comprise (21 %). Si vous avez déjà un numéro d'entreprise, le second poste ne vous concerne pas. Les revenus dépendent du temps et de l'implication de chacun.</p>
+                  <label class="consent">
+                    <input type="checkbox" id="feesAck">
+                    <span>J'ai pris connaissance des frais de démarrage.</span>
+                  </label>
+                  <div class="err" data-err="feesAck"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -481,6 +514,25 @@ document.querySelectorAll('input[name=typeClient]').forEach(r => r.addEventListe
 }));
 $('statutPro').addEventListener('change', () => { $('tva-row').hidden = $('statutPro').value !== 'Indépendant'; });
 
+/* ---------- Frais de démarrage (montants TVAC) ---------- */
+const FEES = { starter: 96.99, bce: 134.92 };
+const eur = (n) => n.toFixed(2).replace('.', ',') + ' €';
+function updateFees() {
+  const sel = document.querySelector('input[name=aEntreprise]:checked');
+  $('fee-starter').textContent = eur(FEES.starter);
+  $('fee-bce').textContent = eur(FEES.bce);
+  $('fee-bce-row').hidden = !!sel && sel.value === 'Oui';
+  $('fees-total-row').hidden = !sel;
+  if (sel) $('fees-total').textContent = eur(feesTotal());
+}
+function feesTotal() {
+  const sel = document.querySelector('input[name=aEntreprise]:checked');
+  const hasBce = !!sel && sel.value === 'Oui';
+  return Math.round((FEES.starter + (hasBce ? 0 : FEES.bce)) * 100) / 100;
+}
+document.querySelectorAll('input[name=aEntreprise]').forEach(r => r.addEventListener('change', updateFees));
+updateFees();
+
 /* ---------- Validation ---------- */
 function setErr(key, msg) {
   const el = document.querySelector('[data-err="' + key + '"]');
@@ -542,6 +594,8 @@ function validate() {
     if (!$('statutPro').value) bad('statutPro', 'Merci de choisir');
     if ($('statutPro').value === 'Indépendant' && $('tvaConsultant').value.trim() && !tvaValid($('tvaConsultant').value)) bad('tvaConsultant', 'N° de TVA invalide');
     if (!$('province').value) bad('province', 'Merci de choisir');
+    if (!document.querySelector('input[name=aEntreprise]:checked')) bad('aEntreprise', 'Merci de choisir');
+    if (!$('feesAck').checked) bad('feesAck', 'Merci de confirmer que vous avez pris connaissance des frais');
   }
   if (!$('consent').checked) bad('consent', 'Votre accord est nécessaire pour envoyer le formulaire');
   if (firstBad) { const el = $(firstBad); if (el) el.focus(); return false; }
@@ -593,6 +647,9 @@ function buildPayload() {
     statutPro: stat,
     tva: stat === 'Indépendant' && $('tvaConsultant').value.trim() ? normalizeTva($('tvaConsultant').value) : '',
     province: $('province').value,
+    aNumeroEntreprise: document.querySelector('input[name=aEntreprise]:checked').value,
+    fraisAcceptes: true,
+    fraisMontantTVAC: feesTotal(),
     disponibilite: $('dispo').value,
     presentation: 'Non présentée',
     commentaire: $('msgConsultant').value.trim()
