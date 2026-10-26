@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.52 - Frais de démarrage recrutement";
+  scope.APP_VERSION = "14.53 - Frais dans CRM prospects consultants";
 })();

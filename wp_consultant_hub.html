@@ -7355,6 +7355,14 @@ function pcoQrExtras(p) {
   var out = '';
   if (p.province) out += '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.province) + '</div>';
   if (p.disponibilite) out += '<div style="font-size:12px;color:#555;">🕒 Disponibilité : ' + pcEsc(p.disponibilite) + '</div>';
+  // Frais de démarrage (wp_contact.html, Build 14.52) : n° d'entreprise + frais acceptés
+  if (p.aNumeroEntreprise === 'Oui') out += '<div style="font-size:12px;color:#555;">🪪 N° d\'entreprise : Oui</div>';
+  else if (p.aNumeroEntreprise === 'Non') out += '<div style="font-size:12px;color:#c2410c;font-weight:700;">🪪 N° d\'entreprise : Non (à prévoir)</div>';
+  if (p.fraisAcceptes === true) {
+    var fr = (p.fraisMontantTVAC === null || p.fraisMontantTVAC === undefined || isNaN(Number(p.fraisMontantTVAC))) ? ''
+      : ' · ' + Number(p.fraisMontantTVAC).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' € TVAC';
+    out += '<div style="font-size:12px;color:#166534;">✅ Frais de démarrage acceptés' + pcEsc(fr) + '</div>';
+  }
   return out;
 }
 
