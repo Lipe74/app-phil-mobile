@@ -1365,6 +1365,8 @@ STATUT: independant
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Test">0</div><div style="font-size:10px;opacity:.9;">Test</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-archives">0</div><div style="font-size:10px;opacity:.9;">Archivés</div></div>
             </div>
 
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
@@ -1497,6 +1499,8 @@ STATUT: independant
                   <option value="Contacté">📞 Contacté</option>
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
+                  <option value="Test">🧪 Test</option>
+                  <option value="__archives">📦 Archivés</option>
                 </select>
                 <input id="pcl-search" type="text" placeholder="🔍 Rechercher..." oninput="pclFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pclMigrateConverted()" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">✅ Migrer convertis</button>
@@ -1584,6 +1588,8 @@ OPERATEUR: Proximus
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Test">0</div><div style="font-size:10px;opacity:.9;">Test</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-archives">0</div><div style="font-size:10px;opacity:.9;">Archivés</div></div>
             </div>
 
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
@@ -1668,6 +1674,8 @@ OPERATEUR: Proximus
                   <option value="Contacté">📞 Contacté</option>
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
+                  <option value="Test">🧪 Test</option>
+                  <option value="__archives">📦 Archivés</option>
                 </select>
                 <input id="pco-search" type="text" placeholder="🔍 Rechercher..." oninput="pcoFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pcoDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
@@ -7297,9 +7305,43 @@ function pclStatusStyle(s) {
     'Nouveau': 'background:#e8f0fe;color:#1a73e8;',
     'Contacté': 'background:#fff3e8;color:#f97316;',
     'Converti': 'background:#E8F5E9;color:#2E7D32;',
-    'Perdu': 'background:#f1f1f1;color:#757575;'
+    'Perdu': 'background:#f1f1f1;color:#757575;',
+    'Test': 'background:#f3e8ff;color:#7e22ce;'
   };
   return map[s] || map['Nouveau'];
+}
+
+// Statuts proposés dans les listes Prospects (clients et consultants)
+var PC_STATUTS = ['Nouveau', 'Contacté', 'Converti', 'Perdu', 'Test'];
+
+// Fiche visible selon le filtre : "__archives" = uniquement les archivées ; sinon les archivées sont masquées
+function pcVisible(p, statutFilter) {
+  if (statutFilter === '__archives') return p.archive === true;
+  return p.archive !== true && (!statutFilter || p.statut === statutFilter);
+}
+
+// Statistiques du bandeau : fiches actives uniquement, archivées comptées à part
+function pcFillStats(prefix, list) {
+  var active = list.filter(function (p) { return p.archive !== true; });
+  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0, 'Test': 0 };
+  active.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
+  var set = function (id, v) { var el = document.getElementById(prefix + '-stat-' + id); if (el) el.textContent = v; };
+  set('total', active.length);
+  set('archives', list.length - active.length);
+  Object.keys(counts).forEach(function (k) { set(k, counts[k]); });
+}
+
+// Archivage (manuel, réversible) : la fiche reste en base, masquée de la liste normale
+function pcArchive(collectionName, docId, flag, reload) {
+  var now = new Date().toISOString();
+  return window.updateDoc(window.doc(window.db, collectionName, docId), { archive: flag, dateArchive: flag ? now : null, dateMaj: now })
+    .then(function () { pcToast(flag ? '📦 Fiche archivée' : '♻️ Fiche restaurée'); reload(); })
+    .catch(function (err) { alert('Erreur: ' + err.message); });
+}
+function pcArchiveButton(fn, p) {
+  return p.archive === true
+    ? '<button onclick="' + fn + '(\'' + p.docId + '\', false)" style="padding:4px 9px;border:1px solid #86efac;border-radius:6px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;cursor:pointer;">♻️ Restaurer</button>'
+    : '<button onclick="' + fn + '(\'' + p.docId + '\', true)" title="Archiver" style="padding:4px 9px;border:1px solid #d1d5db;border-radius:6px;background:#f3f4f6;color:#4b5563;font-size:11px;font-weight:700;cursor:pointer;">📦</button>';
 }
 
 function pcFindColumn(headers, candidates) {
@@ -7397,7 +7439,9 @@ function startQrBadges(user) {
       window.where('origine', '==', 'QR'),
       window.where('statut', '==', 'Nouveau'));
     window.onSnapshot(q, function (snap) {
-      _qrCounts[cfg[1]] = snap.size;
+      var nActives = 0;
+      snap.forEach(function (d) { if (d.data().archive !== true) nActives++; });   // les fiches archivées ne comptent pas
+      _qrCounts[cfg[1]] = nActives;
       qrBadgesRender();
       if (first) { first = false; return; }
       var added = snap.docChanges().some(function (c) { return c.type === 'added'; });
@@ -7639,12 +7683,7 @@ function pclLoadList() {
   });
 }
 
-function pclUpdateStats(list) {
-  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0 };
-  list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
-  var totalEl = document.getElementById('pcl-stat-total'); if (totalEl) totalEl.textContent = list.length;
-  Object.keys(counts).forEach(function (k) { var el = document.getElementById('pcl-stat-' + k); if (el) el.textContent = counts[k]; });
-}
+function pclUpdateStats(list) { pcFillStats('pcl', list); }
 
 function pclCleanTel(tel) { return (tel || '').replace(/[\s.\-()]+/g, ''); }
 
@@ -7681,8 +7720,9 @@ function pclRenderList(list) {
   var statutFilter = document.getElementById('pcl-filter-statut').value;
   var filtered = list.filter(function (p) {
     var txt = ((p.nom || '') + (p.tel || '') + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
-    return (!term || txt.indexOf(term) >= 0) && (!statutFilter || p.statut === statutFilter);
+    return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
+  if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   el.innerHTML = filtered.map(function (p) {
     var contratBtn = p.contractId
       ? '<span style="padding:5px 10px;font-size:11px;font-weight:700;color:#2E7D32;">🧾 Contrat créé</span>'
@@ -7702,17 +7742,19 @@ function pclRenderList(list) {
       + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
       + '<select onchange="pclChangeStatus(\'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
-      + ['Nouveau', 'Contacté', 'Converti', 'Perdu'].map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
+      + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
       + '</select>'
       + '<button onclick="pclEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
       + '<button onclick="pclOpenContactModal(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff3e8;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">📞 Log</button>'
       + contratBtn
+      + pcArchiveButton('pclArchive', p)
       + '<button onclick="pclDeleteProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f5b7b1;border-radius:6px;background:#fde2e1;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'
       + '</div></div>';
   }).join('');
 }
 
 window.pclFilterList = function () { pclRenderList(window._pclData || []); };
+window.pclArchive = function (docId, flag) { return pcArchive('prospectsClients', docId, flag, pclLoadList); };
 
 window.pclChangeStatus = async function (docId, newStatus) {
   try {
@@ -7771,9 +7813,9 @@ window.pclDeleteProspect = async function (docId) {
 };
 
 window.pclDeleteAll = async function () {
-  var list = window._pclData || [];
+  var list = (window._pclData || []).filter(function (p) { return p.archive !== true; });   // les archivées sont conservées
   if (!list.length) { alert('Aucun prospect à supprimer.'); return; }
-  var conf = prompt('⚠️ Supprimer DÉFINITIVEMENT tes ' + list.length + ' prospect(s) ? Tape SUPPRIMER pour confirmer :');
+  var conf = prompt('⚠️ Supprimer DÉFINITIVEMENT tes ' + list.length + ' prospect(s) (les fiches archivées sont conservées) ? Tape SUPPRIMER pour confirmer :');
   if (conf !== 'SUPPRIMER') { if (conf !== null) alert('Suppression annulée.'); return; }
   for (var i = 0; i < list.length; i++) {
     try { await window.deleteDoc(window.doc(window.db, 'prospectsClients', list[i].docId)); } catch (e) {}
@@ -8070,12 +8112,7 @@ function pcoLoadList() {
   });
 }
 
-function pcoUpdateStats(list) {
-  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0 };
-  list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
-  var totalEl = document.getElementById('pco-stat-total'); if (totalEl) totalEl.textContent = list.length;
-  Object.keys(counts).forEach(function (k) { var el = document.getElementById('pco-stat-' + k); if (el) el.textContent = counts[k]; });
-}
+function pcoUpdateStats(list) { pcFillStats('pco', list); }
 
 function pcoRenderList(list) {
   var el = document.getElementById('pco-list');
@@ -8085,8 +8122,9 @@ function pcoRenderList(list) {
   var statutFilter = document.getElementById('pco-filter-statut').value;
   var filtered = list.filter(function (p) {
     var txt = ((p.nom || '') + (p.tel || '') + (p.email || '')).toLowerCase();
-    return (!term || txt.indexOf(term) >= 0) && (!statutFilter || p.statut === statutFilter);
+    return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
+  if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   el.innerHTML = filtered.map(function (p) {
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
       + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
@@ -8101,15 +8139,17 @@ function pcoRenderList(list) {
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
       + '<select onchange="pcoChangeStatus(\'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
-      + ['Nouveau', 'Contacté', 'Converti', 'Perdu'].map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
+      + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
       + '</select>'
       + '<button onclick="pcoEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
+      + pcArchiveButton('pcoArchive', p)
       + '<button onclick="pcoDeleteProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f5b7b1;border-radius:6px;background:#fde2e1;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'
       + '</div></div>';
   }).join('');
 }
 
 window.pcoFilterList = function () { pcoRenderList(window._pcoData || []); };
+window.pcoArchive = function (docId, flag) { return pcArchive('prospectsConsultants', docId, flag, pcoLoadList); };
 
 window.pcoChangeStatus = async function (docId, newStatus) {
   try {
@@ -8150,9 +8190,9 @@ window.pcoDeleteProspect = async function (docId) {
 };
 
 window.pcoDeleteAll = async function () {
-  var list = window._pcoData || [];
+  var list = (window._pcoData || []).filter(function (p) { return p.archive !== true; });   // les archivées sont conservées
   if (!list.length) { alert('Aucun prospect à supprimer.'); return; }
-  var conf = prompt('⚠️ Supprimer DÉFINITIVEMENT tes ' + list.length + ' prospect(s) ? Tape SUPPRIMER pour confirmer :');
+  var conf = prompt('⚠️ Supprimer DÉFINITIVEMENT tes ' + list.length + ' prospect(s) (les fiches archivées sont conservées) ? Tape SUPPRIMER pour confirmer :');
   if (conf !== 'SUPPRIMER') { if (conf !== null) alert('Suppression annulée.'); return; }
   for (var i = 0; i < list.length; i++) {
     try { await window.deleteDoc(window.doc(window.db, 'prospectsConsultants', list[i].docId)); } catch (e) {}
