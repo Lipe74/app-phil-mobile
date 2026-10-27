@@ -6914,18 +6914,43 @@ window.showPromotions = function(btn) {
   loadPromotionsPanel();
 };
 
-var PROMO_FAMILY_SECTIONS_HUB = [
-  ['mobile', '📱 Promo Mobile'],
-  ['internet', '🌐 Promo Internet'],
-  ['divers', '🎁 Promo Divers']
-];
+var PROMO_FAMILY_LABELS_HUB = {
+  mobile: '📱 Promo Mobile',
+  internet: '🌐 Promo Internet',
+  tv: '📺 Promo TV',
+  films: '🎬 Promo Films (Netflix, Disney+)',
+  options: '⚙️ Promo Options'
+};
+var PROMO_ORDER_DEFAULT_HUB = ['internet', 'tv', 'mobile', 'options'];
+
+// Même logique que l'admin : ordre des blocs = settings/orangeSectionOrder, "films" juste après "options"
+function buildPromoFamilySectionsHub(order) {
+  var keys = (order && order.length ? order : PROMO_ORDER_DEFAULT_HUB).filter(function(k){ return PROMO_FAMILY_LABELS_HUB[k]; });
+  var out = [];
+  keys.forEach(function(k) {
+    out.push([k, PROMO_FAMILY_LABELS_HUB[k]]);
+    if (k === 'options') out.push(['films', PROMO_FAMILY_LABELS_HUB.films]);
+  });
+  if (!out.some(function(x){ return x[0] === 'films'; })) out.push(['films', PROMO_FAMILY_LABELS_HUB.films]);
+  ['mobile','internet','tv','options'].forEach(function(k) {
+    if (!out.some(function(x){ return x[0] === k; })) out.push([k, PROMO_FAMILY_LABELS_HUB[k]]);
+  });
+  return out;
+}
+
+function formatDateFrHub(iso) {
+  if (!iso) return '';
+  var p = String(iso).split('-');
+  return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : iso;
+}
 var PROMO_TYPE_LABEL_HUB = { monthly: '📅 Mensuelle', mobile: '📱 Mobile', unique: '💶 Unique' };
 
 function derivePromoFamilyHub(p) {
-  if (p.productFamily) return p.productFamily;
+  var fam = p.productFamily;
+  if (fam) return fam === 'divers' ? 'options' : fam;
   if (p.type === 'mobile') return 'mobile';
   if ((p.name || '').toLowerCase().indexOf('internet') !== -1) return 'internet';
-  return 'divers';
+  return 'options';
 }
 
 // Filet de sécurité : retire tout fragment ressemblant à une balise HTML qui se serait retrouvé
@@ -6964,9 +6989,18 @@ window.loadPromotionsPanel = async function() {
       return;
     }
 
+    var sectionOrder = null;
+    try {
+      if (window.getDoc && window.doc) {
+        var ordSnap = await window.getDoc(window.doc(window.db, 'settings', 'orangeSectionOrder'));
+        if (ordSnap.exists() && Array.isArray(ordSnap.data().order)) sectionOrder = ordSnap.data().order;
+      }
+    } catch (e) { console.log('Ordre des sections promos indisponible:', e.message); }
+
     var html = '';
-    PROMO_FAMILY_SECTIONS_HUB.forEach(function([fam, label]) {
-      var inFam = list.filter(function(p){ return derivePromoFamilyHub(p) === fam; });
+    buildPromoFamilySectionsHub(sectionOrder).forEach(function([fam, label]) {
+      var inFam = list.filter(function(p){ return derivePromoFamilyHub(p) === fam; })
+        .sort(function(a, b){ return (a.order ?? 9999) - (b.order ?? 9999); });
       if (inFam.length === 0) return;
 
       html += '<div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;">' + label + '</div>';
@@ -6985,6 +7019,7 @@ window.loadPromotionsPanel = async function() {
           +       '<span style="background:#fff3e8;color:#f97316;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;">' + (PROMO_TYPE_LABEL_HUB[p.type] || p.type) + '</span> '
           +       catBadge
           +       '<div style="color:#888;font-size:12px;margin-top:4px;">' + escapeHtmlPromos(p.sub || '') + '</div>'
+          +       ((p.dateDebut || p.dateFin) ? '<div style="color:#0369a1;font-weight:700;font-size:12px;margin-top:2px;">📅 ' + (p.dateDebut ? 'Du ' + formatDateFrHub(p.dateDebut) : '') + (p.dateFin ? ' au ' + formatDateFrHub(p.dateFin) : '') + '</div>' : '')
           +       (p.condition ? '<div style="color:#cc4400;font-weight:700;font-size:12px;margin-top:2px;">📌 Condition : ' + escapeHtmlPromos(p.condition) + '</div>' : '')
           +     '</div>'
           +     '<div style="font-weight:700;color:#f97316;font-size:14px;white-space:nowrap;">-' + p.price + '€ <span style="font-size:11px;color:#888;font-weight:400;">· ' + durLabel + '</span></div>'
