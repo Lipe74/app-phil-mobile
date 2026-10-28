@@ -235,7 +235,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.35 - Prénom, nom, pseudo</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.36 - Facture ING + CBC</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -3761,7 +3761,7 @@ window.dismissProspect = async function (docId) {
 
 // ===== ACHATS & PROLONGATIONS : facture PDF (QR SEPA + communication structurée), envoi, paiement =====
 // Prix et TVA toujours recalculés ici (jamais repris du formulaire public, qui peut être falsifié).
-const INV_ISSUER = { name: 'Phil-Mobile By Zen-Connect', street: 'Oudesmisestraat 20', city: '1700 Dilbeek', vat: 'BE1035199737', email: 'facturation@zen-connect.be', iban: 'BE08732086423213', ibanFmt: 'BE08 7320 8642 3213' };
+const INV_ISSUER = { name: 'Phil-Mobile By Zen-Connect', street: 'Oudesmisestraat 20', city: '1700 Dilbeek', vat: 'BE1035199737', email: 'facturation@zen-connect.be', iban: 'BE91363286037276', ibanFmt: 'BE91 3632 8603 7276', altIbanFmt: 'BE08 7320 8642 3213', altLabel: 'CBC' };
 const INV_PRICES = {
   purchase: { htva: 149,  tva: 31.29, tvac: 180.29, label: "Licence de l'application Phil-Mobile — accès 12 mois, mises à jour incluses" },
   renewal:  { htva: 29.9, tva: 6.28,  tvac: 36.18,  label: "Renouvellement annuel de l'application Phil-Mobile — mises à jour incluses" }
@@ -3917,16 +3917,17 @@ function invBuildPdf(it, periodTxt) {
 
   // Bloc de paiement : coordonnées + QR SEPA
   y = y + 38;
-  doc.setDrawColor(249, 115, 22); doc.setLineWidth(0.5); doc.roundedRect(L, y, R - L, 50, 3, 3);
+  doc.setDrawColor(249, 115, 22); doc.setLineWidth(0.5); doc.roundedRect(L, y, R - L, 56, 3, 3);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(249, 115, 22);
   doc.text('Paiement par virement', L + 6, y + 9);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30);
-  [['Bénéficiaire', 'Zen-Connect'], ['IBAN', INV_ISSUER.ibanFmt], ['Montant', invMoney(it.tvac)], ['Communication', it.ogm]].forEach((r, i) => {
+  [['Bénéficiaire', 'Zen-Connect'], ['IBAN (ING)', INV_ISSUER.ibanFmt], ['Montant', invMoney(it.tvac)], ['Communication', it.ogm]].forEach((r, i) => {
     doc.setFont('helvetica', 'normal'); doc.setTextColor(110); doc.text(r[0], L + 6, y + 19 + i * 7);
     doc.setFont('helvetica', 'bold'); doc.setTextColor(30); doc.text(r[1], L + 36, y + 19 + i * 7);
   });
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(110);
   doc.text('Merci de reprendre la communication structurée ci-dessus.', L + 6, y + 46);
+  doc.text('Alternative ' + INV_ISSUER.altLabel + ' : ' + INV_ISSUER.altIbanFmt + ' (Zen-Connect)', L + 6, y + 51);
   if (it.specimen) {
     // Filigrane diagonal translucide (le QR en bas reste lisible)
     doc.saveGraphicsState();
@@ -4005,7 +4006,7 @@ window.invSend = async function (coll, docId, channel) {
   if (!d || !d.invoiceNumber) { showToast("Génère d'abord la facture."); return; }
   const it = invItem(coll, d);
   const first = (it.name.split(/\s+/)[0] || '').trim();
-  const text = `Bonjour ${first},\n\nVoici ta facture Phil-Mobile n° ${it.number} de ${invMoney(it.tvac)} TVAC (${it.type === 'purchase' ? "achat de l'application" : 'renouvellement annuel'}).\nPaiement par virement sur ${INV_ISSUER.ibanFmt} (Zen-Connect), communication ${it.ogm}.\nTu peux aussi scanner le QR code présent sur la facture.\n\nMerci ! Philippe — Phil-Mobile`;
+  const text = `Bonjour ${first},\n\nVoici ta facture Phil-Mobile n° ${it.number} de ${invMoney(it.tvac)} TVAC (${it.type === 'purchase' ? "achat de l'application" : 'renouvellement annuel'}).\nPaiement par virement sur ${INV_ISSUER.ibanFmt} (ING, Zen-Connect), communication ${it.ogm}.\nAlternative ${INV_ISSUER.altLabel} : ${INV_ISSUER.altIbanFmt}.\nTu peux aussi scanner le QR code présent sur la facture.\n\nMerci ! Philippe — Phil-Mobile`;
   if (channel === 'mail') {
     window.location.href = 'mailto:' + (it.email || '') + '?subject=' + encodeURIComponent('Facture Phil-Mobile n° ' + it.number) + '&body=' + encodeURIComponent(text);
   } else {

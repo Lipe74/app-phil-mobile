@@ -6684,7 +6684,8 @@ window.recoGenerateInvoice = function (docId) {
 // ===== ACHAT / RENOUVELLEMENT : QR de paiement (virement SEPA) + demandes de prolongation =====
 // Les montants sont aussi recalculés et revérifiés côté admin au moment de la facture.
 var PAY = {
-  iban: 'BE08732086423213', ibanFmt: 'BE08 7320 8642 3213', name: 'Zen-Connect',
+  iban: 'BE91363286037276', ibanFmt: 'BE91 3632 8603 7276', name: 'Zen-Connect',   // ING (principal)
+  alt: { iban: 'BE08732086423213', ibanFmt: 'BE08 7320 8642 3213', label: 'CBC' },     // CBC (secours si le QR ING est refusé)
   purchase: { htva: 149, tva: 31.29, tvac: 180.29 },
   renewal:  { htva: 29.9, tva: 6.28,  tvac: 36.18 }
 };
@@ -6730,8 +6731,8 @@ function payOgm() {
 }
 
 // Contenu du QR de virement (norme EPC / SEPA Credit Transfer, version 002, UTF-8, ASCII uniquement ici)
-function payEpc(amount, digits) {
-  return ['BCD', '002', '1', 'SCT', '', PAY.name, PAY.iban, 'EUR' + Number(amount).toFixed(2), '', digits].join('\n');
+function payEpc(amount, digits, iban) {
+  return ['BCD', '002', '1', 'SCT', '', PAY.name, iban || PAY.iban, 'EUR' + Number(amount).toFixed(2), '', digits].join('\n');
 }
 
 function payLoadQrLib(cb) {
@@ -6749,6 +6750,14 @@ function payCopy(txt, btn) {
   else { var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
 }
 window.payCopyIban = function (b) { payCopy(PAY.ibanFmt, b); };
+window.payCopyIbanAlt = function (b) { payCopy(PAY.alt.ibanFmt, b); };
+window.payToggleAlt = function () {
+  var b = document.getElementById('pay-alt-box'), l = document.getElementById('pay-alt-link');
+  if (!b) return;
+  var open = b.style.display === 'none';
+  b.style.display = open ? 'block' : 'none';
+  if (l) l.textContent = open ? '▲ Masquer le QR code ' + PAY.alt.label : '❓ QR code non valide ? Clique ici pour afficher le QR code ' + PAY.alt.label;
+};
 window.payCopyOgm = function (b) { payCopy(b.getAttribute('data-ogm'), b); };
 
 window.payClose = function () { var m = document.getElementById('pay-modal'); if (m) m.remove(); };
@@ -6777,6 +6786,12 @@ function payShowQr(o) {
       '<div>IBAN : <strong>' + PAY.ibanFmt + '</strong> <button style="' + btn + '" onclick="payCopyIban(this)">Copier</button></div>' +
       '<div>Communication : <strong>' + payEsc(o.ogm) + '</strong> <button style="' + btn + '" data-ogm="' + payEsc(o.ogm) + '" onclick="payCopyOgm(this)">Copier</button></div>' +
     '</div>' +
+    '<div style="text-align:center;margin-top:10px;"><a id="pay-alt-link" href="javascript:void(0)" onclick="payToggleAlt()" style="font-size:12px;font-weight:700;color:#f97316;text-decoration:underline;cursor:pointer;">❓ QR code non valide ? Clique ici pour afficher le QR code ' + PAY.alt.label + '</a></div>' +
+    '<div id="pay-alt-box" style="display:none;margin-top:8px;border:1px dashed #f97316;border-radius:10px;padding:10px 12px;">' +
+      '<div id="pay-qr-alt" style="display:flex;justify-content:center;margin:4px 0 8px;min-height:220px;align-items:center;"></div>' +
+      '<div style="text-align:center;font-size:12px;color:#6b7280;margin-bottom:8px;">QR code ' + PAY.alt.label + ' (même montant, même communication)</div>' +
+      '<div style="font-size:13px;line-height:1.7;">IBAN ' + PAY.alt.label + ' : <strong>' + PAY.alt.ibanFmt + '</strong> <button style="' + btn + '" onclick="payCopyIbanAlt(this)">Copier</button></div>' +
+    '</div>' +
     '<div style="font-size:12px;color:#555;margin-top:10px;">' + o.after + '</div>' +
     '<button onclick="payClose()" style="margin-top:14px;width:100%;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">J\'ai compris</button>'
   );
@@ -6785,6 +6800,8 @@ function payShowQr(o) {
     if (!box) return;
     box.innerHTML = '';
     new window.QRCode(box, { text: payEpc(o.amount, o.digits), width: 220, height: 220, colorDark: '#000000', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+    var boxAlt = document.getElementById('pay-qr-alt');
+    if (boxAlt) { boxAlt.innerHTML = ''; new window.QRCode(boxAlt, { text: payEpc(o.amount, o.digits, PAY.alt.iban), width: 220, height: 220, colorDark: '#000000', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); }
   });
 }
 

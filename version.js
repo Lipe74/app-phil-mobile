@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.56 - Promos hub (TV, Films, Options)";
+  scope.APP_VERSION = "14.57 - Paiement ING + QR CBC de secours";
 })();
