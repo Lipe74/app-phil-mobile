@@ -235,7 +235,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.36 - Facture ING + CBC</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.37 - Demandes ignorées + restaurer</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -3701,9 +3701,11 @@ function loadProspects() {
   container.innerHTML = '<div class="empty">Chargement...</div>';
   prospectsUnsub = onSnapshot(collection(db, 'prospects'), (snap) => {
   const pending = [];
+  const dismissedList = [];
   snap.forEach(d => {
     const p = d.data();
     if (p.status === 'pending' || !p.status) pending.push({ docId: d.id, ...p });
+    else if (p.status === 'dismissed') dismissedList.push({ docId: d.id, ...p });
   });
 
   window._prospectsCache = pending;
@@ -3711,12 +3713,7 @@ function loadProspects() {
   if (countEl) countEl.innerHTML = pending.length > 0 ? `<span class="count-badge">${pending.length}</span>` : '';
   updateCrmBadge();
 
-  if (pending.length === 0) {
-    container.innerHTML = '<div class="empty">Aucune demande en attente.</div>';
-    return;
-  }
-
-  container.innerHTML = '';
+  container.innerHTML = pending.length === 0 ? '<div class="empty">Aucune demande en attente.</div>' : '';
   pending.forEach(p => {
     const card = document.createElement('div');
     card.className = 'card';
@@ -3744,6 +3741,7 @@ function loadProspects() {
     `;
     container.appendChild(card);
   });
+  appendIgnoredSection(container, 'prospects', dismissedList);
 
   window._prospectsCache = pending;
   }, (err) => {
@@ -3757,6 +3755,47 @@ window.dismissProspect = async function (docId) {
   await updateDoc(doc(db, 'prospects', docId), { status: 'dismissed' });
   showToast('Demande ignorée.');
   // (liste mise à jour automatiquement par le listener temps réel)
+};
+
+// Demandes ignorées : section repliable en bas de liste + restauration (remet la demande « en attente »)
+window._ignOpen = window._ignOpen || {};
+function appendIgnoredSection(container, coll, items) {
+  if (!items || !items.length) return;
+  items = items.slice().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+  const open = !!window._ignOpen[coll];
+  const wrap = document.createElement('div');
+  wrap.style.marginTop = '18px';
+  const rows = items.map(x => {
+    const name = coll === 'prospects' ? `${x.firstName || ''} ${x.lastName || ''}`.trim() : (x.fullName || '');
+    const kind = coll === 'prospects'
+      ? (x.accessType === 'achat' ? '🛒 Achat' : x.accessType === 'demo' ? '🧪 Démo 3 jours' : x.accessType === 'trial' ? '🎁 Mois offert' : '')
+      : (x.kind === 'upgrade' ? '🛒 Achat (compte existant)' : '🔄 Prolongation');
+    const when = x.createdAt ? new Date(x.createdAt).toLocaleDateString('fr-BE') : '';
+    return `<div class="card"><div class="card-row"><div class="card-info">
+        <strong>${escapeHtml(name || '—')}</strong>
+        ${x.smartId ? `<span class="badge badge-active" style="background:#E3F2FD;color:#1565C0;">ID Smart: ${escapeHtml(x.smartId)}</span>` : ''}
+        ${kind ? `<span class="badge" style="background:#f3f4f6;color:#555;">${kind}</span>` : ''}
+        <div class="meta">${escapeHtml(x.company || '—')} · ${escapeHtml(x.email || '')}${when ? ' · reçue le ' + escapeHtml(when) : ''}</div>
+      </div><div class="card-actions"><button class="btn btn-primary" onclick="restoreDismissed('${coll}','${x.docId}')">↩️ Restaurer</button></div></div></div>`;
+  }).join('');
+  wrap.innerHTML = `<button class="btn btn-secondary" id="ign-btn-${coll}" onclick="toggleIgnored('${coll}')">🚫 Ignorées (${items.length}) ${open ? '▲' : '▼'}</button>` +
+    `<div id="ign-list-${coll}" style="display:${open ? 'block' : 'none'};margin-top:10px;">${rows}</div>`;
+  container.appendChild(wrap);
+}
+window.toggleIgnored = function (coll) {
+  const l = document.getElementById('ign-list-' + coll), b = document.getElementById('ign-btn-' + coll);
+  if (!l) return;
+  const open = l.style.display === 'none';
+  window._ignOpen[coll] = open;
+  l.style.display = open ? 'block' : 'none';
+  if (b) b.textContent = b.textContent.replace(/[▲▼]\s*$/, open ? '▲' : '▼');
+};
+window.restoreDismissed = async function (coll, docId) {
+  if (!confirm('Remettre cette demande dans la liste « en attente » ?')) return;
+  try {
+    await updateDoc(doc(db, coll, docId), { status: 'pending' });
+    showToast('↩️ Demande restaurée.');
+  } catch (err) { alert('❌ Erreur : ' + err.message); }
 };
 
 // ===== ACHATS & PROLONGATIONS : facture PDF (QR SEPA + communication structurée), envoi, paiement =====
@@ -4071,9 +4110,10 @@ function renderRenewals() {
   const container = document.getElementById('renewals-list');
   if (!container) return;
   const all = (window._renewalsCache || []).filter(r => r.status !== 'dismissed');
+  const dismissedRen = (window._renewalsCache || []).filter(r => r.status === 'dismissed');
   const open = all.filter(r => (r.status || 'pending') === 'pending');
   const paid = all.filter(r => r.status === 'paid').slice(0, 15);
-  if (!open.length && !paid.length) { container.innerHTML = '<div class="empty">Aucune demande de prolongation.</div>'; return; }
+  if (!open.length && !paid.length) { container.innerHTML = '<div class="empty">Aucune demande de prolongation.</div>'; appendIgnoredSection(container, 'renewals', dismissedRen); return; }
   container.innerHTML = '';
   const cons = window._consultantsCache || [];
   const mk = (r, isPaid) => {
@@ -4123,6 +4163,7 @@ function renderRenewals() {
     container.appendChild(h);
     paid.forEach(r => mk(r, true));
   }
+  appendIgnoredSection(container, 'renewals', dismissedRen);
 }
 
 window.renewalDismiss = async function (docId) {

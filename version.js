@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.57 - Paiement ING + QR CBC de secours";
+  scope.APP_VERSION = "14.58 - Demandes ignorées restaurables";
 })();
