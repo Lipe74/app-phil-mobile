@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.66 - Bandeau rdv compact + visible gsm";
+  scope.APP_VERSION = "14.67 - Bandeau rdv compact + visible gsm (maj)";
 })();
