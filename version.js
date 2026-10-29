@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.62 - Opérateur actuel (recrutement)";
+  scope.APP_VERSION = "14.63 - Opérateur : Proximus ajouté";
 })();
