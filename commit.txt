@@ -1,15 +1,13 @@
 TITRE
-CRM : statut Rdv, contacts et conversion (14.59)
+Prospects consultants : tel, mail, TVA (14.60)
 
 DESCRIPTION
-Prospects Clients et Prospects Consultants (hub) :
-- Nouveau statut "Rdv" avec date et heure (+ lieu/visio), badges Aujourd'hui / Rdv passe, tri par date de rdv
-- Contacts : mode (Mail, Reseaux, Telephone) + date, 2e contact (relance) possible
-- Bouton "Rdv termine" : nouveau rdv, perdu (archive) ou converti
-- Converti : fiche client / consultant pre-remplie a valider (Gestion Clients / Gestion Consultants), sans creer l'application, prospect archive
-- Bouton Calendrier : fichier .ics (Outlook, Apple, Google), duree 1 h, rappel 30 min avant
-- Bandeau sur l'accueil : rdv du jour et rdv a cloturer
-- Agenda clients : les rdv y apparaissent
-- Remplace la creation automatique de fiche au passage en Converti
+Prospects Consultants (hub) :
+- Telephone et email cliquables (appel / ouverture du mail) + petits boutons rapides (appel, SMS, WhatsApp, mail)
+- Formulaire : Source et Statut vides par defaut (plus de Facebook / Independant)
+- TVA : choix Oui / Non (Non par defaut), le champ du numero n'apparait que sur Oui
+- Statut Independant : la TVA passe automatiquement sur Oui (autres statuts : reglage manuel)
+- Bouton "Rdv" visible sur toutes les fiches (clients et consultants) pour fixer un rendez-vous directement
+- Telephone et email cliquables aussi dans Prospects Clients
 
-Version 14.59 (version.js) et cache du service worker (sw.js).
+Version 14.60 (version.js) et cache du service worker (sw.js).

@@ -1620,11 +1620,16 @@ OPERATEUR: Proximus
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
-                    <input id="pco-tva" placeholder="BE0123456789" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <select id="pco-tva-oui" onchange="pcoToggleTva()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="Non">Non</option>
+                      <option value="Oui">Oui</option>
+                    </select>
+                    <input id="pco-tva" placeholder="BE0123456789" style="display:none;width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:6px;">
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
                     <select id="pco-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="">— choisir —</option>
                       <option value="Facebook">📘 Facebook</option>
                       <option value="WhatsApp">💬 WhatsApp</option>
                       <option value="Recommandation">🤝 Recommandation</option>
@@ -1636,7 +1641,8 @@ OPERATEUR: Proximus
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Statut</div>
-                    <select id="pco-statut-pro" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <select id="pco-statut-pro" onchange="pcoOnStatutPro()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <option value="">— choisir —</option>
                       <option value="Indépendant">💼 Indépendant</option>
                       <option value="Société">🏢 Société</option>
                       <option value="Employé">👔 Employé</option>
@@ -7820,8 +7826,8 @@ function pclRenderList(list) {
       + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
       + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
       + pclQuickActions(p)
-      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcEsc(p.tel) + '</div>' : '')
-      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
+      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
+      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
       + (p.ville ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.ville) + '</div>' : '')
       + (p.type === 'Société' ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc(p.societe || '-') + '</div>' : '')
       + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcEsc(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(p.numMobile) : '') + '</div>' : '')
@@ -8124,10 +8130,27 @@ window.pcoOpenModal = function (title) {
 };
 window.pcoCloseModal = function () { document.getElementById('modal-pco-edit').style.display = 'none'; };
 
+// TVA : Oui / Non ; le champ du numéro n'apparaît que sur Oui
+window.pcoToggleTva = function () {
+  var oui = document.getElementById('pco-tva-oui').value === 'Oui';
+  var inp = document.getElementById('pco-tva');
+  inp.style.display = oui ? 'block' : 'none';
+  if (!oui) inp.value = '';
+};
+// Statut « Indépendant » : TVA passe sur Oui (les autres statuts : on règle à la main, un salarié peut avoir une TVA)
+window.pcoOnStatutPro = function () {
+  if (document.getElementById('pco-statut-pro').value === 'Indépendant') {
+    document.getElementById('pco-tva-oui').value = 'Oui';
+    window.pcoToggleTva();
+  }
+};
+
 function pcoResetForm() {
   ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
-  document.getElementById('pco-source').value = 'Facebook';
-  document.getElementById('pco-statut-pro').value = 'Indépendant';
+  document.getElementById('pco-source').value = '';
+  document.getElementById('pco-statut-pro').value = '';
+  document.getElementById('pco-tva-oui').value = 'Non';
+  window.pcoToggleTva();
   document.getElementById('pco-presentation').value = 'Non présentée';
 }
 
@@ -8140,8 +8163,11 @@ window.pcoEditProspect = function (id) {
   document.getElementById('pco-tel').value = p.tel || '';
   document.getElementById('pco-email').value = p.email || '';
   document.getElementById('pco-tva').value = p.tva || '';
-  document.getElementById('pco-source').value = p.source || 'Facebook';
-  document.getElementById('pco-statut-pro').value = p.statutPro || 'Indépendant';
+  document.getElementById('pco-tva-oui').value = p.tva ? 'Oui' : 'Non';
+  window.pcoToggleTva();
+  document.getElementById('pco-tva').value = p.tva || '';
+  document.getElementById('pco-source').value = p.source || '';
+  document.getElementById('pco-statut-pro').value = p.statutPro || '';
   document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
   document.getElementById('pco-commentaire').value = p.commentaire || '';
   pcoEditId = id;
@@ -8157,7 +8183,7 @@ window.pcoSaveProspect = async function () {
     consultantId: window.pmCurrentUser.id, nom: nom,
     tel: document.getElementById('pco-tel').value.trim(),
     email: document.getElementById('pco-email').value.trim(),
-    tva: document.getElementById('pco-tva').value.trim(),
+    tva: document.getElementById('pco-tva-oui').value === 'Oui' ? document.getElementById('pco-tva').value.trim() : '',
     source: document.getElementById('pco-source').value,
     statutPro: document.getElementById('pco-statut-pro').value,
     presentation: document.getElementById('pco-presentation').value,
@@ -8214,8 +8240,9 @@ function pcoRenderList(list) {
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
       + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
       + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
-      + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:4px;">📞 ' + pcEsc(p.tel) + '</div>' : '')
-      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcEsc(p.email) + '</div>' : '')
+      + pclQuickActions(p)
+      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
+      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
       + (p.tva ? '<div style="font-size:12px;color:#555;">💳 ' + pcEsc(p.tva) + '</div>' : '')
       + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(p.source || '-') + '</div>'
       + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(p.statutPro) + '</div>' : '')
@@ -8381,6 +8408,8 @@ var PC_BTN_OK = 'background:#f97316;color:#fff;border:none;border-radius:8px;pad
 var PC_BTN_KO = 'background:#f3f4f6;color:#4b5563;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;';
 var PC_BTN_SM = 'padding:4px 9px;border:1px solid #c4b5fd;border-radius:6px;background:#f5f3ff;color:#6d28d9;font-size:11px;font-weight:700;cursor:pointer;';
 
+function pcTelLink(tel) { return '<a href="tel:' + pcEsc(pclCleanTel(tel)) + '" style="color:inherit;text-decoration:underline;">' + pcEsc(tel) + '</a>'; }
+function pcMailLink(m) { return '<a href="mailto:' + pcEsc(m) + '" style="color:inherit;text-decoration:underline;">' + pcEsc(m) + '</a>'; }
 function pcFind(kind, id) { return PC_CFG[kind].data().find(function (x) { return x.docId === id; }); }
 function pcRef(kind, id) { return window.doc(window.db, PC_CFG[kind].coll, id); }
 function pcZ(n) { return ('0' + n).slice(-2); }
@@ -8651,6 +8680,8 @@ function pcRdvButtons(kind, p) {
     b += '<button style="' + PC_BTN_SM + '" onclick="pcRdvIcs(' + k + ')">📅 Calendrier</button>'
       + '<button style="' + PC_BTN_SM + '" onclick="pcRdvOpen(' + k + ')">🗓 Modifier le rdv</button>'
       + '<button style="padding:4px 9px;border:1px solid #86efac;border-radius:6px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;cursor:pointer;" onclick="pcRdvDoneOpen(' + k + ')">✅ Rdv terminé</button>';
+  } else {
+    b += '<button style="' + PC_BTN_SM + '" onclick="pcRdvOpen(' + k + ')">📅 Rdv</button>';
   }
   return b;
 }
