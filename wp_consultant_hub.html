@@ -719,6 +719,9 @@ Version stable : <span id="app-version-1">…</span>
   <button onclick="showProspPanel('consultants')" class="menu-item" id="btn-prosp-consultants">
     🚀 Prospects Consultants <span id="qr-badge-pco" class="pm-qr-badge" style="display:none;"></span>
   </button>
+  <button onclick="showCrmPanel('panel-rdvs')" class="menu-item" id="btn-rdvs">
+    📅 Rdvs
+  </button>
   <button onclick="showCrmPanel('panel-mon-qr')" class="menu-item" id="btn-mon-qr" style="display:none;">
     📱 Mon QR Code
   </button>
@@ -1584,6 +1587,13 @@ OPERATEUR: Proximus
           </div>
 
           <!-- Panel Prospects Consultants -->
+          <div id="panel-rdvs" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📅 Rdvs</h2>
+            <div id="rdvpg-kinds" style="display:flex;gap:8px;margin-bottom:12px;"></div>
+            <div id="rdvpg-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
+            <div id="rdvpg-list"></div>
+          </div>
+
           <div id="panel-prosp-consultants" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🚀 Prospects Consultants</h2>
 
@@ -6263,6 +6273,7 @@ window.showCrmPanel = function(panelId) {
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
   if (panelId === 'panel-contrats' && typeof ctrInit === 'function') ctrInit();
   if (panelId === 'panel-mon-qr') monQrOpen();
+  if (panelId === 'panel-rdvs') rdvPageOpen();
   if (panelId === 'panel-recommander' && typeof recoOpen === 'function') recoOpen();
 };
 
@@ -8754,16 +8765,78 @@ function initRdvBanner(user) {
       var q = window.query(window.collection(window.db, PC_CFG[kind].coll), window.where('consultantId', '==', user.id), window.where('statut', '==', 'Rdv'));
       window.onSnapshot(q, function (snap) {
         var arr = [];
-        snap.forEach(function (d) { var x = d.data(); if (x.archive !== true && x.rdv && x.rdv.date && !isNaN(new Date(x.rdv.date))) arr.push(x); });
+        snap.forEach(function (d) { var x = d.data(); if (x.archive !== true && x.rdv && x.rdv.date && !isNaN(new Date(x.rdv.date))) { x.docId = d.id; arr.push(x); } });
         _rdvItems[kind] = arr;
         rdvBannerRender();
+        rdvPageRender();
       }, function (err) { console.log('Bandeau rdv indisponible (' + kind + '):', err.message); });
     });
   });
 }
 window.rdvBannerOpen = function () {
-  var hasCl = _rdvItems.cl.length > 0;
-  window.showProspPanel(hasCl ? 'clients' : 'consultants');
+  var sp = { cl: rdvPageSplit('cl'), co: rdvPageSplit('co') };
+  var pick = function (k) { return sp[k].today.length ? 0 : sp[k].late.length ? 1 : sp[k].next.length ? 2 : 3; };
+  _rdvPg.kind = pick('co') < pick('cl') ? 'co' : 'cl';
+  _rdvPg.tab = null;
+  window.showCrmPanel('panel-rdvs');
+};
+
+// --- Page « Rdvs » : rdvs du CRM séparés Clients / Consultants (à venir, aujourd'hui, passés à clôturer) ---
+var _rdvPg = { kind: 'cl', tab: null };
+function rdvPageSplit(kind) {
+  var now = new Date(), startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var r = { today: [], next: [], late: [] };
+  _rdvItems[kind].forEach(function (p) {
+    var d = new Date(p.rdv.date);
+    if (d < startToday) r.late.push(p);
+    else if (pcLocalDate(d) === pcLocalDate(now)) r.today.push(p);
+    else r.next.push(p);
+  });
+  var byDate = function (a, b) { return new Date(a.rdv.date) - new Date(b.rdv.date); };
+  r.today.sort(byDate); r.next.sort(byDate);
+  r.late.sort(function (a, b) { return byDate(b, a); });
+  return r;
+}
+window.rdvPageSet = function (kind, tab) {
+  if (kind) { _rdvPg.kind = kind; _rdvPg.tab = null; }
+  if (tab) _rdvPg.tab = tab;
+  rdvPageRender();
+};
+function rdvPageRender() {
+  var panel = document.getElementById('panel-rdvs');
+  if (!panel || panel.style.display === 'none') return;
+  var sp = { cl: rdvPageSplit('cl'), co: rdvPageSplit('co') };
+  var cur = sp[_rdvPg.kind];
+  if (!_rdvPg.tab) _rdvPg.tab = cur.today.length ? 'today' : cur.late.length ? 'late' : 'next';
+  var cnt = function (k) { return sp[k].today.length + sp[k].next.length + sp[k].late.length; };
+  var kindBtn = function (k, label) {
+    var on = _rdvPg.kind === k;
+    return '<button onclick="rdvPageSet(\'' + k + '\')" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #f97316;'
+      + (on ? 'background:#f97316;color:#fff;' : 'background:#fff;color:#f97316;') + '">' + label + ' (' + cnt(k) + ')</button>';
+  };
+  document.getElementById('rdvpg-kinds').innerHTML = kindBtn('cl', '🎯 Clients') + kindBtn('co', '🚀 Consultants');
+  var tabs = [['today', "Aujourd'hui"], ['next', 'À venir'], ['late', 'Passés à clôturer']];
+  document.getElementById('rdvpg-tabs').innerHTML = tabs.map(function (t) {
+    var on = _rdvPg.tab === t[0], red = t[0] === 'late' && cur.late.length;
+    return '<button onclick="rdvPageSet(null,\'' + t[0] + '\')" style="padding:6px 12px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid ' + (red ? '#c0392b' : '#c4b5fd') + ';'
+      + (on ? 'background:' + (red ? '#c0392b' : '#6d28d9') + ';color:#fff;' : 'background:#f5f3ff;color:' + (red ? '#c0392b' : '#6d28d9') + ';') + '">' + t[1] + ' (' + cur[t[0]].length + ')</button>';
+  }).join('');
+  var list = cur[_rdvPg.tab], el = document.getElementById('rdvpg-list');
+  if (!list.length) { el.innerHTML = '<div style="color:#9ca3af;font-size:13px;text-align:center;padding:24px 0;">Aucun rdv.</div>'; return; }
+  el.innerHTML = list.map(function (p) {
+    var late = _rdvPg.tab === 'late';
+    return '<div style="border:1px solid ' + (late ? '#fca5a5' : '#e5e7eb') + ';border-left:4px solid ' + (late ? '#c0392b' : '#8b5cf6') + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff;">'
+      + '<div style="font-size:13px;font-weight:700;color:' + (late ? '#c0392b' : '#5b21b6') + ';">' + pcEsc(pcFmtRdv(p.rdv.date)) + '</div>'
+      + '<div style="font-size:14px;font-weight:700;margin-top:2px;">' + pcEsc(p.nom || '') + '</div>'
+      + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:2px;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
+      + (p.rdv.note ? '<div style="font-size:12px;color:#555;margin-top:2px;">📝 ' + pcEsc(p.rdv.note) + '</div>' : '')
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(_rdvPg.kind, p) + '</div></div>';
+  }).join('');
+}
+window.rdvPageOpen = function () {
+  // Démarre les écoutes des listes (les boutons Rdv terminé / Modifier utilisent leurs données)
+  pcLiveList('cl'); pcLiveList('co');
+  rdvPageRender();
 };
 // --- Listes Prospects en temps réel (clients 'cl' et consultants 'co') ---
 var _pcUnsub = { cl: null, co: null };
