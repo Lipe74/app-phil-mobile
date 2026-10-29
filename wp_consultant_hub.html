@@ -1363,6 +1363,7 @@ STATUT: independant
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Rdv">0</div><div style="font-size:10px;opacity:.9;">Rdv</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Test">0</div><div style="font-size:10px;opacity:.9;">Test</div></div>
@@ -1497,6 +1498,7 @@ STATUT: independant
                   <option value="">Tous les statuts</option>
                   <option value="Nouveau">🆕 Nouveau</option>
                   <option value="Contacté">📞 Contacté</option>
+                  <option value="Rdv">📅 Rdv</option>
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
                   <option value="Test">🧪 Test</option>
@@ -1586,6 +1588,7 @@ OPERATEUR: Proximus
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-total">0</div><div style="font-size:10px;opacity:.9;">Total</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Rdv">0</div><div style="font-size:10px;opacity:.9;">Rdv</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Test">0</div><div style="font-size:10px;opacity:.9;">Test</div></div>
@@ -1672,6 +1675,7 @@ OPERATEUR: Proximus
                   <option value="">Tous les statuts</option>
                   <option value="Nouveau">🆕 Nouveau</option>
                   <option value="Contacté">📞 Contacté</option>
+                  <option value="Rdv">📅 Rdv</option>
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
                   <option value="Test">🧪 Test</option>
@@ -1895,6 +1899,8 @@ STATUT: independant
 
           <!-- TABLEAU DE BORD (affiché dès connexion) -->
           <div id="welcome-panel" style="display:block;">
+            <!-- Bandeau rdv du jour (prospects) -->
+            <div id="rdv-banner" onclick="rdvBannerOpen()" style="display:none;cursor:pointer;border:1px solid #c4b5fd;border-radius:12px;background:#f5f3ff;color:#5b21b6;padding:12px 16px;margin-bottom:10px;font-size:13px;"></div>
             <!-- Carte Bienvenue -->
             <div style="border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;">
               <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">BIENVENUE</div>
@@ -5163,6 +5169,8 @@ function doUnlock(user) {
   subscribeChatOnlineBadge();
   // QR Code prospects : bouton visible selon le mode (Pilote / Tous) défini dans l'admin
   initMonQr(user);
+  // Bandeau + calendrier : rdv prospects du jour
+  initRdvBanner(user);
   crmReady(function () { recoLoadList(); });
 }
 
@@ -7356,6 +7364,7 @@ function pclStatusStyle(s) {
   var map = {
     'Nouveau': 'background:#e8f0fe;color:#1a73e8;',
     'Contacté': 'background:#fff3e8;color:#f97316;',
+    'Rdv': 'background:#ede9fe;color:#6d28d9;',
     'Converti': 'background:#E8F5E9;color:#2E7D32;',
     'Perdu': 'background:#f1f1f1;color:#757575;',
     'Test': 'background:#f3e8ff;color:#7e22ce;'
@@ -7364,7 +7373,7 @@ function pclStatusStyle(s) {
 }
 
 // Statuts proposés dans les listes Prospects (clients et consultants)
-var PC_STATUTS = ['Nouveau', 'Contacté', 'Converti', 'Perdu', 'Test'];
+var PC_STATUTS = ['Nouveau', 'Contacté', 'Rdv', 'Converti', 'Perdu', 'Test'];
 
 // Statuts qui archivent automatiquement la fiche (Nouveau / Contacté la désarchivent)
 var PC_AUTO_ARCHIVE = ['Converti', 'Perdu', 'Test'];
@@ -7386,7 +7395,7 @@ function pcVisible(p, statutFilter) {
 // Statistiques du bandeau : total = fiches actives ; chaque statut compte toutes les fiches (archivées comprises) ; archivées comptées à part
 function pcFillStats(prefix, list) {
   var nbActives = list.filter(function (p) { return p.archive !== true; }).length;
-  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Converti': 0, 'Perdu': 0, 'Test': 0 };
+  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Rdv': 0, 'Converti': 0, 'Perdu': 0, 'Test': 0 };
   list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
   var set = function (id, v) { var el = document.getElementById(prefix + '-stat-' + id); if (el) el.textContent = v; };
   set('total', nbActives);
@@ -7801,6 +7810,7 @@ function pclRenderList(list) {
     var txt = ((p.nom || '') + (p.tel || '') + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
+  filtered = pcSortRdv(filtered, statutFilter);
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   el.innerHTML = filtered.map(function (p) {
     var contratBtn = p.contractId
@@ -7818,11 +7828,13 @@ function pclRenderList(list) {
       + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcEsc(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(p.numInternet) : '') + '</div>' : '')
       + pclQrExtras(p)
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
+      + pcContactInfo(p) + pcRdvInfo(p)
       + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
-      + '<select onchange="pclChangeStatus(\'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
+      + '<select onchange="pcChangeStatus(\'cl\', \'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
       + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
       + '</select>'
+      + pcRdvButtons('cl', p)
       + '<button onclick="pclEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
       + '<button onclick="pclOpenContactModal(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff3e8;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">📞 Log</button>'
       + contratBtn
@@ -7834,15 +7846,6 @@ function pclRenderList(list) {
 
 window.pclFilterList = function () { pclRenderList(window._pclData || []); };
 window.pclArchive = function (docId, flag) { return pcArchive('prospectsClients', docId, flag, pclLoadList); };
-
-window.pclChangeStatus = async function (docId, newStatus) {
-  try {
-    await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), pcStatusPatch(newStatus));
-    pcToast('Statut mis à jour : ' + newStatus);
-    if (newStatus === 'Converti') await pclMigrateOne(docId);
-    pclLoadList();
-  } catch (err) { alert('Erreur: ' + err.message); }
-};
 
 async function pclMigrateOne(docId) {
   var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
@@ -7908,6 +7911,7 @@ function pclRenderAgenda() {
   var actions = [], upcoming = [];
   var now = new Date();
   list.forEach(function (p) {
+    if (p.statut === 'Rdv' && p.rdv && p.rdv.date && p.archive !== true) upcoming.push({ date: p.rdv.date, prospectName: p.nom, resultat: '📅 Rdv' + (p.rdv.note ? ' · ' + p.rdv.note : '') });
     (p.contacts || []).forEach(function (c, idx) {
       actions.push(Object.assign({}, c, { prospectName: p.nom }));
       var isLast = idx === (p.contacts || []).length - 1;
@@ -8204,6 +8208,7 @@ function pcoRenderList(list) {
     var txt = ((p.nom || '') + (p.tel || '') + (p.email || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
+  filtered = pcSortRdv(filtered, statutFilter);
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   el.innerHTML = filtered.map(function (p) {
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
@@ -8217,10 +8222,12 @@ function pcoRenderList(list) {
       + pcoQrExtras(p)
       + (p.presentation && p.presentation !== 'Non présentée' ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.presentation) + '</div>' : '')
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
+      + pcContactInfo(p) + pcRdvInfo(p)
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
-      + '<select onchange="pcoChangeStatus(\'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
+      + '<select onchange="pcChangeStatus(\'co\', \'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
       + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
       + '</select>'
+      + pcRdvButtons('co', p)
       + '<button onclick="pcoEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
       + pcArchiveButton('pcoArchive', p)
       + '<button onclick="pcoDeleteProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f5b7b1;border-radius:6px;background:#fde2e1;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'
@@ -8230,34 +8237,6 @@ function pcoRenderList(list) {
 
 window.pcoFilterList = function () { pcoRenderList(window._pcoData || []); };
 window.pcoArchive = function (docId, flag) { return pcArchive('prospectsConsultants', docId, flag, pcoLoadList); };
-
-window.pcoChangeStatus = async function (docId, newStatus) {
-  try {
-    await window.updateDoc(window.doc(window.db, 'prospectsConsultants', docId), pcStatusPatch(newStatus));
-    pcToast('Statut mis à jour : ' + newStatus);
-    if (newStatus === 'Converti') await pcoMigrateOne(docId);
-    pcoLoadList();
-  } catch (err) { alert('Erreur: ' + err.message); }
-};
-
-async function pcoMigrateOne(docId) {
-  var p = (window._pcoData || []).find(function (x) { return x.docId === docId; });
-  if (!p) return;
-  try {
-    var nameParts = (p.nom || '').trim().split(' ');
-    var sp = (p.statutPro || '').toLowerCase();
-    await window.addDoc(window.collection(window.db, 'consultantsCrm'), {
-      consultantId: p.consultantId || window.pmCurrentUser.id,
-      prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
-      nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
-      tel: p.tel || '', email: p.email || '', ville: '', adresse: '', cp: '', societe: '', tva: p.tva || '',
-      dateDemarrage: '', etat: 'actif',
-      statutPro: sp.indexOf('ind') >= 0 ? 'independant' : (sp.indexOf('sal') >= 0 || sp.indexOf('employ') >= 0 ? 'salarie' : ''),
-      sourceProspectId: docId, createdAt: new Date().toISOString()
-    });
-    pcToast('✅ Consultant migré dans Gestion Consultants !');
-  } catch (err) { console.log('Migration consultantsCrm:', err.message); }
-}
 
 window.pcoDeleteProspect = async function (docId) {
   var p = (window._pcoData || []).find(function (x) { return x.docId === docId; });
@@ -8392,6 +8371,348 @@ window.pcoBulkImportPaste = async function () {
   if (ta) ta.value = '';
   window.pcoShowTab('liste');
 };
+// ===== RDV / CONTACTS / CONVERSION (Build 14.59) — commun aux Prospects Clients ('cl') et Consultants ('co') =====
+var PC_CFG = {
+  cl: { coll: 'prospectsClients', data: function () { return window._pclData || []; }, reload: function () { pclLoadList(); } },
+  co: { coll: 'prospectsConsultants', data: function () { return window._pcoData || []; }, reload: function () { pcoLoadList(); } }
+};
+var PC_INP = 'width:100%;margin:4px 0;padding:9px;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;font-size:13px;';
+var PC_BTN_OK = 'background:#f97316;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;';
+var PC_BTN_KO = 'background:#f3f4f6;color:#4b5563;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;';
+var PC_BTN_SM = 'padding:4px 9px;border:1px solid #c4b5fd;border-radius:6px;background:#f5f3ff;color:#6d28d9;font-size:11px;font-weight:700;cursor:pointer;';
+
+function pcFind(kind, id) { return PC_CFG[kind].data().find(function (x) { return x.docId === id; }); }
+function pcRef(kind, id) { return window.doc(window.db, PC_CFG[kind].coll, id); }
+function pcZ(n) { return ('0' + n).slice(-2); }
+function pcLocalDate(d) { return d.getFullYear() + '-' + pcZ(d.getMonth() + 1) + '-' + pcZ(d.getDate()); }
+function pcLocalInput(d) { return pcLocalDate(d) + 'T' + pcZ(d.getHours()) + ':' + pcZ(d.getMinutes()); }
+function pcFmtDate(v) { var d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString('fr-BE'); }
+function pcFmtRdv(v) {
+  var d = new Date(v);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('fr-BE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) + ' à ' + d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });
+}
+// 'today' = rdv aujourd'hui (pas encore passé) ; 'late' = rdv dépassé à clôturer ; '' = à venir
+function pcRdvState(v) {
+  var d = new Date(v), now = new Date();
+  if (isNaN(d)) return '';
+  if (d < now) return 'late';
+  return pcLocalDate(d) === pcLocalDate(now) ? 'today' : '';
+}
+
+function pcModal(html) {
+  pcModalClose();
+  var m = document.createElement('div');
+  m.id = 'pc-dyn-modal';
+  m.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:3500;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:16px;box-sizing:border-box;';
+  m.innerHTML = '<div style="background:#fff;border-radius:16px;padding:20px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto;box-sizing:border-box;">' + html + '</div>';
+  document.body.appendChild(m);
+}
+// kind fourni : on recharge la liste (remet aussi le menu de statut sur la bonne valeur)
+window.pcModalClose = function (kind) {
+  var m = document.getElementById('pc-dyn-modal');
+  if (m) m.remove();
+  if (kind && PC_CFG[kind]) PC_CFG[kind].reload();
+};
+
+// Historique des rdv : on archive le rdv courant avec son issue avant de le remplacer / clôturer
+function pcRdvHistoryPatch(p, issue) {
+  if (!p.rdv || !p.rdv.date) return {};
+  return { rdvHistory: window.arrayUnion({ date: p.rdv.date, note: p.rdv.note || '', issue: issue, closedAt: new Date().toISOString() }) };
+}
+
+// --- Changement de statut (liste déroulante) ---
+window.pcChangeStatus = async function (kind, docId, newStatus) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  if (newStatus === 'Rdv') { window.pcRdvOpen(kind, docId); return; }
+  if (newStatus === 'Converti') { window.pcConvertOpen(kind, docId); return; }
+  try {
+    await window.updateDoc(pcRef(kind, docId), pcStatusPatch(newStatus));
+    pcToast('Statut mis à jour : ' + newStatus);
+    PC_CFG[kind].reload();
+    if (newStatus === 'Contacté' && !(p.contact1 && p.contact1.mode)) window.pcContactOpen(kind, docId);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// --- Contacts (mode + date, 2e contact possible) ---
+function pcModeSelect(id, value) {
+  return '<select id="' + id + '" style="' + PC_INP + '">'
+    + ['', 'Mail', 'Réseaux', 'Téléphone'].map(function (m) { return '<option value="' + m + '"' + (value === m ? ' selected' : '') + '>' + (m || '— choisir —') + '</option>'; }).join('')
+    + '</select>';
+}
+window.pcContactOpen = function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var c1 = p.contact1 || {}, c2 = p.contact2 || {};
+  pcModal(
+    '<h3 style="color:#f97316;margin:0 0 4px;font-size:15px;">📞 Contacts</h3>'
+    + '<div style="font-size:12px;color:#666;margin-bottom:10px;">Pour : ' + pcEsc(p.nom || '') + '</div>'
+    + '<div style="font-size:12px;font-weight:700;margin-top:6px;">1er contact</div>'
+    + pcModeSelect('pc-c1-mode', c1.mode || '')
+    + '<input id="pc-c1-date" type="date" value="' + pcEsc(c1.date || pcLocalDate(new Date())) + '" style="' + PC_INP + '">'
+    + '<div style="font-size:12px;font-weight:700;margin-top:10px;">2e contact (relance, facultatif)</div>'
+    + pcModeSelect('pc-c2-mode', c2.mode || '')
+    + '<input id="pc-c2-date" type="date" value="' + pcEsc(c2.date || '') + '" style="' + PC_INP + '">'
+    + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'flex:1;" onclick="pcContactSave(\'' + kind + '\',\'' + docId + '\')">Enregistrer</button>'
+    + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose()">Fermer</button></div>'
+  );
+};
+window.pcContactSave = async function (kind, docId) {
+  var g = function (id) { return document.getElementById(id).value; };
+  var m1 = g('pc-c1-mode'), m2 = g('pc-c2-mode');
+  if (m2 && !m1) { alert('Renseigne d\'abord le 1er contact.'); return; }
+  var patch = {
+    contact1: m1 ? { mode: m1, date: g('pc-c1-date') || pcLocalDate(new Date()) } : null,
+    contact2: m2 ? { mode: m2, date: g('pc-c2-date') || pcLocalDate(new Date()) } : null,
+    dateMaj: new Date().toISOString()
+  };
+  try {
+    await window.updateDoc(pcRef(kind, docId), patch);
+    pcToast('📞 Contacts enregistrés.');
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// --- Rendez-vous ---
+window.pcRdvOpen = function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var d;
+  if (p.rdv && p.rdv.date && !isNaN(new Date(p.rdv.date))) d = new Date(p.rdv.date);
+  else { d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
+  pcModal(
+    '<h3 style="color:#f97316;margin:0 0 4px;font-size:15px;">📅 Rendez-vous</h3>'
+    + '<div style="font-size:12px;color:#666;margin-bottom:10px;">Pour : ' + pcEsc(p.nom || '') + '</div>'
+    + '<div style="font-size:12px;font-weight:700;">Date et heure</div>'
+    + '<input id="pc-rdv-date" type="datetime-local" value="' + pcLocalInput(d) + '" style="' + PC_INP + '">'
+    + '<input id="pc-rdv-note" type="text" placeholder="Lieu / visio / remarque (facultatif)" value="' + pcEsc((p.rdv && p.rdv.note) || '') + '" style="' + PC_INP + '">'
+    + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'flex:1;" onclick="pcRdvSave(\'' + kind + '\',\'' + docId + '\')">Enregistrer le rdv</button>'
+    + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose(\'' + kind + '\')">Annuler</button></div>'
+  );
+};
+window.pcRdvSave = async function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var val = document.getElementById('pc-rdv-date').value;
+  var d = val ? new Date(val) : null;
+  if (!d || isNaN(d)) { alert('Merci de choisir une date et une heure.'); return; }
+  if (d < new Date() && !confirm('Cette date est dans le passé. Enregistrer quand même ?')) return;
+  var iso = d.toISOString();
+  var patch = Object.assign(pcStatusPatch('Rdv'), { rdv: { date: iso, note: document.getElementById('pc-rdv-note').value.trim() } });
+  if (p.rdv && p.rdv.date && p.rdv.date !== iso) Object.assign(patch, pcRdvHistoryPatch(p, 'Reporté / nouveau rdv'));
+  try {
+    await window.updateDoc(pcRef(kind, docId), patch);
+    pcToast('📅 Rdv enregistré : ' + pcFmtRdv(iso));
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// Fin de rdv : nouveau rdv / perdu / converti
+window.pcRdvDoneOpen = function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var lbl = kind === 'cl' ? 'Client' : 'Consultant';
+  var big = 'display:block;width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;';
+  pcModal(
+    '<h3 style="color:#f97316;margin:0 0 4px;font-size:15px;">✅ Rdv terminé</h3>'
+    + '<div style="font-size:12px;color:#666;margin-bottom:10px;">' + pcEsc(p.nom || '') + (p.rdv && p.rdv.date ? ' · ' + pcEsc(pcFmtRdv(p.rdv.date)) : '') + '</div>'
+    + '<div style="font-size:13px;margin-bottom:4px;">Quelle suite ?</div>'
+    + '<button style="' + big + 'background:#ede9fe;color:#6d28d9;" onclick="pcRdvOpen(\'' + kind + '\',\'' + docId + '\')">🔁 Nouveau rdv</button>'
+    + '<button style="' + big + 'background:#f1f1f1;color:#555;" onclick="pcRdvLost(\'' + kind + '\',\'' + docId + '\')">❌ ' + lbl + ' perdu</button>'
+    + '<button style="' + big + 'background:#E8F5E9;color:#2E7D32;" onclick="pcConvertOpen(\'' + kind + '\',\'' + docId + '\')">✅ ' + lbl + ' converti</button>'
+    + '<button style="' + PC_BTN_KO + 'width:100%;margin-top:12px;" onclick="pcModalClose()">Fermer</button>'
+  );
+};
+window.pcRdvLost = async function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  if (!confirm('Passer « ' + (p.nom || '') + ' » en Perdu ? La fiche sera archivée (réversible).')) return;
+  try {
+    await window.updateDoc(pcRef(kind, docId), Object.assign(pcStatusPatch('Perdu'), pcRdvHistoryPatch(p, 'Perdu'), { rdv: null }));
+    pcToast('❌ Fiche passée en Perdu et archivée.');
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// --- Conversion : fiche pré-remplie à valider (Gestion Clients / Gestion Consultants), sans créer l'application ---
+window.pcConvertOpen = function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var parts = (p.nom || '').trim().split(' ');
+  var prenom = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+  var nom = parts.length > 1 ? parts[parts.length - 1] : (parts[0] || '');
+  var f = function (id, ph, val) { return '<input id="pc-cv-' + id + '" placeholder="' + ph + '" value="' + pcEsc(val || '') + '" style="' + PC_INP + '">'; };
+  var extra;
+  if (kind === 'cl') {
+    extra = f('ville', 'Ville / adresse', p.ville) + f('societe', 'Société', p.societe) + f('tva', 'N° de TVA', p.tva);
+  } else {
+    var sp = (p.statutPro || '').toLowerCase();
+    var spv = sp.indexOf('ind') >= 0 ? 'independant' : (sp.indexOf('sal') >= 0 || sp.indexOf('employ') >= 0 ? 'salarie' : '');
+    extra = f('tva', 'N° de TVA / entreprise', p.tva)
+      + '<select id="pc-cv-statutpro" style="' + PC_INP + '">'
+      + [['', '— statut pro —'], ['independant', 'Indépendant'], ['salarie', 'Salarié / employé']].map(function (o) { return '<option value="' + o[0] + '"' + (spv === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+      + '</select>';
+  }
+  pcModal(
+    '<h3 style="color:#2E7D32;margin:0 0 4px;font-size:15px;">✅ Créer la fiche ' + (kind === 'cl' ? 'client' : 'consultant') + '</h3>'
+    + '<div style="font-size:12px;color:#666;margin-bottom:10px;">Vérifie les informations avant de valider. La fiche sera ajoutée dans ' + (kind === 'cl' ? 'Gestion Clients' : 'Gestion Consultants') + ' (sans créer l\'application) et le prospect sera archivé.</div>'
+    + f('prenom', 'Prénom', prenom) + f('nom', 'Nom', nom) + f('tel', 'Téléphone', p.tel) + f('email', 'Email', p.email) + extra
+    + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'background:#16a34a;flex:1;" onclick="pcConvertSave(\'' + kind + '\',\'' + docId + '\')">✅ Valider et créer la fiche</button>'
+    + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose(\'' + kind + '\')">Annuler</button></div>'
+    + '<div style="text-align:center;margin-top:10px;"><a href="javascript:void(0)" onclick="pcConvertSkip(\'' + kind + '\',\'' + docId + '\')" style="font-size:11px;color:#6b7280;text-decoration:underline;">Passer en Converti sans créer de fiche</a></div>'
+  );
+};
+function pcConvertFinish(kind, docId, extra) {
+  var p = pcFind(kind, docId) || {};
+  var patch = Object.assign(pcStatusPatch('Converti'), pcRdvHistoryPatch(p, 'Converti'), { rdv: null }, extra || {});
+  return window.updateDoc(pcRef(kind, docId), patch);
+}
+window.pcConvertSkip = async function (kind, docId) {
+  try {
+    await pcConvertFinish(kind, docId);
+    pcToast('✅ Prospect converti et archivé.');
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+window.pcConvertSave = async function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var g = function (id) { var el = document.getElementById('pc-cv-' + id); return el ? el.value.trim() : ''; };
+  var prenom = g('prenom'), nom = g('nom'), tel = g('tel');
+  if (!prenom && !nom) { alert('Merci de renseigner au moins un nom.'); return; }
+  var uid = p.consultantId || window.pmCurrentUser.id;
+  var now = new Date().toISOString();
+  try {
+    var coll, data;
+    if (kind === 'cl') {
+      coll = 'clients';
+      data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: g('ville'), adresse: g('ville'), cp: '',
+        societe: g('societe'), tva: g('tva'), reference: '', etat: 'actif', sourceProspectId: docId, createdAt: now };
+    } else {
+      coll = 'consultantsCrm';
+      data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: g('tva'),
+        dateDemarrage: '', etat: 'actif', statutPro: g('statutpro'), sourceProspectId: docId, createdAt: now };
+    }
+    if (tel) {
+      var dup = await window.getDocs(window.query(window.collection(window.db, coll), window.where('tel', '==', tel), window.where('consultantId', '==', window.pmCurrentUser.id)));
+      if (!dup.empty && !confirm('Une fiche avec ce téléphone existe déjà dans ' + (kind === 'cl' ? 'Gestion Clients' : 'Gestion Consultants') + '. Créer quand même ?')) return;
+    }
+    var ref = await window.addDoc(window.collection(window.db, coll), data);
+    await pcConvertFinish(kind, docId, { convertedId: ref.id });
+    pcToast('✅ Fiche créée dans ' + (kind === 'cl' ? 'Gestion Clients' : 'Gestion Consultants') + ' !');
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+// --- Calendrier (.ics : Outlook, Apple, Google), durée 1 h, rappel 30 min avant ---
+window.pcRdvIcs = function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p || !p.rdv || !p.rdv.date) return;
+  var s = new Date(p.rdv.date), e = new Date(s.getTime() + 3600000);
+  var loc = function (d) { return d.getFullYear() + pcZ(d.getMonth() + 1) + pcZ(d.getDate()) + 'T' + pcZ(d.getHours()) + pcZ(d.getMinutes()) + '00'; };
+  var utc = function (d) { return d.getUTCFullYear() + pcZ(d.getUTCMonth() + 1) + pcZ(d.getUTCDate()) + 'T' + pcZ(d.getUTCHours()) + pcZ(d.getUTCMinutes()) + pcZ(d.getUTCSeconds()) + 'Z'; };
+  var esc = function (t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); };
+  var desc = [p.tel ? 'Tél : ' + p.tel : '', p.email ? 'Email : ' + p.email : '', p.rdv.note || ''].filter(Boolean).join('\n');
+  var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Phil-Mobile//Rdv//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', 'UID:' + docId + '-' + s.getTime() + '@phil-mobile.be', 'DTSTAMP:' + utc(new Date()),
+    'DTSTART:' + loc(s), 'DTEND:' + loc(e), 'SUMMARY:' + esc('Rdv ' + (kind === 'cl' ? 'client' : 'consultant') + ' — ' + (p.nom || '')),
+    'DESCRIPTION:' + esc(desc), p.rdv.note ? 'LOCATION:' + esc(p.rdv.note) : '',
+    'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:Rdv dans 30 minutes', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'
+  ].filter(Boolean);
+  var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'rdv-' + (p.nom || 'prospect').replace(/[^A-Za-z0-9]+/g, '-') + '.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+};
+
+// --- Affichage dans les fiches ---
+function pcContactInfo(p) {
+  var parts = [];
+  [p.contact1, p.contact2].forEach(function (c, i) {
+    if (c && c.mode) parts.push((i ? '2e' : '1er') + ' contact : ' + pcEsc(c.mode) + (c.date ? ' le ' + pcEsc(pcFmtDate(c.date)) : ''));
+  });
+  return parts.length ? '<div style="font-size:12px;color:#555;">📞 ' + parts.join(' · ') + '</div>' : '';
+}
+function pcRdvInfo(p) {
+  if (p.statut !== 'Rdv' || !p.rdv || !p.rdv.date) return '';
+  var st = pcRdvState(p.rdv.date);
+  var badge = st === 'today' ? ' <span style="background:#fef3c7;color:#92400e;border-radius:99px;padding:1px 8px;font-size:10px;">Aujourd\'hui</span>'
+    : st === 'late' ? ' <span style="background:#fde2e1;color:#c0392b;border-radius:99px;padding:1px 8px;font-size:10px;">⚠️ Rdv passé — à clôturer</span>' : '';
+  return '<div style="font-size:12px;font-weight:700;color:#6d28d9;margin-top:3px;">📅 Rdv : ' + pcEsc(pcFmtRdv(p.rdv.date)) + badge + '</div>'
+    + (p.rdv.note ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.rdv.note) + '</div>' : '');
+}
+function pcRdvButtons(kind, p) {
+  var k = '\'' + kind + '\',\'' + p.docId + '\'';
+  var b = '<button style="' + PC_BTN_SM + '" onclick="pcContactOpen(' + k + ')">☎️ Contact</button>';
+  if (p.statut === 'Rdv' && p.rdv && p.rdv.date) {
+    b += '<button style="' + PC_BTN_SM + '" onclick="pcRdvIcs(' + k + ')">📅 Calendrier</button>'
+      + '<button style="' + PC_BTN_SM + '" onclick="pcRdvOpen(' + k + ')">🗓 Modifier le rdv</button>'
+      + '<button style="padding:4px 9px;border:1px solid #86efac;border-radius:6px;background:#dcfce7;color:#166534;font-size:11px;font-weight:700;cursor:pointer;" onclick="pcRdvDoneOpen(' + k + ')">✅ Rdv terminé</button>';
+  }
+  return b;
+}
+// Filtre « Rdv » : rdv les plus proches d'abord
+function pcSortRdv(list, statutFilter) {
+  if (statutFilter !== 'Rdv') return list;
+  return list.slice().sort(function (a, b) {
+    return new Date((a.rdv && a.rdv.date) || '9999-12-31') - new Date((b.rdv && b.rdv.date) || '9999-12-31');
+  });
+}
+
+// --- Bandeau « rdv du jour » à l'ouverture du hub (temps réel) ---
+var _rdvBannerStarted = false;
+var _rdvItems = { cl: [], co: [] };
+function rdvBannerRender() {
+  var el = document.getElementById('rdv-banner');
+  if (!el) return;
+  var now = new Date(), startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var today = [], late = [], next = null;
+  ['cl', 'co'].forEach(function (kind) {
+    _rdvItems[kind].forEach(function (p) {
+      var d = new Date(p.rdv.date);
+      var item = { kind: kind, nom: p.nom || '', d: d };
+      if (d < startToday) late.push(item);
+      else if (pcLocalDate(d) === pcLocalDate(now)) today.push(item);
+      else if (!next || d < next.d) next = item;
+    });
+  });
+  today.sort(function (a, b) { return a.d - b.d; });
+  if (!today.length && !late.length && !next) { el.style.display = 'none'; return; }
+  var hm = function (d) { return d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }); };
+  var html = '';
+  if (today.length) html += '<div style="font-weight:700;">📅 ' + today.length + ' rdv aujourd\'hui</div><div style="font-size:12px;margin-top:2px;">'
+    + today.map(function (t) { return pcEsc(hm(t.d)) + ' · ' + pcEsc(t.nom) + (t.kind === 'co' ? ' (consultant)' : ''); }).join('<br>') + '</div>';
+  if (late.length) html += '<div style="font-weight:700;color:#c0392b;margin-top:' + (html ? '6' : '0') + 'px;">⚠️ ' + late.length + ' rdv passé(s) à clôturer</div><div style="font-size:12px;margin-top:2px;">'
+    + late.map(function (t) { return pcEsc(pcFmtDate(t.d)) + ' · ' + pcEsc(t.nom); }).join('<br>') + '</div>';
+  if (!today.length && !late.length && next) html += '<div style="font-weight:700;">📅 Prochain rdv</div><div style="font-size:12px;margin-top:2px;">' + pcEsc(pcFmtRdv(next.d)) + ' · ' + pcEsc(next.nom) + '</div>';
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+function initRdvBanner(user) {
+  if (_rdvBannerStarted || !user) return;
+  crmReady(function () {
+    if (_rdvBannerStarted || !window.onSnapshot) return;
+    _rdvBannerStarted = true;
+    ['cl', 'co'].forEach(function (kind) {
+      var q = window.query(window.collection(window.db, PC_CFG[kind].coll), window.where('consultantId', '==', user.id), window.where('statut', '==', 'Rdv'));
+      window.onSnapshot(q, function (snap) {
+        var arr = [];
+        snap.forEach(function (d) { var x = d.data(); if (x.archive !== true && x.rdv && x.rdv.date && !isNaN(new Date(x.rdv.date))) arr.push(x); });
+        _rdvItems[kind] = arr;
+        rdvBannerRender();
+      }, function (err) { console.log('Bandeau rdv indisponible (' + kind + '):', err.message); });
+    });
+  });
+}
+window.rdvBannerOpen = function () {
+  var hasCl = _rdvItems.cl.length > 0;
+  window.showProspPanel(hasCl ? 'clients' : 'consultants');
+};
+// ===== FIN RDV / CONTACTS / CONVERSION =====
+
 // ===== FIN PROSPECTS =====
 
 // ===== MES CONTRATS — fusionné depuis wp_contrats.html (version simplifiée : sans import PDF/IA) =====

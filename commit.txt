@@ -1,13 +1,15 @@
 TITRE
-Admin : demandes ignorees restaurables (14.58)
+CRM : statut Rdv, contacts et conversion (14.59)
 
 DESCRIPTION
-Les demandes ignorees ne disparaissent plus : elles sont retrouvables et restaurables.
+Prospects Clients et Prospects Consultants (hub) :
+- Nouveau statut "Rdv" avec date et heure (+ lieu/visio), badges Aujourd'hui / Rdv passe, tri par date de rdv
+- Contacts : mode (Mail, Reseaux, Telephone) + date, 2e contact (relance) possible
+- Bouton "Rdv termine" : nouveau rdv, perdu (archive) ou converti
+- Converti : fiche client / consultant pre-remplie a valider (Gestion Clients / Gestion Consultants), sans creer l'application, prospect archive
+- Bouton Calendrier : fichier .ics (Outlook, Apple, Google), duree 1 h, rappel 30 min avant
+- Bandeau sur l'accueil : rdv du jour et rdv a cloturer
+- Agenda clients : les rdv y apparaissent
+- Remplace la creation automatique de fiche au passage en Converti
 
-Admin (Build 14.37) :
-- Demandes d'acces : section repliable "Ignorees (n)" sous la liste
-- Prolongations et achats : meme section "Ignorees (n)"
-- Bouton "Restaurer" : remet la demande en attente (confirmation avant)
-- La section reste ouverte apres une restauration
-
-Version 14.58 (version.js) et cache du service worker (sw.js).
+Version 14.59 (version.js) et cache du service worker (sw.js).
