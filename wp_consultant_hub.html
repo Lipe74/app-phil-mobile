@@ -1485,6 +1485,7 @@ STATUT: independant
                     <textarea id="pcl-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
                   </div>
                 </div>
+                <div id="pcl-modal-summary"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
                   <button onclick="pclCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
                   <button onclick="pclSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
@@ -1668,6 +1669,7 @@ OPERATEUR: Proximus
                     <textarea id="pco-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
                   </div>
                 </div>
+                <div id="pco-modal-summary"></div>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
                   <button onclick="pcoCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
                   <button onclick="pcoSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
@@ -7133,41 +7135,55 @@ function crmRenderList(data, listId, col) {
   el.innerHTML = h;
 }
 
+// Gestion Clients / Consultants en temps réel (onSnapshot) : plus besoin de rafraîchir après une modification faite ailleurs.
+var _crmClUnsub = null;
 function crmLoadClients() {
   var el = document.getElementById('crm-cl-list');
+  if (_crmClUnsub) { window.filterCrmList('clients'); return; }
   if (el) el.innerHTML = '<div style="color:#999;">Chargement...</div>';
   crmReady(function() {
-    window.getDocs(window.query(window.collection(window.db,'clients'), window.where('consultantId','==',window.pmCurrentUser.id))).then(function(snap) {
+    if (_crmClUnsub) return;
+    _crmClUnsub = window.onSnapshot(window.query(window.collection(window.db,'clients'), window.where('consultantId','==',window.pmCurrentUser.id)), function(snap) {
       _crmClData = [];
       snap.forEach(function(d){ _crmClData.push(Object.assign({ _id: d.id }, d.data())); });
       _crmClData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
-      crmRenderList(_crmClData, 'crm-cl-list', 'clients');
-    }).catch(function(err){ if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>'; });
+      window.filterCrmList('clients');
+    }, function(err){ _crmClUnsub = null; var e = document.getElementById('crm-cl-list'); if (e) e.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>'; });
   });
 }
 
+var _crmCoUnsubs = [];
+var _crmCoSrc = { auth: [], crm: [] };
+function crmRebuildConsultants() {
+  _crmCoData = _crmCoSrc.auth.concat(_crmCoSrc.crm);
+  _crmCoData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
+  crmRenderList(_crmCoData, 'crm-co-list', 'consultantsCrm');
+}
 function crmLoadConsultants() {
   var el = document.getElementById('crm-co-list');
+  if (_crmCoUnsubs.length) { crmRebuildConsultants(); return; }
   if (el) el.innerHTML = '<div style="color:#999;">Chargement...</div>';
   crmReady(function() {
+    if (_crmCoUnsubs.length) return;
     var myId = window.pmCurrentUser.id;
-    Promise.all([
-      window.getDocs(window.query(window.collection(window.db,'consultants'), window.where('uplineId','==',myId))),
-      window.getDocs(window.query(window.collection(window.db,'consultantsCrm'), window.where('consultantId','==',myId)))
-    ]).then(function(r) {
-      _crmCoData = [];
-      r[0].forEach(function(d){
+    var onErr = function(err){ _crmCoUnsubs.forEach(function(u){ try { u(); } catch (e) {} }); _crmCoUnsubs = []; var e = document.getElementById('crm-co-list'); if (e) e.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>'; };
+    _crmCoUnsubs.push(window.onSnapshot(window.query(window.collection(window.db,'consultants'), window.where('uplineId','==',myId)), function(snap) {
+      _crmCoSrc.auth = [];
+      snap.forEach(function(d){
         var data=d.data();
         var fn=(data.fullName||data.name||'').trim();
         var parts=fn.split(' ');
         var nom=parts.length>1?parts[parts.length-1]:'';
         var prenom=parts.length>1?parts.slice(0,-1).join(' '):fn;
-        _crmCoData.push({ _id:d.id, _source:'consultants', prenom:prenom, nom:nom, tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', dateDemarrage:data.startDate||'', etat:data.active===false?'desactive':'actif', _aspInit:data.aspInit||0, _aspFromContracts:data.aspFromContracts||0 });
+        _crmCoSrc.auth.push({ _id:d.id, _source:'consultants', prenom:prenom, nom:nom, tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', dateDemarrage:data.startDate||'', etat:data.active===false?'desactive':'actif', _aspInit:data.aspInit||0, _aspFromContracts:data.aspFromContracts||0 });
       });
-      r[1].forEach(function(d){ _crmCoData.push(Object.assign({ _id:d.id, _source:'consultantsCrm' }, d.data())); });
-      _crmCoData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
-      crmRenderList(_crmCoData, 'crm-co-list', 'consultantsCrm');
-    }).catch(function(err){ if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>'; });
+      crmRebuildConsultants();
+    }, onErr));
+    _crmCoUnsubs.push(window.onSnapshot(window.query(window.collection(window.db,'consultantsCrm'), window.where('consultantId','==',myId)), function(snap) {
+      _crmCoSrc.crm = [];
+      snap.forEach(function(d){ _crmCoSrc.crm.push(Object.assign({ _id:d.id, _source:'consultantsCrm' }, d.data())); });
+      crmRebuildConsultants();
+    }, onErr));
   });
 }
 
@@ -7689,7 +7705,7 @@ function pclResetForm() {
   window.pclToggleReference();
 }
 
-window.pclStartNew = function () { pclEditId = null; pclResetForm(); window.pclOpenModal('🆕 Nouveau prospect'); };
+window.pclStartNew = function () { pclEditId = null; pcRefreshModalSummary('cl'); pclResetForm(); window.pclOpenModal('🆕 Nouveau prospect'); };
 
 window.pclEditProspect = function (id) {
   var p = (window._pclData || []).find(function (x) { return x.docId === id; });
@@ -7715,6 +7731,7 @@ window.pclEditProspect = function (id) {
   window.pclToggleSociete();
   window.pclToggleReference();
   pclEditId = id;
+  pcRefreshModalSummary('cl');
   window.pclOpenModal('✏️ Modifier le prospect');
 };
 
@@ -7758,24 +7775,9 @@ window.pclSaveProspect = async function () {
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
-function pclLoadList() {
-  var el = document.getElementById('pcl-list');
-  if (el) el.innerHTML = 'Chargement...';
-  crmReady(async function () {
-    try {
-      var snap = await window.getDocs(window.query(window.collection(window.db, 'prospectsClients'), window.where('consultantId', '==', window.pmCurrentUser.id)));
-      var list = [];
-      snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
-      list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
-      await pcAutoArchiveLegacy('prospectsClients', list);
-      window._pclData = list;
-      pclUpdateStats(list);
-      pclRenderList(list);
-    } catch (err) {
-      if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>';
-    }
-  });
-}
+// Liste en temps réel (onSnapshot) : une modification faite ailleurs (autre appareil / navigateur) apparaît sans rafraîchir.
+// Rappels de pclLoadList() (après une action) : simple réaffichage depuis les données déjà à jour.
+function pclLoadList() { pcLiveList('cl'); }
 
 function pclUpdateStats(list) { pcFillStats('pcl', list); }
 
@@ -8154,7 +8156,7 @@ function pcoResetForm() {
   document.getElementById('pco-presentation').value = 'Non présentée';
 }
 
-window.pcoStartNew = function () { pcoEditId = null; pcoResetForm(); window.pcoOpenModal('🆕 Nouveau prospect'); };
+window.pcoStartNew = function () { pcoEditId = null; pcRefreshModalSummary('co'); pcoResetForm(); window.pcoOpenModal('🆕 Nouveau prospect'); };
 
 window.pcoEditProspect = function (id) {
   var p = (window._pcoData || []).find(function (x) { return x.docId === id; });
@@ -8171,6 +8173,7 @@ window.pcoEditProspect = function (id) {
   document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
   document.getElementById('pco-commentaire').value = p.commentaire || '';
   pcoEditId = id;
+  pcRefreshModalSummary('co');
   window.pcoOpenModal('✏️ Modifier le prospect');
 };
 
@@ -8203,24 +8206,7 @@ window.pcoSaveProspect = async function () {
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
-function pcoLoadList() {
-  var el = document.getElementById('pco-list');
-  if (el) el.innerHTML = 'Chargement...';
-  crmReady(async function () {
-    try {
-      var snap = await window.getDocs(window.query(window.collection(window.db, 'prospectsConsultants'), window.where('consultantId', '==', window.pmCurrentUser.id)));
-      var list = [];
-      snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
-      list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
-      await pcAutoArchiveLegacy('prospectsConsultants', list);
-      window._pcoData = list;
-      pcoUpdateStats(list);
-      pcoRenderList(list);
-    } catch (err) {
-      if (el) el.innerHTML = '<div style="color:#e24b4a;">' + err.message + '</div>';
-    }
-  });
-}
+function pcoLoadList() { pcLiveList('co'); }
 
 function pcoUpdateStats(list) { pcFillStats('pco', list); }
 
@@ -8742,6 +8728,52 @@ window.rdvBannerOpen = function () {
   var hasCl = _rdvItems.cl.length > 0;
   window.showProspPanel(hasCl ? 'clients' : 'consultants');
 };
+// --- Listes Prospects en temps réel (clients 'cl' et consultants 'co') ---
+var _pcUnsub = { cl: null, co: null };
+function pcRenderKind(kind) {
+  if (kind === 'cl') { pclUpdateStats(window._pclData || []); pclRenderList(window._pclData || []); }
+  else { pcoUpdateStats(window._pcoData || []); pcoRenderList(window._pcoData || []); }
+  pcRefreshModalSummary(kind);
+}
+function pcLiveList(kind) {
+  var elId = kind === 'cl' ? 'pcl-list' : 'pco-list';
+  if (_pcUnsub[kind]) { pcRenderKind(kind); return; }
+  var el = document.getElementById(elId);
+  if (el) el.innerHTML = 'Chargement...';
+  crmReady(function () {
+    if (_pcUnsub[kind]) return;
+    var q = window.query(window.collection(window.db, PC_CFG[kind].coll), window.where('consultantId', '==', window.pmCurrentUser.id));
+    _pcUnsub[kind] = window.onSnapshot(q, async function (snap) {
+      var list = [];
+      snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
+      list.sort(function (a, b) { return new Date(b.dateCreation || 0) - new Date(a.dateCreation || 0); });
+      await pcAutoArchiveLegacy(PC_CFG[kind].coll, list);
+      if (kind === 'cl') window._pclData = list; else window._pcoData = list;
+      pcRenderKind(kind);
+    }, function (err) {
+      _pcUnsub[kind] = null;
+      var e = document.getElementById(elId);
+      if (e) e.innerHTML = '<div style="color:#e24b4a;">' + pcEsc(err.message) + '</div>';
+    });
+  });
+}
+
+// --- Résumé « suivi » (statut, contacts, rdv + boutons) affiché en bas de la fiche en modification ---
+function pcModalSummaryHtml(kind, p) {
+  return '<div style="border-top:1px solid #eee;padding-top:10px;margin-top:14px;">'
+    + '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:5px;">Suivi</div>'
+    + '<div style="margin-bottom:4px;"><span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;">' + pcEsc(p.statut || 'Nouveau') + '</span></div>'
+    + pcContactInfo(p) + pcRdvInfo(p)
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(kind, p) + '</div></div>';
+}
+function pcRefreshModalSummary(kind) {
+  var box = document.getElementById(kind === 'cl' ? 'pcl-modal-summary' : 'pco-modal-summary');
+  if (!box) return;
+  var id = kind === 'cl' ? pclEditId : pcoEditId;
+  var p = id ? pcFind(kind, id) : null;
+  box.innerHTML = p ? pcModalSummaryHtml(kind, p) : '';
+}
+
 // ===== FIN RDV / CONTACTS / CONVERSION =====
 
 // ===== FIN PROSPECTS =====
