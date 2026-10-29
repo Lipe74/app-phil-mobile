@@ -1612,8 +1612,18 @@ OPERATEUR: Proximus
                     <input id="pco-nom" placeholder="Nom du prospect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
-                    <input id="pco-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                      <span style="font-size:11px;font-weight:700;color:#555;">Téléphone</span>
+                      <a href="javascript:void(0)" onclick="pcoCheckOperator()" title="Copie le numéro et ouvre 1399.be" style="font-size:10px;font-weight:700;color:#f97316;text-decoration:underline;cursor:pointer;">🔎 Vérifier l'opérateur</a>
+                    </div>
+                    <div style="display:flex;gap:5px;">
+                      <input id="pco-tel" placeholder="0470..." style="flex:1;min-width:0;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <select id="pco-operateur" title="Opérateur actuel" style="width:38%;min-width:0;padding:8px 4px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:12px;">
+                        <option value="">Opérateur</option>
+                        <option>Orange</option><option>Base</option><option>Voo</option><option>Telenet</option>
+                        <option>Mobile Vikings</option><option>Scarlet</option><option>Hey</option><option>Autre</option>
+                      </select>
+                    </div>
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
@@ -8133,6 +8143,13 @@ window.pcoOpenModal = function (title) {
 window.pcoCloseModal = function () { document.getElementById('modal-pco-edit').style.display = 'none'; };
 
 // TVA : Oui / Non ; le champ du numéro n'apparaît que sur Oui
+// Copie le numéro saisi et ouvre 1399.be (vérification de l'opérateur à la main : le site ne se laisse pas interroger par l'app)
+window.pcoCheckOperator = function () {
+  var tel = document.getElementById('pco-tel').value.trim();
+  if (tel && navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tel).catch(function () {});
+  pcToast(tel ? '📋 Numéro copié — colle-le sur 1399.be' : 'Saisis d\'abord le numéro, puis relance la vérification.');
+  window.open('https://www.1399.be', '_blank', 'noopener');
+};
 window.pcoToggleTva = function () {
   var oui = document.getElementById('pco-tva-oui').value === 'Oui';
   var inp = document.getElementById('pco-tva');
@@ -8150,6 +8167,7 @@ window.pcoOnStatutPro = function () {
 function pcoResetForm() {
   ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pco-source').value = '';
+  document.getElementById('pco-operateur').value = '';
   document.getElementById('pco-statut-pro').value = '';
   document.getElementById('pco-tva-oui').value = 'Non';
   window.pcoToggleTva();
@@ -8169,6 +8187,7 @@ window.pcoEditProspect = function (id) {
   window.pcoToggleTva();
   document.getElementById('pco-tva').value = p.tva || '';
   document.getElementById('pco-source').value = p.source || '';
+  document.getElementById('pco-operateur').value = p.operateurActuel || '';
   document.getElementById('pco-statut-pro').value = p.statutPro || '';
   document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
   document.getElementById('pco-commentaire').value = p.commentaire || '';
@@ -8188,6 +8207,7 @@ window.pcoSaveProspect = async function () {
     email: document.getElementById('pco-email').value.trim(),
     tva: document.getElementById('pco-tva-oui').value === 'Oui' ? document.getElementById('pco-tva').value.trim() : '',
     source: document.getElementById('pco-source').value,
+    operateurActuel: document.getElementById('pco-operateur').value,
     statutPro: document.getElementById('pco-statut-pro').value,
     presentation: document.getElementById('pco-presentation').value,
     commentaire: document.getElementById('pco-commentaire').value.trim(),
@@ -8227,7 +8247,7 @@ function pcoRenderList(list) {
       + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
       + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
       + pclQuickActions(p)
-      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
+      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + (p.operateurActuel ? ' · 📶 ' + pcEsc(p.operateurActuel) : '') + '</div>' : '')
       + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
       + (p.tva ? '<div style="font-size:12px;color:#555;">💳 ' + pcEsc(p.tva) + '</div>' : '')
       + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(p.source || '-') + '</div>'

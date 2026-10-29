@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.61 - Temps réel CRM + suivi dans la fiche";
+  scope.APP_VERSION = "14.62 - Opérateur actuel (recrutement)";
 })();
