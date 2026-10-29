@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.64 - Pastilles opérateur colorées";
+  scope.APP_VERSION = "14.65 - Suivi dès la création + contacts";
 })();

@@ -7747,7 +7747,7 @@ window.pclEditProspect = function (id) {
   window.pclOpenModal('✏️ Modifier le prospect');
 };
 
-window.pclSaveProspect = async function () {
+window.pclSaveProspect = async function (afterAction) {
   var nom = document.getElementById('pcl-nom').value.trim();
   if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
   var existing = pclEditId ? (window._pclData || []).find(function (x) { return x.docId === pclEditId; }) : null;
@@ -7777,9 +7777,11 @@ window.pclSaveProspect = async function () {
     dateMaj: now
   };
   try {
+    var newRef = null;
     if (pclEditId) await window.updateDoc(window.doc(window.db, 'prospectsClients', pclEditId), data);
-    else await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
+    else newRef = await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
     pcToast('✅ Prospect enregistré.');
+    if (afterAction === 'contact' || afterAction === 'rdv') { pcContinueAfterSave('cl', pclEditId || newRef.id, data, afterAction); return; }
     pclEditId = null;
     pclResetForm();
     window.pclCloseModal();
@@ -8198,7 +8200,7 @@ window.pcoEditProspect = function (id) {
   window.pcoOpenModal('✏️ Modifier le prospect');
 };
 
-window.pcoSaveProspect = async function () {
+window.pcoSaveProspect = async function (afterAction) {
   var nom = document.getElementById('pco-nom').value.trim();
   if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
   var existing = pcoEditId ? (window._pcoData || []).find(function (x) { return x.docId === pcoEditId; }) : null;
@@ -8218,9 +8220,11 @@ window.pcoSaveProspect = async function () {
     dateMaj: now
   };
   try {
+    var newRef = null;
     if (pcoEditId) await window.updateDoc(window.doc(window.db, 'prospectsConsultants', pcoEditId), data);
-    else await window.addDoc(window.collection(window.db, 'prospectsConsultants'), data);
+    else newRef = await window.addDoc(window.collection(window.db, 'prospectsConsultants'), data);
     pcToast('✅ Prospect enregistré.');
+    if (afterAction === 'contact' || afterAction === 'rdv') { pcContinueAfterSave('co', pcoEditId || newRef.id, data, afterAction); return; }
     pcoEditId = null;
     pcoResetForm();
     window.pcoCloseModal();
@@ -8485,7 +8489,7 @@ window.pcChangeStatus = async function (kind, docId, newStatus) {
 // --- Contacts (mode + date, 2e contact possible) ---
 function pcModeSelect(id, value) {
   return '<select id="' + id + '" style="' + PC_INP + '">'
-    + ['', 'Mail', 'Réseaux', 'Téléphone'].map(function (m) { return '<option value="' + m + '"' + (value === m ? ' selected' : '') + '>' + (m || '— choisir —') + '</option>'; }).join('')
+    + ['', 'Téléphone', 'SMS', 'WhatsApp', 'Mail', 'Réseaux', 'Autre'].map(function (m) { return '<option value="' + m + '"' + (value === m ? ' selected' : '') + '>' + (m || '— choisir —') + '</option>'; }).join('')
     + '</select>';
 }
 window.pcContactOpen = function (kind, docId) {
@@ -8514,6 +8518,8 @@ window.pcContactSave = async function (kind, docId) {
     contact2: m2 ? { mode: m2, date: g('pc-c2-date') || pcLocalDate(new Date()) } : null,
     dateMaj: new Date().toISOString()
   };
+  var cur = pcFind(kind, docId);
+  if (m1 && cur && (!cur.statut || cur.statut === 'Nouveau')) Object.assign(patch, pcStatusPatch('Contacté'));
   try {
     await window.updateDoc(pcRef(kind, docId), patch);
     pcToast('📞 Contacts enregistrés.');
@@ -8798,12 +8804,30 @@ function pcModalSummaryHtml(kind, p) {
     + pcContactInfo(p) + pcRdvInfo(p)
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(kind, p) + '</div></div>';
 }
+// Fiche en création : boutons Contact / Rdv (la fiche est d'abord enregistrée, puis la fenêtre du suivi s'ouvre)
+function pcModalNewHtml(kind) {
+  var fn = kind === 'cl' ? 'pclSaveProspect' : 'pcoSaveProspect';
+  return '<div style="border-top:1px solid #eee;padding-top:10px;margin-top:14px;">'
+    + '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Suivi</div>'
+    + '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Déjà appelé ou rdv fixé ? La fiche est enregistrée, puis tu complètes le suivi.</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    + '<button style="' + PC_BTN_SM + '" onclick="' + fn + '(\'contact\')">☎️ Contact</button>'
+    + '<button style="' + PC_BTN_SM + '" onclick="' + fn + '(\'rdv\')">📅 Rdv</button></div></div>';
+}
+function pcContinueAfterSave(kind, id, data, action) {
+  if (!pcFind(kind, id)) PC_CFG[kind].data().push(Object.assign({ docId: id }, data));
+  if (kind === 'cl') pclEditId = id; else pcoEditId = id;
+  var t = document.getElementById(kind === 'cl' ? 'pcl-modal-title' : 'pco-modal-title');
+  if (t) t.textContent = '✏️ Modifier le prospect';
+  pcRefreshModalSummary(kind);
+  if (action === 'contact') window.pcContactOpen(kind, id); else window.pcRdvOpen(kind, id);
+}
 function pcRefreshModalSummary(kind) {
   var box = document.getElementById(kind === 'cl' ? 'pcl-modal-summary' : 'pco-modal-summary');
   if (!box) return;
   var id = kind === 'cl' ? pclEditId : pcoEditId;
   var p = id ? pcFind(kind, id) : null;
-  box.innerHTML = p ? pcModalSummaryHtml(kind, p) : '';
+  box.innerHTML = p ? pcModalSummaryHtml(kind, p) : (id ? '' : pcModalNewHtml(kind));
 }
 
 // ===== FIN RDV / CONTACTS / CONVERSION =====
