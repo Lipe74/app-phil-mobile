@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Outils Phil-Mobile</title>
 <link rel="icon" type="image/png" href="images/logo.png">
-<link rel="apple-touch-icon" href="images/logo.png">
-  <link rel="manifest" href="/manifest.json">
-
+<link rel="apple-touch-icon" href="images/icon-hub-192.png" data-pm-fixed="1">
+<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#f97316">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <script src="version.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -9726,7 +9727,7 @@ window.signInAs = (email, password) => signInWithEmailAndPassword(auth, email, p
 getDoc(doc(window.db, 'settings', 'app')).then(snap => {
   if (snap.exists() && snap.data().logoUrl) {
     window.pmDefaultLogoUrl = snap.data().logoUrl;
-    document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(link => link.href = window.pmDefaultLogoUrl);
+    document.querySelectorAll('link[rel="icon"]:not([data-pm-fixed]), link[rel="apple-touch-icon"]:not([data-pm-fixed])').forEach(link => link.href = window.pmDefaultLogoUrl);
     // Tous les logos "Phil-Mobile par défaut" de la page (écran de connexion, support, etc.)
     document.querySelectorAll('img.pm-default-logo').forEach(img => { img.onerror = null; img.src = window.pmDefaultLogoUrl; });
   }

@@ -1,0 +1,27 @@
+{
+  "id": "phil-mobile-orange",
+  "name": "Phil-Mobile — Simulateur Orange",
+  "short_name": "PM Orange",
+  "description": "Simulateur Orange by Phil-Mobile",
+  "start_url": "/wp_orange.html",
+  "scope": "/wp_orange.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF7900",
+  "orientation": "portrait",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "images/icon-orange-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/icon-orange-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

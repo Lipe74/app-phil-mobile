@@ -1,33 +1,27 @@
 {
-  "name": "App Phil-Mobile",
-  "short_name": "App Phil-Mobile",
+  "name": "Phil-Mobile — Hub",
+  "short_name": "PM Hub",
   "description": "Application Consultants Phil-Mobile",
-"start_url": "/wp_consultant_hub.html",
-  "scope": "/",
+  "start_url": "/wp_consultant_hub.html",
+  "scope": "/wp_consultant_hub.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#f97316",
+  "theme_color": "#2563EB",
   "orientation": "portrait",
   "lang": "fr",
   "id": "phil-mobile-app",
   "icons": [
     {
-      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-icon-192.png?alt=media",
+      "src": "images/icon-hub-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-icon-512.png?alt=media",
+      "src": "images/icon-hub-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "https://firebasestorage.googleapis.com/v0/b/phil-mobile.firebasestorage.app/o/profiles%2Fapp-icon-512-maskable.png?alt=media",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "screenshots": [
