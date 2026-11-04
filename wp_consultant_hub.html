@@ -1370,6 +1370,7 @@ STATUT: independant
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Rdv">0</div><div style="font-size:10px;opacity:.9;">Rdv</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Attente">0</div><div style="font-size:10px;opacity:.9;">En attente</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pcl-stat-Test">0</div><div style="font-size:10px;opacity:.9;">Test</div></div>
@@ -1506,6 +1507,7 @@ STATUT: independant
                   <option value="Nouveau">🆕 Nouveau</option>
                   <option value="Contacté">📞 Contacté</option>
                   <option value="Rdv">📅 Rdv</option>
+                  <option value="En attente">⏳ En attente</option>
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
                   <option value="Test">🧪 Test</option>
@@ -1513,6 +1515,7 @@ STATUT: independant
                 </select>
                 <input id="pcl-search" type="text" placeholder="🔍 Rechercher..." oninput="pclFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pclMigrateConverted()" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">✅ Migrer convertis</button>
+                <button onclick="pcVcfList('cl')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
                 <button onclick="pclDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
               </div>
               <div id="pcl-list" style="font-size:13px;color:#666;">Chargement...</div>
@@ -1603,6 +1606,7 @@ OPERATEUR: Proximus
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Nouveau">0</div><div style="font-size:10px;opacity:.9;">Nouveau</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Contacté">0</div><div style="font-size:10px;opacity:.9;">Contacté</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Rdv">0</div><div style="font-size:10px;opacity:.9;">Rdv</div></div>
+              <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Attente">0</div><div style="font-size:10px;opacity:.9;">En attente</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Converti">0</div><div style="font-size:10px;opacity:.9;">Converti</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Perdu">0</div><div style="font-size:10px;opacity:.9;">Perdu</div></div>
               <div><div style="font-size:20px;font-weight:700;" id="pco-stat-Test">0</div><div style="font-size:10px;opacity:.9;">Test</div></div>
@@ -1646,7 +1650,7 @@ OPERATEUR: Proximus
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
-                    <select id="pco-tva-oui" onchange="pcoToggleTva()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <select id="pco-tva-oui" onchange="pcoOnTvaChange()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="Non">Non</option>
                       <option value="Oui">Oui</option>
                     </select>
@@ -1656,37 +1660,22 @@ OPERATEUR: Proximus
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
                     <select id="pco-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="">— choisir —</option>
-                      <option value="Facebook">📘 Facebook</option>
-                      <option value="WhatsApp">💬 WhatsApp</option>
-                      <option value="Recommandation">🤝 Recommandation</option>
-                      <option value="Terrain">🚶 Terrain</option>
-                      <option value="Site Web">🌐 Site Web</option>
-                      <option value="QR Code">📱 QR Code</option>
-                      <option value="Autre">✨ Autre</option>
+                      <option value="Réseaux sociaux">📘 Réseaux sociaux</option>
+                      <option value="Indeed - Site Recrutement">🌐 Indeed - Site Recrutement</option>
+                      <option value="WhatsApp / SMS">💬 WhatsApp / SMS</option>
+                      <option value="QR Code Phil-Mobile">📱 QR Code Phil-Mobile</option>
+                      <option value="Démarchages">🚶 Démarchages</option>
                     </select>
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Statut</div>
                     <select id="pco-statut-pro" onchange="pcoOnStatutPro()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="">— choisir —</option>
-                      <option value="Indépendant">💼 Indépendant</option>
-                      <option value="Société">🏢 Société</option>
-                      <option value="Employé">👔 Employé</option>
-                      <option value="Salarié">👔 Salarié</option>
-                      <option value="Chômage">🗂 Chômage</option>
-                      <option value="Autres revenus">💶 Autres revenus</option>
-                      <option value="Sans revenus">📄 Sans revenus</option>
+                      <option value="Indépendant (Société)">💼 Indépendant (Société)</option>
+                      <option value="Employé - Salarié">👔 Employé - Salarié</option>
                       <option value="Étudiant">🎓 Étudiant</option>
-                      <option value="Sans activité">📄 Sans activité</option>
-                    </select>
-                  </div>
-                  <div style="grid-column:span 2;">
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Présentation</div>
-                    <select id="pco-presentation" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-                      <option value="Non présentée">🎯 Non présentée</option>
-                      <option value="Terrain">🤝 Présentée sur le terrain</option>
-                      <option value="Zoom">💻 Présentée en Zoom</option>
-                      <option value="Bureau">🏢 Présentée au bureau</option>
+                      <option value="Pensionné">🛋 Pensionné</option>
+                      <option value="Chômage - CPAS">🗂 Chômage - CPAS</option>
                     </select>
                   </div>
                   <div style="grid-column:span 2;">
@@ -1709,12 +1698,14 @@ OPERATEUR: Proximus
                   <option value="Nouveau">🆕 Nouveau</option>
                   <option value="Contacté">📞 Contacté</option>
                   <option value="Rdv">📅 Rdv</option>
+                  <option value="En attente">⏳ En attente</option>
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
                   <option value="Test">🧪 Test</option>
                   <option value="__archives">📦 Archivés</option>
                 </select>
                 <input id="pco-search" type="text" placeholder="🔍 Rechercher..." oninput="pcoFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
+                <button onclick="pcVcfList('co')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
                 <button onclick="pcoDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
               </div>
               <div id="pco-list" style="font-size:13px;color:#666;">Chargement...</div>
@@ -7411,6 +7402,7 @@ function pclStatusStyle(s) {
     'Nouveau': 'background:#e8f0fe;color:#1a73e8;',
     'Contacté': 'background:#fff3e8;color:#f97316;',
     'Rdv': 'background:#ede9fe;color:#6d28d9;',
+    'En attente': 'background:#fef9c3;color:#a16207;',
     'Converti': 'background:#E8F5E9;color:#2E7D32;',
     'Perdu': 'background:#f1f1f1;color:#757575;',
     'Test': 'background:#f3e8ff;color:#7e22ce;'
@@ -7419,7 +7411,7 @@ function pclStatusStyle(s) {
 }
 
 // Statuts proposés dans les listes Prospects (clients et consultants)
-var PC_STATUTS = ['Nouveau', 'Contacté', 'Rdv', 'Converti', 'Perdu', 'Test'];
+var PC_STATUTS = ['Nouveau', 'Contacté', 'Rdv', 'En attente', 'Converti', 'Perdu', 'Test'];
 
 // Statuts qui archivent automatiquement la fiche (Nouveau / Contacté la désarchivent)
 var PC_AUTO_ARCHIVE = ['Converti', 'Perdu', 'Test'];
@@ -7441,12 +7433,12 @@ function pcVisible(p, statutFilter) {
 // Statistiques du bandeau : total = fiches actives ; chaque statut compte toutes les fiches (archivées comprises) ; archivées comptées à part
 function pcFillStats(prefix, list) {
   var nbActives = list.filter(function (p) { return p.archive !== true; }).length;
-  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Rdv': 0, 'Converti': 0, 'Perdu': 0, 'Test': 0 };
+  var counts = { 'Nouveau': 0, 'Contacté': 0, 'Rdv': 0, 'En attente': 0, 'Converti': 0, 'Perdu': 0, 'Test': 0 };
   list.forEach(function (p) { if (counts[p.statut] !== undefined) counts[p.statut]++; });
   var set = function (id, v) { var el = document.getElementById(prefix + '-stat-' + id); if (el) el.textContent = v; };
   set('total', nbActives);
   set('archives', list.length - nbActives);
-  Object.keys(counts).forEach(function (k) { set(k, counts[k]); });
+  Object.keys(counts).forEach(function (k) { set(k === 'En attente' ? 'Attente' : k, counts[k]); });
 }
 
 // Reprise unique des fiches existantes : Converti / Perdu / Test sans champ "archive" sont archivées.
@@ -7793,7 +7785,7 @@ window.pclSaveProspect = async function (afterAction) {
     if (pclEditId) await window.updateDoc(window.doc(window.db, 'prospectsClients', pclEditId), data);
     else newRef = await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
     pcToast('✅ Prospect enregistré.');
-    if (afterAction === 'contact' || afterAction === 'rdv') { pcContinueAfterSave('cl', pclEditId || newRef.id, data, afterAction); return; }
+    if (afterAction === 'contact' || afterAction === 'rdv' || afterAction === 'bom') { pcContinueAfterSave('cl', pclEditId || newRef.id, data, afterAction); return; }
     pclEditId = null;
     pclResetForm();
     window.pclCloseModal();
@@ -7818,8 +7810,39 @@ function pclQuickActions(p) {
     buttons.push('<a href="https://wa.me/' + tel.replace(/^\+/, '') + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">🟢</a>');
   }
   if (p.email) buttons.push('<a href="mailto:' + pcEsc(p.email) + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#f97316;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📧</a>');
+  if ((tel || p.email) && p.docId) buttons.push('<button type="button" title="Enregistrer dans mon GSM" onclick="pcVcf(\'' + p.docId + '\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:none;border-radius:8px;background:#6b7280;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">📲</button>');
   return buttons.length ? '<div style="display:flex;gap:5px;margin:5px 0;">' + buttons.join('') + '</div>' : '';
 }
+// Export des contacts vers le GSM : fichier .vcf (vCard) que iPhone / Android proposent d'ajouter aux contacts
+function pcVcardText(p) {
+  var esc = function (t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); };
+  var full = (p.nom || '').trim(), parts = full.split(/\s+/);
+  var last = parts.length > 1 ? parts[parts.length - 1] : full, first = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+  var tel = pclCleanTel(p.tel);
+  return ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + esc(last) + ';' + esc(first) + ';;;', 'FN:' + esc(full || 'Contact'),
+    tel ? 'TEL;TYPE=CELL:' + tel : '', p.email ? 'EMAIL;TYPE=INTERNET:' + esc(p.email) : '', 'NOTE:' + esc('Prospect Phil-Mobile'), 'END:VCARD'].filter(Boolean).join('\r\n');
+}
+function pcVcfDownload(text, filename) {
+  var blob = new Blob([text], { type: 'text/vcard;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+}
+window.pcVcf = function (docId) {
+  var p = (window._pclData || []).concat(window._pcoData || []).find(function (x) { return x.docId === docId; });
+  if (!p) return;
+  pcVcfDownload(pcVcardText(p), (p.nom || 'contact').trim().replace(/[^A-Za-z0-9]+/g, '-') + '.vcf');
+};
+// Toute la liste affichée (filtres et recherche appliqués) en un seul fichier
+window.pcVcfList = function (kind) {
+  var list = (kind === 'cl' ? window._pclShown : window._pcoShown) || [];
+  list = list.filter(function (p) { return p.nom && (pclCleanTel(p.tel) || p.email); });
+  if (!list.length) { alert('Aucun contact à exporter (il faut un nom et un téléphone ou un email).'); return; }
+  pcVcfDownload(list.map(pcVcardText).join('\r\n'), 'contacts-phil-mobile-' + pcLocalDate(new Date()) + '.vcf');
+  pcToast('📲 ' + list.length + ' contact(s) exporté(s) — ouvre le fichier pour les ajouter à ton GSM.');
+};
 
 function pclContactSummary(p) {
   var contacts = p.contacts || [];
@@ -7845,6 +7868,7 @@ function pclRenderList(list) {
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
   filtered = pcSortRdv(filtered, statutFilter);
+  window._pclShown = filtered;
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   el.innerHTML = filtered.map(function (p) {
     var contratBtn = p.contractId
@@ -8172,13 +8196,34 @@ window.pcoToggleTva = function () {
   inp.style.display = oui ? 'block' : 'none';
   if (!oui) inp.value = '';
 };
-// Statut « Indépendant » : TVA passe sur Oui (les autres statuts : on règle à la main, un salarié peut avoir une TVA)
+// Liens statut pro <-> TVA : « Indépendant (Société) » = TVA Oui ; un autre statut = TVA Non (et inversement)
+var PCO_INDEP = 'Indépendant (Société)';
 window.pcoOnStatutPro = function () {
-  if (document.getElementById('pco-statut-pro').value === 'Indépendant') {
-    document.getElementById('pco-tva-oui').value = 'Oui';
-    window.pcoToggleTva();
-  }
+  var v = document.getElementById('pco-statut-pro').value;
+  if (!v) return;
+  document.getElementById('pco-tva-oui').value = (v === PCO_INDEP) ? 'Oui' : 'Non';
+  window.pcoToggleTva();
 };
+window.pcoOnTvaChange = function () {
+  var oui = document.getElementById('pco-tva-oui').value === 'Oui';
+  var sp = document.getElementById('pco-statut-pro');
+  if (oui) sp.value = PCO_INDEP;
+  else if (sp.value === PCO_INDEP) sp.value = '';
+  window.pcoToggleTva();
+};
+// Anciennes valeurs (fiches existantes) -> nouvelles listes raccourcies ; les valeurs sans équivalent restent affichées telles quelles
+var PCO_SOURCE_MAP = { 'Facebook': 'Réseaux sociaux', 'WhatsApp': 'WhatsApp / SMS', 'Site Web': 'Indeed - Site Recrutement', 'Terrain': 'Démarchages', 'QR Code': 'QR Code Phil-Mobile' };
+var PCO_STATUTPRO_MAP = { 'Indépendant': PCO_INDEP, 'Société': PCO_INDEP, 'Employé': 'Employé - Salarié', 'Salarié': 'Employé - Salarié', 'Chômage': 'Chômage - CPAS' };
+function pcoNormSource(v) { return PCO_SOURCE_MAP[v] || v || ''; }
+function pcoNormStatutPro(v) { return PCO_STATUTPRO_MAP[v] || v || ''; }
+// Valeur d'un <select> : si l'ancienne valeur n'existe plus dans la liste, on l'ajoute pour ne pas la perdre à l'enregistrement
+function pcoSetSelect(id, val) {
+  var el = document.getElementById(id);
+  if (val && !Array.prototype.some.call(el.options, function (o) { return o.value === val; })) {
+    var o = document.createElement('option'); o.value = val; o.textContent = val; el.appendChild(o);
+  }
+  el.value = val || '';
+}
 
 function pcoResetForm() {
   ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
@@ -8187,7 +8232,6 @@ function pcoResetForm() {
   document.getElementById('pco-statut-pro').value = '';
   document.getElementById('pco-tva-oui').value = 'Non';
   window.pcoToggleTva();
-  document.getElementById('pco-presentation').value = 'Non présentée';
 }
 
 window.pcoStartNew = function () { pcoEditId = null; pcRefreshModalSummary('co'); pcoResetForm(); window.pcoOpenModal('🆕 Nouveau prospect'); };
@@ -8202,10 +8246,9 @@ window.pcoEditProspect = function (id) {
   document.getElementById('pco-tva-oui').value = p.tva ? 'Oui' : 'Non';
   window.pcoToggleTva();
   document.getElementById('pco-tva').value = p.tva || '';
-  document.getElementById('pco-source').value = p.source || '';
+  pcoSetSelect('pco-source', pcoNormSource(p.source));
   document.getElementById('pco-operateur').value = p.operateurActuel || '';
-  document.getElementById('pco-statut-pro').value = p.statutPro || '';
-  document.getElementById('pco-presentation').value = p.presentation || 'Non présentée';
+  pcoSetSelect('pco-statut-pro', pcoNormStatutPro(p.statutPro));
   document.getElementById('pco-commentaire').value = p.commentaire || '';
   pcoEditId = id;
   pcRefreshModalSummary('co');
@@ -8225,7 +8268,6 @@ window.pcoSaveProspect = async function (afterAction) {
     source: document.getElementById('pco-source').value,
     operateurActuel: document.getElementById('pco-operateur').value,
     statutPro: document.getElementById('pco-statut-pro').value,
-    presentation: document.getElementById('pco-presentation').value,
     commentaire: document.getElementById('pco-commentaire').value.trim(),
     statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
     dateCreation: existing ? (existing.dateCreation || now) : now,
@@ -8236,7 +8278,7 @@ window.pcoSaveProspect = async function (afterAction) {
     if (pcoEditId) await window.updateDoc(window.doc(window.db, 'prospectsConsultants', pcoEditId), data);
     else newRef = await window.addDoc(window.collection(window.db, 'prospectsConsultants'), data);
     pcToast('✅ Prospect enregistré.');
-    if (afterAction === 'contact' || afterAction === 'rdv') { pcContinueAfterSave('co', pcoEditId || newRef.id, data, afterAction); return; }
+    if (afterAction === 'contact' || afterAction === 'rdv' || afterAction === 'bom') { pcContinueAfterSave('co', pcoEditId || newRef.id, data, afterAction); return; }
     pcoEditId = null;
     pcoResetForm();
     window.pcoCloseModal();
@@ -8259,6 +8301,7 @@ function pcoRenderList(list) {
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
   filtered = pcSortRdv(filtered, statutFilter);
+  window._pcoShown = filtered;
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   el.innerHTML = filtered.map(function (p) {
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
@@ -8268,12 +8311,11 @@ function pcoRenderList(list) {
       + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + (p.operateurActuel ? ' ' + pcOpBadge(p.operateurActuel) : '') + '</div>' : '')
       + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
       + (p.tva ? '<div style="font-size:12px;color:#555;">💳 ' + pcEsc(p.tva) + '</div>' : '')
-      + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(p.source || '-') + '</div>'
-      + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(p.statutPro) + '</div>' : '')
+      + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(pcoNormSource(p.source) || '-') + '</div>'
+      + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(pcoNormStatutPro(p.statutPro)) + '</div>' : '')
       + pcoQrExtras(p)
-      + (p.presentation && p.presentation !== 'Non présentée' ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.presentation) + '</div>' : '')
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
-      + pcContactInfo(p) + pcRdvInfo(p)
+      + pcContactInfo(p) + pcRdvInfo(p) + pcBomInfo(p)
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
       + '<select onchange="pcChangeStatus(\'co\', \'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
       + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
@@ -8405,8 +8447,8 @@ window.pcoBulkImportPaste = async function () {
     };
     if (statMatch) {
       var s = statMatch[1].trim().toLowerCase();
-      if (/independ/i.test(s)) data.statutPro = 'Indépendant';
-      else if (/salari/i.test(s)) data.statutPro = 'Employé';
+      if (/independ/i.test(s)) data.statutPro = 'Indépendant (Société)';
+      else if (/salari/i.test(s)) data.statutPro = 'Employé - Salarié';
     }
     valid.push(data);
   });
@@ -8584,10 +8626,20 @@ window.pcRdvDoneOpen = function (kind, docId) {
     + '<div style="font-size:12px;color:#666;margin-bottom:10px;">' + pcEsc(p.nom || '') + (p.rdv && p.rdv.date ? ' · ' + pcEsc(pcFmtRdv(p.rdv.date)) : '') + '</div>'
     + '<div style="font-size:13px;margin-bottom:4px;">Quelle suite ?</div>'
     + '<button style="' + big + 'background:#ede9fe;color:#6d28d9;" onclick="pcRdvOpen(\'' + kind + '\',\'' + docId + '\')">🔁 Nouveau rdv</button>'
+    + '<button style="' + big + 'background:#fef9c3;color:#a16207;" onclick="pcRdvWait(\'' + kind + '\',\'' + docId + '\')">⏳ En attente</button>'
     + '<button style="' + big + 'background:#f1f1f1;color:#555;" onclick="pcRdvLost(\'' + kind + '\',\'' + docId + '\')">❌ ' + lbl + ' perdu</button>'
     + '<button style="' + big + 'background:#E8F5E9;color:#2E7D32;" onclick="pcConvertOpen(\'' + kind + '\',\'' + docId + '\')">✅ ' + lbl + ' converti</button>'
     + '<button style="' + PC_BTN_KO + 'width:100%;margin-top:12px;" onclick="pcModalClose()">Fermer</button>'
   );
+};
+window.pcRdvWait = async function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  try {
+    await window.updateDoc(pcRef(kind, docId), Object.assign(pcStatusPatch('En attente'), pcRdvHistoryPatch(p, 'En attente'), { rdv: null }));
+    pcToast('⏳ Fiche passée en attente.');
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 window.pcRdvLost = async function (kind, docId) {
   var p = pcFind(kind, docId);
@@ -8670,6 +8722,62 @@ window.pcConvertSave = async function (kind, docId) {
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
+// --- BOM (prospects consultants) : date du BOM, puis résultat Converti / Perdu ---
+window.pcBomOpen = function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var b = p.bom || {};
+  var d;
+  if (b.date && !isNaN(new Date(b.date))) d = new Date(b.date);
+  else { d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
+  var big = 'display:block;width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;';
+  var result = pcBomResult(p);
+  pcModal(
+    '<h3 style="color:#f97316;margin:0 0 4px;font-size:15px;">🎯 BOM</h3>'
+    + '<div style="font-size:12px;color:#666;margin-bottom:10px;">Pour : ' + pcEsc(p.nom || '') + '</div>'
+    + '<div style="font-size:12px;font-weight:700;">Date et heure du BOM</div>'
+    + '<input id="pc-bom-date" type="datetime-local" value="' + pcLocalInput(d) + '" style="' + PC_INP + '">'
+    + '<input id="pc-bom-note" type="text" placeholder="Lieu / visio / remarque (facultatif)" value="' + pcEsc(b.note || '') + '" style="' + PC_INP + '">'
+    + '<div style="display:flex;gap:8px;margin-top:10px;"><button style="' + PC_BTN_OK + 'flex:1;" onclick="pcBomSave(\'' + kind + '\',\'' + docId + '\')">Enregistrer le BOM</button>'
+    + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose()">Fermer</button></div>'
+    + (b.date ? '<div style="border-top:1px solid #eee;margin-top:14px;padding-top:10px;"><div style="font-size:13px;font-weight:700;">Résultat du BOM' + (result ? ' : ' + pcEsc(result) : '') + '</div>'
+      + '<button style="' + big + 'background:#E8F5E9;color:#2E7D32;" onclick="pcConvertOpen(\'' + kind + '\',\'' + docId + '\')">✅ Converti</button>'
+      + '<button style="' + big + 'background:#f1f1f1;color:#555;" onclick="pcRdvLost(\'' + kind + '\',\'' + docId + '\')">❌ Perdu</button>'
+      + '<a href="javascript:void(0)" onclick="pcBomDelete(\'' + kind + '\',\'' + docId + '\')" style="display:block;text-align:center;margin-top:10px;font-size:11px;color:#6b7280;text-decoration:underline;">Supprimer ce BOM</a></div>' : '')
+  );
+};
+window.pcBomSave = async function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var val = document.getElementById('pc-bom-date').value;
+  var d = val ? new Date(val) : null;
+  if (!d || isNaN(d)) { alert('Merci de choisir une date et une heure.'); return; }
+  try {
+    await window.updateDoc(pcRef(kind, docId), { bom: { date: d.toISOString(), note: document.getElementById('pc-bom-note').value.trim() }, dateMaj: new Date().toISOString() });
+    pcToast('🎯 BOM enregistré : ' + pcFmtRdv(d.toISOString()));
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+window.pcBomDelete = async function (kind, docId) {
+  if (!confirm('Supprimer le BOM de cette fiche ?')) return;
+  try {
+    await window.updateDoc(pcRef(kind, docId), { bom: null, dateMaj: new Date().toISOString() });
+    pcToast('BOM supprimé.');
+    pcModalClose(kind);
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+// Résultat = statut de la fiche une fois Converti / Perdu (une seule source de vérité)
+function pcBomResult(p) {
+  if (!p.bom || !p.bom.date) return '';
+  return p.statut === 'Converti' ? '✅ Converti' : (p.statut === 'Perdu' ? '❌ Perdu' : '');
+}
+function pcBomInfo(p) {
+  if (!p.bom || !p.bom.date) return '';
+  var res = pcBomResult(p);
+  return '<div style="font-size:12px;font-weight:700;color:#c2410c;margin-top:3px;">🎯 BOM : ' + pcEsc(pcFmtRdv(p.bom.date)) + (res ? ' · ' + res : '') + '</div>'
+    + (p.bom.note ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.bom.note) + '</div>' : '');
+}
+
 // --- Calendrier (.ics : Outlook, Apple, Google), durée 1 h, rappel 30 min avant ---
 window.pcRdvIcs = function (kind, docId) {
   var p = pcFind(kind, docId);
@@ -8719,6 +8827,7 @@ function pcRdvButtons(kind, p) {
   } else {
     b += '<button style="' + PC_BTN_SM + '" onclick="pcRdvOpen(' + k + ')">📅 Rdv</button>';
   }
+  if (kind === 'co') b += '<button style="' + PC_BTN_SM + '" onclick="pcBomOpen(' + k + ')">🎯 BOM</button>';
   return b;
 }
 // Filtre « Rdv » : rdv les plus proches d'abord
@@ -8874,7 +8983,7 @@ function pcModalSummaryHtml(kind, p) {
   return '<div style="border-top:1px solid #eee;padding-top:10px;margin-top:14px;">'
     + '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:5px;">Suivi</div>'
     + '<div style="margin-bottom:4px;"><span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;">' + pcEsc(p.statut || 'Nouveau') + '</span></div>'
-    + pcContactInfo(p) + pcRdvInfo(p)
+    + pcContactInfo(p) + pcRdvInfo(p) + pcBomInfo(p)
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(kind, p) + '</div></div>';
 }
 // Fiche en création : boutons Contact / Rdv (la fiche est d'abord enregistrée, puis la fenêtre du suivi s'ouvre)
@@ -8885,7 +8994,8 @@ function pcModalNewHtml(kind) {
     + '<div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Déjà appelé ou rdv fixé ? La fiche est enregistrée, puis tu complètes le suivi.</div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     + '<button style="' + PC_BTN_SM + '" onclick="' + fn + '(\'contact\')">☎️ Contact</button>'
-    + '<button style="' + PC_BTN_SM + '" onclick="' + fn + '(\'rdv\')">📅 Rdv</button></div></div>';
+    + '<button style="' + PC_BTN_SM + '" onclick="' + fn + '(\'rdv\')">📅 Rdv</button>'
+    + (kind === 'co' ? '<button style="' + PC_BTN_SM + '" onclick="' + fn + '(\'bom\')">🎯 BOM</button>' : '') + '</div></div>';
 }
 function pcContinueAfterSave(kind, id, data, action) {
   if (!pcFind(kind, id)) PC_CFG[kind].data().push(Object.assign({ docId: id }, data));
@@ -8893,7 +9003,7 @@ function pcContinueAfterSave(kind, id, data, action) {
   var t = document.getElementById(kind === 'cl' ? 'pcl-modal-title' : 'pco-modal-title');
   if (t) t.textContent = '✏️ Modifier le prospect';
   pcRefreshModalSummary(kind);
-  if (action === 'contact') window.pcContactOpen(kind, id); else window.pcRdvOpen(kind, id);
+  if (action === 'contact') window.pcContactOpen(kind, id); else if (action === 'bom') window.pcBomOpen(kind, id); else window.pcRdvOpen(kind, id);
 }
 function pcRefreshModalSummary(kind) {
   var box = document.getElementById(kind === 'cl' ? 'pcl-modal-summary' : 'pco-modal-summary');

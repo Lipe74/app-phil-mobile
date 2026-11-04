@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.70 - Icônes et manifestes par appli";
+  scope.APP_VERSION = "14.71 - BOM, listes recrutement, En attente, export GSM";
 })();
