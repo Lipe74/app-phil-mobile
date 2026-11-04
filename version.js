@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.73 - Numéros de téléphone normalisés";
+  scope.APP_VERSION = "14.74 - Numéros +32 partout, export GSM enrichi";
 })();

@@ -1251,6 +1251,7 @@ Version stable : <span id="app-version-1">…</span>
                   📥 Import CSV
                   <input type="file" accept=".csv" id="csv-clients-input" onchange="importCrmCsv(this,'clients')" style="display:none;">
                 </label>
+                <button onclick="pcTelMigrateAll()" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔧 Normaliser les numéros</button>
                 <button onclick="openCrmModal('clients',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
                 <button onclick="crmDeleteAll('clients')" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Supprimer tout</button>
               </div>
@@ -1281,6 +1282,7 @@ OPERATEUR: Proximus
                   📥 Import CSV
                   <input type="file" accept=".csv" id="csv-consultants-input" onchange="importCrmCsv(this,'consultantsCrm')" style="display:none;">
                 </label>
+                <button onclick="pcTelMigrateAll()" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔧 Normaliser les numéros</button>
                 <button onclick="openCrmModal('consultantsCrm',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
               </div>
             </div>
@@ -1516,7 +1518,7 @@ STATUT: independant
                 <input id="pcl-search" type="text" placeholder="🔍 Rechercher..." oninput="pclFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pclMigrateConverted()" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">✅ Migrer convertis</button>
                 <button onclick="pcVcfList('cl')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
-                <button onclick="pcTelMigrate('cl')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🔧 Normaliser les numéros</button>
+                <button onclick="pcTelMigrateAll()" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🔧 Normaliser tous les numéros</button>
                 <button onclick="pclDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
               </div>
               <div id="pcl-list" style="font-size:13px;color:#666;">Chargement...</div>
@@ -1707,7 +1709,7 @@ OPERATEUR: Proximus
                 </select>
                 <input id="pco-search" type="text" placeholder="🔍 Rechercher..." oninput="pcoFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pcVcfList('co')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
-                <button onclick="pcTelMigrate('co')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🔧 Normaliser les numéros</button>
+                <button onclick="pcTelMigrateAll()" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🔧 Normaliser tous les numéros</button>
                 <button onclick="pcoDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
               </div>
               <div id="pco-list" style="font-size:13px;color:#666;">Chargement...</div>
@@ -7210,7 +7212,7 @@ window.filterCrmList = function(type) {
   var listId = type === 'clients' ? 'crm-cl-list' : 'crm-co-list';
   var searchEl = document.getElementById('crm-cl-search');
   var t = (searchEl ? searchEl.value : '').toLowerCase();
-  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+pcTelFmt(x.tel)+(x.email||'')+(x.ville||'')+(x.numOrange||'')+(x.numEneco||'')+(x.numSmart||'')).toLowerCase().indexOf(t) >= 0; }) : data;
+  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+pcTelSearch(x.tel)+(x.email||'')+(x.ville||'')+(x.numOrange||'')+(x.numEneco||'')+(x.numSmart||'')).toLowerCase().indexOf(t) >= 0; }) : data;
   crmRenderList(filtered, listId, col);
 };
 
@@ -7825,17 +7827,10 @@ function pcNormTel(raw) {
   return '+' + intl;
 }
 function pcTelOk(raw) { return /^\+\d{8,15}$/.test(pcNormTel(raw)); }
-function pcTelFmt(raw) {
-  var n = pcNormTel(raw);
-  if (n.indexOf('+32') !== 0 || !/^\+\d+$/.test(n)) return n;
-  var m = n.slice(3);
-  if (m.length === 9 && m.charAt(0) === '4') return '0' + m.slice(0, 3) + ' ' + m.slice(3, 5) + ' ' + m.slice(5, 7) + ' ' + m.slice(7, 9);
-  if (m.length === 8) {
-    if ('2349'.indexOf(m.charAt(0)) >= 0) return '0' + m.charAt(0) + ' ' + m.slice(1, 4) + ' ' + m.slice(4, 6) + ' ' + m.slice(6, 8);
-    return '0' + m.slice(0, 2) + ' ' + m.slice(2, 4) + ' ' + m.slice(4, 6) + ' ' + m.slice(6, 8);
-  }
-  return n;
-}
+// Affichage = format enregistré (international, sans espaces) : +32475123456
+function pcTelFmt(raw) { return pcNormTel(raw); }
+// Texte de recherche : on retrouve une fiche en tapant +32475… comme 0475…
+function pcTelSearch(raw) { var n = pcNormTel(raw); return n + (n.indexOf('+32') === 0 ? ' 0' + n.slice(3) : ''); }
 function pclCleanTel(tel) { return pcNormTel(tel).replace(/[\s.\-()]+/g, ''); }
 // Toutes les écritures possibles d'un même numéro (pour retrouver les anciennes fiches lors d'un test de doublon)
 function pcTelVariants(raw) {
@@ -7855,23 +7850,33 @@ document.addEventListener('focusout', function (e) {
   t.value = pcTelFmt(v);
   if (!pcTelOk(v) && typeof pcToast === 'function') pcToast('⚠️ Numéro à vérifier : ' + v);
 });
-// Normalise d'un coup les numéros des fiches déjà enregistrées (format seulement, rien n'est supprimé)
-window.pcTelMigrate = async function (kind) {
-  var list = PC_CFG[kind].data(), todo = [];
-  list.forEach(function (p) {
-    var patch = {};
-    if (p.tel && pcTelOk(p.tel) && pcNormTel(p.tel) !== p.tel) patch.tel = pcNormTel(p.tel);
-    if (p.referenceTel && pcTelOk(p.referenceTel) && pcNormTel(p.referenceTel) !== p.referenceTel) patch.referenceTel = pcNormTel(p.referenceTel);
-    if (Object.keys(patch).length) todo.push({ id: p.docId, patch: patch });
-  });
+// Normalise d'un coup tous les numéros déjà enregistrés (prospects clients / consultants, Gestion Clients / Consultants) : seul le format change
+window.pcTelMigrateAll = async function () {
+  var uid = window.pmCurrentUser && window.pmCurrentUser.id;
+  if (!uid) return;
+  var targets = [['prospectsClients', 'Prospects clients'], ['prospectsConsultants', 'Prospects consultants'], ['clients', 'Gestion Clients'], ['consultantsCrm', 'Gestion Consultants']];
+  var todo = [], counts = {};
+  try {
+    for (var t = 0; t < targets.length; t++) {
+      var snap = await window.getDocs(window.query(window.collection(window.db, targets[t][0]), window.where('consultantId', '==', uid)));
+      snap.forEach(function (d) {
+        var x = d.data(), patch = {};
+        ['tel', 'referenceTel'].forEach(function (f) {
+          if (x[f] && pcTelOk(x[f]) && pcNormTel(x[f]) !== x[f]) patch[f] = pcNormTel(x[f]);
+        });
+        if (Object.keys(patch).length) { todo.push({ coll: targets[t][0], id: d.id, patch: patch }); counts[targets[t][1]] = (counts[targets[t][1]] || 0) + 1; }
+      });
+    }
+  } catch (err) { alert('Erreur: ' + err.message); return; }
   if (!todo.length) { pcToast('✅ Tous les numéros sont déjà au bon format.'); return; }
-  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ? Seul le format du numéro change (ex. 0475 12 34 56 → +32475123456).')) return;
+  var detail = Object.keys(counts).map(function (k) { return '- ' + k + ' : ' + counts[k]; }).join('\n');
+  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ?\n' + detail + '\n\nSeul le format du numéro change (ex. 0475 12 34 56 → +32475123456).')) return;
   var done = 0;
   for (var i = 0; i < todo.length; i++) {
-    try { await window.updateDoc(pcRef(kind, todo[i].id), todo[i].patch); done++; } catch (err) { console.log('Normalisation impossible:', err.message); }
+    try { await window.updateDoc(window.doc(window.db, todo[i].coll, todo[i].id), todo[i].patch); done++; } catch (err) { console.log('Normalisation impossible:', err.message); }
   }
-  pcToast('✅ ' + done + ' numéro(s) normalisé(s).');
-  PC_CFG[kind].reload();
+  pcToast('✅ ' + done + ' fiche(s) normalisée(s).');
+  [pclLoadList, pcoLoadList, crmLoadClients, crmLoadConsultants].forEach(function (fn) { try { fn(); } catch (e) {} });
 };
 
 function pclQuickActions(p) {
@@ -7887,13 +7892,16 @@ function pclQuickActions(p) {
   return buttons.length ? '<div style="display:flex;gap:5px;margin:5px 0;">' + buttons.join('') + '</div>' : '';
 }
 // Export des contacts vers le GSM : fichier .vcf (vCard) que iPhone / Android proposent d'ajouter aux contacts
-function pcVcardText(p) {
+function pcVcardText(p, kind) {
   var esc = function (t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); };
   var full = (p.nom || '').trim(), parts = full.split(/\s+/);
   var last = parts.length > 1 ? parts[parts.length - 1] : full, first = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
   var tel = pclCleanTel(p.tel);
-  return ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + esc(last) + ';' + esc(first) + ';;;', 'FN:' + esc(full || 'Contact'),
-    tel ? 'TEL;TYPE=CELL:' + tel : '', p.email ? 'EMAIL;TYPE=INTERNET:' + esc(p.email) : '', 'NOTE:' + esc('Prospect Phil-Mobile'), 'END:VCARD'].filter(Boolean).join('\r\n');
+  var origine = kind === 'co' ? 'Prospect Consultant (Phil-Mobile)' : 'Prospect Client (Phil-Mobile)';
+  var src = kind === 'co' ? pcoNormSource(p.source) : (p.source || '');
+  var note = [origine, p.statut || '', src].filter(Boolean).join(' · ');
+  return ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + esc(last) + ';' + esc(first) + ';;;', 'FN:' + esc(full || 'Contact'), 'ORG:Phil-Mobile',
+    tel ? 'TEL;TYPE=CELL:' + tel : '', p.email ? 'EMAIL;TYPE=INTERNET:' + esc(p.email) : '', 'NOTE:' + esc(note), 'END:VCARD'].filter(Boolean).join('\r\n');
 }
 function pcVcfDownload(text, filename) {
   var blob = new Blob([text], { type: 'text/vcard;charset=utf-8' });
@@ -7904,16 +7912,17 @@ function pcVcfDownload(text, filename) {
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
 }
 window.pcVcf = function (docId) {
-  var p = (window._pclData || []).concat(window._pcoData || []).find(function (x) { return x.docId === docId; });
+  var kind = 'cl', p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  if (!p) { kind = 'co'; p = (window._pcoData || []).find(function (x) { return x.docId === docId; }); }
   if (!p) return;
-  pcVcfDownload(pcVcardText(p), (p.nom || 'contact').trim().replace(/[^A-Za-z0-9]+/g, '-') + '.vcf');
+  pcVcfDownload(pcVcardText(p, kind), (p.nom || 'contact').trim().replace(/[^A-Za-z0-9]+/g, '-') + '.vcf');
 };
 // Toute la liste affichée (filtres et recherche appliqués) en un seul fichier
 window.pcVcfList = function (kind) {
   var list = (kind === 'cl' ? window._pclShown : window._pcoShown) || [];
   list = list.filter(function (p) { return p.nom && (pclCleanTel(p.tel) || p.email); });
   if (!list.length) { alert('Aucun contact à exporter (il faut un nom et un téléphone ou un email).'); return; }
-  pcVcfDownload(list.map(pcVcardText).join('\r\n'), 'contacts-phil-mobile-' + pcLocalDate(new Date()) + '.vcf');
+  pcVcfDownload(list.map(function (p) { return pcVcardText(p, kind); }).join('\r\n'), 'contacts-phil-mobile-' + pcLocalDate(new Date()) + '.vcf');
   pcToast('📲 ' + list.length + ' contact(s) exporté(s) — ouvre le fichier pour les ajouter à ton GSM.');
 };
 
@@ -7937,7 +7946,7 @@ function pclRenderList(list) {
   var term = (document.getElementById('pcl-search').value || '').toLowerCase();
   var statutFilter = document.getElementById('pcl-filter-statut').value;
   var filtered = list.filter(function (p) {
-    var txt = ((p.nom || '') + (p.tel || '') + pcTelFmt(p.tel) + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
+    var txt = ((p.nom || '') + (p.tel || '') + pcTelSearch(p.tel) + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
   filtered = pcSortRdv(filtered, statutFilter);
@@ -8370,7 +8379,7 @@ function pcoRenderList(list) {
   var term = (document.getElementById('pco-search').value || '').toLowerCase();
   var statutFilter = document.getElementById('pco-filter-statut').value;
   var filtered = list.filter(function (p) {
-    var txt = ((p.nom || '') + (p.tel || '') + pcTelFmt(p.tel) + (p.email || '')).toLowerCase();
+    var txt = ((p.nom || '') + (p.tel || '') + pcTelSearch(p.tel) + (p.email || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
   filtered = pcSortRdv(filtered, statutFilter);

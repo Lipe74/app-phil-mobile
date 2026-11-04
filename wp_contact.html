@@ -473,17 +473,7 @@ function normTel(raw) {
   return '+' + intl;
 }
 function telOk(raw) { return /^\+\d{8,15}$/.test(normTel(raw)); }
-function telFmt(raw) {
-  var n = normTel(raw);
-  if (n.indexOf('+32') !== 0 || !/^\+\d+$/.test(n)) return n;
-  var m = n.slice(3);
-  if (m.length === 9 && m.charAt(0) === '4') return '0' + m.slice(0, 3) + ' ' + m.slice(3, 5) + ' ' + m.slice(5, 7) + ' ' + m.slice(7, 9);
-  if (m.length === 8) {
-    if ('2349'.indexOf(m.charAt(0)) >= 0) return '0' + m.charAt(0) + ' ' + m.slice(1, 4) + ' ' + m.slice(4, 6) + ' ' + m.slice(6, 8);
-    return '0' + m.slice(0, 2) + ' ' + m.slice(2, 4) + ' ' + m.slice(4, 6) + ' ' + m.slice(6, 8);
-  }
-  return n;
-}
+function telFmt(raw) { return normTel(raw); }
 function cleanTel(t) { return normTel(t).replace(/[^\d+]/g, ''); }
 function initials(name) {
   return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0].toUpperCase()).join('');
