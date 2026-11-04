@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.72 - BOM, listes recrutement, En attente, export GSM";
+  scope.APP_VERSION = "14.73 - Numéros de téléphone normalisés";
 })();

@@ -1516,6 +1516,7 @@ STATUT: independant
                 <input id="pcl-search" type="text" placeholder="🔍 Rechercher..." oninput="pclFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pclMigrateConverted()" style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">✅ Migrer convertis</button>
                 <button onclick="pcVcfList('cl')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
+                <button onclick="pcTelMigrate('cl')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🔧 Normaliser les numéros</button>
                 <button onclick="pclDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
               </div>
               <div id="pcl-list" style="font-size:13px;color:#666;">Chargement...</div>
@@ -1706,6 +1707,7 @@ OPERATEUR: Proximus
                 </select>
                 <input id="pco-search" type="text" placeholder="🔍 Rechercher..." oninput="pcoFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                 <button onclick="pcVcfList('co')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
+                <button onclick="pcTelMigrate('co')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🔧 Normaliser les numéros</button>
                 <button onclick="pcoDeleteAll()" style="background:#fde2e1;color:#c0392b;border:1px solid #f5b7b1;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Tout supprimer</button>
               </div>
               <div id="pco-list" style="font-size:13px;color:#666;">Chargement...</div>
@@ -7124,7 +7126,7 @@ function crmRenderCard(item, col) {
   if (editBtn || toggleBtn || importBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + editBtn + toggleBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
-  if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(item.tel) + '</div>';
+  if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(pcTelFmt(item.tel)) + '</div>';
   if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
   if (item.cp || item.ville) h += '<div style="font-size:12px;color:#555;">' + crmEsc([item.adresse, item.cp, item.ville].filter(Boolean).join(' ')) + '</div>';
   if (item.reference) h += '<div style="font-size:12px;color:#555;">Ref: ' + crmEsc(item.reference) + '</div>';
@@ -7208,7 +7210,7 @@ window.filterCrmList = function(type) {
   var listId = type === 'clients' ? 'crm-cl-list' : 'crm-co-list';
   var searchEl = document.getElementById('crm-cl-search');
   var t = (searchEl ? searchEl.value : '').toLowerCase();
-  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+(x.email||'')+(x.ville||'')+(x.numOrange||'')+(x.numEneco||'')+(x.numSmart||'')).toLowerCase().indexOf(t) >= 0; }) : data;
+  var filtered = t ? data.filter(function(x){ return ((x.nom||'')+(x.prenom||'')+(x.tel||'')+pcTelFmt(x.tel)+(x.email||'')+(x.ville||'')+(x.numOrange||'')+(x.numEneco||'')+(x.numSmart||'')).toLowerCase().indexOf(t) >= 0; }) : data;
   crmRenderList(filtered, listId, col);
 };
 
@@ -7252,7 +7254,7 @@ window.openCrmModal = function(col, docId) {
   ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=item[f]||''; }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=(f==='tel' ? pcTelFmt(item[f]) : (item[f]||'')); }); }
   }
   document.getElementById('modal-crm').style.display = 'flex';
 };
@@ -7264,7 +7266,7 @@ window.saveCrmModal = function() {
   var docId = document.getElementById('crm-doc-id').value;
   var isC = col === 'consultantsCrm';
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
-  var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:g('tel'), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
+  var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
   if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.numSmart=g('numSmart'); data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
@@ -7302,6 +7304,7 @@ window.importCrmCsv = function(input, col) {
       var vals = lines[i].split(sep);
       var data = { consultantId:window.pmCurrentUser.id, etat:'actif', createdAt:new Date().toISOString() };
       headers.forEach(function(h,idx){ var key=map[h]; if(key&&vals[idx]) data[key]=vals[idx].trim().replace(/^"|"$/g,''); });
+      if (data.tel) data.tel = pcNormTel(data.tel);
       if (!data.nom && !data.prenom) continue;
       promises.push(window.addDoc(window.collection(window.db,col),data));
     }
@@ -7332,7 +7335,7 @@ window.bulkImportCrmPaste = function(col) {
     var data = {
       consultantId: window.pmCurrentUser.id,
       nom: nom,
-      tel: telMatch ? telMatch[1].trim() : '',
+      tel: telMatch ? pcNormTel(telMatch[1].trim()) : '',
       email: emailMatch ? emailMatch[1].trim() : '',
       etat: 'actif',
       createdAt: new Date().toISOString()
@@ -7727,7 +7730,7 @@ window.pclEditProspect = function (id) {
   var p = (window._pclData || []).find(function (x) { return x.docId === id; });
   if (!p) return;
   document.getElementById('pcl-nom').value = p.nom || '';
-  document.getElementById('pcl-tel').value = p.tel || '';
+  document.getElementById('pcl-tel').value = pcTelFmt(p.tel);
   document.getElementById('pcl-email').value = p.email || '';
   document.getElementById('pcl-ville').value = p.ville || '';
   document.getElementById('pcl-source').value = p.source || 'Orange';
@@ -7737,7 +7740,7 @@ window.pclEditProspect = function (id) {
   document.getElementById('pcl-societe').value = p.societe || '';
   document.getElementById('pcl-tva').value = p.tva || '';
   document.getElementById('pcl-ref-nom').value = p.referenceNom || '';
-  document.getElementById('pcl-ref-tel').value = p.referenceTel || '';
+  document.getElementById('pcl-ref-tel').value = pcTelFmt(p.referenceTel);
   document.getElementById('pcl-op-mobile').value = p.opMobile || '';
   document.getElementById('pcl-num-mobile').value = p.numMobile || '';
   document.getElementById('pcl-op-internet').value = p.opInternet || '';
@@ -7759,7 +7762,7 @@ window.pclSaveProspect = async function (afterAction) {
   var data = {
     consultantId: window.pmCurrentUser.id,
     nom: nom,
-    tel: document.getElementById('pcl-tel').value.trim(),
+    tel: pcNormTel(document.getElementById('pcl-tel').value),
     email: document.getElementById('pcl-email').value.trim(),
     type: document.getElementById('pcl-type').value,
     societe: document.getElementById('pcl-societe').value.trim(),
@@ -7774,7 +7777,7 @@ window.pclSaveProspect = async function (afterAction) {
     source: document.getElementById('pcl-source').value,
     provenance: document.getElementById('pcl-provenance').value,
     referenceNom: document.getElementById('pcl-ref-nom').value.trim(),
-    referenceTel: document.getElementById('pcl-ref-tel').value.trim(),
+    referenceTel: pcNormTel(document.getElementById('pcl-ref-tel').value),
     commentaire: document.getElementById('pcl-commentaire').value.trim(),
     statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
     dateCreation: existing ? (existing.dateCreation || now) : now,
@@ -7799,7 +7802,77 @@ function pclLoadList() { pcLiveList('cl'); }
 
 function pclUpdateStats(list) { pcFillStats('pcl', list); }
 
-function pclCleanTel(tel) { return (tel || '').replace(/[\s.\-()]+/g, ''); }
+// ===== Numéros de téléphone : un seul format stocké (+32475123456), affiché à la belge (0475 12 34 56) =====
+// Reconnaît +32 475…, 0032 475…, 0475…, 04 75…, 475…, +32 (0)475… ; les fixes belges (8 chiffres) ; les numéros étrangers (+33…).
+// Un numéro non reconnu est laissé tel quel (rien n'est perdu).
+function pcNormTel(raw) {
+  var s = String(raw == null ? '' : raw).trim();
+  if (!s) return '';
+  var d = s.replace(/\D/g, '');
+  if (!d) return s;
+  var intl;
+  if (s.charAt(0) === '+') intl = d;
+  else if (d.indexOf('00') === 0) intl = d.slice(2);
+  else if (d.charAt(0) === '0') intl = '32' + d.slice(1);
+  else if (/^4\d{8}$/.test(d)) intl = '32' + d;
+  else if (/^32\d{8,9}$/.test(d)) intl = d;
+  else return s;
+  intl = intl.replace(/^320/, '32');
+  if (intl.indexOf('32') === 0) {
+    var n = intl.slice(2);
+    if (!(n.length === 9 && n.charAt(0) === '4') && n.length !== 8) return s;
+  } else if (intl.length < 8 || intl.length > 15) return s;
+  return '+' + intl;
+}
+function pcTelOk(raw) { return /^\+\d{8,15}$/.test(pcNormTel(raw)); }
+function pcTelFmt(raw) {
+  var n = pcNormTel(raw);
+  if (n.indexOf('+32') !== 0 || !/^\+\d+$/.test(n)) return n;
+  var m = n.slice(3);
+  if (m.length === 9 && m.charAt(0) === '4') return '0' + m.slice(0, 3) + ' ' + m.slice(3, 5) + ' ' + m.slice(5, 7) + ' ' + m.slice(7, 9);
+  if (m.length === 8) {
+    if ('2349'.indexOf(m.charAt(0)) >= 0) return '0' + m.charAt(0) + ' ' + m.slice(1, 4) + ' ' + m.slice(4, 6) + ' ' + m.slice(6, 8);
+    return '0' + m.slice(0, 2) + ' ' + m.slice(2, 4) + ' ' + m.slice(4, 6) + ' ' + m.slice(6, 8);
+  }
+  return n;
+}
+function pclCleanTel(tel) { return pcNormTel(tel).replace(/[\s.\-()]+/g, ''); }
+// Toutes les écritures possibles d'un même numéro (pour retrouver les anciennes fiches lors d'un test de doublon)
+function pcTelVariants(raw) {
+  var n = pcNormTel(raw), out = [];
+  var add = function (v) { if (v && out.indexOf(v) < 0) out.push(v); };
+  add(n); add(pcTelFmt(raw)); add(String(raw || '').trim()); add(String(raw || '').replace(/[\s.\-()]+/g, ''));
+  if (n.indexOf('+32') === 0) { add('0' + n.slice(3)); add('0032' + n.slice(3)); }
+  return out.slice(0, 10);
+}
+// Champs téléphone : mise en forme automatique en quittant le champ
+var PC_TEL_INPUTS = ['pcl-tel', 'pco-tel', 'pcl-ref-tel', 'crm-tel', 'ctr-tel', 'pc-cv-tel'];
+document.addEventListener('focusout', function (e) {
+  var t = e.target;
+  if (!t || !t.id || PC_TEL_INPUTS.indexOf(t.id) < 0) return;
+  var v = t.value.trim();
+  if (!v) return;
+  t.value = pcTelFmt(v);
+  if (!pcTelOk(v) && typeof pcToast === 'function') pcToast('⚠️ Numéro à vérifier : ' + v);
+});
+// Normalise d'un coup les numéros des fiches déjà enregistrées (format seulement, rien n'est supprimé)
+window.pcTelMigrate = async function (kind) {
+  var list = PC_CFG[kind].data(), todo = [];
+  list.forEach(function (p) {
+    var patch = {};
+    if (p.tel && pcTelOk(p.tel) && pcNormTel(p.tel) !== p.tel) patch.tel = pcNormTel(p.tel);
+    if (p.referenceTel && pcTelOk(p.referenceTel) && pcNormTel(p.referenceTel) !== p.referenceTel) patch.referenceTel = pcNormTel(p.referenceTel);
+    if (Object.keys(patch).length) todo.push({ id: p.docId, patch: patch });
+  });
+  if (!todo.length) { pcToast('✅ Tous les numéros sont déjà au bon format.'); return; }
+  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ? Seul le format du numéro change (ex. 0475 12 34 56 → +32475123456).')) return;
+  var done = 0;
+  for (var i = 0; i < todo.length; i++) {
+    try { await window.updateDoc(pcRef(kind, todo[i].id), todo[i].patch); done++; } catch (err) { console.log('Normalisation impossible:', err.message); }
+  }
+  pcToast('✅ ' + done + ' numéro(s) normalisé(s).');
+  PC_CFG[kind].reload();
+};
 
 function pclQuickActions(p) {
   var tel = pclCleanTel(p.tel);
@@ -7864,7 +7937,7 @@ function pclRenderList(list) {
   var term = (document.getElementById('pcl-search').value || '').toLowerCase();
   var statutFilter = document.getElementById('pcl-filter-statut').value;
   var filtered = list.filter(function (p) {
-    var txt = ((p.nom || '') + (p.tel || '') + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
+    var txt = ((p.nom || '') + (p.tel || '') + pcTelFmt(p.tel) + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
   filtered = pcSortRdv(filtered, statutFilter);
@@ -7914,13 +7987,13 @@ async function pclMigrateOne(docId) {
       consultantId: p.consultantId || window.pmCurrentUser.id,
       prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
       nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
-      tel: p.tel || '', email: p.email || '', ville: p.ville || '',
+      tel: pcNormTel(p.tel), email: p.email || '', ville: p.ville || '',
       adresse: p.adresse || p.ville || '', cp: p.cp || '',
       societe: p.societe || '', tva: p.tva || '', reference: '',
       etat: 'actif', sourceProspectId: docId, createdAt: new Date().toISOString()
     };
     if (p.tel) {
-      var existing = await window.getDocs(window.query(window.collection(window.db, 'clients'), window.where('tel', '==', p.tel), window.where('consultantId', '==', window.pmCurrentUser.id)));
+      var existing = await window.getDocs(window.query(window.collection(window.db, 'clients'), window.where('tel', 'in', pcTelVariants(p.tel)), window.where('consultantId', '==', window.pmCurrentUser.id)));
       if (!existing.empty) { pcToast('Client déjà existant dans Gestion Clients (même tél).'); return; }
     }
     await window.addDoc(window.collection(window.db, 'clients'), clientData);
@@ -8010,7 +8083,7 @@ function pclRenderRelation() {
   el.innerHTML = arr.map(function (g) {
     var converti = g.prospects.filter(function (p) { return p.statut === 'Converti'; }).length;
     return '<div style="background:#fafafa;border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px;">'
-      + '<b>⭐ ' + pcEsc(g.nom) + '</b>' + (g.tel ? ' · 📞 ' + pcEsc(g.tel) : '') + '<br>'
+      + '<b>⭐ ' + pcEsc(g.nom) + '</b>' + (g.tel ? ' · 📞 ' + pcEsc(pcTelFmt(g.tel)) : '') + '<br>'
       + '<span style="color:#666;">' + g.prospects.length + ' prospect(s) apporté(s) · ' + converti + ' converti(s)</span>'
       + '</div>';
   }).join('');
@@ -8075,7 +8148,7 @@ window.pclParseImportFile = function () {
       var normalized = rows.map(function (r) {
         return {
           nom: (r[colNom] || '').toString().trim(),
-          tel: colTel ? (r[colTel] || '').toString().trim() : '',
+          tel: colTel ? pcNormTel((r[colTel] || '').toString().trim()) : '',
           email: colEmail ? (r[colEmail] || '').toString().trim() : '',
           source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
           commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
@@ -8142,7 +8215,7 @@ window.pclBulkImportPaste = async function () {
     var now = new Date().toISOString();
     var data = {
       consultantId: window.pmCurrentUser.id, nom: nom,
-      tel: telMatch ? telMatch[1].trim() : '', email: emailMatch ? emailMatch[1].trim() : '',
+      tel: telMatch ? pcNormTel(telMatch[1].trim()) : '', email: emailMatch ? emailMatch[1].trim() : '',
       source: 'Autre', statut: 'Nouveau', dateCreation: now, dateMaj: now
     };
     var prod = prodMatch ? prodMatch[1].trim() : '';
@@ -8240,7 +8313,7 @@ window.pcoEditProspect = function (id) {
   var p = (window._pcoData || []).find(function (x) { return x.docId === id; });
   if (!p) return;
   document.getElementById('pco-nom').value = p.nom || '';
-  document.getElementById('pco-tel').value = p.tel || '';
+  document.getElementById('pco-tel').value = pcTelFmt(p.tel);
   document.getElementById('pco-email').value = p.email || '';
   document.getElementById('pco-tva').value = p.tva || '';
   document.getElementById('pco-tva-oui').value = p.tva ? 'Oui' : 'Non';
@@ -8262,7 +8335,7 @@ window.pcoSaveProspect = async function (afterAction) {
   var now = new Date().toISOString();
   var data = {
     consultantId: window.pmCurrentUser.id, nom: nom,
-    tel: document.getElementById('pco-tel').value.trim(),
+    tel: pcNormTel(document.getElementById('pco-tel').value),
     email: document.getElementById('pco-email').value.trim(),
     tva: document.getElementById('pco-tva-oui').value === 'Oui' ? document.getElementById('pco-tva').value.trim() : '',
     source: document.getElementById('pco-source').value,
@@ -8297,7 +8370,7 @@ function pcoRenderList(list) {
   var term = (document.getElementById('pco-search').value || '').toLowerCase();
   var statutFilter = document.getElementById('pco-filter-statut').value;
   var filtered = list.filter(function (p) {
-    var txt = ((p.nom || '') + (p.tel || '') + (p.email || '')).toLowerCase();
+    var txt = ((p.nom || '') + (p.tel || '') + pcTelFmt(p.tel) + (p.email || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
   filtered = pcSortRdv(filtered, statutFilter);
@@ -8374,7 +8447,7 @@ window.pcoParseImportFile = function () {
       if (!colNom) { document.getElementById('pco-import-preview').innerHTML = '<div style="font-size:12px;color:#c0392b;">⚠️ Aucune colonne "Nom" trouvée.</div>'; return; }
       var normalized = rows.map(function (r) {
         return {
-          nom: (r[colNom] || '').toString().trim(), tel: colTel ? (r[colTel] || '').toString().trim() : '',
+          nom: (r[colNom] || '').toString().trim(), tel: colTel ? pcNormTel((r[colTel] || '').toString().trim()) : '',
           email: colEmail ? (r[colEmail] || '').toString().trim() : '', tva: colTva ? (r[colTva] || '').toString().trim() : '',
           source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
           commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
@@ -8441,7 +8514,7 @@ window.pcoBulkImportPaste = async function () {
     var now = new Date().toISOString();
     var data = {
       consultantId: window.pmCurrentUser.id, nom: nom,
-      tel: telMatch ? telMatch[1].trim() : '', email: emailMatch ? emailMatch[1].trim() : '',
+      tel: telMatch ? pcNormTel(telMatch[1].trim()) : '', email: emailMatch ? emailMatch[1].trim() : '',
       tva: tvaMatch ? tvaMatch[1].trim() : '',
       source: 'Autre', statut: 'Nouveau', dateCreation: now, dateMaj: now
     };
@@ -8484,7 +8557,7 @@ function pcOpBadge(name) {
   var c = PC_OP_COLORS[String(name).trim().toLowerCase()] || ['#e5e7eb', '#4b5563'];
   return '<span style="display:inline-block;background:' + c[0] + ';color:' + c[1] + ';border-radius:99px;padding:1px 9px;font-size:10px;font-weight:700;vertical-align:middle;">' + pcEsc(name) + '</span>';
 }
-function pcTelLink(tel) { return '<a href="tel:' + pcEsc(pclCleanTel(tel)) + '" style="color:inherit;text-decoration:underline;">' + pcEsc(tel) + '</a>'; }
+function pcTelLink(tel) { return '<a href="tel:' + pcEsc(pclCleanTel(tel)) + '" style="color:inherit;text-decoration:underline;">' + pcEsc(pcTelFmt(tel)) + '</a>'; }
 function pcMailLink(m) { return '<a href="mailto:' + pcEsc(m) + '" style="color:inherit;text-decoration:underline;">' + pcEsc(m) + '</a>'; }
 function pcFind(kind, id) { return PC_CFG[kind].data().find(function (x) { return x.docId === id; }); }
 function pcRef(kind, id) { return window.doc(window.db, PC_CFG[kind].coll, id); }
@@ -8674,7 +8747,7 @@ window.pcConvertOpen = function (kind, docId) {
   pcModal(
     '<h3 style="color:#2E7D32;margin:0 0 4px;font-size:15px;">✅ Créer la fiche ' + (kind === 'cl' ? 'client' : 'consultant') + '</h3>'
     + '<div style="font-size:12px;color:#666;margin-bottom:10px;">Vérifie les informations avant de valider. La fiche sera ajoutée dans ' + (kind === 'cl' ? 'Gestion Clients' : 'Gestion Consultants') + ' (sans créer l\'application) et le prospect sera archivé.</div>'
-    + f('prenom', 'Prénom', prenom) + f('nom', 'Nom', nom) + f('tel', 'Téléphone', p.tel) + f('email', 'Email', p.email) + extra
+    + f('prenom', 'Prénom', prenom) + f('nom', 'Nom', nom) + f('tel', 'Téléphone', pcTelFmt(p.tel)) + f('email', 'Email', p.email) + extra
     + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'background:#16a34a;flex:1;" onclick="pcConvertSave(\'' + kind + '\',\'' + docId + '\')">✅ Valider et créer la fiche</button>'
     + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose(\'' + kind + '\')">Annuler</button></div>'
     + '<div style="text-align:center;margin-top:10px;"><a href="javascript:void(0)" onclick="pcConvertSkip(\'' + kind + '\',\'' + docId + '\')" style="font-size:11px;color:#6b7280;text-decoration:underline;">Passer en Converti sans créer de fiche</a></div>'
@@ -8696,7 +8769,7 @@ window.pcConvertSave = async function (kind, docId) {
   var p = pcFind(kind, docId);
   if (!p) return;
   var g = function (id) { var el = document.getElementById('pc-cv-' + id); return el ? el.value.trim() : ''; };
-  var prenom = g('prenom'), nom = g('nom'), tel = g('tel');
+  var prenom = g('prenom'), nom = g('nom'), tel = pcNormTel(g('tel'));
   if (!prenom && !nom) { alert('Merci de renseigner au moins un nom.'); return; }
   var uid = p.consultantId || window.pmCurrentUser.id;
   var now = new Date().toISOString();
@@ -8712,7 +8785,7 @@ window.pcConvertSave = async function (kind, docId) {
         dateDemarrage: '', etat: 'actif', statutPro: g('statutpro'), sourceProspectId: docId, createdAt: now };
     }
     if (tel) {
-      var dup = await window.getDocs(window.query(window.collection(window.db, coll), window.where('tel', '==', tel), window.where('consultantId', '==', window.pmCurrentUser.id)));
+      var dup = await window.getDocs(window.query(window.collection(window.db, coll), window.where('tel', 'in', pcTelVariants(tel)), window.where('consultantId', '==', window.pmCurrentUser.id)));
       if (!dup.empty && !confirm('Une fiche avec ce téléphone existe déjà dans ' + (kind === 'cl' ? 'Gestion Clients' : 'Gestion Consultants') + '. Créer quand même ?')) return;
     }
     var ref = await window.addDoc(window.collection(window.db, coll), data);
@@ -8786,7 +8859,7 @@ window.pcRdvIcs = function (kind, docId) {
   var loc = function (d) { return d.getFullYear() + pcZ(d.getMonth() + 1) + pcZ(d.getDate()) + 'T' + pcZ(d.getHours()) + pcZ(d.getMinutes()) + '00'; };
   var utc = function (d) { return d.getUTCFullYear() + pcZ(d.getUTCMonth() + 1) + pcZ(d.getUTCDate()) + 'T' + pcZ(d.getUTCHours()) + pcZ(d.getUTCMinutes()) + pcZ(d.getUTCSeconds()) + 'Z'; };
   var esc = function (t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); };
-  var desc = [p.tel ? 'Tél : ' + p.tel : '', p.email ? 'Email : ' + p.email : '', p.rdv.note || ''].filter(Boolean).join('\n');
+  var desc = [p.tel ? 'Tél : ' + pcTelFmt(p.tel) : '', p.email ? 'Email : ' + p.email : '', p.rdv.note || ''].filter(Boolean).join('\n');
   var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Phil-Mobile//Rdv//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + docId + '-' + s.getTime() + '@phil-mobile.be', 'DTSTAMP:' + utc(new Date()),
     'DTSTART:' + loc(s), 'DTEND:' + loc(e), 'SUMMARY:' + esc('Rdv ' + (kind === 'cl' ? 'client' : 'consultant') + ' — ' + (p.nom || '')),
@@ -9296,7 +9369,7 @@ window.ctrSaveContract = async function () {
     date: new Date().toISOString(),
     nom: nom,
     societe: document.getElementById('ctr-societe').value.trim(),
-    tel: document.getElementById('ctr-tel').value.trim(),
+    tel: pcNormTel(document.getElementById('ctr-tel').value),
     tva: document.getElementById('ctr-tva').value.trim(),
     clientOrange: document.getElementById('ctr-clientOrange').value.trim(),
     contratEneco: document.getElementById('ctr-contratEneco').value.trim(),
@@ -9364,7 +9437,7 @@ window.ctrEditContract = function (docId) {
 
   document.getElementById('ctr-nom').value = c.nom || '';
   document.getElementById('ctr-societe').value = c.societe || '';
-  document.getElementById('ctr-tel').value = c.tel || '';
+  document.getElementById('ctr-tel').value = pcTelFmt(c.tel);
   document.getElementById('ctr-tva').value = c.tva || '';
   document.getElementById('ctr-clientOrange').value = c.clientOrange || '';
   document.getElementById('ctr-contratEneco').value = c.contratEneco || '';
@@ -9400,7 +9473,7 @@ async function ctrSyncContractToClients(contractData, contractId) {
       consultantId: contractData.consultantId,
       prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
       nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
-      tel: contractData.tel || '', email: contractData.email || '',
+      tel: pcNormTel(contractData.tel), email: contractData.email || '',
       ville: contractData.adresse || '', adresse: contractData.adresse || '', cp: '',
       societe: contractData.societe || '', tva: contractData.tva || '',
       orange: contractData.clientOrange || '', eneco: contractData.contratEneco || '',
@@ -9411,7 +9484,7 @@ async function ctrSyncContractToClients(contractData, contractId) {
     if (clientData.tel) {
       var existing = await window.getDocs(window.query(
         window.collection(window.db, 'clients'),
-        window.where('tel', '==', clientData.tel),
+        window.where('tel', 'in', pcTelVariants(contractData.tel)),
         window.where('consultantId', '==', contractData.consultantId)
       ));
       if (!existing.empty) return;
@@ -9645,7 +9718,7 @@ function ctrApplyImportedContract(data) {
   if (!data) return;
   var client = data.client || {};
   var fieldMap = {
-    'ctr-nom': client.nom, 'ctr-societe': client.societe, 'ctr-tel': client.tel,
+    'ctr-nom': client.nom, 'ctr-societe': client.societe, 'ctr-tel': pcTelFmt(client.tel),
     'ctr-tva': client.tva, 'ctr-clientOrange': client.clientOrange, 'ctr-contratEneco': client.contratEneco,
     'ctr-contratSmart': client.contratSmart, 'ctr-email': client.email, 'ctr-adresse': client.adresse
   };
