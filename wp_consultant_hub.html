@@ -7292,6 +7292,7 @@ window.saveCrmModal = function() {
   var isC = col === 'consultantsCrm';
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
+  var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
   if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.numSmart=g('numSmart'); data.dateContrat=g('dateContrat'); data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
@@ -7834,6 +7835,27 @@ function pclUpdateStats(list) { pcFillStats('pcl', list); }
 function pcNormName(raw) {
   return String(raw == null ? '' : raw).trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s\-'’])([a-zà-öø-ÿ])/g, function (m, sep, ch) { return sep + ch.toUpperCase(); });
 }
+// Adresse complète « Rue X 5 Bte 2, 4100 Seraing » -> { adresse, cp, ville } (code postal belge à 4 chiffres requis)
+function pcSplitAdresse(raw) {
+  var t = String(raw || '').trim().replace(/[,\s]*(belgique|belgium)\s*$/i, '');
+  var m = t.match(/^(.*)\b(\d{4})\b\s*([^,\d][^,]*)$/);
+  if (!m) return null;
+  return { adresse: m[1].replace(/[\s,;\-]+$/, '').trim(), cp: m[2], ville: m[3].trim() };
+}
+// Corrige une fiche dont la ville contient toute l'adresse ; renvoie null si rien à corriger
+function pcFixAdresse(o) {
+  var ville = o.ville || '', adr = o.adresse || '';
+  var src = /\d{4}/.test(ville) ? ville : (!o.cp && /\d{4}/.test(adr) ? adr : '');
+  var sp = src ? pcSplitAdresse(src) : null;
+  if (!sp) return null;
+  var res = { adresse: sp.adresse || (adr === src ? '' : adr), cp: sp.cp, ville: sp.ville };
+  return (res.adresse !== adr || res.cp !== (o.cp || '') || res.ville !== ville) ? res : null;
+}
+// Numéro (Smart SN) lu dans le nom du fichier : « Orange_0000138335.pdf », « Connective package Name 0000147106 »…
+function ctrSmartFromFileName(name) {
+  var m = String(name || '').replace(/\.[a-z0-9]{2,4}$/i, '').match(/\d{8,12}(?!.*\d{8,})/);
+  return m ? m[0] : '';
+}
 function pcNormTel(raw) {
   var s = String(raw == null ? '' : raw).trim();
   if (!s) return '';
@@ -7882,8 +7904,10 @@ window.pcTelMigrateAll = async function () {
   var uid = window.pmCurrentUser && window.pmCurrentUser.id;
   if (!uid) return;
   var targets = [['prospectsClients', 'Prospects clients'], ['prospectsConsultants', 'Prospects consultants'], ['clients', 'Gestion Clients'], ['consultantsCrm', 'Gestion Consultants']];
-  var todo = [], counts = {};
+  var todo = [], counts = {}, ctrMap = {};
   try {
+    var cs = await window.getDocs(window.query(window.collection(window.db, 'contrats'), window.where('consultantId', '==', uid)));
+    cs.forEach(function (d) { ctrMap[d.id] = d.data(); });
     for (var t = 0; t < targets.length; t++) {
       var snap = await window.getDocs(window.query(window.collection(window.db, targets[t][0]), window.where('consultantId', '==', uid)));
       snap.forEach(function (d) {
@@ -7894,13 +7918,29 @@ window.pcTelMigrateAll = async function () {
         ['tel', 'referenceTel'].forEach(function (f) {
           if (x[f] && pcTelOk(x[f]) && pcNormTel(x[f]) !== x[f]) patch[f] = pcNormTel(x[f]);
         });
+        if (targets[t][0] === 'clients' || targets[t][0] === 'prospectsClients') {
+          var fa = pcFixAdresse(x);
+          if (fa) { patch.adresse = fa.adresse; patch.cp = fa.cp; patch.ville = fa.ville; }
+        }
+        if (targets[t][0] === 'clients') {
+          var c = ctrMap[x.sourceContractId] || {}, isNum = function (v) { return /^[\d.\-\s]{5,}$/.test(String(v || '')); };
+          var nS = x.numSmart || x.contratSmart || c.contratSmart || '';
+          var nO = x.numOrange || (isNum(x.orange) ? x.orange : '') || c.clientOrange || '';
+          var nE = x.numEneco || (isNum(x.eneco) ? x.eneco : '') || c.contratEneco || '';
+          if (nS && nS !== x.numSmart) patch.numSmart = nS;
+          if (nO && nO !== x.numOrange) patch.numOrange = nO;
+          if (nE && nE !== x.numEneco) patch.numEneco = nE;
+          if (isNum(x.orange)) patch.orange = '';
+          if (isNum(x.eneco)) patch.eneco = '';
+          if (!x.dateContrat && c.dateContrat) patch.dateContrat = c.dateContrat;
+        }
         if (Object.keys(patch).length) { todo.push({ coll: targets[t][0], id: d.id, patch: patch }); counts[targets[t][1]] = (counts[targets[t][1]] || 0) + 1; }
       });
     }
   } catch (err) { alert('Erreur: ' + err.message); return; }
   if (!todo.length) { pcToast('✅ Numéros et noms sont déjà au bon format.'); return; }
   var detail = Object.keys(counts).map(function (k) { return '- ' + k + ' : ' + counts[k]; }).join('\n');
-  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ?\n' + detail + '\n\nSeuls le format des numéros (0475 12 34 56 → +32475123456) et les majuscules des noms/prénoms (jean DUPONT → Jean Dupont) changent.')) return;
+  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ?\n' + detail + '\n\nSont corrigés : le format des numéros (0475 12 34 56 → +32475123456), les majuscules des noms/prénoms, l\'adresse, le code postal, la ville et les n° Smart, Orange, Eneco repris du contrat lié.')) return;
   var done = 0;
   for (var i = 0; i < todo.length; i++) {
     try { await window.updateDoc(window.doc(window.db, todo[i].coll, todo[i].id), todo[i].patch); done++; } catch (err) { console.log('Normalisation impossible:', err.message); }
@@ -8067,6 +8107,8 @@ async function pclMigrateOne(docId) {
       societe: p.societe || '', tva: p.tva || '', reference: '',
       etat: 'actif', sourceProspectId: docId, createdAt: new Date().toISOString()
     };
+    var fxp = pcFixAdresse(clientData);
+    if (fxp) { clientData.adresse = fxp.adresse; clientData.cp = fxp.cp; clientData.ville = fxp.ville; }
     if (p.tel) {
       var existing = await window.getDocs(window.query(window.collection(window.db, 'clients'), window.where('tel', 'in', pcTelVariants(p.tel)), window.where('consultantId', '==', window.pmCurrentUser.id)));
       if (!existing.empty) { pcToast('Client déjà existant dans Gestion Clients (même tél).'); return; }
@@ -9549,13 +9591,15 @@ async function ctrSyncContractToClients(contractData, contractId) {
       prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
       nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
       tel: pcNormTel(contractData.tel), email: contractData.email || '', dateContrat: contractData.dateContrat || '',
-      ville: contractData.adresse || '', adresse: contractData.adresse || '', cp: '',
+      ville: '', adresse: contractData.adresse || '', cp: '',
       societe: contractData.societe || '', tva: contractData.tva || '',
-      orange: contractData.clientOrange || '', eneco: contractData.contratEneco || '',
-      contratSmart: contractData.contratSmart || '', reference: '', etat: 'actif',
+      numOrange: contractData.clientOrange || '', numEneco: contractData.contratEneco || '',
+      numSmart: contractData.contratSmart || '', reference: '', etat: 'actif',
       sourceProspectId: contractData.prospectId || null, sourceContractId: contractId,
       createdAt: new Date().toISOString()
     };
+    var fxc = pcFixAdresse({ adresse: clientData.adresse, cp: '', ville: clientData.adresse });
+    if (fxc) { clientData.adresse = fxc.adresse; clientData.cp = fxc.cp; clientData.ville = fxc.ville; }
     if (clientData.tel) {
       var existing = await window.getDocs(window.query(
         window.collection(window.db, 'clients'),
@@ -9828,6 +9872,9 @@ window.ctrHandleImportPdf = async function (file) {
     ctrSetImportLoading(true, '🤖 Analyse IA en cours…');
 
     var data = await ctrExtractContractFromFile(file);
+    data.client = data.client || {};
+    var smartFromName = ctrSmartFromFileName(file.name);
+    if (smartFromName) data.client.contratSmart = smartFromName;
     ctrApplyImportedContract(data);
 
     var fournisseur = data.fournisseur || 'Fournisseur inconnu';
