@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.76 - Export GSM clients et consultants, noms normalisés";
+  scope.APP_VERSION = "14.77 - Doublons, fusion et contrats par client";
 })();
