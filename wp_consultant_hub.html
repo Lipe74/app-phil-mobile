@@ -7933,6 +7933,13 @@ window.pcTelMigrateAll = async function () {
           var ms = ctrList.filter(function (c) { return crmMatchContract(x, c); });
           var base = Array.isArray(x.contrats) ? x.contrats : crmLegacyLines(x);
           var lines = crmMergeContrats(base, ms.map(function (c) { return ctrLineFromContract(c, c.docId); }), false);
+          // Lignes créées avec l'ancienne règle (« Eneco + Orange », Domiciliation…) : fournisseur et produits recalculés depuis le contrat
+          lines = lines.map(function (l) {
+            var c = l.contractId ? ctrList.find(function (k) { return k.docId === l.contractId; }) : null;
+            if (!c || !((l.fournisseur || '').indexOf('+') >= 0 || (l.produits || []).some(function (q) { return /domiciliation|ebilling/i.test(q); }))) return l;
+            var d = ctrLineFromContract(c, c.docId);
+            return Object.assign({}, l, { fournisseur: d.fournisseur, produits: d.produits });
+          });
           if (crmLinesSig(lines) !== crmLinesSig(x.contrats || [])) patch.contrats = lines;
           if (!lines.length) sansContrat++;
           var nS = x.numSmart || (lines.find(function (l) { return l.smart; }) || {}).smart || x.contratSmart || '';
@@ -9907,6 +9914,7 @@ function ctrLineFromContract(c, id) {
   var cats = {}, prods = [], list = (typeof ctrProducts !== 'undefined') ? ctrProducts : [];
   Object.keys(c.produitsDetail || {}).forEach(function (pid) {
     var p = list.find(function (x) { return x.id === pid; });
+    if (p && p.cat === 'other') return;   // Domiciliation, eBilling : ignorés (ni affichés, ni fournisseur)
     var n = (c.produitsDetail[pid] || []).length || 1, label = p ? p.label : pid;
     prods.push(n > 1 ? label + ' ×' + n : label);
     cats[p && p.cat === 'energy' ? 'Eneco' : 'Orange'] = true;
