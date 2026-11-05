@@ -9519,6 +9519,20 @@ window.ctrSaveContract = async function () {
   };
 
   var editingId = window._ctrEditingId;
+  if (!editingId) {
+    try {
+      var dupC = await ctrFindDuplicate(data);
+      if (dupC) {
+        var lib = (dupC.nom || '') + (dupC.dateContrat ? ', ' + pcFmtDate(dupC.dateContrat) : '') + (dupC.contratSmart ? ', Smart ' + dupC.contratSmart : '');
+        if (confirm('⚠️ Ce contrat existe déjà : ' + lib + '.\n\nOK = mettre à jour le contrat existant (rien n\'est compté en double)\nAnnuler = autres choix')) {
+          editingId = dupC.docId; data.ancien = !!dupC.ancien; data.date = dupC.date || data.date;
+        } else if (!confirm('Enregistrer quand même comme NOUVEAU contrat ?' + (data.ancien ? '' : '\n(ses ASP seront comptés en plus)'))) return;
+      } else {
+        var conf = await ctrSmartConflict(data);
+        if (conf && !confirm('⚠️ Le N° Smart ' + data.contratSmart + ' est déjà utilisé par le contrat de « ' + (conf.nom || '?') + ' ».\n\nVérifie le numéro (fichier ou saisie).\n\nOK = enregistrer quand même\nAnnuler = corriger le numéro')) return;
+      }
+    } catch (e) { console.log('Contrôle doublon contrat impossible:', e.message); }
+  }
   try {
     var refId;
     if (editingId) {
@@ -9985,12 +9999,30 @@ function pcDupSoftKey(r) {
   return (tokens.length >= 2 && m) ? tokens.join(' ') + '|' + m : '';
 }
 var PC_DUP_LABELS = { tel: 'même téléphone', mail: 'même email', orange: 'même N° client Orange', eneco: 'même N° client Eneco', smart: 'même N° Smart' };
+// Même personne ? (même téléphone, même email, ou mêmes nom et prénom — ordre et accents ignorés)
+function pcNameTokens(r) {
+  var full = r.prenom ? (r.prenom + ' ' + (r.nom || '')) : (r.nom || '');
+  return pcStripAcc(full).replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' ');
+}
+function pcSamePerson(a, b) {
+  var ka = pcDupKeys(a).filter(function (k) { return k.indexOf('tel:') === 0 || k.indexOf('mail:') === 0; });
+  var kb = pcDupKeys(b);
+  if (ka.some(function (k) { return kb.indexOf(k) >= 0; })) return true;
+  var na = pcNameTokens(a);
+  return !!na && na === pcNameTokens(b);
+}
 function pcDupFind(recs) {
   var parent = recs.map(function (_, i) { return i; });
   var find = function (i) { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
-  var byKey = {}, keysOf = recs.map(pcDupKeys);
+  var byKey = {}, keysOf = recs.map(pcDupKeys), anom = {};
   keysOf.forEach(function (ks, i) {
-    ks.forEach(function (k) { if (byKey[k] === undefined) byKey[k] = i; else parent[find(i)] = find(byKey[k]); });
+    ks.forEach(function (k) {
+      if (byKey[k] === undefined) { byKey[k] = i; return; }
+      var j = byKey[k], strongId = /^(smart|orange|eneco):/.test(k);
+      if (!strongId || pcSamePerson(recs[i], recs[j])) { parent[find(i)] = find(j); return; }
+      var ak = Math.min(i, j) + '|' + Math.max(i, j);
+      (anom[ak] = anom[ak] || { i: Math.min(i, j), j: Math.max(i, j), why: {} }).why[PC_DUP_LABELS[k.split(':')[0]]] = 1;
+    });
   });
   var groups = {};
   recs.forEach(function (_, i) { var r = find(i); (groups[r] = groups[r] || []).push(i); });
@@ -10005,13 +10037,18 @@ function pcDupFind(recs) {
     out.push({ level: 'certain', members: idx.map(function (i) { return recs[i]; }), reasons: Object.keys(why) });
   });
   var soft = {};
-  recs.forEach(function (r, i) { var s = pcDupSoftKey(r); if (s) (soft[s] = soft[s] || []).push(i); });
-  Object.keys(soft).forEach(function (s) {
-    var idx = soft[s];
+  recs.forEach(function (r, i) { var sk = pcDupSoftKey(r); if (sk) (soft[sk] = soft[sk] || []).push(i); });
+  Object.keys(soft).forEach(function (sk) {
+    var idx = soft[sk];
     if (idx.length < 2) return;
     var roots = idx.map(find).filter(function (v, i, a) { return a.indexOf(v) === i; });
     if (roots.length < 2) return;
     out.push({ level: 'possible', members: idx.map(function (i) { return recs[i]; }), reasons: ['même nom et même code postal'] });
+  });
+  Object.keys(anom).forEach(function (ak) {
+    var o = anom[ak];
+    if (find(o.i) === find(o.j)) return;
+    out.push({ level: 'anomaly', members: [recs[o.i], recs[o.j]], reasons: Object.keys(o.why) });
   });
   return out;
 }
@@ -10085,7 +10122,7 @@ function pcMergeRecs(keep, others, coll) {
   return res;
 }
 
-var _pcDup = { coll: '', groups: [], cross: [] };
+var _pcDup = { coll: '', groups: [], cross: [], ctr: [] };
 var PC_DUP_TITLES = { clients: 'Gestion Clients', consultantsCrm: 'Gestion Consultants', prospectsClients: 'Prospects Clients', prospectsConsultants: 'Prospects Consultants' };
 var PC_DUP_PAIR = { clients: 'prospectsClients', prospectsClients: 'clients', consultantsCrm: 'prospectsConsultants', prospectsConsultants: 'consultantsCrm' };
 var PC_DUP_SYS = ['docId', 'consultantId', 'createdAt', 'updatedAt', 'dateCreation', 'dateMaj', 'dateArchive', 'archive', 'etat', 'contrats'];
@@ -10103,7 +10140,8 @@ window.pcDupOpen = async function (coll) {
   _pcDup.coll = coll;
   try {
     var items = await pcDupLoad(coll);
-    _pcDup.groups = pcDupFind(items).sort(function (a, b) { return a.level === b.level ? 0 : (a.level === 'certain' ? -1 : 1); });
+    var lvl = { certain: 0, possible: 1, anomaly: 2 };
+    _pcDup.groups = pcDupFind(items).sort(function (a, b) { return lvl[a.level] - lvl[b.level]; });
     var pair = PC_DUP_PAIR[coll], others = await pcDupLoad(pair), isProsp = coll.indexOf('prospects') === 0;
     var pros = isProsp ? items : others, cli = isProsp ? others : items, cross = [];
     pros.forEach(function (p) {
@@ -10112,6 +10150,7 @@ window.pcDupOpen = async function (coll) {
       if (c && p.statut !== 'Converti') cross.push({ p: p, c: c, pColl: isProsp ? coll : pair, cColl: isProsp ? pair : coll });
     });
     _pcDup.cross = cross;
+    _pcDup.ctr = coll === 'clients' ? await ctrDupGroups() : [];
   } catch (err) {
     ov.innerHTML = '<div style="background:#fff;border-radius:14px;padding:18px;max-width:760px;width:100%;margin:auto;color:#b91c1c;">Erreur : ' + pcEsc(err.message) + '<br><button onclick="pcDupClose()" style="margin-top:10px;">Fermer</button></div>';
     return;
@@ -10124,19 +10163,20 @@ window.pcDupClose = function () {
 };
 function pcDupRender() {
   var ov = document.getElementById('pc-dup-overlay'); if (!ov) return;
-  var g = _pcDup.groups, x = _pcDup.cross;
+  var g = _pcDup.groups, x = _pcDup.cross, cg = _pcDup.ctr || [];
   var h = '<div style="background:#fff;border-radius:14px;padding:16px;max-width:760px;width:100%;margin:auto;">'
     + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;"><b style="color:#f97316;font-size:15px;">🔍 Doublons — ' + pcEsc(PC_DUP_TITLES[_pcDup.coll]) + '</b>'
     + '<button onclick="pcDupClose()" style="border:1px solid #d1d5db;background:#fff;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;">Fermer</button></div>';
-  if (!g.length && !x.length) h += '<div style="color:#166534;background:#dcfce7;border-radius:8px;padding:12px;font-size:13px;">✅ Aucun doublon trouvé.</div>';
+  if (!g.length && !x.length && !cg.length) h += '<div style="color:#166534;background:#dcfce7;border-radius:8px;padding:12px;font-size:13px;">✅ Aucun doublon trouvé.</div>';
   g.forEach(function (grp, gi) {
-    var cert = grp.level === 'certain';
+    var cert = grp.level === 'certain', anom = grp.level === 'anomaly';
     var keys = {};
     grp.members.forEach(function (m) { Object.keys(m).forEach(function (k) { if (PC_DUP_SYS.indexOf(k) < 0 && typeof m[k] !== 'object') keys[k] = 1; }); });
-    h += '<div style="border:1px solid ' + (cert ? '#fdba74' : '#fde047') + ';border-radius:10px;padding:10px;margin-bottom:12px;">'
-      + '<div style="font-size:12px;font-weight:700;margin-bottom:6px;">' + (cert ? '🟠 Doublon certain' : '🟡 Doublon possible') + ' <span style="font-weight:400;color:#6b7280;">— ' + pcEsc(grp.reasons.join(', ')) + '</span></div>'
+    h += '<div style="border:1px solid ' + (anom ? '#fca5a5' : (cert ? '#fdba74' : '#fde047')) + ';border-radius:10px;padding:10px;margin-bottom:12px;">'
+      + '<div style="font-size:12px;font-weight:700;margin-bottom:6px;">' + (anom ? '🔴 Anomalie' : (cert ? '🟠 Doublon certain' : '🟡 Doublon possible')) + ' <span style="font-weight:400;color:#6b7280;">— ' + pcEsc(grp.reasons.join(', ')) + '</span></div>'
+      + (anom ? '<div style="font-size:11px;color:#b91c1c;margin-bottom:6px;">Personnes différentes avec le même numéro : probablement une erreur de saisie. Ne fusionne pas : corrige le bon numéro dans la fiche ou dans Mes Contrats.</div>' : '')
       + '<div style="overflow-x:auto;"><table style="border-collapse:collapse;font-size:11px;width:100%;"><tr><th></th>'
-      + grp.members.map(function (m, mi) { return '<th style="text-align:left;padding:3px 6px;"><label><input type="radio" name="dup-keep-' + gi + '" value="' + mi + '"' + (mi === 0 ? ' checked' : '') + '> Garder</label></th>'; }).join('') + '</tr>';
+      + grp.members.map(function (m, mi) { return '<th style="text-align:left;padding:3px 6px;">' + (anom ? '' : '<label><input type="radio" name="dup-keep-' + gi + '" value="' + mi + '"' + (mi === 0 ? ' checked' : '') + '> Garder</label>') + '</th>'; }).join('') + '</tr>';
     Object.keys(keys).forEach(function (k) {
       var vals = grp.members.map(function (m) { return pcIsEmpty(m[k]) ? '' : String(m[k]); });
       var diff = vals.filter(function (v, i, a) { return v && a.indexOf(v) === i; }).length > 1;
@@ -10147,7 +10187,7 @@ function pcDupRender() {
       h += '<tr style="border-top:1px solid #f1f5f9;"><td style="padding:2px 6px;color:#6b7280;">contrats</td>'
         + grp.members.map(function (m) { return '<td style="padding:2px 6px;">' + (Array.isArray(m.contrats) && m.contrats.length ? m.contrats : crmLegacyLines(m)).map(function (c) { return pcEsc(crmContratLine(c)); }).join('<br>') + '</td>'; }).join('') + '</tr>';
     }
-    h += '</table></div><button onclick="pcDupMerge(' + gi + ')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🔀 Fusionner dans la fiche choisie</button></div>';
+    h += '</table></div>' + (anom ? '' : '<button onclick="pcDupMerge(' + gi + ')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">🔀 Fusionner dans la fiche choisie</button>') + '</div>';
   });
   if (x.length) {
     h += '<div style="font-size:12px;font-weight:700;margin:8px 0 6px;">Prospects déjà présents comme clients / consultants</div>';
@@ -10156,10 +10196,18 @@ function pcDupRender() {
         + '<br><button onclick="pcDupCross(' + xi + ')" style="margin-top:6px;background:#0d6efd;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">✅ Marquer converti (archivé) et compléter la fiche</button></div>';
     });
   }
+  if (cg.length) {
+    h += '<div style="font-size:12px;font-weight:700;margin:8px 0 6px;">Contrats en double dans Mes Contrats</div>';
+    cg.forEach(function (grp, ci) {
+      h += '<div style="border:1px solid #fca5a5;border-radius:10px;padding:9px;margin-bottom:8px;font-size:12px;">'
+        + grp.map(function (c) { return pcEsc((c.nom || '') + ' · ' + (c.dateContrat ? pcFmtDate(c.dateContrat) : 'sans date') + (c.contratSmart ? ' · Smart ' + c.contratSmart : '') + (c.ancien ? ' · ancien' : '') + ' · ' + (c.aspTotal || 0) + ' ASP'); }).join('<br>')
+        + '<br><button onclick="pcDupCtr(' + ci + ')" style="margin-top:6px;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🗑️ Garder le plus ancien, supprimer les autres</button></div>';
+    });
+  }
   ov.innerHTML = h + '</div>';
 }
 window.pcDupMerge = async function (gi) {
-  var grp = _pcDup.groups[gi]; if (!grp) return;
+  var grp = _pcDup.groups[gi]; if (!grp || grp.level === 'anomaly') return;
   var sel = document.querySelector('input[name="dup-keep-' + gi + '"]:checked');
   var ki = sel ? parseInt(sel.value, 10) : 0, keep = grp.members[ki], others = grp.members.filter(function (_, i) { return i !== ki; });
   if (!confirm('Fusionner ' + grp.members.length + ' fiches dans « ' + pcDupName(keep) + ' » ?\nLes autres fiches seront supprimées (leurs informations sont reprises dans la fiche gardée).')) return;
@@ -10234,6 +10282,51 @@ async function ctrSyncContractToClients(contractData, contractId) {
     await window.addDoc(window.collection(window.db, 'clients'), clientData);
   } catch (err) { console.log('Synchro Gestion Clients impossible:', err.message); }
 }
+// Contrat déjà enregistré ? (même N° Smart, ou même client + même date + mêmes produits)
+// N° Smart déjà utilisé par un contrat d'une AUTRE personne ?
+async function ctrSmartConflict(d) {
+  var sm = crmDigits(d.contratSmart);
+  if (!sm) return null;
+  var list = await ctrLoadContracts();
+  return list.find(function (c) { return crmDigits(c.contratSmart) === sm && !pcSamePerson(c, d); }) || null;
+}
+function ctrSig(c) { return Object.keys(c.produitsDetail || {}).sort().map(function (k) { return k + 'x' + ((c.produitsDetail[k] || []).length); }).join(','); }
+async function ctrFindDuplicate(d) {
+  var list = await ctrLoadContracts();
+  var t = pcNormTel(d.tel), m = (d.email || '').trim().toLowerCase(), sm = crmDigits(d.contratSmart);
+  return list.find(function (c) {
+    if (sm && crmDigits(c.contratSmart) === sm && pcSamePerson(c, d)) return true;
+    var sameP = (t && pcNormTel(c.tel) === t) || (m && (c.email || '').trim().toLowerCase() === m);
+    return !!(sameP && d.dateContrat && c.dateContrat === d.dateContrat && ctrSig(c) === ctrSig(d));
+  }) || null;
+}
+// Groupes de contrats en double dans Mes Contrats (pour nettoyer l'existant)
+async function ctrDupGroups() {
+  var list = await ctrLoadContracts(), used = {}, out = [];
+  list.sort(function (a, b) { return new Date(a.date || 0) - new Date(b.date || 0); });
+  list.forEach(function (c, i) {
+    if (used[c.docId]) return;
+    var grp = [c];
+    list.forEach(function (o, j) {
+      if (j <= i || used[o.docId]) return;
+      var sm = crmDigits(c.contratSmart), same = sm && sm === crmDigits(o.contratSmart) && pcSamePerson(c, o);
+      var sameP = (pcNormTel(c.tel) && pcNormTel(c.tel) === pcNormTel(o.tel)) || (c.email && o.email && c.email.trim().toLowerCase() === o.email.trim().toLowerCase());
+      if (same || (sameP && c.dateContrat && c.dateContrat === o.dateContrat && ctrSig(c) === ctrSig(o))) grp.push(o);
+    });
+    if (grp.length > 1) { grp.forEach(function (g) { used[g.docId] = 1; }); out.push(grp); }
+  });
+  return out;
+}
+window.pcDupCtr = async function (gi) {
+  var grp = _pcDup.ctr[gi]; if (!grp) return;
+  if (!confirm('Garder le contrat le plus ancien et supprimer les ' + (grp.length - 1) + ' autre(s) ?\n(Les points ASP ne seront plus comptés en double.)')) return;
+  try {
+    for (var i = 1; i < grp.length; i++) await window.deleteDoc(window.doc(window.db, 'contrats', grp[i].docId));
+    pcToast('✅ Contrat(s) en double supprimé(s).');
+    if (window.ctrRefreshAspTotal) await window.ctrRefreshAspTotal();
+  } catch (err) { alert('Impossible : ' + err.message); return; }
+  window.pcDupOpen(_pcDup.coll);
+};
 // ===== FIN CONTRATS PAR CLIENT + DOUBLONS =====
 
 // ===== FIN MES CONTRATS =====

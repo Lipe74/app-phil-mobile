@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.77 - Doublons, fusion et contrats par client";
+  scope.APP_VERSION = "14.79 - Anomalies N° Smart, doublons plus sûrs";
 })();
