@@ -569,14 +569,19 @@ function clearErrors() {
   $('form-error').textContent = '';
 }
 // TVA belge : BE + 10 chiffres (0 ou 1 en tête), clé de contrôle modulo 97
-function normalizeTva(v) {
-  let s = (v || '').toUpperCase().replace(/[\s.\-]/g, '');
+function tvaDigits(v) {
+  let s = (v || '').toUpperCase().replace(/[\s.\-\/]/g, '');
   if (s.startsWith('BE')) s = s.slice(2);
   if (/^\d{9}$/.test(s)) s = '0' + s;
   return s;
 }
+// Format unique BE0477714607 (identique au hub) ; une saisie non reconnue est renvoyée telle quelle
+function normalizeTva(v) {
+  const s = tvaDigits(v);
+  return /^\d{10}$/.test(s) ? 'BE' + s : (v || '').trim();
+}
 function tvaValid(v) {
-  const s = normalizeTva(v);
+  const s = tvaDigits(v);
   if (!/^[01]\d{9}$/.test(s)) return false;
   const base = parseInt(s.slice(0, 8), 10), key = parseInt(s.slice(8), 10);
   return 97 - (base % 97) === key;

@@ -691,6 +691,7 @@ Version stable : <span id="app-version-1">…</span>
   <button onclick="showBlogSmart(this)" class="menu-item" id="menu-blogsmart">📰 Blog Smart SN</button>
 </div>
 <button onclick="showNouveautes(this)" class="menu-item" id="menu-nouveautes">🚀 Idées &amp; Projets<span id="nouveautes-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
+<button onclick="showCrmPanel('panel-maj')" class="menu-item" id="btn-maj">📝 Mises à jour<span id="maj-badge" style="display:none;background:#ef4444;color:#fff;border-radius:9px;padding:1px 6px;font-size:10px;margin-left:6px;">nouveau</span></button>
 <button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
 <div id="concoursMenu" class="submenu">
   <button onclick="showConcours(this,'smart')" class="menu-item" id="menu-concours-smart">🔵 Smart SN</button>
@@ -1246,6 +1247,10 @@ Version stable : <span id="app-version-1">…</span>
 
           <!-- Panel News -->
           <!-- Panel Gestion Clients -->
+          <div id="panel-maj" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📝 Mises à jour</h2>
+            <div id="maj-list"><div style="font-size:12px;color:#9ca3af;">Chargement...</div></div>
+          </div>
           <div id="panel-simulateur" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🎯 Simulateur commercial</h2>
             <div id="sim-body"></div>
@@ -5180,6 +5185,7 @@ function doUnlock(user) {
 
   // Nouveautés : lance l'écoute en tâche de fond pour activer le badge sans ouvrir le panneau
   listenNouveautes();
+  majListen();
   // Blog Phil-Mobile : vérifie en tâche de fond s'il y a un nouvel article non lu
   checkBlogPhilBadge();
 
@@ -6283,6 +6289,7 @@ window.showCrmPanel = function(panelId) {
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
   if (panelId === 'panel-contrats' && typeof ctrInit === 'function') ctrInit();
   if (panelId === 'panel-simulateur') simOpen();
+  if (panelId === 'panel-maj') majOpen();
   if (panelId === 'panel-mon-qr') monQrOpen();
   if (panelId === 'panel-rdvs') rdvPageOpen();
   if (panelId === 'panel-recommander' && typeof recoOpen === 'function') recoOpen();
@@ -10426,7 +10433,7 @@ function simRender() {
           var wk = days / 7;
           h += '<div style="margin-top:6px;font-size:12px;color:#555;line-height:1.5;">' + days + ' jour(s) restants<br>'
             + '→ <b>' + simNum(rem / wk) + '</b> ASP / semaine · <b>' + simNum(rem / days) + '</b> ASP / jour'
-            + (clients === null ? '' : '<br>→ <b>' + simNum(clients / wk) + '</b> client(s) / semaine') + '</div>';
+            + (clients === null ? '' : '<br>→ <b>' + Math.ceil(clients / wk - 0.0001) + '</b> client(s) / semaine') + '</div>';
         }
       } else if (rem === 0) h += '<div style="margin-top:6px;font-size:12px;color:#166534;font-weight:700;">✅ Objectif atteint</div>';
       h += '</div>';
@@ -10466,6 +10473,76 @@ document.addEventListener('focusout', function (e) {
 });
 // ===== FIN TVA =====
 
+// ===== MISES À JOUR (BUILDS) — Build 14.82 =====
+// Collection 'buildNotes' { build, title, description, date, createdAt } alimentée depuis admin.html (lecture seule ici)
+var majItems = [];
+var majUnsub = null;
+var MAJ_BASE_SEEN = Date.UTC(2026, 0, 2);
+function majSeenKey() { return 'pm_maj_lastseen_' + (pmCurrentUser ? pmCurrentUser.id : ''); }
+function majLastSeen() {
+  var v = 0;
+  try { v = parseInt(localStorage.getItem(majSeenKey()) || '0', 10) || 0; } catch (e) {}
+  return v || MAJ_BASE_SEEN;
+}
+function majKey(n) {
+  var m = String(n.build || '').match(/(\d+)\.(\d+)/);
+  return (m ? parseInt(m[1], 10) * 100000 + parseInt(m[2], 10) : 0) * 1e6 + ((n.createdAt || 0) % 1e6);
+}
+function majEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function majUpdateBadge() {
+  var b = document.getElementById('maj-badge');
+  if (!b) return;
+  var panel = document.getElementById('panel-maj');
+  var open = panel && panel.style.display === 'block';
+  var seen = majLastSeen();
+  b.style.display = (!open && majItems.some(function (n) { return (n.createdAt || 0) > seen; })) ? 'inline-block' : 'none';
+}
+async function majListen() {
+  if (majUnsub) return;
+  var tries = 0;
+  while ((!window.db || !window.onSnapshot || !window.collection) && tries < 50) { await new Promise(function (r) { setTimeout(r, 200); }); tries++; }
+  if (!window.db || !window.onSnapshot || !window.collection) return;
+  try {
+    majUnsub = window.onSnapshot(window.collection(window.db, 'buildNotes'), function (snap) {
+      majItems = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      majItems.sort(function (a, b) { return majKey(b) - majKey(a); });
+      var panel = document.getElementById('panel-maj');
+      if (panel && panel.style.display === 'block') majRender(majLastSeen());
+      majUpdateBadge();
+    }, function (err) { console.log('Mises à jour indisponibles:', err.message); });
+  } catch (e) { console.log('Mises à jour indisponibles:', e.message); }
+}
+function majRender(seen) {
+  var el = document.getElementById('maj-list');
+  if (!el) return;
+  if (!majItems.length) { el.innerHTML = '<div style="font-size:12px;color:#9ca3af;">Aucune mise à jour pour le moment.</div>'; return; }
+  el.innerHTML = majItems.map(function (n) {
+    var isNew = (n.createdAt || 0) > seen;
+    var lines = String(n.description || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    var body = lines.map(function (l) {
+      if (/^version\s+\d+\.\d+/i.test(l.replace(/^[-•]\s*/, ''))) return '';
+      return /^[-•]\s+/.test(l)
+        ? '<li style="margin:2px 0;">' + majEsc(l.replace(/^[-•]\s+/, '')) + '</li>'
+        : '<div style="margin:2px 0;color:#6b7280;">' + majEsc(l) + '</div>';
+    }).join('');
+    return '<div style="border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:10px;background:#fffaf5;">'
+      + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+      + '<b style="color:#f97316;">Build ' + majEsc(n.build) + '</b>'
+      + (isNew ? '<span style="background:#ef4444;color:#fff;border-radius:9px;padding:1px 7px;font-size:10px;">nouveau</span>' : '')
+      + '<span style="font-size:11px;color:#9ca3af;margin-left:auto;">' + majEsc(n.date || '') + '</span></div>'
+      + '<div style="font-weight:700;font-size:14px;margin:4px 0;color:#1f2937;">' + majEsc(n.title) + '</div>'
+      + (body ? '<ul style="margin:4px 0 0;padding-left:18px;font-size:12.5px;color:#374151;">' + body + '</ul>' : '')
+      + '</div>';
+  }).join('');
+}
+function majOpen() {
+  var seen = majLastSeen();
+  majListen();
+  majRender(seen);
+  var max = majItems.reduce(function (m, n) { return Math.max(m, n.createdAt || 0); }, 0);
+  if (max) { try { localStorage.setItem(majSeenKey(), String(Math.max(max, seen))); } catch (e) {} }
+  majUpdateBadge();
+}
 // ===== FIN MES CONTRATS =====
 
 </script>
