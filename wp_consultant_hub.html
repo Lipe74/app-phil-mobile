@@ -714,6 +714,9 @@ Version stable : <span id="app-version-1">…</span>
   <button onclick="showCrmPanel('panel-contrats')" class="menu-item" id="btn-contrats">
     📋 Gestion des contrats
   </button>
+  <button onclick="showCrmPanel('panel-simulateur')" class="menu-item" id="btn-simulateur">
+    🎯 Simulateur commercial
+  </button>
   <button onclick="showProspPanel('clients')" class="menu-item" id="btn-prosp-clients">
     🎯 Prospects Clients <span id="qr-badge-pcl" class="pm-qr-badge" style="display:none;"></span>
   </button>
@@ -1243,6 +1246,11 @@ Version stable : <span id="app-version-1">…</span>
 
           <!-- Panel News -->
           <!-- Panel Gestion Clients -->
+          <div id="panel-simulateur" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">🎯 Simulateur commercial</h2>
+            <div id="sim-body"></div>
+          </div>
+
           <div id="panel-crm-clients" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
               <h2 style="color:#f97316;margin:0;font-size:16px;">🧑 Gestion Clients</h2>
@@ -5428,7 +5436,7 @@ function renderDashboard() {
 </div>        <div style="font-size:11px;color:#6b7280;">Consultant Phil-Mobile · Actif depuis le <strong>${p.startDate||'—'}</strong></div>
         <div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:12px;font-weight:700;background:#fff3e8;color:#f97316;padding:3px 10px;border-radius:99px;border:1px solid #fde8cc;">Statut : ${cur.label}</span>
-          ${next?`<span style="font-size:11px;color:#9ca3af;">→ <strong style="color:#6b7280;">${next.label}</strong> dans <strong style="color:#f97316;">${Math.round((next.pts-aspTotal)*10)/10} ASP</strong></span>`:''}
+          ${next?`<span onclick="showCrmPanel('panel-simulateur')" title="Ouvrir le simulateur commercial" style="font-size:11px;color:#9ca3af;cursor:pointer;">→ <strong style="color:#6b7280;">${next.label}</strong> dans <strong style="color:#f97316;">${Math.round((next.pts-aspTotal)*10)/10} ASP</strong></span>`:''}
         </div>
       </div>
     </div>
@@ -6274,6 +6282,7 @@ window.showCrmPanel = function(panelId) {
   if (panelId === 'panel-crm-clients') crmLoadClients();
   if (panelId === 'panel-crm-consultants') crmLoadConsultants();
   if (panelId === 'panel-contrats' && typeof ctrInit === 'function') ctrInit();
+  if (panelId === 'panel-simulateur') simOpen();
   if (panelId === 'panel-mon-qr') monQrOpen();
   if (panelId === 'panel-rdvs') rdvPageOpen();
   if (panelId === 'panel-recommander' && typeof recoOpen === 'function') recoOpen();
@@ -7295,7 +7304,7 @@ window.saveCrmModal = function() {
   var docId = document.getElementById('crm-doc-id').value;
   var isC = col === 'consultantsCrm';
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
-  var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:g('tva'), updatedAt:new Date().toISOString() };
+  var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), updatedAt:new Date().toISOString() };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
   if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
@@ -7335,6 +7344,7 @@ window.importCrmCsv = function(input, col) {
       var data = { consultantId:window.pmCurrentUser.id, etat:'actif', createdAt:new Date().toISOString() };
       headers.forEach(function(h,idx){ var key=map[h]; if(key&&vals[idx]) data[key]=vals[idx].trim().replace(/^"|"$/g,''); });
       if (data.tel) data.tel = pcNormTel(data.tel);
+      if (data.tva) data.tva = pcNormTva(data.tva);
       if (!data.nom && !data.prenom) continue;
       rows.push(data);
     }
@@ -7798,7 +7808,7 @@ window.pclSaveProspect = async function (afterAction) {
     email: document.getElementById('pcl-email').value.trim(),
     type: document.getElementById('pcl-type').value,
     societe: document.getElementById('pcl-societe').value.trim(),
-    tva: document.getElementById('pcl-tva').value.trim(),
+    tva: pcNormTva(document.getElementById('pcl-tva').value),
     ville: document.getElementById('pcl-ville').value.trim(),
     opMobile: document.getElementById('pcl-op-mobile').value,
     numMobile: document.getElementById('pcl-num-mobile').value.trim(),
@@ -7909,7 +7919,7 @@ document.addEventListener('focusout', function (e) {
 window.pcTelMigrateAll = async function () {
   var uid = window.pmCurrentUser && window.pmCurrentUser.id;
   if (!uid) return;
-  var targets = [['prospectsClients', 'Prospects clients'], ['prospectsConsultants', 'Prospects consultants'], ['clients', 'Gestion Clients'], ['consultantsCrm', 'Gestion Consultants']];
+  var targets = [['prospectsClients', 'Prospects clients'], ['prospectsConsultants', 'Prospects consultants'], ['clients', 'Gestion Clients'], ['consultantsCrm', 'Gestion Consultants'], ['contrats', 'Contrats']];
   var todo = [], counts = {}, ctrList = [], sansContrat = 0;
   try {
     var cs = await window.getDocs(window.query(window.collection(window.db, 'contrats'), window.where('consultantId', '==', uid)));
@@ -7918,6 +7928,7 @@ window.pcTelMigrateAll = async function () {
       var snap = await window.getDocs(window.query(window.collection(window.db, targets[t][0]), window.where('consultantId', '==', uid)));
       snap.forEach(function (d) {
         var x = d.data(), patch = {};
+        if (x.tva && pcNormTva(x.tva) !== x.tva) patch.tva = pcNormTva(x.tva);
         ['nom', 'prenom'].forEach(function (f) {
           if (x[f] && pcNormName(x[f]) !== x[f]) patch[f] = pcNormName(x[f]);
         });
@@ -7959,7 +7970,7 @@ window.pcTelMigrateAll = async function () {
   } catch (err) { alert('Erreur: ' + err.message); return; }
   if (!todo.length) { pcToast('✅ Numéros et noms sont déjà au bon format.'); return; }
   var detail = Object.keys(counts).map(function (k) { return '- ' + k + ' : ' + counts[k]; }).join('\n') + (sansContrat ? '\n\n⚠️ ' + sansContrat + ' client(s) sans contrat retrouvé dans Mes Contrats (à compléter à la main).' : '');
-  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ?\n' + detail + '\n\nSont corrigés : le format des numéros (0475 12 34 56 → +32475123456), les majuscules des noms/prénoms, l\'adresse, le code postal, la ville, les contrats (N° Smart, date, produits) et les N° clients Orange / Eneco repris de Mes Contrats.')) return;
+  if (!confirm('Normaliser ' + todo.length + ' fiche(s) ?\n' + detail + '\n\nSont corrigés : le format des numéros (0475 12 34 56 → +32475123456), les majuscules des noms/prénoms, les N° de TVA (BE0123456789), l\'adresse, le code postal, la ville, les contrats (N° Smart, date, produits) et les N° clients Orange / Eneco repris de Mes Contrats.')) return;
   var done = 0;
   for (var i = 0; i < todo.length; i++) {
     try { await window.updateDoc(window.doc(window.db, todo[i].coll, todo[i].id), todo[i].patch); done++; } catch (err) { console.log('Normalisation impossible:', err.message); }
@@ -8474,7 +8485,7 @@ window.pcoSaveProspect = async function (afterAction) {
     consultantId: window.pmCurrentUser.id, nom: pcNormName(nom),
     tel: pcNormTel(document.getElementById('pco-tel').value),
     email: document.getElementById('pco-email').value.trim(),
-    tva: document.getElementById('pco-tva-oui').value === 'Oui' ? document.getElementById('pco-tva').value.trim() : '',
+    tva: document.getElementById('pco-tva-oui').value === 'Oui' ? pcNormTva(document.getElementById('pco-tva').value) : '',
     source: document.getElementById('pco-source').value,
     operateurActuel: document.getElementById('pco-operateur').value,
     statutPro: document.getElementById('pco-statut-pro').value,
@@ -8585,7 +8596,7 @@ window.pcoParseImportFile = function () {
       var normalized = rows.map(function (r) {
         return {
           nom: pcNormName((r[colNom] || '').toString()), tel: colTel ? pcNormTel((r[colTel] || '').toString().trim()) : '',
-          email: colEmail ? (r[colEmail] || '').toString().trim() : '', tva: colTva ? (r[colTva] || '').toString().trim() : '',
+          email: colEmail ? (r[colEmail] || '').toString().trim() : '', tva: colTva ? pcNormTva((r[colTva] || '').toString()) : '',
           source: colSource ? (r[colSource] || '').toString().trim() : 'Autre',
           commentaire: colCommentaire ? (r[colCommentaire] || '').toString().trim() : ''
         };
@@ -8654,7 +8665,7 @@ window.pcoBulkImportPaste = async function () {
     var data = {
       consultantId: window.pmCurrentUser.id, nom: pcNormName(nom),
       tel: telMatch ? pcNormTel(telMatch[1].trim()) : '', email: emailMatch ? emailMatch[1].trim() : '',
-      tva: tvaMatch ? tvaMatch[1].trim() : '',
+      tva: tvaMatch ? pcNormTva(tvaMatch[1]) : '',
       source: 'Autre', statut: 'Nouveau', dateCreation: now, dateMaj: now
     };
     if (statMatch) {
@@ -8918,10 +8929,10 @@ window.pcConvertSave = async function (kind, docId) {
     if (kind === 'cl') {
       coll = 'clients';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: g('ville'), adresse: g('ville'), cp: '',
-        societe: g('societe'), tva: g('tva'), reference: '', etat: 'actif', sourceProspectId: docId, createdAt: now };
+        societe: g('societe'), tva: pcNormTva(g('tva')), reference: '', etat: 'actif', sourceProspectId: docId, createdAt: now };
     } else {
       coll = 'consultantsCrm';
-      data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: g('tva'),
+      data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: pcNormTva(g('tva')),
         dateDemarrage: '', etat: 'actif', statutPro: g('statutpro'), sourceProspectId: docId, createdAt: now };
     }
     if (tel) {
@@ -9510,7 +9521,7 @@ window.ctrSaveContract = async function () {
     nom: nom,
     societe: document.getElementById('ctr-societe').value.trim(),
     tel: pcNormTel(document.getElementById('ctr-tel').value),
-    tva: document.getElementById('ctr-tva').value.trim(),
+    tva: pcNormTva(document.getElementById('ctr-tva').value),
     clientOrange: document.getElementById('ctr-clientOrange').value.trim(),
     contratEneco: document.getElementById('ctr-contratEneco').value.trim(),
     contratSmart: document.getElementById('ctr-contratSmart').value.trim(),
@@ -9842,7 +9853,7 @@ function ctrApplyImportedContract(data) {
   var client = data.client || {};
   var fieldMap = {
     'ctr-nom': client.nom, 'ctr-societe': client.societe, 'ctr-tel': pcTelFmt(client.tel),
-    'ctr-tva': client.tva, 'ctr-clientOrange': client.clientOrange, 'ctr-contratEneco': client.contratEneco,
+    'ctr-tva': pcNormTva(client.tva), 'ctr-clientOrange': client.clientOrange, 'ctr-contratEneco': client.contratEneco,
     'ctr-contratSmart': client.contratSmart, 'ctr-email': client.email, 'ctr-adresse': client.adresse
   };
   Object.keys(fieldMap).forEach(function (id) {
@@ -10336,6 +10347,124 @@ window.pcDupCtr = async function (gi) {
   window.pcDupOpen(_pcDup.coll);
 };
 // ===== FIN CONTRATS PAR CLIENT + DOUBLONS =====
+
+// ===== SIMULATEUR COMMERCIAL (Build 14.81) — évolution « vendeur » : ASP personnels =====
+var SIM_NIVEAUX = [{ code: 'BC', pts: 0 }, { code: 'SC', pts: 70 }, { code: 'EC', pts: 200 }, { code: 'PC', pts: 600 }, { code: 'MC', pts: 1500 }, { code: 'NMC', pts: 3500 }, { code: 'PMC', pts: 10000 }];
+var _sim = { asp: 0, mob: 2, net: 1, tv: 1, ene: 0, chaud: 0, extra: 0, dl: {} };
+function simKey() { return 'pm-sim-' + ((window.pmCurrentUser && window.pmCurrentUser.id) || ''); }
+function simSave() { try { localStorage.setItem(simKey(), JSON.stringify({ mob: _sim.mob, net: _sim.net, tv: _sim.tv, ene: _sim.ene, chaud: _sim.chaud, extra: _sim.extra, dl: _sim.dl })); } catch (e) {} }
+function simLoad() {
+  try {
+    var o = JSON.parse(localStorage.getItem(simKey()) || 'null');
+    if (!o) return;
+    ['mob', 'net', 'tv', 'ene', 'chaud', 'extra'].forEach(function (k) { var v = Number(o[k]); if (isFinite(v) && v >= 0) _sim[k] = v; });
+    _sim.dl = (o.dl && typeof o.dl === 'object') ? o.dl : {};
+  } catch (e) {}
+}
+function simAspAuto() {
+  try { return Math.round((typeof pmGetTotalASP === 'function' && window.pmCurrentUser ? pmGetTotalASP(window.pmCurrentUser.agent) : 0) * 10) / 10; } catch (e) { return 0; }
+}
+function simNiveau(asp) { var c = SIM_NIVEAUX[0]; SIM_NIVEAUX.forEach(function (n) { if (asp >= n.pts) c = n; }); return c; }
+function simNum(v) { var r = Math.round(v * 10) / 10; return String(r).replace('.', ','); }
+window.simOpen = function () { simLoad(); _sim.asp = simAspAuto(); simRender(); };
+window.simStep = function (k, d) { _sim[k] = Math.max(0, Math.round((_sim[k] + d) * 10) / 10); simSave(); simRender(); };
+window.simSetAsp = function (v) { var n = parseFloat(String(v).replace(',', '.')); _sim.asp = isFinite(n) && n >= 0 ? n : 0; simRender(); };
+window.simResetAsp = function () { _sim.asp = simAspAuto(); simRender(); };
+window.simSetDl = function (code, v) { if (v) _sim.dl[code] = v; else delete _sim.dl[code]; simSave(); simRender(); };
+function simCounter(label, k, step, hint) {
+  var v = _sim[k];
+  var b = 'width:34px;height:30px;border:1px solid #d1d5db;border-radius:99px;background:#fff;font-size:16px;cursor:pointer;';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3f4f6;">'
+    + '<div style="font-size:13px;">' + label + (hint ? '<div style="font-size:10px;color:#9ca3af;">' + hint + '</div>' : '') + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;"><button type="button" style="' + b + '" onclick="simStep(\'' + k + '\',' + (-step) + ')">−</button>'
+    + '<span style="min-width:30px;text-align:center;font-weight:700;">' + simNum(v) + '</span>'
+    + '<button type="button" style="' + b + '" onclick="simStep(\'' + k + '\',' + step + ')">+</button></div></div>';
+}
+function simRender() {
+  var box = document.getElementById('sim-body');
+  if (!box) return;
+  var asp = _sim.asp, cur = simNiveau(asp), idx = SIM_NIVEAUX.indexOf(cur), targets = SIM_NIVEAUX.slice(idx + 1, idx + 3);
+  var perClient = Math.round((_sim.mob + _sim.net + _sim.tv + (_sim.ene + _sim.chaud) * 0.5 + _sim.extra) * 10) / 10;
+  var h = '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px 14px;margin-bottom:14px;">'
+    + '<div style="font-size:11px;color:#9a3412;font-weight:700;margin-bottom:6px;">MA SITUATION</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+    + '<span style="font-size:12px;font-weight:700;background:#fff3e8;color:#f97316;padding:3px 10px;border-radius:99px;border:1px solid #fde8cc;">Statut : ' + cur.code + '</span>'
+    + '<label style="font-size:12px;color:#555;">ASP personnels aujourd\'hui '
+    + '<input type="number" step="0.5" min="0" value="' + asp + '" onchange="simSetAsp(this.value)" style="width:90px;padding:6px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-weight:700;"></label>'
+    + '<button type="button" onclick="simResetAsp()" style="border:1px solid #d1d5db;background:#fff;border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;">↺ Reprendre mes ASP</button></div>'
+    + '<div style="font-size:10px;color:#9ca3af;margin-top:5px;">Repris du tableau de bord. Seuils d\'ASP personnels : ' + SIM_NIVEAUX.slice(1).map(function (n) { return n.code + ' ' + n.pts; }).join(' · ') + '</div></div>';
+
+  h += '<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;">MES SERVICES VENDUS PAR CLIENT</div>'
+    + '<div style="border:1px solid #eee;border-radius:12px;padding:4px 14px;margin-bottom:14px;">'
+    + simCounter('Abonnements mobiles', 'mob', 1, '1 ASP chacun (Small et plus)')
+    + simCounter('Internet', 'net', 1, '1 ASP')
+    + simCounter('TV', 'tv', 1, '1 ASP')
+    + simCounter('Énergie Eneco (électricité / gaz)', 'ene', 1, '0,5 ASP chacun')
+    + simCounter('Entretien de chaudière', 'chaud', 1, '0,5 ASP chacun')
+    + simCounter('ASP supplémentaires (indépendants)', 'extra', 0.5, '+0,5 ASP par service pour un client indépendant / SoHo (ex. énergie SoHo = 0,5 + 0,5 = 1 ASP)')
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;"><b style="font-size:13px;">ASP par client</b><b style="font-size:22px;">' + simNum(perClient) + '</b></div></div>';
+
+  if (!targets.length) {
+    h += '<div style="background:#dcfce7;border-radius:10px;padding:12px;color:#166534;font-weight:700;">🏆 Statut maximum atteint (' + cur.code + ').</div>';
+  } else {
+    h += '<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:6px;">MES OBJECTIFS</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;">';
+    targets.forEach(function (t) {
+      var rem = Math.max(0, Math.round((t.pts - asp) * 10) / 10);
+      var pct = Math.min(100, Math.round(asp / t.pts * 100));
+      var clients = perClient > 0 ? Math.ceil(rem / perClient) : null;
+      var dl = _sim.dl[t.code] || '', days = null;
+      if (dl) { var d = new Date(dl + 'T23:59:59'); days = Math.ceil((d - new Date()) / 86400000); }
+      h += '<div style="border:1px solid #fdba74;border-radius:12px;padding:12px 14px;background:#fffaf5;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:baseline;"><b style="font-size:16px;color:#f97316;">' + t.code + '</b><span style="font-size:11px;color:#9ca3af;">' + t.pts + ' ASP</span></div>'
+        + '<div style="height:6px;background:#f3f4f6;border-radius:99px;overflow:hidden;margin:6px 0;"><div style="height:100%;width:' + pct + '%;background:#f97316;"></div></div>'
+        + '<div style="font-size:12px;color:#555;">Il te reste <b style="font-size:20px;color:#1a1a1a;">' + simNum(rem) + '</b> ASP</div>'
+        + '<div style="font-size:12px;color:#555;margin-top:2px;">≈ <b>' + (clients === null ? '—' : clients) + '</b> client(s) avec ton mix de services</div>'
+        + '<div style="margin-top:8px;font-size:11px;color:#555;">Date limite <input type="date" value="' + dl + '" onchange="simSetDl(\'' + t.code + '\',this.value)" style="padding:4px;border:1px solid #ddd;border-radius:6px;font-size:12px;"></div>';
+      if (dl && rem > 0) {
+        if (days <= 0) h += '<div style="margin-top:6px;font-size:12px;color:#b91c1c;font-weight:700;">⚠️ Date dépassée</div>';
+        else {
+          var wk = days / 7;
+          h += '<div style="margin-top:6px;font-size:12px;color:#555;line-height:1.5;">' + days + ' jour(s) restants<br>'
+            + '→ <b>' + simNum(rem / wk) + '</b> ASP / semaine · <b>' + simNum(rem / days) + '</b> ASP / jour'
+            + (clients === null ? '' : '<br>→ <b>' + simNum(clients / wk) + '</b> client(s) / semaine') + '</div>';
+        }
+      } else if (rem === 0) h += '<div style="margin-top:6px;font-size:12px;color:#166534;font-weight:700;">✅ Objectif atteint</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  h += '<div style="font-size:10px;color:#9ca3af;margin-top:12px;">Évolution vendeur (ASP personnels). Le volet recrutement / réseau viendra en dessous.</div>';
+  box.innerHTML = h;
+}
+// ===== FIN SIMULATEUR COMMERCIAL =====
+
+// ===== TVA : format unique « BE0477714607 » (BE + 10 chiffres) =====
+function pcNormTva(raw) {
+  var s = String(raw == null ? '' : raw).trim();
+  if (!s) return '';
+  var m = s.toUpperCase().replace(/[\s.\-\/]/g, '');
+  if (/^[A-Z]{2}/.test(m) && m.slice(0, 2) !== 'BE') return m;   // autre pays : sans séparateurs, sinon inchangé
+  var d = m.replace(/^BE/, '');
+  if (!/^\d{9,10}$/.test(d)) return s;                            // illisible : on garde tel quel
+  if (d.length === 9) d = '0' + d;
+  return 'BE' + d;
+}
+// Clé de contrôle belge : 97 - (8 premiers chiffres mod 97) = 2 derniers chiffres
+function pcTvaOk(v) {
+  var m = /^BE(\d{10})$/.exec(String(v || ''));
+  if (!m) return false;
+  return 97 - (parseInt(m[1].slice(0, 8), 10) % 97) === parseInt(m[1].slice(8), 10);
+}
+var PC_TVA_INPUTS = ['pcl-tva', 'pco-tva', 'crm-tva', 'ctr-tva'];
+document.addEventListener('focusout', function (e) {
+  var t = e.target;
+  if (!t || !t.id || PC_TVA_INPUTS.indexOf(t.id) < 0) return;
+  var v = t.value.trim();
+  if (!v) return;
+  t.value = pcNormTva(v);
+  if (/^BE/.test(t.value) && !pcTvaOk(t.value) && typeof pcToast === 'function') pcToast('⚠️ N° de TVA à vérifier : ' + t.value);
+});
+// ===== FIN TVA =====
 
 // ===== FIN MES CONTRATS =====
 
