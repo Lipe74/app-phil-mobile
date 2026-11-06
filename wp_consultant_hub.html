@@ -691,7 +691,7 @@ Version stable : <span id="app-version-1">…</span>
   <button onclick="showBlogSmart(this)" class="menu-item" id="menu-blogsmart">📰 Blog Smart SN</button>
 </div>
 <button onclick="showNouveautes(this)" class="menu-item" id="menu-nouveautes">🚀 Idées &amp; Projets<span id="nouveautes-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
-<button onclick="showCrmPanel('panel-maj')" class="menu-item" id="btn-maj">📝 Mises à jour<span id="maj-badge" style="display:none;background:#ef4444;color:#fff;border-radius:9px;padding:1px 6px;font-size:10px;margin-left:6px;">nouveau</span></button>
+<button onclick="showCrmPanel('panel-maj')" class="menu-item" id="btn-maj">📝 Les builds de Phil-Mobile<span id="maj-badge" class="pm-maj-badge" style="display:none;background:#ef4444;color:#fff;border-radius:9px;padding:1px 6px;font-size:10px;margin-left:6px;">nouveau</span></button>
 <button onclick="toggleMenu('concoursMenu')" class="menu-item group-toggle">🏆 Concours</button>
 <div id="concoursMenu" class="submenu">
   <button onclick="showConcours(this,'smart')" class="menu-item" id="menu-concours-smart">🔵 Smart SN</button>
@@ -1248,7 +1248,7 @@ Version stable : <span id="app-version-1">…</span>
           <!-- Panel News -->
           <!-- Panel Gestion Clients -->
           <div id="panel-maj" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
-            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📝 Mises à jour</h2>
+            <h2 style="color:#f97316;margin:0 0 12px;font-size:16px;">📝 Les builds de Phil-Mobile</h2>
             <div id="maj-list"><div style="font-size:12px;color:#9ca3af;">Chargement...</div></div>
           </div>
           <div id="panel-simulateur" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
@@ -2792,7 +2792,7 @@ function pmRenderFavoritesList() {
     btn.style.paddingRight = '22px';
     // Libellé sans le badge du bouton d'origine, puis badge "live" propre au favori (mis à jour par qrBadgesRender)
     var origClone = orig.cloneNode(true);
-    origClone.querySelectorAll('.pm-qr-badge').forEach(function (b) { b.remove(); });
+    origClone.querySelectorAll('.pm-qr-badge, .pm-maj-badge').forEach(function (b) { b.remove(); });
     btn.textContent = origClone.textContent.trim();
     var origBadge = orig.querySelector('.pm-qr-badge');
     if (origBadge && origBadge.id) {

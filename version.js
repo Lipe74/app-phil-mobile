@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.82 - Mises à jour dans le hub, TVA du QR";
+  scope.APP_VERSION = "14.83 - Les builds de Phil-Mobile (renommage)";
 })();

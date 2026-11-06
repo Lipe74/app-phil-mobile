@@ -244,7 +244,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.82 - Mises à jour dans le hub, TVA du QR</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.83 - Les builds de Phil-Mobile (renommage)</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -286,7 +286,7 @@
           <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
           <button onclick="showAdminPanel('panel-teams-link', this)" class="menu-item" id="menu-teams-link">📹 Réunion Teams</button>
           <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
-          <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Mises à jour (builds)</button>
+          <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Les builds de Phil-Mobile</button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
           <div id="botFaqMenu" class="submenu">
             <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
@@ -1049,10 +1049,10 @@
         </div>
 
         <div class="admin-panel" id="panel-build-notes">
-          <div class="section-title">📝 Mises à jour (builds) — affichées dans le menu du hub</div>
+          <div class="section-title">📝 Les builds de Phil-Mobile — affichés dans le menu du hub</div>
           <div class="card">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
-              Colle le titre et la description du commit : les consultants les voient dans l'onglet « 📝 Mises à jour » du hub (le plus récent en haut).
+              Colle le titre et la description du commit : les consultants les voient dans l'onglet « 📝 Les builds de Phil-Mobile » du hub (le plus récent en haut).
               Une ligne commençant par « - » devient une puce.
             </div>
             <input type="hidden" id="bn-edit-id" value="">
@@ -8914,7 +8914,7 @@ const FAV_ITEMS = {
   'menu-messages':             { label: '💬 Messages',                     panelId: 'panel-messages' },
   'menu-teams-link':           { label: '📹 Réunion Teams',                panelId: 'panel-teams-link' },
   'menu-fav-defaults':         { label: '❤️ Favoris par défaut',           panelId: 'panel-fav-defaults' },
-  'menu-build-notes':          { label: '📝 Mises à jour',                 panelId: 'panel-build-notes' },
+  'menu-build-notes':          { label: '📝 Les builds de Phil-Mobile', panelId: 'panel-build-notes' },
   'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },
   'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
   'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },
