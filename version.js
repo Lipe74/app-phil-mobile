@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.85 - Factures sur prospects, cartes enrichies";
+  scope.APP_VERSION = "14.86 - Titulaire, choix du nom, relecture facture";
 })();
