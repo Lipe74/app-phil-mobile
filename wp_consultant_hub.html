@@ -1503,6 +1503,15 @@ STATUT: independant
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                   </div>
+                  <div id="pcl-factures-row" style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Factures (PDF)</div>
+                    <div id="pcl-factures-box"></div>
+                    <div id="pcl-facture-status" style="display:none;font-size:12px;padding:6px 9px;border-radius:7px;margin-bottom:6px;"></div>
+                    <div id="pcl-facture-review"></div>
+                    <label style="display:inline-block;border:1px dashed #f97316;background:#fff7ed;color:#f97316;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">📎 Joindre une facture (PDF)
+                      <input type="file" accept="application/pdf" style="display:none;" onchange="crmFactureAdd(this.files[0]); this.value='';">
+                    </label>
+                  </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
                     <textarea id="pcl-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
@@ -7307,7 +7316,7 @@ window.openCrmModal = function(col, docId) {
   }
   var _it = docId ? (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; }) : null;
   crmContratsFill(!isC && _it ? crmContrats(_it) : []);
-  crmFactInit(isC ? null : docId, !isC && _it ? _it.factures : []);
+  crmFactInit('crm', isC ? null : docId, !isC && _it ? _it.factures : []);
   document.getElementById('modal-crm').style.display = 'flex';
 };
 
@@ -7779,7 +7788,7 @@ function pclResetForm() {
   window.pclToggleReference();
 }
 
-window.pclStartNew = function () { pclEditId = null; pcRefreshModalSummary('cl'); pclResetForm(); window.pclOpenModal('🆕 Nouveau prospect'); };
+window.pclStartNew = function () { pclEditId = null; pcRefreshModalSummary('cl'); pclResetForm(); crmFactInit('pcl', null, []); window.pclOpenModal('🆕 Nouveau prospect'); };
 
 window.pclEditProspect = function (id) {
   var p = (window._pclData || []).find(function (x) { return x.docId === id; });
@@ -7805,6 +7814,7 @@ window.pclEditProspect = function (id) {
   document.getElementById('pcl-date-fin-contrat').value = p.dateFinContrat || '';
   window.pclToggleSociete();
   window.pclToggleReference();
+  crmFactInit('pcl', id, p.factures);
   pclEditId = id;
   pcRefreshModalSummary('cl');
   window.pclOpenModal('✏️ Modifier le prospect');
@@ -7843,7 +7853,7 @@ window.pclSaveProspect = async function (afterAction) {
   try {
     var newRef = null;
     if (pclEditId) await window.updateDoc(window.doc(window.db, 'prospectsClients', pclEditId), data);
-    else { if (!(await pcDupWarnNew('prospectsClients', data))) return; newRef = await window.addDoc(window.collection(window.db, 'prospectsClients'), data); }
+    else { if (!(await pcDupWarnNew('prospectsClients', data))) return; newRef = await window.addDoc(window.collection(window.db, 'prospectsClients'), data); if (crmFact.ctx === 'pcl') await crmFactFlushPending(newRef.id); }
     pcToast('✅ Prospect enregistré.');
     if (afterAction === 'contact' || afterAction === 'rdv' || afterAction === 'bom') { pcContinueAfterSave('cl', pclEditId || newRef.id, data, afterAction); return; }
     pclEditId = null;
@@ -8088,6 +8098,12 @@ function pclContactSummary(p) {
   return html;
 }
 
+function pclRefLine(p) {
+  var nm = [p.referencePrenom, p.referenceNom].filter(Boolean).join(' ');
+  var tel = p.referenceTel ? pcTelFmt(p.referenceTel) : '';
+  if (!nm && !tel) return '';
+  return '<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-top:2px;">👥 Référencé par : ' + pcEsc([nm, tel].filter(Boolean).join(' · ')) + '</div>';
+}
 function pclRenderList(list) {
   var el = document.getElementById('pcl-list');
   if (!el) return;
@@ -8112,9 +8128,12 @@ function pclRenderList(list) {
       + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
       + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
       + (p.ville ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.ville) + '</div>' : '')
+      + pclRefLine(p)
+      + (p.source ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.source) + (p.type ? ' · ' + pcEsc(p.type) : '') + (p.provenance ? ' · ' + pcEsc(p.provenance) : '') + '</div>' : '')
       + (p.type === 'Société' ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc(p.societe || '-') + '</div>' : '')
-      + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcOpBadge(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(p.numMobile) : '') + '</div>' : '')
-      + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcOpBadge(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(p.numInternet) : '') + '</div>' : '')
+      + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcOpBadge(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(String(p.numMobile).replace(/[\s:;,]+$/, '')) : '') + '</div>' : '')
+      + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcOpBadge(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(String(p.numInternet).replace(/[\s:;,]+$/, '')) : '') + '</div>' : '')
+      + (Array.isArray(p.factures) && p.factures.length ? '<div style="font-size:12px;color:#555;">📄 ' + p.factures.length + ' facture(s)</div>' : '')
       + pclQrExtras(p)
       + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
       + pcContactInfo(p) + pcRdvInfo(p)
@@ -8147,7 +8166,7 @@ async function pclMigrateOne(docId) {
       nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
       tel: pcNormTel(p.tel), email: p.email || '', ville: p.ville || '',
       adresse: p.adresse || p.ville || '', cp: p.cp || '',
-      societe: p.societe || '', tva: p.tva || '', reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '',
+      societe: p.societe || '', tva: p.tva || '', reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', factures: Array.isArray(p.factures) ? p.factures : [],
       etat: 'actif', sourceProspectId: docId, createdAt: new Date().toISOString()
     };
     var fxp = pcFixAdresse(clientData);
@@ -8951,7 +8970,7 @@ window.pcConvertSave = async function (kind, docId) {
     if (kind === 'cl') {
       coll = 'clients';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: g('ville'), adresse: g('ville'), cp: '',
-        societe: g('societe'), tva: pcNormTva(g('tva')), reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', etat: 'actif', sourceProspectId: docId, createdAt: now };
+        societe: g('societe'), tva: pcNormTva(g('tva')), reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', factures: Array.isArray(p.factures) ? p.factures : [], etat: 'actif', sourceProspectId: docId, createdAt: now };
     } else {
       coll = 'consultantsCrm';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: pcNormTva(g('tva')),
@@ -10306,12 +10325,29 @@ async function ctrSyncContractToClients(contractData, contractId) {
       if (!hit.tel && contractData.tel) upd.tel = pcNormTel(contractData.tel);
       if (!hit.email && contractData.email) upd.email = contractData.email;
       if (!hit.sourceContractId) upd.sourceContractId = contractId;
+      if (contractData.prospectId) {
+        try {
+          var ps2 = await window.getDoc(window.doc(window.db, 'prospectsClients', contractData.prospectId));
+          if (ps2.exists()) {
+            var pr2 = ps2.data();
+            if (Array.isArray(pr2.factures) && pr2.factures.length) {
+              var have = (hit.factures || []).map(function (f) { return f.path; });
+              upd.factures = (hit.factures || []).concat(pr2.factures.filter(function (f) { return have.indexOf(f.path) < 0; }));
+            }
+            if (!hit.reference && pr2.referenceTel) upd.reference = pcNormTel(pr2.referenceTel);
+            if (!hit.referenceNom && pr2.referenceNom) upd.referenceNom = pr2.referenceNom;
+            if (!hit.referencePrenom && pr2.referencePrenom) upd.referencePrenom = pr2.referencePrenom;
+          }
+        } catch (e) { /* prospect illisible : on ignore */ }
+      }
       var d0 = lines.map(function (l) { return l.date; }).filter(Boolean).sort()[0];
       if (d0) upd.dateContrat = d0;
       await window.updateDoc(window.doc(window.db, 'clients', hit.docId), upd);
       if (!linked) pcToast('✅ Contrat ajouté à la fiche de ' + pcDupName(hit));
       return;
     }
+    var pr = null;
+    if (contractData.prospectId) { try { var ps = await window.getDoc(window.doc(window.db, 'prospectsClients', contractData.prospectId)); if (ps.exists()) pr = ps.data(); } catch (e) { pr = null; } }
     var nameParts = nom.split(' ');
     var clientData = {
       consultantId: contractData.consultantId,
@@ -10321,12 +10357,13 @@ async function ctrSyncContractToClients(contractData, contractId) {
       ville: '', adresse: contractData.adresse || '', cp: '',
       societe: contractData.societe || '', tva: contractData.tva || '',
       numOrange: contractData.clientOrange || '', numEneco: contractData.contratEneco || '',
-      numSmart: contractData.contratSmart || '', contrats: [line], reference: '', etat: 'actif',
+      numSmart: contractData.contratSmart || '', contrats: [line], reference: pr ? pcNormTel(pr.referenceTel || '') : '', referencePrenom: pr ? (pr.referencePrenom || '') : '', referenceNom: pr ? (pr.referenceNom || '') : '', etat: 'actif',
       sourceProspectId: contractData.prospectId || null, sourceContractId: contractId,
       createdAt: new Date().toISOString()
     };
     var fxc = pcFixAdresse({ adresse: clientData.adresse, cp: '', ville: clientData.adresse });
     if (fxc) { clientData.adresse = fxc.adresse; clientData.cp = fxc.cp; clientData.ville = fxc.ville; }
+    if (pr && Array.isArray(pr.factures) && pr.factures.length) clientData.factures = pr.factures;
     await window.addDoc(window.collection(window.db, 'clients'), clientData);
   } catch (err) { console.log('Synchro Gestion Clients impossible:', err.message); }
 }
@@ -10565,11 +10602,47 @@ function majOpen() {
   if (max) { try { localStorage.setItem(majSeenKey(), String(Math.max(max, seen))); } catch (e) {} }
   majUpdateBadge();
 }
-// ===== FACTURES PDF PAR CLIENT (Build 14.84) =====
-// PDF dans Storage : facturesClients/{consultantId}/{clientId}/{fichier}. Fiche client : factures = [{ path, name, uploadedAt, fournisseur, numeroFacture, numeroClient, dateFacture, montantTvac, titulaire }]
-var crmFact = { clientId: '', list: [], pending: [], review: null };
+// ===== FACTURES PDF PAR CLIENT / PROSPECT CLIENT (Build 14.84 / 14.85) =====
+// PDF dans Storage : facturesClients/{consultantId}/{id}/{fichier}. Fiche client (clients) ou prospect client (prospectsClients) : factures = [{ path, name, uploadedAt, fournisseur, numeroFacture, numeroClient, dateFacture, montantTvac, titulaire }]
+var crmFact = { ctx: 'crm', clientId: '', list: [], pending: [], review: null };
+// Contextes : fiche client (modale crm-*) et prospect client (modale pcl-*)
+var CRMFACT_CTX = {
+  crm: {
+    coll: 'clients', box: 'crm-factures-box', status: 'crm-facture-status', review: 'crm-facture-review',
+    find: function (id) { return (_crmClData || []).find(function (x) { return x._id === id; }); },
+    val: function (f) { var el = document.getElementById('crm-' + f); return el ? el.value.trim() : ''; },
+    set: function (f, v) { var el = document.getElementById('crm-' + f); if (el && !el.value.trim()) el.value = v; },
+    name: function () { return (this.val('prenom') + ' ' + this.val('nom')).trim(); },
+    cands: function (d, meta) {
+      var f = (meta.fournisseur || '').toLowerCase();
+      var c = [
+        { id: 'adresse', label: 'Adresse', v: String(d.adresse || '').trim() }, { id: 'cp', label: 'Code postal', v: String(d.cp || '').trim() },
+        { id: 'ville', label: 'Ville', v: String(d.ville || '').trim() }, { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
+        { id: 'email', label: 'Email', v: String(d.email || '').trim() }
+      ];
+      if (/orange/.test(f) && meta.numeroClient) c.push({ id: 'numOrange', label: 'N° client Orange', v: meta.numeroClient });
+      if (/eneco/.test(f) && meta.numeroClient) c.push({ id: 'numEneco', label: 'N° client Eneco', v: meta.numeroClient });
+      return c;
+    }
+  },
+  pcl: {
+    coll: 'prospectsClients', box: 'pcl-factures-box', status: 'pcl-facture-status', review: 'pcl-facture-review',
+    find: function (id) { return (window._pclData || []).find(function (x) { return x.docId === id; }); },
+    val: function (f) { var el = document.getElementById('pcl-' + f); return el ? el.value.trim() : ''; },
+    set: function (f, v) { var el = document.getElementById('pcl-' + f); if (el && !el.value.trim()) el.value = v; },
+    name: function () { return this.val('nom'); },
+    cands: function (d) {
+      var ville = [String(d.cp || '').trim(), String(d.ville || '').trim()].filter(Boolean).join(' ');
+      return [
+        { id: 'ville', label: 'Ville', v: ville }, { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
+        { id: 'email', label: 'Email', v: String(d.email || '').trim() }
+      ];
+    }
+  }
+};
+function crmFactCtx() { return CRMFACT_CTX[crmFact.ctx] || CRMFACT_CTX.crm; }
 function crmFactStatus(type, msg) {
-  var el = document.getElementById('crm-facture-status');
+  var el = document.getElementById(crmFactCtx().status);
   if (!el) return;
   if (!type) { el.style.display = 'none'; el.textContent = ''; return; }
   el.style.display = 'block';
@@ -10577,15 +10650,15 @@ function crmFactStatus(type, msg) {
   el.style.color = type === 'ok' ? '#1a7a3c' : (type === 'wait' ? '#c2410c' : '#b42323');
   el.textContent = msg || '';
 }
-function crmFactInit(clientId, list) {
-  crmFact = { clientId: clientId || '', list: Array.isArray(list) ? list.slice() : [], pending: [], review: null };
+function crmFactInit(ctxName, clientId, list) {
+  crmFact = { ctx: ctxName || 'crm', clientId: clientId || '', list: Array.isArray(list) ? list.slice() : [], pending: [], review: null };
   crmFactStatus(null);
-  var rv = document.getElementById('crm-facture-review'); if (rv) rv.innerHTML = '';
+  var rv = document.getElementById(crmFactCtx().review); if (rv) rv.innerHTML = '';
   crmFactRender();
 }
 function crmFactMoney(v) { return (typeof v === 'number' && isFinite(v)) ? v.toFixed(2).replace('.', ',') + ' €' : ''; }
 function crmFactRender() {
-  var box = document.getElementById('crm-factures-box');
+  var box = document.getElementById(crmFactCtx().box);
   if (!box) return;
   var rows = crmFact.list.map(function (f, i) { return { f: f, i: i, pend: false }; })
     .concat(crmFact.pending.map(function (p, i) { return { f: p.meta, i: i, pend: true }; }));
@@ -10646,9 +10719,9 @@ async function crmFactUpload(clientId, file) {
 function crmFactPersist() {
   if (!crmFact.clientId) return Promise.resolve();
   var list = crmFact.list.slice();
-  var item = (_crmClData || []).find(function (x) { return x._id === crmFact.clientId; });
+  var item = crmFactCtx().find(crmFact.clientId);
   if (item) item.factures = list;
-  return window.updateDoc(window.doc(window.db, 'clients', crmFact.clientId), { factures: list, updatedAt: new Date().toISOString() });
+  return window.updateDoc(window.doc(window.db, crmFactCtx().coll, crmFact.clientId), { factures: list, updatedAt: new Date().toISOString() });
 }
 function crmFactCleanMeta(d, file) {
   d = d || {};
@@ -10664,7 +10737,7 @@ window.crmFactureAdd = async function (file) {
   if (!file) return;
   if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { crmFactStatus('err', '❌ Seuls les fichiers PDF sont acceptés.'); return; }
   if (file.size > 10 * 1024 * 1024) { crmFactStatus('err', '❌ Fichier trop lourd (10 Mo maximum).'); return; }
-  var rv = document.getElementById('crm-facture-review'); if (rv) rv.innerHTML = '';
+  var rv = document.getElementById(crmFactCtx().review); if (rv) rv.innerHTML = '';
   crmFactStatus('wait', '🤖 Lecture de la facture en cours…');
   var data = null, readErr = '';
   try { data = await crmFactExtract(file); } catch (e) { console.error(e); readErr = e.message || 'lecture impossible'; }
@@ -10689,30 +10762,22 @@ window.crmFactureAdd = async function (file) {
 };
 // Rapprochement : propose de compléter les champs VIDES de la fiche. Le nom du client n'est jamais modifié.
 function crmFactShowReview(d, meta) {
-  var rv = document.getElementById('crm-facture-review'); if (!rv) return;
-  var val = function (id) { var el = document.getElementById('crm-' + id); return el ? el.value.trim() : ''; };
-  var fournisseur = (meta.fournisseur || '').toLowerCase();
-  var cand = [
-    { id: 'adresse', label: 'Adresse', v: String(d.adresse || '').trim() },
-    { id: 'cp', label: 'Code postal', v: String(d.cp || '').trim() },
-    { id: 'ville', label: 'Ville', v: String(d.ville || '').trim() },
-    { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
-    { id: 'email', label: 'Email', v: String(d.email || '').trim() }
-  ];
-  if (/orange/.test(fournisseur) && meta.numeroClient) cand.push({ id: 'numOrange', label: 'N° client Orange', v: meta.numeroClient });
-  if (/eneco/.test(fournisseur) && meta.numeroClient) cand.push({ id: 'numEneco', label: 'N° client Eneco', v: meta.numeroClient });
+  var ctx = crmFactCtx();
+  var rv = document.getElementById(ctx.review); if (!rv) return;
+  var cand = ctx.cands(d, meta);
   var html = '', n = 0;
   cand.forEach(function (c) {
     if (!c.v) return;
-    var cur = val(c.id);
+    var cur = ctx.val(c.id);
     if (!cur) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="crm-fact-chk" data-field="' + c.id + '" data-val="' + crmEsc(c.v).replace(/"/g, '&quot;') + '" checked> ' + crmEsc(c.label) + ' : <b>' + crmEsc(c.v) + '</b></label>'; n++; }
     else if (cur.toLowerCase() !== c.v.toLowerCase()) html += '<div style="font-size:12px;color:#6b7280;margin:2px 0;">' + crmEsc(c.label) + ' : facture « ' + crmEsc(c.v) + ' », fiche « ' + crmEsc(cur) + ' » (non modifié)</div>';
   });
   var warn = '';
-  var cli = (val('prenom') + ' ' + val('nom')).trim().toLowerCase();
+  var cliName = ctx.name();
+  var cli = cliName.toLowerCase();
   var tit = (meta.titulaire || '').toLowerCase();
   var tok = function (t) { return t.split(/[\s\-]+/).filter(Boolean).sort().join(' '); };
-  if (tit && cli && tok(tit) !== tok(cli)) warn = '<div style="font-size:12px;color:#b45309;background:#fffbeb;border-radius:6px;padding:5px 8px;margin-bottom:5px;">⚠️ Facture au nom de <b>' + crmEsc(meta.titulaire) + '</b>, fiche au nom de <b>' + crmEsc((val('prenom') + ' ' + val('nom')).trim()) + '</b>. Le nom du client n\'est pas modifié ; le titulaire est noté avec la facture.</div>';
+  if (tit && cli && tok(tit) !== tok(cli)) warn = '<div style="font-size:12px;color:#b45309;background:#fffbeb;border-radius:6px;padding:5px 8px;margin-bottom:5px;">⚠️ Facture au nom de <b>' + crmEsc(meta.titulaire) + '</b>, fiche au nom de <b>' + crmEsc(cliName) + '</b>. Le nom du client n\'est pas modifié ; le titulaire est noté avec la facture.</div>';
   else if (tit && !cli) warn = '<div style="font-size:12px;color:#6b7280;margin-bottom:5px;">Facture au nom de <b>' + crmEsc(meta.titulaire) + '</b> (à toi de dire si c\'est le client).</div>';
   if (!html && !warn) { rv.innerHTML = ''; return; }
   rv.innerHTML = '<div style="border:1px solid #fed7aa;background:#fffaf5;border-radius:8px;padding:8px 10px;margin-bottom:8px;">'
@@ -10723,10 +10788,9 @@ function crmFactShowReview(d, meta) {
 window.crmFactApply = function () {
   document.querySelectorAll('.crm-fact-chk').forEach(function (c) {
     if (!c.checked) return;
-    var el = document.getElementById('crm-' + c.getAttribute('data-field'));
-    if (el && !el.value.trim()) el.value = c.getAttribute('data-val');
+    crmFactCtx().set(c.getAttribute('data-field'), c.getAttribute('data-val'));
   });
-  var rv = document.getElementById('crm-facture-review'); if (rv) rv.innerHTML = '';
+  var rv = document.getElementById(crmFactCtx().review); if (rv) rv.innerHTML = '';
   crmFactStatus('ok', '✅ Champs complétés : vérifie puis clique sur Enregistrer.');
 };
 async function crmFactFlushPending(clientId) {
