@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.86 - Titulaire, choix du nom, relecture facture";
+  scope.APP_VERSION = "14.87 - Prénom/nom séparés, types de client";
 })();

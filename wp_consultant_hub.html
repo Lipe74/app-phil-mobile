@@ -1411,10 +1411,14 @@ STATUT: independant
                 <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                   <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
-                    <input id="pcl-nom" placeholder="Nom du prospect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
+                    <input id="pcl-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
+                    <input id="pcl-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
                     <input id="pcl-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
@@ -1426,6 +1430,7 @@ STATUT: independant
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Type</div>
                     <select id="pcl-type" onchange="pclToggleSociete()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="Particulier">👤 Particulier</option>
+                      <option value="Indépendant">🧑‍💼 Indépendant</option>
                       <option value="Société">🏢 Société</option>
                     </select>
                   </div>
@@ -1440,7 +1445,7 @@ STATUT: independant
                     </div>
                     <div>
                       <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
-                      <input id="pcl-tva" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <input id="pcl-tva" onchange="pmTvaTypeCheck('pcl')" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                     </div>
                   </div>
                   <div>
@@ -1656,8 +1661,12 @@ OPERATEUR: Proximus
                 <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                   <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
+                    <input id="pco-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
-                    <input id="pco-nom" placeholder="Nom du prospect" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pco-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
@@ -7182,6 +7191,7 @@ function crmRenderCard(item, col) {
   if (editBtn || toggleBtn || importBtn || vcfBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + toggleBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
+  if (item.type || item.tva) h += '<div style="font-size:12px;color:#555;margin-top:2px;">🏷️ ' + crmEsc([item.type, item.tva ? '🧾 TVA ' + item.tva : ''].filter(Boolean).join(' · ')) + '</div>';
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(pcTelFmt(item.tel)) + '</div>';
   if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
   if (item.cp || item.ville) h += '<div style="font-size:12px;color:#555;">' + crmEsc([item.adresse, item.cp, item.ville].filter(Boolean).join(' ')) + '</div>';
@@ -7315,10 +7325,10 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-factures-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-operateur-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-statutpro-row').style.display = isC ? '' : 'none';
-  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=((f==='tel'||f==='reference') ? pcTelFmt(item[f]) : (item[f]||'')); }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=((f==='tel'||f==='reference') ? pcTelFmt(item[f]) : (item[f]||'')); }); }
   }
   var _it = docId ? (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; }) : null;
   crmContratsFill(!isC && _it ? crmContrats(_it) : []);
@@ -7335,7 +7345,7 @@ window.saveCrmModal = function() {
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), updatedAt:new Date().toISOString() };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
-  if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.titulaire=pcNormName(g('titulaire')); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
+  if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.titulaire=pcNormName(g('titulaire')); data.type=g('type'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   var p;
@@ -7774,15 +7784,23 @@ window.pclOpenModal = function (title) {
 window.pclCloseModal = function () { document.getElementById('modal-pcl-edit').style.display = 'none'; };
 
 window.pclToggleSociete = function () {
-  var isSoc = document.getElementById('pcl-type').value === 'Société';
+  var tv = document.getElementById('pcl-type').value, isSoc = tv === 'Société' || tv === 'Indépendant';
   document.getElementById('pcl-societe-row').style.display = isSoc ? 'grid' : 'none';
 };
 window.pclToggleReference = function () {
   document.getElementById('pcl-reference-row').style.display = 'grid';
 };
 
+// Sépare "Prénom Nom" : le dernier mot est le nom de famille
+function pmSplitName(full) {
+  var p = String(full || '').trim().split(/\s+/).filter(Boolean);
+  return { prenom: p.length > 1 ? p.slice(0, -1).join(' ') : '', nom: p.length ? p[p.length - 1] : '' };
+}
+function pmProspectNames(p) {
+  return (p.prenom || p.nomFamille) ? { prenom: p.prenom || '', nom: p.nomFamille || '' } : pmSplitName(p.nom);
+}
 function pclResetForm() {
-  ['pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-ref-prenom', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-titulaire', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
+  ['pcl-prenom', 'pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-ref-prenom', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-titulaire', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('pcl-source').value = 'Orange';
@@ -7799,7 +7817,9 @@ window.pclStartNew = function () { pclEditId = null; pcRefreshModalSummary('cl')
 window.pclEditProspect = function (id) {
   var p = (window._pclData || []).find(function (x) { return x.docId === id; });
   if (!p) return;
-  document.getElementById('pcl-nom').value = p.nom || '';
+  var pn = pmProspectNames(p);
+  document.getElementById('pcl-prenom').value = pn.prenom;
+  document.getElementById('pcl-nom').value = pn.nom;
   document.getElementById('pcl-tel').value = pcTelFmt(p.tel);
   document.getElementById('pcl-email').value = p.email || '';
   document.getElementById('pcl-ville').value = p.ville || '';
@@ -7828,13 +7848,14 @@ window.pclEditProspect = function (id) {
 };
 
 window.pclSaveProspect = async function (afterAction) {
-  var nom = document.getElementById('pcl-nom').value.trim();
+  var pPrenom = pcNormName(document.getElementById('pcl-prenom').value.trim()), pFam = pcNormName(document.getElementById('pcl-nom').value.trim());
+  var nom = (pPrenom + ' ' + pFam).trim();
   if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
   var existing = pclEditId ? (window._pclData || []).find(function (x) { return x.docId === pclEditId; }) : null;
   var now = new Date().toISOString();
   var data = {
     consultantId: window.pmCurrentUser.id,
-    nom: pcNormName(nom),
+    nom: nom, prenom: pPrenom, nomFamille: pFam,
     tel: pcNormTel(document.getElementById('pcl-tel').value),
     email: document.getElementById('pcl-email').value.trim(),
     type: document.getElementById('pcl-type').value,
@@ -8139,7 +8160,7 @@ function pclRenderList(list) {
       + (p.titulaire ? '<div style="font-size:12px;color:#555;">👤 Titulaire : ' + pcEsc(p.titulaire) + '</div>' : '')
       + pclRefLine(p)
       + (p.source ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.source) + (p.type ? ' · ' + pcEsc(p.type) : '') + (p.provenance ? ' · ' + pcEsc(p.provenance) : '') + '</div>' : '')
-      + (p.type === 'Société' ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc(p.societe || '-') + '</div>' : '')
+      + (((p.type === 'Société' || p.type === 'Indépendant') && (p.societe || p.tva)) ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc([p.societe, p.tva ? '🧾 TVA ' + p.tva : ''].filter(Boolean).join(' · ')) + '</div>' : '')
       + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcOpBadge(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(String(p.numMobile).replace(/[\s:;,]+$/, '')) : '') + '</div>' : '')
       + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcOpBadge(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(String(p.numInternet).replace(/[\s:;,]+$/, '')) : '') + '</div>' : '')
       + (Array.isArray(p.factures) && p.factures.length ? '<div style="font-size:12px;color:#555;">📄 ' + p.factures.length + ' facture(s)</div>' : '')
@@ -8171,8 +8192,9 @@ async function pclMigrateOne(docId) {
     var nameParts = (p.nom || '').trim().split(' ');
     var clientData = {
       consultantId: p.consultantId || window.pmCurrentUser.id,
-      prenom: nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : '',
-      nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
+      prenom: pmProspectNames(p).prenom,
+      nom: pmProspectNames(p).nom,
+      type: p.type || '',
       tel: pcNormTel(p.tel), email: p.email || '', ville: p.ville || '',
       adresse: p.adresse || p.ville || '', cp: p.cp || '',
       societe: p.societe || '', tva: p.tva || '', reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', titulaire: p.titulaire || '', factures: Array.isArray(p.factures) ? p.factures : [],
@@ -8491,7 +8513,7 @@ function pcoSetSelect(id, val) {
 }
 
 function pcoResetForm() {
-  ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire', 'pco-ref-prenom', 'pco-ref-nom', 'pco-ref-tel'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  ['pco-prenom', 'pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire', 'pco-ref-prenom', 'pco-ref-nom', 'pco-ref-tel'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pco-source').value = '';
   document.getElementById('pco-operateur').value = '';
   document.getElementById('pco-statut-pro').value = '';
@@ -8504,7 +8526,9 @@ window.pcoStartNew = function () { pcoEditId = null; pcRefreshModalSummary('co')
 window.pcoEditProspect = function (id) {
   var p = (window._pcoData || []).find(function (x) { return x.docId === id; });
   if (!p) return;
-  document.getElementById('pco-nom').value = p.nom || '';
+  var qn = pmProspectNames(p);
+  document.getElementById('pco-prenom').value = qn.prenom;
+  document.getElementById('pco-nom').value = qn.nom;
   document.getElementById('pco-tel').value = pcTelFmt(p.tel);
   document.getElementById('pco-email').value = p.email || '';
   document.getElementById('pco-tva').value = p.tva || '';
@@ -8524,12 +8548,13 @@ window.pcoEditProspect = function (id) {
 };
 
 window.pcoSaveProspect = async function (afterAction) {
-  var nom = document.getElementById('pco-nom').value.trim();
+  var qPrenom = pcNormName(document.getElementById('pco-prenom').value.trim()), qFam = pcNormName(document.getElementById('pco-nom').value.trim());
+  var nom = (qPrenom + ' ' + qFam).trim();
   if (!nom) { alert('Merci de renseigner au moins le nom du prospect.'); return; }
   var existing = pcoEditId ? (window._pcoData || []).find(function (x) { return x.docId === pcoEditId; }) : null;
   var now = new Date().toISOString();
   var data = {
-    consultantId: window.pmCurrentUser.id, nom: pcNormName(nom),
+    consultantId: window.pmCurrentUser.id, nom: nom, prenom: qPrenom, nomFamille: qFam,
     tel: pcNormTel(document.getElementById('pco-tel').value),
     email: document.getElementById('pco-email').value.trim(),
     tva: document.getElementById('pco-tva-oui').value === 'Oui' ? pcNormTva(document.getElementById('pco-tva').value) : '',
@@ -8979,7 +9004,7 @@ window.pcConvertSave = async function (kind, docId) {
     if (kind === 'cl') {
       coll = 'clients';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: g('ville'), adresse: g('ville'), cp: '',
-        societe: g('societe'), tva: pcNormTva(g('tva')), reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', titulaire: p.titulaire || '', factures: Array.isArray(p.factures) ? p.factures : [], etat: 'actif', sourceProspectId: docId, createdAt: now };
+        societe: g('societe'), tva: pcNormTva(g('tva')), reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', titulaire: p.titulaire || '', type: p.type || '', factures: Array.isArray(p.factures) ? p.factures : [], etat: 'actif', sourceProspectId: docId, createdAt: now };
     } else {
       coll = 'consultantsCrm';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: pcNormTva(g('tva')),
@@ -9909,6 +9934,36 @@ async function ctrExtractContractFromFile(file) {
 }
 
 // Dialogue de choix quand le nom lu sur un document diffère de celui de la fiche : 'keep' | 'replace' | 'both'
+function pmAskType() {
+  return new Promise(function (resolve) {
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    var btn = 'display:block;width:100%;text-align:left;margin-top:8px;padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #fdba74;background:#fff;';
+    ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:18px;max-width:380px;width:100%;font-size:13px;">'
+      + '<div style="font-weight:700;color:#f97316;font-size:14px;margin-bottom:6px;">Un numéro de TVA est renseigné</div>'
+      + '<div>Cette fiche est encore « Particulier ». C\'est plutôt :</div>'
+      + '<button data-m="Indépendant" style="' + btn + '">🧑‍💼 Indépendant</button>'
+      + '<button data-m="Société" style="' + btn + '">🏢 Société</button>'
+      + '<button data-m="" style="' + btn + '">Garder Particulier</button></div>';
+    ov.addEventListener('click', function (e) {
+      var m = e.target.closest ? e.target.closest('button[data-m]') : null;
+      if (!m) return;
+      document.body.removeChild(ov);
+      resolve(m.getAttribute('data-m'));
+    });
+    document.body.appendChild(ov);
+  });
+}
+window.pmTvaTypeCheck = async function (pref) {
+  var tva = pcNormTva((document.getElementById(pref + '-tva') || {}).value || '');
+  var typeEl = document.getElementById(pref + '-type');
+  if (!typeEl || !/^BE\d{10}$/.test(tva)) return;
+  if (typeEl.value && typeEl.value !== 'Particulier') return;
+  var t = await pmAskType();
+  if (!t) return;
+  typeEl.value = t;
+  if (pref === 'pcl') window.pclToggleSociete();
+};
 function pmNameTok(t) { return String(t || '').toLowerCase().split(/[\s\-]+/).filter(Boolean).sort().join(' '); }
 function pmNameChoice(current, found) {
   return new Promise(function (resolve) {
@@ -10385,6 +10440,7 @@ async function ctrSyncContractToClients(contractData, contractId) {
               var have = (hit.factures || []).map(function (f) { return f.path; });
               upd.factures = (hit.factures || []).concat(pr2.factures.filter(function (f) { return have.indexOf(f.path) < 0; }));
             }
+            if (!hit.type && pr2.type) upd.type = pr2.type;
             if (!hit.reference && pr2.referenceTel) upd.reference = pcNormTel(pr2.referenceTel);
             if (!hit.referenceNom && pr2.referenceNom) upd.referenceNom = pr2.referenceNom;
             if (!hit.referencePrenom && pr2.referencePrenom) upd.referencePrenom = pr2.referencePrenom;
@@ -10419,6 +10475,7 @@ async function ctrSyncContractToClients(contractData, contractId) {
       createdAt: new Date().toISOString()
     };
     if (titulaireName) clientData.titulaire = titulaireName;
+    if (pr && pr.type) clientData.type = pr.type;
     var fxc = pcFixAdresse({ adresse: clientData.adresse, cp: '', ville: clientData.adresse });
     if (fxc) { clientData.adresse = fxc.adresse; clientData.cp = fxc.cp; clientData.ville = fxc.ville; }
     if (pr && Array.isArray(pr.factures) && pr.factures.length) clientData.factures = pr.factures;
@@ -10669,13 +10726,15 @@ var CRMFACT_CTX = {
     coll: 'clients', box: 'crm-factures-box', status: 'crm-facture-status', review: 'crm-facture-review',
     find: function (id) { return (_crmClData || []).find(function (x) { return x._id === id; }); },
     val: function (f) { var el = document.getElementById('crm-' + f); return el ? el.value.trim() : ''; },
-    set: function (f, v) { var el = document.getElementById('crm-' + f); if (el && !el.value.trim()) el.value = v; },
+    set: function (f, v) { var el = document.getElementById('crm-' + f); if (el && (f === 'type' || !el.value.trim())) el.value = v; },
     name: function () { return (this.val('prenom') + ' ' + this.val('nom')).trim(); },
     setName: function (full) { var p = String(full).trim().split(' '); var a = document.getElementById('crm-prenom'), b = document.getElementById('crm-nom'); if (a) a.value = p.length > 1 ? p.slice(0, -1).join(' ') : ''; if (b) b.value = p.length > 1 ? p[p.length - 1] : p[0]; },
     setTit: function (v) { var el = document.getElementById('crm-titulaire'); if (el) el.value = v; },
     cands: function (d, meta) {
       var f = (meta.fournisseur || '').toLowerCase();
       var c = [
+        { id: 'type', label: 'Type', v: meta.typeClient || '' },
+        { id: 'societe', label: 'Société', v: meta.typeClient === 'Société' ? String(d.societe || '').trim() : '' },
         { id: 'adresse', label: 'Adresse', v: String(d.adresse || '').trim() }, { id: 'cp', label: 'Code postal', v: String(d.cp || '').trim() },
         { id: 'ville', label: 'Ville', v: String(d.ville || '').trim() }, { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
         { id: 'email', label: 'Email', v: String(d.email || '').trim() }
@@ -10689,13 +10748,15 @@ var CRMFACT_CTX = {
     coll: 'prospectsClients', box: 'pcl-factures-box', status: 'pcl-facture-status', review: 'pcl-facture-review',
     find: function (id) { return (window._pclData || []).find(function (x) { return x.docId === id; }); },
     val: function (f) { var el = document.getElementById('pcl-' + f); return el ? el.value.trim() : ''; },
-    set: function (f, v) { var el = document.getElementById('pcl-' + f); if (el && !el.value.trim()) el.value = v; },
-    name: function () { return this.val('nom'); },
-    setName: function (full) { var el = document.getElementById('pcl-nom'); if (el) el.value = full; },
+    set: function (f, v) { var el = document.getElementById('pcl-' + f); if (el && (f === 'type' || !el.value.trim())) { el.value = v; if (f === 'type') window.pclToggleSociete(); } },
+    name: function () { return (this.val('prenom') + ' ' + this.val('nom')).trim(); },
+    setName: function (full) { var sp = pmSplitName(full), a = document.getElementById('pcl-prenom'), b = document.getElementById('pcl-nom'); if (a) a.value = sp.prenom; if (b) b.value = sp.nom; },
     setTit: function (v) { var el = document.getElementById('pcl-titulaire'); if (el) el.value = v; },
-    cands: function (d) {
+    cands: function (d, meta) {
       var ville = [String(d.cp || '').trim(), String(d.ville || '').trim()].filter(Boolean).join(' ');
       return [
+        { id: 'type', label: 'Type', v: meta.typeClient || '' },
+        { id: 'societe', label: 'Société', v: meta.typeClient === 'Société' ? String(d.societe || '').trim() : '' },
         { id: 'ville', label: 'Ville', v: ville }, { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
         { id: 'email', label: 'Email', v: String(d.email || '').trim() }
       ];
@@ -10745,12 +10806,14 @@ function crmFactBuildPrompt() {
 
 Le PDF joint est une facture. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
 
-{ "fournisseur": "", "titulaire": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0 }
+{ "fournisseur": "", "titulaire": "", "typeClient": "", "societe": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0 }
 
 Règles :
 - Chaîne vide "" si une info n'est pas trouvée (jamais null, jamais d'invention). "montantTvac" = 0 si absent.
 - "fournisseur" = l'émetteur de la facture (ex: Proximus, Orange, Eneco).
 - "titulaire" = nom du destinataire de la facture, au format "Prénom Nom" (prénom en premier, sans civilité M/Mme/Mr). Si c'est une société, le nom de la société.
+- "typeClient" = "Société" si le destinataire est une société (SRL, SA, SPRL, ASBL, etc.), "Indépendant" si c'est une personne physique avec un numéro de TVA, sinon "Particulier".
+- "societe" = nom de la société destinataire si typeClient est "Société", sinon "".
 - "adresse" = rue et numéro (avec boîte) du CLIENT destinataire, sans code postal ni ville. "cp" = code postal du client (4 chiffres). "ville" = ville du client. Ne prends jamais l'adresse du fournisseur.
 - "tva" = numéro de TVA du CLIENT uniquement (souvent après "Votre n° de TVA"), au format BE0123456789. Ignore la TVA du fournisseur.
 - "email" = adresse e-mail du client (ex: "Nom d'utilisateur"), jamais celle du fournisseur.
@@ -10794,7 +10857,8 @@ function crmFactCleanMeta(d, file) {
     fournisseur: String(d.fournisseur || '').trim(), titulaire: pcNormName(String(d.titulaire || '').trim()),
     numeroFacture: String(d.numeroFacture || '').trim(), numeroClient: String(d.numeroClient || '').trim(),
     dateFacture: /^\d{4}-\d{2}-\d{2}$/.test(d.dateFacture || '') ? d.dateFacture : '', montantTvac: isFinite(n) && n > 0 ? n : 0,
-    lu: { adresse: String(d.adresse || '').trim(), cp: String(d.cp || '').trim(), ville: String(d.ville || '').trim(), tva: pcNormTva(d.tva || ''), email: String(d.email || '').trim() }
+    typeClient: ['Particulier', 'Indépendant', 'Société'].indexOf(d.typeClient) >= 0 ? d.typeClient : (pcNormTva(d.tva || '') ? 'Indépendant' : ''),
+    lu: { typeClient: ['Particulier', 'Indépendant', 'Société'].indexOf(d.typeClient) >= 0 ? d.typeClient : '', societe: String(d.societe || '').trim(), adresse: String(d.adresse || '').trim(), cp: String(d.cp || '').trim(), ville: String(d.ville || '').trim(), tva: pcNormTva(d.tva || ''), email: String(d.email || '').trim() }
   };
 }
 window.crmFactureAdd = async function (file) {
@@ -10828,12 +10892,13 @@ window.crmFactureAdd = async function (file) {
 function crmFactShowReview(d, meta) {
   var ctx = crmFactCtx();
   var rv = document.getElementById(ctx.review); if (!rv) return;
+  if (!meta.typeClient && d && d.tva) meta.typeClient = 'Indépendant';
   var cand = ctx.cands(d, meta);
   var html = '', n = 0;
   cand.forEach(function (c) {
     if (!c.v) return;
     var cur = ctx.val(c.id);
-    if (!cur) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="crm-fact-chk" data-field="' + c.id + '" data-val="' + crmEsc(c.v).replace(/"/g, '&quot;') + '" checked> ' + crmEsc(c.label) + ' : <b>' + crmEsc(c.v) + '</b></label>'; n++; }
+    if (!cur || (c.id === 'type' && cur === 'Particulier')) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="crm-fact-chk" data-field="' + c.id + '" data-val="' + crmEsc(c.v).replace(/"/g, '&quot;') + '" checked> ' + crmEsc(c.label) + ' : <b>' + crmEsc(c.v) + '</b></label>'; n++; }
     else if (cur.toLowerCase() !== c.v.toLowerCase()) html += '<div style="font-size:12px;color:#6b7280;margin:2px 0;">' + crmEsc(c.label) + ' : facture « ' + crmEsc(c.v) + ' », fiche « ' + crmEsc(cur) + ' » (non modifié)</div>';
   });
   var warn = '';
@@ -11495,7 +11560,7 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
         <input id="crm-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
-      <div>
+      <div style="grid-column:span 2;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
         <input id="crm-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
@@ -11515,13 +11580,22 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville</div>
         <input id="crm-ville" placeholder="Liège" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
+      <div style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Type</div>
+        <select id="crm-type" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+          <option value="">-- Non précisé --</option>
+          <option value="Particulier">👤 Particulier</option>
+          <option value="Indépendant">🧑‍💼 Indépendant</option>
+          <option value="Société">🏢 Société</option>
+        </select>
+      </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Société</div>
         <input id="crm-societe" placeholder="Société SRL" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
       <div>
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
-        <input id="crm-tva" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+        <input id="crm-tva" onchange="pmTvaTypeCheck('crm')" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
       <div id="crm-asp-row">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP (Smart Points)</div>
