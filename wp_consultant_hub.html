@@ -1186,6 +1186,7 @@ Version stable : <span id="app-version-1">…</span>
             </div>
 
             <div id="ctr-tab-new">
+              <div id="ctr-reference-info" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;font-size:13px;color:#1e40af;margin-bottom:14px;"></div>
               <div id="ctr-prospect-link-banner" style="display:none;background:#fff3e8;border:1px solid #ffb680;border-radius:10px;padding:10px 14px;font-size:13px;color:#9a3412;margin-bottom:14px;">
                 🔗 Ce contrat sera lié au prospect <b id="ctr-prospect-link-name"></b> — il passera automatiquement en "Converti" une fois le contrat enregistré.
               </div>
@@ -1496,15 +1497,11 @@ STATUT: independant
                       <option value="Autre">✨ Autre</option>
                     </select>
                   </div>
-                  <div id="pcl-reference-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
-                    <div>
-                      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du client référent</div>
-                      <input id="pcl-ref-nom" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-                    </div>
-                    <div>
-                      <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Tél. du référent</div>
-                      <input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-                    </div>
+                  <div id="pcl-reference-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#f97316;">Référencé par (facultatif)</div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom du référent</div><input id="pcl-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
@@ -1698,6 +1695,12 @@ OPERATEUR: Proximus
                       <option value="Pensionné">🛋 Pensionné</option>
                       <option value="Chômage - CPAS">🗂 Chômage - CPAS</option>
                     </select>
+                  </div>
+                  <div style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#f97316;">Référencé par (facultatif)</div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div><input id="pco-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div><input id="pco-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM</div><input id="pco-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
@@ -7169,7 +7172,8 @@ function crmRenderCard(item, col) {
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(pcTelFmt(item.tel)) + '</div>';
   if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
   if (item.cp || item.ville) h += '<div style="font-size:12px;color:#555;">' + crmEsc([item.adresse, item.cp, item.ville].filter(Boolean).join(' ')) + '</div>';
-  if (item.reference) h += '<div style="font-size:12px;color:#555;">Ref: ' + crmEsc(item.reference) + '</div>';
+  if (item.reference || item.referenceNom || item.referencePrenom) h += '<div style="font-size:12px;color:#555;">Référencé par : ' + crmEsc([item.referencePrenom, item.referenceNom].filter(Boolean).join(' ')) + (item.reference ? ' · ' + crmEsc(pcTelFmt(item.reference)) : '') + '</div>';
+  if (Array.isArray(item.factures) && item.factures.length) h += '<div style="font-size:12px;color:#555;">📄 ' + item.factures.length + ' facture(s)</div>';
   if (item.numOrange) h += '<div style="font-size:12px;color:#f97316;font-weight:700;">N° Orange: ' + crmEsc(item.numOrange) + '</div>';
   if (item.numEneco) h += '<div style="font-size:12px;color:#22c55e;font-weight:700;">N° Eneco: ' + crmEsc(item.numEneco) + '</div>';
   if (col === 'clients') crmContrats(item).forEach(function (c) { h += '<div style="font-size:12px;color:#555;">📝 ' + crmEsc(crmContratLine(c)) + '</div>'; });
@@ -7271,7 +7275,8 @@ window.crmImportContract = function(docId) {
     adresse: adresse,
     clientOrange: item.numOrange || '',
     contratEneco: item.numEneco || '',
-    contratSmart: ''
+    contratSmart: '',
+    referencePrenom: item.referencePrenom || '', referenceNom: item.referenceNom || '', referenceTel: item.reference || ''
   });
 };
 
@@ -7292,15 +7297,17 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-numorange-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numeneco-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-contrats-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-factures-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-operateur-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-statutpro-row').style.display = isC ? '' : 'none';
-  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=(f==='tel' ? pcTelFmt(item[f]) : (item[f]||'')); }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=((f==='tel'||f==='reference') ? pcTelFmt(item[f]) : (item[f]||'')); }); }
   }
   var _it = docId ? (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; }) : null;
   crmContratsFill(!isC && _it ? crmContrats(_it) : []);
+  crmFactInit(isC ? null : docId, !isC && _it ? _it.factures : []);
   document.getElementById('modal-crm').style.display = 'flex';
 };
 
@@ -7313,7 +7320,7 @@ window.saveCrmModal = function() {
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), updatedAt:new Date().toISOString() };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
-  if (!isC) { data.reference=g('reference'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
+  if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   var p;
@@ -7322,7 +7329,7 @@ window.saveCrmModal = function() {
   } else {
     data.etat = 'actif';
     data.createdAt = new Date().toISOString();
-    p = pcDupWarnNew(col, data).then(function(ok) { return ok ? window.addDoc(window.collection(window.db, col), data) : Promise.reject({ dupCancel: true }); });
+    p = pcDupWarnNew(col, data).then(function(ok) { return ok ? window.addDoc(window.collection(window.db, col), data).then(function(ref) { return crmFactFlushPending(ref.id); }) : Promise.reject({ dupCancel: true }); });
   }
   p.then(function() { window.closeCrmModal(); if (col === 'clients') crmLoadClients(); else crmLoadConsultants(); }).catch(function(err) { if (err && err.dupCancel) return; alert('Erreur: ' + err.message); });
 };
@@ -7756,12 +7763,11 @@ window.pclToggleSociete = function () {
   document.getElementById('pcl-societe-row').style.display = isSoc ? 'grid' : 'none';
 };
 window.pclToggleReference = function () {
-  var isRef = document.getElementById('pcl-provenance').value === 'Référence client existant';
-  document.getElementById('pcl-reference-row').style.display = isRef ? 'grid' : 'none';
+  document.getElementById('pcl-reference-row').style.display = 'grid';
 };
 
 function pclResetForm() {
-  ['pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
+  ['pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-ref-prenom', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('pcl-source').value = 'Orange';
@@ -7788,6 +7794,7 @@ window.pclEditProspect = function (id) {
   document.getElementById('pcl-type').value = p.type || 'Particulier';
   document.getElementById('pcl-societe').value = p.societe || '';
   document.getElementById('pcl-tva').value = p.tva || '';
+  document.getElementById('pcl-ref-prenom').value = p.referencePrenom || '';
   document.getElementById('pcl-ref-nom').value = p.referenceNom || '';
   document.getElementById('pcl-ref-tel').value = pcTelFmt(p.referenceTel);
   document.getElementById('pcl-op-mobile').value = p.opMobile || '';
@@ -7825,7 +7832,8 @@ window.pclSaveProspect = async function (afterAction) {
     dateFinContrat: document.getElementById('pcl-date-fin-contrat').value,
     source: document.getElementById('pcl-source').value,
     provenance: document.getElementById('pcl-provenance').value,
-    referenceNom: document.getElementById('pcl-ref-nom').value.trim(),
+    referencePrenom: pcNormName(document.getElementById('pcl-ref-prenom').value),
+    referenceNom: pcNormName(document.getElementById('pcl-ref-nom').value),
     referenceTel: pcNormTel(document.getElementById('pcl-ref-tel').value),
     commentaire: document.getElementById('pcl-commentaire').value.trim(),
     statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
@@ -8139,7 +8147,7 @@ async function pclMigrateOne(docId) {
       nom: nameParts.length > 1 ? nameParts[nameParts.length - 1] : (nameParts[0] || ''),
       tel: pcNormTel(p.tel), email: p.email || '', ville: p.ville || '',
       adresse: p.adresse || p.ville || '', cp: p.cp || '',
-      societe: p.societe || '', tva: p.tva || '', reference: '',
+      societe: p.societe || '', tva: p.tva || '', reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '',
       etat: 'actif', sourceProspectId: docId, createdAt: new Date().toISOString()
     };
     var fxp = pcFixAdresse(clientData);
@@ -8164,7 +8172,7 @@ window.pclMigrateConverted = async function () {
 window.pclConvertToClient = function (docId) {
   var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
   if (!p) return;
-  window.ctrOpenNew({ prospectId: p.docId, nom: p.nom || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: p.ville || '' });
+  window.ctrOpenNew({ prospectId: p.docId, nom: p.nom || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: p.ville || '', referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', referenceTel: p.referenceTel || '' });
 };
 
 window.pclDeleteProspect = async function (docId) {
@@ -8223,10 +8231,11 @@ function pclRenderAgenda() {
 function pclRenderRelation() {
   var list = window._pclData || [];
   var referred = list.filter(function (p) { return p.provenance === 'Référence client existant' && p.referenceNom; });
+  referred.forEach(function (p) { p._refFull = [p.referencePrenom, p.referenceNom].filter(Boolean).join(' '); });
   var groups = {};
   referred.forEach(function (p) {
-    var key = p.referenceNom.trim().toLowerCase();
-    if (!groups[key]) groups[key] = { nom: p.referenceNom.trim(), tel: p.referenceTel || '', prospects: [] };
+    var key = p._refFull.trim().toLowerCase();
+    if (!groups[key]) groups[key] = { nom: p._refFull.trim(), tel: p.referenceTel || '', prospects: [] };
     groups[key].prospects.push(p);
   });
   var arr = Object.values(groups).sort(function (a, b) { return b.prospects.length - a.prospects.length; });
@@ -8454,7 +8463,7 @@ function pcoSetSelect(id, val) {
 }
 
 function pcoResetForm() {
-  ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  ['pco-nom', 'pco-tel', 'pco-email', 'pco-tva', 'pco-commentaire', 'pco-ref-prenom', 'pco-ref-nom', 'pco-ref-tel'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('pco-source').value = '';
   document.getElementById('pco-operateur').value = '';
   document.getElementById('pco-statut-pro').value = '';
@@ -8478,6 +8487,9 @@ window.pcoEditProspect = function (id) {
   document.getElementById('pco-operateur').value = p.operateurActuel || '';
   pcoSetSelect('pco-statut-pro', pcoNormStatutPro(p.statutPro));
   document.getElementById('pco-commentaire').value = p.commentaire || '';
+  document.getElementById('pco-ref-prenom').value = p.referencePrenom || '';
+  document.getElementById('pco-ref-nom').value = p.referenceNom || '';
+  document.getElementById('pco-ref-tel').value = pcTelFmt(p.referenceTel);
   pcoEditId = id;
   pcRefreshModalSummary('co');
   window.pcoOpenModal('✏️ Modifier le prospect');
@@ -8497,6 +8509,9 @@ window.pcoSaveProspect = async function (afterAction) {
     operateurActuel: document.getElementById('pco-operateur').value,
     statutPro: document.getElementById('pco-statut-pro').value,
     commentaire: document.getElementById('pco-commentaire').value.trim(),
+    referencePrenom: pcNormName(document.getElementById('pco-ref-prenom').value),
+    referenceNom: pcNormName(document.getElementById('pco-ref-nom').value),
+    referenceTel: pcNormTel(document.getElementById('pco-ref-tel').value),
     statut: existing ? (existing.statut || 'Nouveau') : 'Nouveau',
     dateCreation: existing ? (existing.dateCreation || now) : now,
     dateMaj: now
@@ -8936,7 +8951,7 @@ window.pcConvertSave = async function (kind, docId) {
     if (kind === 'cl') {
       coll = 'clients';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: g('ville'), adresse: g('ville'), cp: '',
-        societe: g('societe'), tva: pcNormTva(g('tva')), reference: '', etat: 'actif', sourceProspectId: docId, createdAt: now };
+        societe: g('societe'), tva: pcNormTva(g('tva')), reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', etat: 'actif', sourceProspectId: docId, createdAt: now };
     } else {
       coll = 'consultantsCrm';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: pcNormTva(g('tva')),
@@ -9494,6 +9509,13 @@ window.ctrOpenNew = function (prefill) {
     var el = document.getElementById(map[k]);
     if (el) el.value = (prefill && prefill[k]) || '';
   });
+  var refEl = document.getElementById('ctr-reference-info');
+  if (refEl) {
+    var refName = prefill ? [prefill.referencePrenom, prefill.referenceNom].filter(Boolean).join(' ') : '';
+    var refTel = prefill && prefill.referenceTel ? pcTelFmt(prefill.referenceTel) : '';
+    refEl.textContent = (refName || refTel) ? '👥 Référencé par : ' + [refName, refTel].filter(Boolean).join(' · ') + ' (à indiquer pour la remise)' : '';
+    refEl.style.display = (refName || refTel) ? 'block' : 'none';
+  }
   var banner = document.getElementById('ctr-prospect-link-banner');
   var nameEl = document.getElementById('ctr-prospect-link-name');
   if (banner && nameEl) {
@@ -10543,6 +10565,203 @@ function majOpen() {
   if (max) { try { localStorage.setItem(majSeenKey(), String(Math.max(max, seen))); } catch (e) {} }
   majUpdateBadge();
 }
+// ===== FACTURES PDF PAR CLIENT (Build 14.84) =====
+// PDF dans Storage : facturesClients/{consultantId}/{clientId}/{fichier}. Fiche client : factures = [{ path, name, uploadedAt, fournisseur, numeroFacture, numeroClient, dateFacture, montantTvac, titulaire }]
+var crmFact = { clientId: '', list: [], pending: [], review: null };
+function crmFactStatus(type, msg) {
+  var el = document.getElementById('crm-facture-status');
+  if (!el) return;
+  if (!type) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? '#e8f9ee' : (type === 'wait' ? '#fff7ed' : '#fdeaea');
+  el.style.color = type === 'ok' ? '#1a7a3c' : (type === 'wait' ? '#c2410c' : '#b42323');
+  el.textContent = msg || '';
+}
+function crmFactInit(clientId, list) {
+  crmFact = { clientId: clientId || '', list: Array.isArray(list) ? list.slice() : [], pending: [], review: null };
+  crmFactStatus(null);
+  var rv = document.getElementById('crm-facture-review'); if (rv) rv.innerHTML = '';
+  crmFactRender();
+}
+function crmFactMoney(v) { return (typeof v === 'number' && isFinite(v)) ? v.toFixed(2).replace('.', ',') + ' €' : ''; }
+function crmFactRender() {
+  var box = document.getElementById('crm-factures-box');
+  if (!box) return;
+  var rows = crmFact.list.map(function (f, i) { return { f: f, i: i, pend: false }; })
+    .concat(crmFact.pending.map(function (p, i) { return { f: p.meta, i: i, pend: true }; }));
+  if (!rows.length) { box.innerHTML = '<div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">Aucune facture jointe.</div>'; return; }
+  box.innerHTML = rows.map(function (r) {
+    var f = r.f;
+    var info = [f.fournisseur, f.numeroFacture ? 'n° ' + f.numeroFacture : '', f.dateFacture ? pcFmtDate(f.dateFacture) : '', crmFactMoney(f.montantTvac)].filter(Boolean).join(' · ');
+    var btns = r.pend
+      ? '<span style="font-size:11px;color:#c2410c;">envoyée à l\'enregistrement</span>'
+      : '<button type="button" onclick="crmFactOpen(' + r.i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;">📥</button>'
+        + '<button type="button" onclick="crmFactDelete(' + r.i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:2px 8px;cursor:pointer;">🗑️</button>';
+    return '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid #eee;border-radius:7px;padding:6px 8px;margin-bottom:5px;font-size:12px;">'
+      + '<div style="min-width:0;"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ' + crmEsc(f.name || 'facture.pdf') + '</div>'
+      + (info ? '<div style="color:#6b7280;">' + crmEsc(info) + '</div>' : '')
+      + (f.titulaire ? '<div style="color:#6b7280;">Au nom de : ' + crmEsc(f.titulaire) + '</div>' : '')
+      + '</div><div style="display:flex;gap:5px;flex-shrink:0;">' + btns + '</div></div>';
+  }).join('');
+}
+function crmFactBuildPrompt() {
+  return `Tu es un assistant d'extraction de données pour des factures belges de télécom et d'énergie (Proximus, Orange, VOO, Telenet, Base, Eneco, Engie, Luminus, ou autres).
+
+Le PDF joint est une facture. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
+
+{ "fournisseur": "", "titulaire": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0 }
+
+Règles :
+- Chaîne vide "" si une info n'est pas trouvée (jamais null, jamais d'invention). "montantTvac" = 0 si absent.
+- "fournisseur" = l'émetteur de la facture (ex: Proximus, Orange, Eneco).
+- "titulaire" = nom du destinataire de la facture, au format "Prénom Nom" (prénom en premier, sans civilité M/Mme/Mr). Si c'est une société, le nom de la société.
+- "adresse" = rue et numéro (avec boîte) du CLIENT destinataire, sans code postal ni ville. "cp" = code postal du client (4 chiffres). "ville" = ville du client. Ne prends jamais l'adresse du fournisseur.
+- "tva" = numéro de TVA du CLIENT uniquement (souvent après "Votre n° de TVA"), au format BE0123456789. Ignore la TVA du fournisseur.
+- "email" = adresse e-mail du client (ex: "Nom d'utilisateur"), jamais celle du fournisseur.
+- "numeroClient" = numéro de client chez le fournisseur. "numeroFacture" = numéro de la facture.
+- "dateFacture" au format AAAA-MM-JJ.
+- "montantTvac" = montant total TVA comprise à payer, nombre avec point décimal.
+- N'ajoute AUCUN champ en dehors de ce schéma.`;
+}
+async function crmFactExtract(file) {
+  if (!window.geminiImportModel) throw new Error("Le service de lecture n'est pas encore configuré.");
+  var base64 = await ctrFileToBase64(file);
+  var result = await window.geminiImportModel.generateContent([
+    { inlineData: { mimeType: 'application/pdf', data: base64 } },
+    { text: crmFactBuildPrompt() }
+  ]);
+  var raw = result.response.text();
+  var m = raw.match(/\{[\s\S]*\}/);
+  return JSON.parse(m ? m[0] : raw);
+}
+async function crmFactUpload(clientId, file) {
+  var tries = 0;
+  while ((!window.storage || !window.storageRef || !window.uploadBytes) && tries < 30) { await new Promise(function (r) { setTimeout(r, 200); }); tries++; }
+  if (!window.storage) throw new Error('Firebase Storage non disponible');
+  var safe = String(file.name || 'facture.pdf').replace(/[^\w.\-]+/g, '_').slice(-80);
+  var path = 'facturesClients/' + window.pmCurrentUser.id + '/' + clientId + '/' + Date.now() + '_' + safe;
+  await window.uploadBytes(window.storageRef(window.storage, path), file, { contentType: 'application/pdf' });
+  return path;
+}
+function crmFactPersist() {
+  if (!crmFact.clientId) return Promise.resolve();
+  var list = crmFact.list.slice();
+  var item = (_crmClData || []).find(function (x) { return x._id === crmFact.clientId; });
+  if (item) item.factures = list;
+  return window.updateDoc(window.doc(window.db, 'clients', crmFact.clientId), { factures: list, updatedAt: new Date().toISOString() });
+}
+function crmFactCleanMeta(d, file) {
+  d = d || {};
+  var n = parseFloat(d.montantTvac);
+  return {
+    name: file.name, uploadedAt: new Date().toISOString(),
+    fournisseur: String(d.fournisseur || '').trim(), titulaire: pcNormName(String(d.titulaire || '').trim()),
+    numeroFacture: String(d.numeroFacture || '').trim(), numeroClient: String(d.numeroClient || '').trim(),
+    dateFacture: /^\d{4}-\d{2}-\d{2}$/.test(d.dateFacture || '') ? d.dateFacture : '', montantTvac: isFinite(n) && n > 0 ? n : 0
+  };
+}
+window.crmFactureAdd = async function (file) {
+  if (!file) return;
+  if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { crmFactStatus('err', '❌ Seuls les fichiers PDF sont acceptés.'); return; }
+  if (file.size > 10 * 1024 * 1024) { crmFactStatus('err', '❌ Fichier trop lourd (10 Mo maximum).'); return; }
+  var rv = document.getElementById('crm-facture-review'); if (rv) rv.innerHTML = '';
+  crmFactStatus('wait', '🤖 Lecture de la facture en cours…');
+  var data = null, readErr = '';
+  try { data = await crmFactExtract(file); } catch (e) { console.error(e); readErr = e.message || 'lecture impossible'; }
+  var meta = crmFactCleanMeta(data, file);
+  try {
+    if (crmFact.clientId) {
+      meta.path = await crmFactUpload(crmFact.clientId, file);
+      crmFact.list.push(meta);
+      await crmFactPersist();
+      crmFactStatus('ok', '✅ Facture jointe' + (readErr ? ' (lecture automatique impossible : ' + readErr + ')' : '.'));
+    } else {
+      crmFact.pending.push({ file: file, meta: meta });
+      crmFactStatus('ok', '✅ Facture prête : elle sera envoyée quand tu enregistreras la fiche' + (readErr ? ' (lecture automatique impossible : ' + readErr + ')' : '.'));
+    }
+  } catch (e) {
+    console.error(e);
+    crmFactStatus('err', '❌ Envoi impossible : ' + (e.message || e));
+    return;
+  }
+  crmFactRender();
+  if (data) crmFactShowReview(data, meta);
+};
+// Rapprochement : propose de compléter les champs VIDES de la fiche. Le nom du client n'est jamais modifié.
+function crmFactShowReview(d, meta) {
+  var rv = document.getElementById('crm-facture-review'); if (!rv) return;
+  var val = function (id) { var el = document.getElementById('crm-' + id); return el ? el.value.trim() : ''; };
+  var fournisseur = (meta.fournisseur || '').toLowerCase();
+  var cand = [
+    { id: 'adresse', label: 'Adresse', v: String(d.adresse || '').trim() },
+    { id: 'cp', label: 'Code postal', v: String(d.cp || '').trim() },
+    { id: 'ville', label: 'Ville', v: String(d.ville || '').trim() },
+    { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
+    { id: 'email', label: 'Email', v: String(d.email || '').trim() }
+  ];
+  if (/orange/.test(fournisseur) && meta.numeroClient) cand.push({ id: 'numOrange', label: 'N° client Orange', v: meta.numeroClient });
+  if (/eneco/.test(fournisseur) && meta.numeroClient) cand.push({ id: 'numEneco', label: 'N° client Eneco', v: meta.numeroClient });
+  var html = '', n = 0;
+  cand.forEach(function (c) {
+    if (!c.v) return;
+    var cur = val(c.id);
+    if (!cur) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="crm-fact-chk" data-field="' + c.id + '" data-val="' + crmEsc(c.v).replace(/"/g, '&quot;') + '" checked> ' + crmEsc(c.label) + ' : <b>' + crmEsc(c.v) + '</b></label>'; n++; }
+    else if (cur.toLowerCase() !== c.v.toLowerCase()) html += '<div style="font-size:12px;color:#6b7280;margin:2px 0;">' + crmEsc(c.label) + ' : facture « ' + crmEsc(c.v) + ' », fiche « ' + crmEsc(cur) + ' » (non modifié)</div>';
+  });
+  var warn = '';
+  var cli = (val('prenom') + ' ' + val('nom')).trim().toLowerCase();
+  var tit = (meta.titulaire || '').toLowerCase();
+  var tok = function (t) { return t.split(/[\s\-]+/).filter(Boolean).sort().join(' '); };
+  if (tit && cli && tok(tit) !== tok(cli)) warn = '<div style="font-size:12px;color:#b45309;background:#fffbeb;border-radius:6px;padding:5px 8px;margin-bottom:5px;">⚠️ Facture au nom de <b>' + crmEsc(meta.titulaire) + '</b>, fiche au nom de <b>' + crmEsc((val('prenom') + ' ' + val('nom')).trim()) + '</b>. Le nom du client n\'est pas modifié ; le titulaire est noté avec la facture.</div>';
+  else if (tit && !cli) warn = '<div style="font-size:12px;color:#6b7280;margin-bottom:5px;">Facture au nom de <b>' + crmEsc(meta.titulaire) + '</b> (à toi de dire si c\'est le client).</div>';
+  if (!html && !warn) { rv.innerHTML = ''; return; }
+  rv.innerHTML = '<div style="border:1px solid #fed7aa;background:#fffaf5;border-radius:8px;padding:8px 10px;margin-bottom:8px;">'
+    + '<div style="font-size:12px;font-weight:700;color:#f97316;margin-bottom:4px;">Infos lues sur la facture</div>' + warn + html
+    + (n ? '<button type="button" onclick="crmFactApply()" style="margin-top:5px;border:none;background:#f97316;color:#fff;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">Compléter la fiche</button>' : '')
+    + '</div>';
+}
+window.crmFactApply = function () {
+  document.querySelectorAll('.crm-fact-chk').forEach(function (c) {
+    if (!c.checked) return;
+    var el = document.getElementById('crm-' + c.getAttribute('data-field'));
+    if (el && !el.value.trim()) el.value = c.getAttribute('data-val');
+  });
+  var rv = document.getElementById('crm-facture-review'); if (rv) rv.innerHTML = '';
+  crmFactStatus('ok', '✅ Champs complétés : vérifie puis clique sur Enregistrer.');
+};
+async function crmFactFlushPending(clientId) {
+  if (!crmFact.pending.length) return;
+  var pend = crmFact.pending.slice();
+  crmFact.pending = [];
+  crmFact.clientId = clientId;
+  var failed = 0;
+  for (var i = 0; i < pend.length; i++) {
+    try { pend[i].meta.path = await crmFactUpload(clientId, pend[i].file); crmFact.list.push(pend[i].meta); }
+    catch (e) { console.error(e); failed++; }
+  }
+  if (crmFact.list.length) await crmFactPersist();
+  if (failed) alert(failed + ' facture(s) n\'ont pas pu être envoyées. Rouvre la fiche pour les joindre à nouveau.');
+}
+window.crmFactOpen = async function (i) {
+  var f = crmFact.list[i]; if (!f || !f.path) return;
+  var w = window.open('', '_blank');
+  try {
+    var url = await window.getDownloadURL(window.storageRef(window.storage, f.path));
+    if (w) w.location = url; else window.location = url;
+  } catch (e) { if (w) w.close(); alert('Téléchargement impossible : ' + e.message); }
+};
+window.crmFactDelete = async function (i) {
+  var f = crmFact.list[i]; if (!f) return;
+  if (!confirm('Supprimer cette facture ?')) return;
+  try {
+    if (f.path && window.deleteObject) { try { await window.deleteObject(window.storageRef(window.storage, f.path)); } catch (e) { if (!/object-not-found/.test(String(e.code || e.message))) throw e; } }
+    crmFact.list.splice(i, 1);
+    await crmFactPersist();
+    crmFactRender();
+    crmFactStatus('ok', '✅ Facture supprimée.');
+  } catch (e) { alert('Suppression impossible : ' + e.message); }
+};
+// ===== FIN FACTURES PDF =====
 // ===== FIN MES CONTRATS =====
 
 </script>
@@ -10615,7 +10834,8 @@ import {
   getStorage,
   ref as storageRef,
   uploadBytes,
-  getDownloadURL
+  getDownloadURL,
+  deleteObject
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
 import {
@@ -10663,6 +10883,7 @@ window.storage = getStorage(app);
 window.storageRef = storageRef;
 window.uploadBytes = uploadBytes;
 window.getDownloadURL = getDownloadURL;
+window.deleteObject = deleteObject;
 window.addDoc = addDoc;
 window.collection = collection;
 window.getDocs = getDocs;
@@ -11143,9 +11364,11 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP (Smart Points)</div>
         <input id="crm-asp" placeholder="0" type="number" min="0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
-      <div id="crm-ref-row" style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Référence (N° GSM)</div>
-        <input id="crm-reference" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      <div id="crm-ref-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#f97316;">Référencé par (facultatif)</div>
+        <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div><input id="crm-referencePrenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+        <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div><input id="crm-referenceNom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+        <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM</div><input id="crm-reference" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
       </div>
       <div id="crm-orange-row" style="grid-column:span 2;display:none;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Orange (produits)</div>
@@ -11179,6 +11402,15 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Contrats (un par ligne : fournisseur, date, N° Smart, produits)</div>
         <div id="crm-contrats-box"></div>
         <button type="button" onclick="crmContratAddRow()" style="border:1px dashed #f97316;background:#fff7ed;color:#f97316;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">➕ Ajouter un contrat</button>
+      </div>
+      <div id="crm-factures-row" style="grid-column:span 2;">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Factures (PDF)</div>
+        <div id="crm-factures-box"></div>
+        <div id="crm-facture-status" style="display:none;font-size:12px;padding:6px 9px;border-radius:7px;margin-bottom:6px;"></div>
+        <div id="crm-facture-review"></div>
+        <label style="display:inline-block;border:1px dashed #f97316;background:#fff7ed;color:#f97316;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">📎 Joindre une facture (PDF)
+          <input type="file" id="crm-facture-input" accept="application/pdf" style="display:none;" onchange="crmFactureAdd(this.files[0]); this.value='';">
+        </label>
       </div>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">

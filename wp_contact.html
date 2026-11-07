@@ -206,6 +206,22 @@
               <input type="email" id="email" name="email" autocomplete="email" inputmode="email" maxlength="100" required>
               <div class="err" data-err="email"></div>
             </div>
+            <div class="full">
+              <label class="f">Vous venez de la part de quelqu'un ? <small>(facultatif)</small></label>
+            </div>
+            <div>
+              <label class="f" for="refPrenom">Prénom du référent</label>
+              <input type="text" id="refPrenom" maxlength="60" autocomplete="off">
+            </div>
+            <div>
+              <label class="f" for="refNom">Nom du référent</label>
+              <input type="text" id="refNom" maxlength="60" autocomplete="off">
+            </div>
+            <div class="full">
+              <label class="f" for="refTel">GSM du référent</label>
+              <input type="tel" id="refTel" maxlength="24" inputmode="tel" placeholder="0470 12 34 56" autocomplete="off">
+              <div class="err" data-err="refTel"></div>
+            </div>
           </div>
 
           <!-- ===== CLIENT ===== -->
@@ -608,6 +624,7 @@ function validate() {
   if (!$('nom').value.trim()) bad('nom', 'Nom requis');
   if (!telOk($('tel').value)) bad('tel', 'Numéro de téléphone invalide (ex. 0470 12 34 56)');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($('email').value.trim())) bad('email', 'Adresse e-mail invalide');
+  if ($('refTel').value.trim() && !telOk($('refTel').value)) bad('refTel', 'Numéro du référent invalide (ex. 0470 12 34 56)');
 
   if (currentType === 'client') {
     const isSoc = document.querySelector('input[name=typeClient]:checked').value === 'Société';
@@ -647,6 +664,11 @@ function buildPayload() {
     dateCreation: now,
     dateMaj: now
   };
+  // Référencé par (facultatif) : champs ajoutés seulement s'ils sont remplis
+  const refPrenom = $('refPrenom').value.trim(), refNom = $('refNom').value.trim(), refTel = $('refTel').value.trim();
+  if (refPrenom) base.referencePrenom = refPrenom;
+  if (refNom) base.referenceNom = refNom;
+  if (refTel) base.referenceTel = normTel(refTel);
   if (currentType === 'client') {
     const isSoc = document.querySelector('input[name=typeClient]:checked').value === 'Société';
     const fixe = document.querySelector('input[name=fixe]:checked');

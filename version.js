@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.83 - Les builds de Phil-Mobile (renommage)";
+  scope.APP_VERSION = "14.84 - Référencé par et factures PDF";
 })();
