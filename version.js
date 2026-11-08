@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.89 - Ligne dernière build, lieu de rdv";
+  scope.APP_VERSION = "14.90 - En-tête de l'application";
 })();
