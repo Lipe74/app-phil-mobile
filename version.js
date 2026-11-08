@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.90 - En-tête de l'application";
+  scope.APP_VERSION = "14.91 - Connexion et messages";
 })();

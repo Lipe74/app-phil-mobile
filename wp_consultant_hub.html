@@ -267,191 +267,77 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
     </div>
   </div>
 
-  <div style="font-size:28px;margin-bottom:12px;">🔐</div>
-
-  <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">
-    Accès Consultants
-  </div>
-<div style="
-  background:#fff3e8;
-  border:1px solid #f97316;
-  border-radius:12px;
-  padding:12px;
-  margin-bottom:16px;
-  font-size:12px;
-  color:#555;
-  text-align:center;
-  max-width:500px;
-  margin-left:auto;
-  margin-right:auto;
-">
-  ℹ️ Cette application est développée et maintenue par
-  <b style="color:#f97316;">PHIL-MOBILE</b> pour les consultants Smart SN.
-  <br><br>
-  Elle n'est pas un produit officiel de Smart SN.
-</div>
-  <div style="font-size:12px;color:#f97316;margin-bottom:16px;">
-    Connectez-vous avec votre adresse e-mail.
+  <!-- CHOIX D'ENTRÉE : deux parcours au même niveau -->
+  <div id="lg-choice" style="max-width:420px;margin:0 auto;">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:14px;">Bienvenue sur Phil-Mobile</div>
+    <button onclick="lgShow('have')" style="display:block;width:100%;background:#f97316;color:#fff;border:none;border-radius:14px;padding:16px 14px;margin-bottom:12px;cursor:pointer;font-family:Arial,sans-serif;box-shadow:0 2px 8px rgba(249,115,22,.25);">
+      <span style="display:block;font-size:17px;font-weight:800;">🔑 J'ai déjà un accès</span>
+      <span style="display:block;font-size:12px;font-weight:600;opacity:.9;margin-top:3px;">Me connecter à l'application</span>
+    </button>
+    <button onclick="lgShow('new')" style="display:block;width:100%;background:#fff;color:#f97316;border:2px solid #f97316;border-radius:14px;padding:16px 14px;cursor:pointer;font-family:Arial,sans-serif;">
+      <span style="display:block;font-size:17px;font-weight:800;">✨ Je n'ai pas encore l'app</span>
+      <span style="display:block;font-size:12px;font-weight:600;color:#9a3412;margin-top:3px;">Découvrir, essayer 3 jours ou commander</span>
+    </button>
   </div>
 
-  <input type="email"
-         id="rem-email"
-         placeholder="Votre adresse e-mail"
-         autocomplete="email"
-         autocapitalize="off"
-         autocorrect="off"
-         spellcheck="false"
-         style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+  <!-- PARCOURS 1 : j'ai déjà un accès -->
+  <div id="lg-have" style="display:none;">
+    <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">🔑 Accès Consultants</div>
+    <div style="font-size:12px;color:#f97316;margin-bottom:16px;">
+      Connectez-vous avec votre adresse e-mail.
+    </div>
 
-  <input type="password"
-         id="rem-password"
+    <input type="email"
+           id="rem-email"
+           placeholder="Votre adresse e-mail"
+           autocomplete="email"
+           autocapitalize="off"
+           autocorrect="off"
+           spellcheck="false"
+           style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+
+    <input type="password"
+           id="rem-password"
            onkeydown="if(event.key==='Enter') firebaseLogin();"
-         placeholder="Votre mot de passe"
-         autocomplete="current-password"
-         autocapitalize="off"
-         autocorrect="off"
-         spellcheck="false"
-         style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
+           placeholder="Votre mot de passe"
+           autocomplete="current-password"
+           autocapitalize="off"
+           autocorrect="off"
+           spellcheck="false"
+           style="width:100%;max-width:260px;padding:11px 14px;font-size:14px;border:1px solid #f97316;border-radius:8px;background:#f8f8f8;color:#1a1a1a;box-sizing:border-box;outline:none;text-align:center;display:block;margin:0 auto 12px;">
 
-  <div id="rem-error"
-       style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">
-    Adresse e-mail ou mot de passe incorrect.
+    <div id="rem-error"
+         style="font-size:11px;color:#e24b4a;margin-bottom:10px;display:none;">
+      Adresse e-mail ou mot de passe incorrect.
+    </div>
+
+    <button onclick="firebaseLogin()"
+            style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
+      Connexion
+    </button>
+
+    <div onclick="firebaseResetPassword()"
+         style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
+      Mot de passe oublié ?
+    </div>
+
+    <div onclick="renewOpen({kind:'renewal'})"
+         style="margin-top:12px;font-size:12px;color:#9a3412;cursor:pointer;">
+      Mon accès a expiré ? <span style="color:#f97316;font-weight:700;text-decoration:underline;">Prolonger mon app</span>
+    </div>
+
+    <div onclick="lgShow('choice')" style="margin-top:18px;font-size:12px;color:#888;cursor:pointer;">← Retour</div>
   </div>
 
-  <button onclick="firebaseLogin()"
-          style="background:#f97316;color:#f8f8f8;border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
-    Connexion
-  </button>
-
-  <div onclick="firebaseResetPassword()"
-       style="margin-top:12px;font-size:12px;color:#f97316;font-weight:600;cursor:pointer;">
-    Mot de passe oublié ?
-  </div>
-<!-- Bouton toggle -->
-<div style="margin-top:22px;padding-bottom:6px;text-align:center;">
-  <button id="btn-info-toggle" onclick="toggleInfoSection()" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;width:100%;max-width:320px;transition:all .2s;">
-    💡 En savoir plus sur l'application &nbsp;▾
-  </button>
-</div>
-
-<!-- Section collapsible -->
-<div id="info-section-wrapper" style="overflow:hidden;max-height:0;transition:max-height 0.55s ease;">
-<div style="max-width:680px;margin:18px auto 0;padding:0 6px 20px;">
+  <!-- PARCOURS 2 : je n'ai pas encore l'app -->
+  <div id="lg-new" style="display:none;">
+<div id="info-section-wrapper" style="overflow:visible;">
+<div style="max-width:680px;margin:0 auto;padding:0 6px 10px;">
 
   <!-- Titre -->
   <div style="text-align:center;margin-bottom:16px;">
     <div style="font-size:19px;font-weight:700;color:#f97316;line-height:1.3;">🚀 Phil-Mobile — Outils Consultants Smart SN</div>
     <div style="font-size:13px;color:#6b7280;margin-top:5px;">Tous vos outils au même endroit, sur smartphone ou desktop</div>
-  </div>
-
-  <!-- Notice indépendance -->
-  <div style="background:#fff7ed;border:1.5px solid #f97316;border-radius:10px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px;">
-    <span style="font-size:18px;flex-shrink:0;">ℹ️</span>
-    <div style="font-size:11px;color:#9a3412;line-height:1.5;">
-      Cette application est <strong>développée et gérée exclusivement par Phil-Mobile</strong>.<br>
-      Elle n'est en aucun cas un produit officiel de Smart SN, ni gérée par Smart SN.
-    </div>
-  </div>
-
-  <!-- Grille screenshots numérotés -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px;">
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#f97316;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">1</span>
-        Connexion sécurisée
-      </div>
-      <img src="images/screen-login.png" alt="Connexion" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#1e3a8a;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#1e3a8a;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">2</span>
-        Tableau de bord
-      </div>
-      <img src="images/screen-dashboard.png" alt="Tableau de bord" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#f97316;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">3</span>
-        Simulateur Orange
-      </div>
-      <img src="images/screen-orange.png" alt="Simulateur Orange" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#f97316;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">4</span>
-        Promotions en cours
-      </div>
-      <img src="images/screen-promos.png" alt="Promotions" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#1e3a8a;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#1e3a8a;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">5</span>
-        Blog Smart SN
-      </div>
-      <img src="images/screen-blog.png" alt="Blog Smart SN" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#f97316;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">6</span>
-        Calculateur commissions
-      </div>
-      <img src="images/screen-commissions.png" alt="Commissions" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#15803d;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#15803d;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">7</span>
-        Simulateur Eneco
-      </div>
-      <img src="images/screen-eneco.png" alt="Simulateur Eneco" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#7c3aed;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#7c3aed;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">8</span>
-        Agenda &amp; Formations
-      </div>
-      <img src="images/screen-agenda.png" alt="Agenda" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#1e3a8a;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#1e3a8a;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">9</span>
-        News &amp; Informations
-      </div>
-      <img src="images/screen-news.png" alt="News" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#f97316;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">10</span>
-        Favoris &amp; Navigation
-      </div>
-      <img src="images/screen-favoris.png" alt="Favoris" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#1e3a8a;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#1e3a8a;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">11</span>
-        Documents &amp; Ressources
-      </div>
-      <img src="images/screen-documents.png" alt="Documents" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
-    <div style="border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);background:#fff;">
-      <div style="background:#f97316;color:#fff;font-size:10px;font-weight:800;padding:4px 8px;display:flex;align-items:center;gap:5px;">
-        <span style="background:#fff;color:#f97316;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;">12</span>
-        Chat online
-      </div>
-      <img src="images/screen-chat.png" alt="Chat" style="width:100%;display:block;max-height:140px;object-fit:cover;object-position:top;">
-    </div>
-
   </div>
 
   <!-- Grille features résumé -->
@@ -532,9 +418,6 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
       </button>
       <button onclick="openAccessFormWith('achat')" style="background:#f97316;color:#fff;border:1.5px solid #f97316;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
         🛒 Commander l'application
-      </button>
-      <button onclick="renewOpen({kind:'renewal'})" style="background:transparent;border:1.5px solid #f97316;color:#f97316;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
-        🔄 Prolonger mon app pour un an
       </button>
     </div>
 
@@ -627,13 +510,15 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
 
   </div>
 
-  <!-- Disclaimer -->
-  <div style="margin-top:14px;font-size:11px;color:#aaa;text-align:center;line-height:1.4;">
-    Application développée de manière indépendante par PHIL-MOBILE — pas un produit officiel Smart SN.
+</div>
+</div>
+    <div onclick="lgShow('choice')" style="margin-top:6px;font-size:12px;color:#888;cursor:pointer;">← Retour</div>
   </div>
 
-</div>
-</div>
+  <!-- Disclaimer (une seule fois) -->
+  <div style="margin-top:22px;font-size:11px;color:#aaa;text-align:center;line-height:1.4;">
+    Application développée de manière indépendante par PHIL-MOBILE — pas un produit officiel Smart SN.
+  </div>
 
 </div>
 
@@ -6088,39 +5973,35 @@ function copyText(id, btn) {
 }
   function toggleAccessForm(){
   const form = document.getElementById('accessForm');
-  const isOpen = form.style.display !== 'none';
-  form.style.display = isOpen ? 'none' : 'block';
-  // Recalcule la hauteur du wrapper pour inclure le formulaire
-  const wrapper = document.getElementById('info-section-wrapper');
-  if (wrapper && wrapper.style.maxHeight !== '0px') {
-    wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-  }
+  form.style.display = form.style.display !== 'none' ? 'none' : 'block';
 }
 
-  window.toggleInfoSection = function(){
-  const wrapper = document.getElementById('info-section-wrapper');
-  const btn = document.getElementById('btn-info-toggle');
-  const isOpen = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
-  if (isOpen) {
-    wrapper.style.maxHeight = '0px';
-    btn.innerHTML = '💡 En savoir plus sur l\'application &nbsp;▾';
-  } else {
-    wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-    btn.innerHTML = '✕ Fermer &nbsp;▴';
-  }
+// Écran de connexion : 'choice' (2 grands choix), 'have' (connexion), 'new' (pas encore l'app)
+window.lgShow = function(which){
+  var ids = { choice: 'lg-choice', have: 'lg-have', 'new': 'lg-new' };
+  Object.keys(ids).forEach(function(k){
+    var e = document.getElementById(ids[k]);
+    if (e) e.style.display = (k === which) ? 'block' : 'none';
+  });
+  try {
+    if (which === 'have') localStorage.setItem('pm_login_choice', 'have');
+    else localStorage.removeItem('pm_login_choice');
+  } catch (e) { /* stockage indisponible : le choix n'est simplement pas mémorisé */ }
 };
+(function lgInit(){
+  var run = function(){
+    var c = '';
+    try { c = localStorage.getItem('pm_login_choice') || ''; } catch (e) {}
+    lgShow(c === 'have' ? 'have' : 'choice');
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
 
   window.openAccessFormWith = function(type) {
-  // Ouvrir le formulaire
   const form = document.getElementById('accessForm');
   form.style.display = 'block';
-  // Sélectionner le bon radio et déclencher son onchange
   const radio = document.getElementById('req-access-' + type);
   if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
-  // Recalculer la hauteur du wrapper
-  const wrapper = document.getElementById('info-section-wrapper');
-  if (wrapper) wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-  // Scroll vers le formulaire
   setTimeout(() => form.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
 };
 
@@ -6525,16 +6406,11 @@ window.recoInvite = function (docId, channel) {
     var run = function () {
       var inp = document.getElementById('req-recommended-by');
       if (inp && !inp.value) inp.value = id;
-      var w = document.getElementById('info-section-wrapper');
-      var b = document.getElementById('btn-info-toggle');
-      if (w && (w.style.maxHeight === '' || w.style.maxHeight === '0px')) {
-        w.style.maxHeight = w.scrollHeight + 'px';
-        if (b) b.innerHTML = '✕ Fermer &nbsp;▴';
-      }
+      if (window.lgShow) lgShow('new');
       setTimeout(function () {
-        if (w) w.style.maxHeight = w.scrollHeight + 'px';
-        if (b) b.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 600);
+        var w = document.getElementById('lg-new');
+        if (w) w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
   } catch (e) { /* lien sans effet : le formulaire reste utilisable normalement */ }
@@ -7007,8 +6883,6 @@ window.accessTypeChanged = function () {
   if (blk) blk.style.display = t === 'achat' ? 'block' : 'none';
   var sb = document.getElementById('req-submit');
   if (sb) sb.textContent = t === 'achat' ? '🛒 Commander et voir le QR de paiement' : 'Envoyer ma demande';
-  var wrapper = document.getElementById('info-section-wrapper');
-  if (wrapper && wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '') wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
 };
 // ===== FIN ACHAT / RENOUVELLEMENT =====
 
@@ -8145,13 +8019,47 @@ window.pcTelMigrateAll = async function () {
   [pclLoadList, pcoLoadList, crmLoadClients, crmLoadConsultants].forEach(function (fn) { try { fn(); } catch (e) {} });
 };
 
+// Message de rappel de rdv (SMS / WhatsApp) : prénom du prospect, date, heure et lieu pris dans la fiche
+function pcRdvMsg(p) {
+  if (!p || p.statut !== 'Rdv' || !p.rdv || !p.rdv.date) return '';
+  var quand = pcFmtRdv(p.rdv.date);
+  if (!quand) return '';
+  var full = pcNormName(p.nom), parts = full.split(/\s+/);
+  var prenom = parts.length > 1 ? parts.slice(0, -1).join(' ') : '';
+  var moi = (window.pmCurrentUser && window.pmCurrentUser.name) || '';
+  var lieu = pcRdvParts(p).lieu;
+  return 'Bonjour' + (prenom ? ' ' + prenom : '') + ', ' + (moi ? "c'est " + moi + ' de Phil-Mobile. ' : "c'est Phil-Mobile. ")
+    + 'Je vous confirme notre rendez-vous le ' + quand + (lieu ? ' (' + lieu + ')' : '') + ". N'hésitez pas à me prévenir en cas d'empêchement. À bientôt !";
+}
+// WhatsApp Privé ou Business (réglage mémorisé sur ce téléphone, Business par défaut)
+function pcWaMode() { try { return localStorage.getItem('pm_wa_mode') === 'prive' ? 'prive' : 'business'; } catch (e) { return 'business'; } }
+window.pcWaToggle = function () {
+  try { localStorage.setItem('pm_wa_mode', pcWaMode() === 'business' ? 'prive' : 'business'); } catch (e) { /* non mémorisé */ }
+  try { pclRenderList(window._pclData || []); } catch (e) {}
+  try { pcoRenderList(window._pcoData || []); } catch (e) {}
+};
+function pcWaChip() {
+  var biz = pcWaMode() === 'business';
+  return '<div style="margin-bottom:8px;font-size:11px;color:#555;">🟢 WhatsApp utilisé : <button type="button" onclick="pcWaToggle()" title="Toucher pour changer" style="border:1px solid #25D366;background:#f0fdf4;color:#166534;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer;">' + (biz ? 'Business' : 'Privé') + ' ⇄</button></div>';
+}
+// Lien WhatsApp : sur Android, Business est forcé via un lien « intent » (retombe sur wa.me si l'app n'est pas installée). iPhone / ordinateur : lien wa.me habituel.
+function pcWaHref(tel, text) {
+  var num = String(tel || '').replace(/^\+/, '');
+  var std = 'https://wa.me/' + num + (text ? '?text=' + encodeURIComponent(text) : '');
+  if (pcWaMode() === 'business' && /android/i.test(navigator.userAgent || '')) {
+    return 'intent://send?phone=' + num + (text ? '&text=' + encodeURIComponent(text) : '')
+      + '#Intent;scheme=whatsapp;package=com.whatsapp.w4b;S.browser_fallback_url=' + encodeURIComponent(std) + ';end';
+  }
+  return std;
+}
 function pclQuickActions(p) {
   var tel = pclCleanTel(p.tel);
   var buttons = [];
   if (tel) {
+    var msg = pcRdvMsg(p), tip = msg ? ' (message de rappel de rdv prêt)' : '';
     buttons.push('<a href="tel:' + tel + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#1a1a1a;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📞</a>');
-    buttons.push('<a href="sms:' + tel + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#0d6efd;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">💬</a>');
-    buttons.push('<a href="https://wa.me/' + tel.replace(/^\+/, '') + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">🟢</a>');
+    buttons.push('<a href="sms:' + tel + (msg ? '?body=' + encodeURIComponent(msg) : '') + '" title="SMS' + tip + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#0d6efd;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">💬</a>');
+    buttons.push('<a href="' + pcEsc(pcWaHref(tel, msg)) + '" target="_blank" rel="noopener" title="WhatsApp' + tip + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">🟢</a>');
   }
   if (p.email) buttons.push('<a href="mailto:' + pcEsc(p.email) + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#f97316;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📧</a>');
   var qa = pclAddr(p);
@@ -8287,7 +8195,7 @@ function pclRenderList(list) {
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   var line = function (icon, html) { return '<div style="font-size:12px;color:#444;margin:1px 0;">' + icon + ' ' + html + '</div>'; };
   var TI = { 'Particulier': '👤', 'Indépendant': '🧑‍💼', 'Société': '🏢' };
-  el.innerHTML = filtered.map(function (p) {
+  el.innerHTML = pcWaChip() + filtered.map(function (p) {
     var contratBtn = p.contractId
       ? '<span style="padding:5px 10px;font-size:11px;font-weight:700;color:#2E7D32;">🧾 Contrat créé</span>'
       : '<button onclick="pclConvertToClient(\'' + p.docId + '\')" style="background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Créer le contrat</button>';
@@ -8758,7 +8666,7 @@ function pcoRenderList(list) {
   window._pcoShown = filtered;
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   var line = function (icon, html) { return '<div style="font-size:12px;color:#444;margin:1px 0;">' + icon + ' ' + html + '</div>'; };
-  el.innerHTML = filtered.map(function (p) {
+  el.innerHTML = pcWaChip() + filtered.map(function (p) {
     var coord = pclQuickActions(p)
       + (p.tel ? line('📞', pcTelLink(p.tel) + (p.operateurActuel ? ' ' + pcOpBadge(p.operateurActuel) : '')) : '')
       + (p.email ? line('📧', pcMailLink(p.email)) : '')
