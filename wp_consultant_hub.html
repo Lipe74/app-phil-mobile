@@ -245,6 +245,7 @@ Version stable : <span id="app-version-1">…</span>
        word-wrap:break-word;
        line-height:1.4;">
 </div>
+<div id="build-line" onclick="showCrmPanel('panel-maj')" title="Voir les nouveautés" style="display:none;cursor:pointer;width:100%;box-sizing:border-box;padding:7px 16px;font-size:12px;text-align:center;line-height:1.4;background:#fff7ed;color:#9a3412;border-bottom:1px solid #fed7aa;"></div>
 
 <!-- TABLEAU DE BORD -->
 
@@ -1509,9 +1510,9 @@ STATUT: independant
                   </div>
                   <div id="pcl-ref-title" style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">👥 Référencé par (facultatif)</div>
                   <div id="pcl-reference-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom du référent</div><input id="pcl-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom du référent</div><input id="pcl-ref-prenom" oninput="pclAutoOrigine()" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" oninput="pclAutoOrigine()" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" oninput="pclAutoOrigine()" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                   </div>
                   <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">🎯 Source et origine du lead</div>
                   <div style="grid-column:span 2;">
@@ -5253,6 +5254,7 @@ function doUnlock(user) {
   initMonQr(user);
   // Bandeau + calendrier : rdv prospects du jour
   initRdvBanner(user);
+  majListen();   // ligne « Dernière build » dès la connexion
   crmReady(function () { recoLoadList(); });
 }
 
@@ -7804,6 +7806,15 @@ window.pclToggleReference = function () {
   var t = document.getElementById('pcl-ref-title');
   if (t) { t.textContent = req ? '👥 Référencé par (obligatoire : origine « Référence client existant »)' : '👥 Référencé par (facultatif)'; t.style.color = req ? '#c0392b' : '#f97316'; }
 };
+// Dès qu'un référent est renseigné, l'origine passe sur « Référence client existant » (sauf si une autre origine est déjà choisie)
+window.pclAutoOrigine = function () {
+  var g = function (i) { return document.getElementById(i).value.trim(); };
+  var sel = document.getElementById('pcl-provenance');
+  if ((g('pcl-ref-prenom') || g('pcl-ref-nom') || g('pcl-ref-tel')) && (sel.value === '' || sel.value === 'Autre')) {
+    sel.value = 'Référence client existant';
+    window.pclToggleReference();
+  }
+};
 window.pclToggleSmartphone = function () {
   var on = document.getElementById('pcl-smartphone').checked;
   document.getElementById('pcl-smartphone-row').style.display = on ? 'block' : 'none';
@@ -7927,6 +7938,7 @@ window.pclEditProspect = function (id) {
   window.pclToggleSmartphone();
   window.pclToggleSociete();
   window.pclToggleReference();
+  window.pclAutoOrigine();
   crmFactInit('pcl', id, p.factures);
   pclEditId = id;
   pcRefreshModalSummary('cl');
@@ -8218,15 +8230,15 @@ window.pcVcfList = function (kind) {
 
 function pclContactSummary(p) {
   var contacts = p.contacts || [];
-  if (!contacts.length) return '<span style="color:#9ca3af;">📞 Aucun contact</span>';
+  if (!contacts.length) return (p.contact1 && p.contact1.mode) ? '' : '<div style="font-size:11px;color:#888;margin-top:4px;"><span style="color:#9ca3af;">📞 Aucun contact</span></div>';
   var last = contacts[contacts.length - 1];
-  var html = '📞 ' + contacts.length + ' action(s) · Dernière : ' + pcEsc(last.type || 'Contact') + ' (' + pcEsc(last.resultat || '-') + ')';
+  var html = '<div style="font-size:11px;color:#888;margin-top:4px;">📞 ' + contacts.length + ' action(s) · Dernière : ' + pcEsc(last.type || 'Contact') + ' (' + pcEsc(last.resultat || '-') + ')';
   if (last.nextActionDate) {
     var nd = new Date(last.nextActionDate);
     var isPast = nd < new Date();
     html += '<br><span style="font-weight:700;color:' + (isPast ? '#c0392b' : '#f97316') + ';">📅 ' + (isPast ? '⚠️ En retard — ' : '') + 'Prochaine échéance : ' + nd.toLocaleDateString() + '</span>';
   }
-  return html;
+  return html + '</div>';
 }
 
 function pclRefLine(p) {
@@ -8245,6 +8257,15 @@ window.pclFactOpen = async function (docId, i) {
     var url = await window.getDownloadURL(window.storageRef(window.storage, f.path));
     if (w) w.location = url; else window.location = url;
   } catch (e) { if (w) w.close(); alert('Téléchargement impossible : ' + e.message); }
+};
+window.pclUseFactAddr = async function (docId) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  var f = p && (p.factures || []).filter(function (x) { return x.lu && x.lu.adresse; })[0];
+  if (!f) return;
+  var patch = { adresse: f.lu.adresse, dateMaj: new Date().toISOString() };
+  if (!p.ville) patch.ville = [f.lu.cp, f.lu.ville].filter(Boolean).join(' ');
+  try { await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), patch); pcToast('📍 Adresse reprise depuis la facture.'); }
+  catch (e) { alert('Erreur: ' + e.message); }
 };
 window.pclFactReread = function (docId, i) {
   window.pclEditProspect(docId);
@@ -8277,6 +8298,8 @@ function pclRenderList(list) {
       + (p.tel ? line('📞', pcTelLink(p.tel)) : '')
       + (p.email ? line('📧', pcMailLink(p.email)) : '')
       + (addr ? line('📍', pcMapLink(addr)) : '');
+    var fa = !p.adresse ? (Array.isArray(p.factures) ? p.factures : []).filter(function (f) { return f.lu && f.lu.adresse; })[0] : null;
+    if (fa) coord += '<div style="font-size:12px;margin:1px 0;">🧾 Adresse complète sur la facture : ' + pcEsc(fa.lu.adresse) + ' <a href="javascript:void(0)" onclick="pclUseFactAddr(\'' + p.docId + '\')" style="color:#c2410c;font-weight:700;text-decoration:underline;">Reprendre</a></div>';
     // Situation actuelle
     var sit = '';
     if (p.opMobile || p.numMobile) sit += line('📱', 'Mobile : ' + pcOpBadge(p.opMobile) + (p.numMobile ? ' · n° ' + pcEsc(String(p.numMobile).replace(/[\s:;,]+$/, '')) : ''));
@@ -8294,8 +8317,8 @@ function pclRenderList(list) {
     var src = pclSourcesHtml(p);
     var suivi = ((src || p.provenance) ? line('🎯', src + (p.provenance ? (src ? ' · ' : '') + '🧭 ' + pcEsc(p.provenance) : '')) : '')
       + (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '')
-      + pcContactInfo(p) + pcRdvInfo(p)
-      + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>';
+      + pcContactInfo(p) + pcRdvInfo(p, 'cl')
+      + pclContactSummary(p);
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
       + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><b style="font-size:14px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
       + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p) + pclRefLine(p) + '</div>'
@@ -8743,7 +8766,7 @@ function pcoRenderList(list) {
     var profil = line('🏷', pcEsc(pcoNormSource(p.source) || '-'))
       + (p.statutPro ? line('💼', pcEsc(pcoNormStatutPro(p.statutPro))) : '')
       + pcoQrExtras(p);
-    var suivi = (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '') + pcContactInfo(p) + pcRdvInfo(p) + pcBomInfo(p);
+    var suivi = (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '') + pcContactInfo(p) + pcRdvInfo(p, 'co') + pcBomInfo(p);
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
       + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><b style="font-size:14px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
       + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p) + pclRefLine(p) + '</div>'
@@ -9022,7 +9045,7 @@ window.pcRdvOpen = function (kind, docId) {
   var d;
   if (p.rdv && p.rdv.date && !isNaN(new Date(p.rdv.date))) d = new Date(p.rdv.date);
   else { d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
-  var cur = (p.rdv && p.rdv.lieu) || '';
+  var cur = pcRdvParts(p).lieu;
   var lieuHtml = '';
   window._pcRdvOpts = null;
   if (kind === 'cl') {
@@ -9053,7 +9076,7 @@ window.pcRdvOpen = function (kind, docId) {
     + '<div style="font-size:12px;font-weight:700;">Date et heure</div>'
     + '<input id="pc-rdv-date" type="datetime-local" value="' + pcLocalInput(d) + '" style="' + PC_INP + '">'
     + lieuHtml
-    + '<input id="pc-rdv-note" type="text" placeholder="Remarque / visio (facultatif)" value="' + pcEsc((p.rdv && p.rdv.note) || '') + '" style="' + PC_INP + '">'
+    + '<input id="pc-rdv-note" type="text" placeholder="Remarque / visio (facultatif)" value="' + pcEsc(pcRdvParts(p).note) + '" style="' + PC_INP + '">'
     + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'flex:1;" onclick="pcRdvSave(\'' + kind + '\',\'' + docId + '\')">Enregistrer le rdv</button>'
     + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose(\'' + kind + '\')">Annuler</button></div>'
   );
@@ -9262,7 +9285,7 @@ window.pcRdvIcs = function (kind, docId) {
   var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Phil-Mobile//Rdv//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + docId + '-' + s.getTime() + '@phil-mobile.be', 'DTSTAMP:' + utc(new Date()),
     'DTSTART:' + loc(s), 'DTEND:' + loc(e), 'SUMMARY:' + esc('Rdv ' + (kind === 'cl' ? 'client' : 'consultant') + ' — ' + (p.nom || '')),
-    'DESCRIPTION:' + esc(desc), (p.rdv.lieu || p.rdv.note) ? 'LOCATION:' + esc(p.rdv.lieu || p.rdv.note) : '',
+    'DESCRIPTION:' + esc(desc), (pcRdvParts(p).lieu || p.rdv.note) ? 'LOCATION:' + esc(pcRdvParts(p).lieu || p.rdv.note) : '',
     'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:Rdv dans 30 minutes', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'
   ].filter(Boolean);
   var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
@@ -9281,14 +9304,22 @@ function pcContactInfo(p) {
   });
   return parts.length ? '<div style="font-size:12px;color:#555;">📞 ' + parts.join(' · ') + '</div>' : '';
 }
-function pcRdvInfo(p) {
+// Lieu et remarque d'un rdv. Les anciens rdv (avant 14.88) avaient l'adresse dans la remarque : si elle ressemble à une adresse, elle sert de lieu
+function pcRdvParts(p) {
+  var r = (p && p.rdv) || {}, lieu = r.lieu || '', note = r.note || '';
+  if (!lieu && note && !/visio|teams|zoom|meet|skype|whatsapp|t[ée]l[ée]ph|appel/i.test(note)
+      && (/\d/.test(note) || /\b(rue|avenue|av|chauss[ée]e|clos|place|boulevard|bd|quai|route|chemin|all[ée]e|impasse|square|fond|dr[èe]ve|ruelle|cour|sentier|rempart|voie)\b/i.test(note))) { lieu = note; note = ''; }
+  return { lieu: lieu, note: note };
+}
+function pcRdvInfo(p, kind) {
   if (p.statut !== 'Rdv' || !p.rdv || !p.rdv.date) return '';
-  var st = pcRdvState(p.rdv.date);
+  var st = pcRdvState(p.rdv.date), pr = pcRdvParts(p);
   var badge = st === 'today' ? ' <span style="background:#fef3c7;color:#92400e;border-radius:99px;padding:1px 8px;font-size:10px;">Aujourd\'hui</span>'
     : st === 'late' ? ' <span style="background:#fde2e1;color:#c0392b;border-radius:99px;padding:1px 8px;font-size:10px;">⚠️ Rdv passé — à clôturer</span>' : '';
   return '<div style="font-size:12px;font-weight:700;color:#6d28d9;margin-top:3px;">📅 Rdv : ' + pcEsc(pcFmtRdv(p.rdv.date)) + badge + '</div>'
-    + (p.rdv.lieu ? '<div style="font-size:12px;color:#555;">📍 ' + pcMapLink(p.rdv.lieu) + '</div>' : '')
-    + (p.rdv.note ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.rdv.note) + '</div>' : '');
+    + (pr.lieu ? '<div style="font-size:12px;color:#555;">📍 ' + pcMapLink(pr.lieu) + '</div>'
+      : (kind === 'cl' && p.docId ? '<div style="font-size:12px;"><a href="javascript:void(0)" onclick="pcRdvOpen(\'cl\',\'' + p.docId + '\')" style="color:#c2410c;text-decoration:underline;font-weight:700;">📍 Lieu du rdv à choisir</a></div>' : ''))
+    + (pr.note ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(pr.note) + '</div>' : '');
 }
 function pcRdvButtons(kind, p) {
   var k = '\'' + kind + '\',\'' + p.docId + '\'';
@@ -9412,8 +9443,8 @@ function rdvPageRender() {
       + '<div style="font-size:13px;font-weight:700;color:' + (late ? '#c0392b' : '#5b21b6') + ';">' + pcEsc(pcFmtRdv(p.rdv.date)) + '</div>'
       + '<div style="font-size:14px;font-weight:700;margin-top:2px;">' + pcEsc(p.nom || '') + '</div>'
       + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:2px;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
-      + (p.rdv.lieu ? '<div style="font-size:12px;color:#555;margin-top:2px;">📍 ' + pcMapLink(p.rdv.lieu) + '</div>' : '')
-      + (p.rdv.note ? '<div style="font-size:12px;color:#555;margin-top:2px;">📝 ' + pcEsc(p.rdv.note) + '</div>' : '')
+      + (pcRdvParts(p).lieu ? '<div style="font-size:12px;color:#555;margin-top:2px;">📍 ' + pcMapLink(pcRdvParts(p).lieu) + '</div>' : '')
+      + (pcRdvParts(p).note ? '<div style="font-size:12px;color:#555;margin-top:2px;">📝 ' + pcEsc(pcRdvParts(p).note) + '</div>' : '')
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(_rdvPg.kind, p) + '</div></div>';
   }).join('');
 }
@@ -9457,7 +9488,7 @@ function pcModalSummaryHtml(kind, p) {
   return '<div style="border-top:1px solid #eee;padding-top:10px;margin-top:14px;">'
     + '<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:5px;">Suivi</div>'
     + '<div style="margin-bottom:4px;"><span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;">' + pcEsc(p.statut || 'Nouveau') + '</span></div>'
-    + pcContactInfo(p) + pcRdvInfo(p) + pcBomInfo(p)
+    + pcContactInfo(p) + pcRdvInfo(p, kind) + pcBomInfo(p)
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(kind, p) + '</div></div>';
 }
 // Fiche en création : boutons Contact / Rdv (la fiche est d'abord enregistrée, puis la fenêtre du suivi s'ouvre)
@@ -10840,7 +10871,19 @@ function majKey(n) {
   return (m ? parseInt(m[1], 10) * 100000 + parseInt(m[2], 10) : 0) * 1e6 + ((n.createdAt || 0) % 1e6);
 }
 function majEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+// Ligne « Dernière build » (haut du hub) : numéro + titre du dernier build publié dans « Les builds de Phil-Mobile »
+function majBuildLine() {
+  var el = document.getElementById('build-line');
+  if (!el) return;
+  var n = majItems[0];
+  if (!n || !n.build) { el.style.display = 'none'; return; }
+  var isNew = (n.createdAt || 0) > majLastSeen();
+  el.innerHTML = '📝 <b>Dernière build ' + majEsc(n.build) + '</b>' + (n.title ? ' : ' + majEsc(n.title) : '')
+    + (isNew ? ' <span style="background:#ef4444;color:#fff;border-radius:9px;padding:1px 7px;font-size:10px;font-weight:700;">nouveau</span>' : '');
+  el.style.display = 'block';
+}
 function majUpdateBadge() {
+  majBuildLine();
   var b = document.getElementById('maj-badge');
   if (!b) return;
   var panel = document.getElementById('panel-maj');
@@ -11671,7 +11714,7 @@ async function loadNews() {
       (snap) => {
         const banner = document.getElementById('news-banner');
         if (!banner) return;
-        if (!snap.exists() || !snap.data().active) {
+        if (!snap.exists() || !snap.data().active || snap.data().type === 'release') {   // « Infos Release » remplacé par la ligne « Dernière build »
           banner.style.display = 'none';
           banner.innerHTML = '';
           return;
