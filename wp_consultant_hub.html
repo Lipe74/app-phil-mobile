@@ -1410,6 +1410,7 @@ STATUT: independant
               <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
                 <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;">📇 Coordonnées</div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
                     <input id="pcl-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1418,13 +1419,21 @@ STATUT: independant
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
                     <input id="pcl-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
-                  <div style="grid-column:span 2;">
+                  <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
                     <input id="pcl-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
-                  <div style="grid-column:span 2;">
+                  <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
                     <input id="pcl-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Adresse (rue et numéro)</div>
+                    <input id="pcl-adresse" placeholder="Rue de l'Exemple 12 bte 3" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Code postal + ville</div>
+                    <input id="pcl-ville" placeholder="4000 Liège" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Type</div>
@@ -1433,10 +1442,6 @@ STATUT: independant
                       <option value="Indépendant">🧑‍💼 Indépendant</option>
                       <option value="Société">🏢 Société</option>
                     </select>
-                  </div>
-                  <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville</div>
-                    <input id="pcl-ville" placeholder="Liège" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div id="pcl-societe-row" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px;">
                     <div>
@@ -1448,9 +1453,14 @@ STATUT: independant
                       <input id="pcl-tva" onchange="pmTvaTypeCheck('pcl')" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                     </div>
                   </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Titulaire du contrat / de la facture (si différent du contact)</div>
+                    <input id="pcl-titulaire" placeholder="Prénom Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                  </div>
+                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">📡 Opérateurs actuels</div>
                   <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Mobile actuel</div>
-                    <select id="pcl-op-mobile" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Mobile</div>
+                    <select id="pcl-op-mobile" onchange="pclOpColor(this)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="">-- Non renseigné --</option>
                       <option>Proximus</option><option>Orange</option><option>Base</option><option>Telenet</option>
                       <option>Mobile Vikings</option><option>Scarlet</option><option>JOIN</option><option>Lycamobile</option>
@@ -1462,8 +1472,8 @@ STATUT: independant
                     <input id="pcl-num-mobile" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Internet actuel</div>
-                    <select id="pcl-op-internet" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Internet</div>
+                    <select id="pcl-op-internet" onchange="pclOpColor(this)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="">-- Non renseigné --</option>
                       <option>Proximus</option><option>Orange</option><option>Telenet</option><option>VOO</option>
                       <option>Scarlet</option><option>EDPnet</option><option>Odido</option><option>Autre</option>
@@ -1473,6 +1483,13 @@ STATUT: independant
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° client Internet</div>
                     <input id="pcl-num-internet" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
+                  <div style="grid-column:span 2;">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;cursor:pointer;"><input type="checkbox" id="pcl-smartphone" onchange="pclToggleSmartphone()"> 📱 Smartphone dans l'abonnement (client « lié »)</label>
+                    <div id="pcl-smartphone-row" style="display:none;margin-top:6px;background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:7px 9px;font-size:12px;color:#92400e;">
+                      ⚠️ Le GSM est lié au contrat : s'il change d'opérateur d'un coup, le client paie le solde de l'appareil. Mieux vaut le mettre « En attente », sauf s'il accepte.
+                      <label style="display:flex;align-items:center;gap:6px;margin-top:5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="pcl-smartphone-ok"> ✅ Le client accepte de solder son GSM</label>
+                    </div>
+                  </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° EasySwitch</div>
                     <input id="pcl-easyswitch" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1481,18 +1498,28 @@ STATUT: independant
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Fin de contrat</div>
                     <input type="date" id="pcl-date-fin-contrat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
-                  <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
-                    <select id="pcl-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-                      <option value="Orange">🟠 Orange</option>
-                      <option value="Eneco">⚡ Eneco</option>
-                      <option value="Orange + Eneco">🟠⚡ Orange + Eneco</option>
-                      <option value="Consultants">🎯 Consultants</option>
-                      <option value="Autre">✨ Autre</option>
-                    </select>
+                  <div id="pcl-factures-row" style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Factures (PDF) : mobile et/ou internet</div>
+                    <div id="pcl-factures-box"></div>
+                    <div id="pcl-facture-status" style="display:none;font-size:12px;padding:6px 9px;border-radius:7px;margin-bottom:6px;"></div>
+                    <div id="pcl-facture-review"></div>
+                    <label style="display:inline-block;border:1px dashed #f97316;background:#fff7ed;color:#f97316;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">📎 Joindre une facture (PDF)
+                      <input type="file" accept="application/pdf" style="display:none;" onchange="crmFactureAdd(this.files[0]); this.value='';">
+                    </label>
                   </div>
-                  <div>
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Provenance</div>
+                  <div id="pcl-ref-title" style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">👥 Référencé par (facultatif)</div>
+                  <div id="pcl-reference-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom du référent</div><input id="pcl-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                  </div>
+                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">🎯 Source et origine du lead</div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
+                    <div><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;margin-right:14px;cursor:pointer;"><input type="checkbox" id="pcl-src-0"> 📡 Télécom</label><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;margin-right:14px;cursor:pointer;"><input type="checkbox" id="pcl-src-1"> ⚡ Énergie</label><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;margin-right:14px;cursor:pointer;"><input type="checkbox" id="pcl-src-2"> 🎯 Consultant</label></div>
+                  </div>
+                  <div style="grid-column:span 2;">
+                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Origine du lead</div>
                     <select id="pcl-provenance" onchange="pclToggleReference()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <option value="">-- Non renseigné --</option>
                       <option value="Cercle d'amis/famille">👥 Cercle d'amis/famille</option>
@@ -1501,25 +1528,6 @@ STATUT: independant
                       <option value="Terrain">🚶 Terrain</option>
                       <option value="Autre">✨ Autre</option>
                     </select>
-                  </div>
-                  <div id="pcl-reference-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                    <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#f97316;">Référencé par (facultatif)</div>
-                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom du référent</div><input id="pcl-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                    <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                  </div>
-                  <div style="grid-column:span 2;">
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Titulaire du contrat / de la facture (si différent du contact)</div>
-                    <input id="pcl-titulaire" placeholder="Prénom Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-                  </div>
-                  <div id="pcl-factures-row" style="grid-column:span 2;">
-                    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Factures (PDF)</div>
-                    <div id="pcl-factures-box"></div>
-                    <div id="pcl-facture-status" style="display:none;font-size:12px;padding:6px 9px;border-radius:7px;margin-bottom:6px;"></div>
-                    <div id="pcl-facture-review"></div>
-                    <label style="display:inline-block;border:1px dashed #f97316;background:#fff7ed;color:#f97316;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">📎 Joindre une facture (PDF)
-                      <input type="file" accept="application/pdf" style="display:none;" onchange="crmFactureAdd(this.files[0]); this.value='';">
-                    </label>
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
@@ -1660,6 +1668,7 @@ OPERATEUR: Proximus
               <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
                 <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;">📇 Coordonnées</div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
                     <input id="pco-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1668,7 +1677,7 @@ OPERATEUR: Proximus
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
                     <input id="pco-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
-                  <div>
+                  <div style="grid-column:span 2;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
                       <span style="font-size:11px;font-weight:700;color:#555;">Téléphone</span>
                       <a href="javascript:void(0)" onclick="pcoCheckOperator()" title="Copie le numéro et ouvre 1399.be" style="font-size:10px;font-weight:700;color:#f97316;text-decoration:underline;cursor:pointer;">🔎 Vérifier l'opérateur</a>
@@ -1696,6 +1705,7 @@ OPERATEUR: Proximus
                     </select>
                     <input id="pco-tva" placeholder="BE0123456789" style="display:none;width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:6px;">
                   </div>
+                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">💼 Profil</div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
                     <select id="pco-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1719,11 +1729,12 @@ OPERATEUR: Proximus
                     </select>
                   </div>
                   <div style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                    <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#f97316;">Référencé par (facultatif)</div>
+                    <div style="grid-column:1/-1;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">👥 Référencé par (facultatif)</div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div><input id="pco-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div><input id="pco-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM</div><input id="pco-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                   </div>
+                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">📝 Notes</div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
                     <textarea id="pco-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
@@ -7789,7 +7800,73 @@ window.pclToggleSociete = function () {
 };
 window.pclToggleReference = function () {
   document.getElementById('pcl-reference-row').style.display = 'grid';
+  var req = document.getElementById('pcl-provenance').value === 'Référence client existant';
+  var t = document.getElementById('pcl-ref-title');
+  if (t) { t.textContent = req ? '👥 Référencé par (obligatoire : origine « Référence client existant »)' : '👥 Référencé par (facultatif)'; t.style.color = req ? '#c0392b' : '#f97316'; }
 };
+window.pclToggleSmartphone = function () {
+  var on = document.getElementById('pcl-smartphone').checked;
+  document.getElementById('pcl-smartphone-row').style.display = on ? 'block' : 'none';
+  if (!on) document.getElementById('pcl-smartphone-ok').checked = false;
+};
+// Liseré de couleur sur la liste d'opérateurs (Orange, Proximus, Base ; les autres en gris)
+window.pclOpColor = function (sel) {
+  var c = PC_OP_COLORS[String(sel.value).trim().toLowerCase()];
+  sel.style.borderLeft = '6px solid ' + (c ? c[0] : (sel.value ? '#9ca3af' : '#ddd'));
+};
+// Opérateur de la liste correspondant au nom lu sur une facture (« Proximus SA » -> « Proximus »)
+function pclOptMatch(id, name) {
+  var el = document.getElementById(id), n = String(name || '').trim().toLowerCase();
+  if (!el || !n) return '';
+  var r = '';
+  Array.prototype.forEach.call(el.options, function (o) {
+    var v = o.value.toLowerCase();
+    if (!r && o.value && v !== 'autre' && (n === v || n.indexOf(v) >= 0)) r = o.value;
+  });
+  return r;
+}
+// Source : Télécom, Énergie, Consultant (plusieurs possibles). Anciennes valeurs (Orange, Eneco, Orange + Eneco, Consultants) converties à l'affichage
+var PCL_SOURCES = [['Télécom', '📡'], ['Énergie', '⚡'], ['Consultant', '🎯']];
+function pclNormSources(p) {
+  if (Array.isArray(p.sources)) return p.sources.filter(function (x) { return PCL_SOURCES.some(function (k) { return k[0] === x; }); });
+  var s = String(p.source || '').toLowerCase(), out = [];
+  if (/orange|t[ée]l[ée]com|mobile|internet|proximus/.test(s)) out.push('Télécom');
+  if (/eneco|[ée]nergie|electri|gaz/.test(s)) out.push('Énergie');
+  if (/consultant/.test(s)) out.push('Consultant');
+  return out;
+}
+function pclGetSources() {
+  return PCL_SOURCES.filter(function (k, i) { var el = document.getElementById('pcl-src-' + i); return el && el.checked; }).map(function (k) { return k[0]; });
+}
+function pclSetSources(arr) {
+  PCL_SOURCES.forEach(function (k, i) { var el = document.getElementById('pcl-src-' + i); if (el) el.checked = arr.indexOf(k[0]) >= 0; });
+}
+function pclSourcesHtml(p) {
+  var arr = pclNormSources(p);
+  var h = arr.map(function (n) {
+    var ic = PCL_SOURCES.filter(function (k) { return k[0] === n; })[0][1];
+    return '<span style="display:inline-block;background:#fff3e8;color:#c2410c;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-right:3px;">' + ic + ' ' + pcEsc(n) + '</span>';
+  }).join('');
+  if (!h && p.source && p.source !== 'Autre') h = pcEsc(p.source);
+  return h;
+}
+// Adresse complète, lien plan (Apple Maps sur iPhone/iPad, Google Maps ailleurs)
+function pclAddr(p) { return [p.adresse, p.ville].filter(Boolean).join(', '); }
+function pcMapUrl(addr) {
+  var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return ios ? 'https://maps.apple.com/?q=' + encodeURIComponent(addr) : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
+}
+function pcMapLink(addr) {
+  return '<a href="' + pcEsc(pcMapUrl(addr)) + '" target="_blank" rel="noopener" style="color:#1d4ed8;text-decoration:underline;">' + pcEsc(addr) + '</a>';
+}
+function pclSec(t) {
+  return '<div style="font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#f97316;border-top:1px solid #fed7aa;margin:8px 0 3px;padding-top:6px;">' + t + '</div>';
+}
+function pclByPrenom(a, b) {
+  var k = function (p) { var n = pmProspectNames(p); return ((n.prenom || '') + ' ' + (n.nom || '')).trim().toLowerCase(); };
+  return k(a).localeCompare(k(b), 'fr', { sensitivity: 'base' });
+}
+
 
 // Sépare "Prénom Nom" : le dernier mot est le nom de famille
 function pmSplitName(full) {
@@ -7800,14 +7877,18 @@ function pmProspectNames(p) {
   return (p.prenom || p.nomFamille) ? { prenom: p.prenom || '', nom: p.nomFamille || '' } : pmSplitName(p.nom);
 }
 function pclResetForm() {
-  ['pcl-prenom', 'pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-ref-prenom', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-titulaire', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
+  ['pcl-prenom', 'pcl-nom', 'pcl-tel', 'pcl-email', 'pcl-commentaire', 'pcl-societe', 'pcl-tva', 'pcl-ville', 'pcl-adresse', 'pcl-ref-prenom', 'pcl-ref-nom', 'pcl-ref-tel', 'pcl-titulaire', 'pcl-num-mobile', 'pcl-num-internet', 'pcl-easyswitch', 'pcl-date-fin-contrat'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
-  document.getElementById('pcl-source').value = 'Orange';
+  pclSetSources(['Télécom']);
   document.getElementById('pcl-provenance').value = '';
   document.getElementById('pcl-op-mobile').value = '';
   document.getElementById('pcl-op-internet').value = '';
   document.getElementById('pcl-type').value = 'Particulier';
+  document.getElementById('pcl-smartphone').checked = false;
+  document.getElementById('pcl-smartphone-ok').checked = false;
+  window.pclOpColor(document.getElementById('pcl-op-mobile')); window.pclOpColor(document.getElementById('pcl-op-internet'));
+  window.pclToggleSmartphone();
   window.pclToggleSociete();
   window.pclToggleReference();
 }
@@ -7823,7 +7904,8 @@ window.pclEditProspect = function (id) {
   document.getElementById('pcl-tel').value = pcTelFmt(p.tel);
   document.getElementById('pcl-email').value = p.email || '';
   document.getElementById('pcl-ville').value = p.ville || '';
-  document.getElementById('pcl-source').value = p.source || 'Orange';
+  document.getElementById('pcl-adresse').value = p.adresse || '';
+  pclSetSources(pclNormSources(p));
   document.getElementById('pcl-provenance').value = p.provenance || '';
   document.getElementById('pcl-commentaire').value = p.commentaire || '';
   document.getElementById('pcl-type').value = p.type || 'Particulier';
@@ -7839,6 +7921,10 @@ window.pclEditProspect = function (id) {
   document.getElementById('pcl-num-internet').value = p.numInternet || '';
   document.getElementById('pcl-easyswitch').value = p.easySwitch || '';
   document.getElementById('pcl-date-fin-contrat').value = p.dateFinContrat || '';
+  document.getElementById('pcl-smartphone').checked = p.smartphone === true;
+  document.getElementById('pcl-smartphone-ok').checked = p.smartphone === true && p.smartphoneOk === true;
+  window.pclOpColor(document.getElementById('pcl-op-mobile')); window.pclOpColor(document.getElementById('pcl-op-internet'));
+  window.pclToggleSmartphone();
   window.pclToggleSociete();
   window.pclToggleReference();
   crmFactInit('pcl', id, p.factures);
@@ -7862,13 +7948,17 @@ window.pclSaveProspect = async function (afterAction) {
     societe: document.getElementById('pcl-societe').value.trim(),
     tva: pcNormTva(document.getElementById('pcl-tva').value),
     ville: document.getElementById('pcl-ville').value.trim(),
+    adresse: document.getElementById('pcl-adresse').value.trim(),
+    smartphone: document.getElementById('pcl-smartphone').checked,
+    smartphoneOk: document.getElementById('pcl-smartphone').checked && document.getElementById('pcl-smartphone-ok').checked,
     opMobile: document.getElementById('pcl-op-mobile').value,
     numMobile: document.getElementById('pcl-num-mobile').value.trim(),
     opInternet: document.getElementById('pcl-op-internet').value,
     numInternet: document.getElementById('pcl-num-internet').value.trim(),
     easySwitch: document.getElementById('pcl-easyswitch').value.trim(),
     dateFinContrat: document.getElementById('pcl-date-fin-contrat').value,
-    source: document.getElementById('pcl-source').value,
+    sources: pclGetSources(),
+    source: pclGetSources().join(' + '),
     provenance: document.getElementById('pcl-provenance').value,
     titulaire: pcNormName(document.getElementById('pcl-titulaire').value),
     referencePrenom: pcNormName(document.getElementById('pcl-ref-prenom').value),
@@ -7879,6 +7969,16 @@ window.pclSaveProspect = async function (afterAction) {
     dateCreation: existing ? (existing.dateCreation || now) : now,
     dateMaj: now
   };
+  // Origine « Référence client existant » : le référent est obligatoire (nom et/ou GSM)
+  if (data.provenance === 'Référence client existant' && !(data.referencePrenom || data.referenceNom || data.referenceTel)) {
+    alert('Origine « Référence client existant » : indique qui a référé ce client (nom et/ou GSM du référent).');
+    return;
+  }
+  // Smartphone lié : on propose « En attente » (une seule fois), sauf si le client accepte de solder son GSM
+  if (data.smartphone && !data.smartphoneOk && !(existing && existing.smartphone === true) && (data.statut === 'Nouveau' || data.statut === 'Contacté')
+      && confirm('📱 Smartphone lié à l\'abonnement.\n\nPasser ce prospect en « En attente » pour éviter qu\'il paie le solde de son GSM d\'un coup ?')) {
+    Object.assign(data, pcStatusPatch('En attente'));
+  }
   try {
     var newRef = null;
     if (pclEditId) await window.updateDoc(window.doc(window.db, 'prospectsClients', pclEditId), data);
@@ -8042,6 +8142,8 @@ function pclQuickActions(p) {
     buttons.push('<a href="https://wa.me/' + tel.replace(/^\+/, '') + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">🟢</a>');
   }
   if (p.email) buttons.push('<a href="mailto:' + pcEsc(p.email) + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#f97316;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📧</a>');
+  var qa = pclAddr(p);
+  if (qa) buttons.push('<a href="' + pcEsc(pcMapUrl(qa)) + '" target="_blank" rel="noopener" title="Voir sur le plan" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#1d4ed8;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📍</a>');
   if ((tel || p.email) && p.docId) buttons.push('<button type="button" title="Enregistrer dans mon GSM" onclick="pcVcf(\'' + p.docId + '\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:none;border-radius:8px;background:#6b7280;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">📲</button>');
   return buttons.length ? '<div style="display:flex;gap:5px;margin:5px 0;">' + buttons.join('') + '</div>' : '';
 }
@@ -8131,8 +8233,23 @@ function pclRefLine(p) {
   var nm = [p.referencePrenom, p.referenceNom].filter(Boolean).join(' ');
   var tel = p.referenceTel ? pcTelFmt(p.referenceTel) : '';
   if (!nm && !tel) return '';
-  return '<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-top:2px;">👥 Référencé par : ' + pcEsc([nm, tel].filter(Boolean).join(' · ')) + '</div>';
+  return '<span style="font-size:11px;font-weight:700;color:#1d4ed8;margin-left:6px;">👥 Référencé par : ' + pcEsc([nm, tel].filter(Boolean).join(' · ')) + '</span>';
 }
+// Factures d'un prospect : ouvrir le PDF / relire (ouvre la fiche et relance la lecture)
+window.pclFactOpen = async function (docId, i) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  var f = p && Array.isArray(p.factures) ? p.factures[i] : null;
+  if (!f || !f.path) return;
+  var w = window.open('', '_blank');
+  try {
+    var url = await window.getDownloadURL(window.storageRef(window.storage, f.path));
+    if (w) w.location = url; else window.location = url;
+  } catch (e) { if (w) w.close(); alert('Téléchargement impossible : ' + e.message); }
+};
+window.pclFactReread = function (docId, i) {
+  window.pclEditProspect(docId);
+  window.crmFactReread(i);
+};
 function pclRenderList(list) {
   var el = document.getElementById('pcl-list');
   if (!el) return;
@@ -8140,37 +8257,55 @@ function pclRenderList(list) {
   var term = (document.getElementById('pcl-search').value || '').toLowerCase();
   var statutFilter = document.getElementById('pcl-filter-statut').value;
   var filtered = list.filter(function (p) {
-    var txt = ((p.nom || '') + (p.tel || '') + pcTelSearch(p.tel) + (p.email || '') + (p.ville || '') + (p.societe || '')).toLowerCase();
+    var txt = ((p.nom || '') + (p.tel || '') + pcTelSearch(p.tel) + (p.email || '') + (p.ville || '') + (p.adresse || '') + (p.societe || '')).toLowerCase();
     return (!term || txt.indexOf(term) >= 0) && pcVisible(p, statutFilter);
   });
-  filtered = pcSortRdv(filtered, statutFilter);
+  // Ordre alphabétique (prénom) ; le filtre « Rdv » garde les rdv les plus proches d'abord
+  filtered = statutFilter === 'Rdv' ? pcSortRdv(filtered, statutFilter) : filtered.slice().sort(pclByPrenom);
   window._pclShown = filtered;
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
+  var line = function (icon, html) { return '<div style="font-size:12px;color:#444;margin:1px 0;">' + icon + ' ' + html + '</div>'; };
+  var TI = { 'Particulier': '👤', 'Indépendant': '🧑‍💼', 'Société': '🏢' };
   el.innerHTML = filtered.map(function (p) {
     var contratBtn = p.contractId
       ? '<span style="padding:5px 10px;font-size:11px;font-weight:700;color:#2E7D32;">🧾 Contrat créé</span>'
       : '<button onclick="pclConvertToClient(\'' + p.docId + '\')" style="background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Créer le contrat</button>';
-    return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
-      + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
-      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
-      + pclQuickActions(p)
-      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
-      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
-      + (p.ville ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.ville) + '</div>' : '')
-      + (p.titulaire ? '<div style="font-size:12px;color:#555;">👤 Titulaire : ' + pcEsc(p.titulaire) + '</div>' : '')
-      + pclRefLine(p)
-      + (p.source ? '<div style="font-size:12px;color:#555;">🎯 ' + pcEsc(p.source) + (p.type ? ' · ' + pcEsc(p.type) : '') + (p.provenance ? ' · ' + pcEsc(p.provenance) : '') + '</div>' : '')
-      + (((p.type === 'Société' || p.type === 'Indépendant') && (p.societe || p.tva)) ? '<div style="font-size:12px;color:#555;">🏢 ' + pcEsc([p.societe, p.tva ? '🧾 TVA ' + p.tva : ''].filter(Boolean).join(' · ')) + '</div>' : '')
-      + (p.opMobile ? '<div style="font-size:12px;color:#555;">📱 ' + pcOpBadge(p.opMobile) + (p.numMobile ? ' · ' + pcEsc(String(p.numMobile).replace(/[\s:;,]+$/, '')) : '') + '</div>' : '')
-      + (p.opInternet ? '<div style="font-size:12px;color:#555;">🌐 ' + pcOpBadge(p.opInternet) + (p.numInternet ? ' · ' + pcEsc(String(p.numInternet).replace(/[\s:;,]+$/, '')) : '') + '</div>' : '')
-      + (Array.isArray(p.factures) && p.factures.length ? '<div style="font-size:12px;color:#555;">📄 ' + p.factures.length + ' facture(s)</div>' : '')
-      + pclQrExtras(p)
-      + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
+    var typ = p.type || 'Particulier', addr = pclAddr(p);
+    // Coordonnées
+    var coord = pclQuickActions(p)
+      + line(TI[typ] || '👤', '<b>' + pcEsc(typ) + '</b>' + (p.societe ? ' · ' + pcEsc(p.societe) : '') + (p.tva ? ' · 🧾 TVA ' + pcEsc(p.tva) : ''))
+      + (p.tel ? line('📞', pcTelLink(p.tel)) : '')
+      + (p.email ? line('📧', pcMailLink(p.email)) : '')
+      + (addr ? line('📍', pcMapLink(addr)) : '');
+    // Situation actuelle
+    var sit = '';
+    if (p.opMobile || p.numMobile) sit += line('📱', 'Mobile : ' + pcOpBadge(p.opMobile) + (p.numMobile ? ' · n° ' + pcEsc(String(p.numMobile).replace(/[\s:;,]+$/, '')) : ''));
+    if (p.opInternet || p.numInternet) sit += line('🌐', 'Internet : ' + pcOpBadge(p.opInternet) + (p.numInternet ? ' · n° ' + pcEsc(String(p.numInternet).replace(/[\s:;,]+$/, '')) : ''));
+    if (p.smartphone) sit += '<div style="font-size:12px;font-weight:700;margin:2px 0;color:' + (p.smartphoneOk ? '#166534' : '#92400e') + ';">📱 Smartphone lié ' + (p.smartphoneOk ? '· solde accepté ✅' : '· ⏳ à mettre en attente (solde du GSM)') + '</div>';
+    if (p.easySwitch) sit += line('🔁', 'EasySwitch : ' + pcEsc(p.easySwitch));
+    if (p.dateFinContrat) sit += line('⏳', 'Fin de contrat : ' + pcEsc(pcFmtDate(p.dateFinContrat)));
+    (Array.isArray(p.factures) ? p.factures : []).forEach(function (f, i) {
+      sit += '<div style="font-size:12px;color:#444;margin:2px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">📄 <a href="javascript:void(0)" onclick="pclFactOpen(\'' + p.docId + '\',' + i + ')" style="color:#1d4ed8;text-decoration:underline;">' + pcEsc(f.name || 'facture.pdf') + '</a>'
+        + (f.service ? '<span style="background:#f3f4f6;color:#4b5563;border-radius:99px;padding:0 7px;font-size:10px;font-weight:700;">' + pcEsc(f.service) + '</span>' : '')
+        + '<button type="button" onclick="pclFactReread(\'' + p.docId + '\',' + i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;">🔄 Relire</button></div>';
+    });
+    sit += pclQrExtras(p);
+    // Suivi
+    var src = pclSourcesHtml(p);
+    var suivi = ((src || p.provenance) ? line('🎯', src + (p.provenance ? (src ? ' · ' : '') + '🧭 ' + pcEsc(p.provenance) : '')) : '')
+      + (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '')
       + pcContactInfo(p) + pcRdvInfo(p)
-      + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>'
+      + '<div style="font-size:11px;color:#888;margin-top:4px;">' + pclContactSummary(p) + '</div>';
+    return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
+      + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><b style="font-size:14px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
+      + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p) + pclRefLine(p) + '</div>'
+      + pclSec('Coordonnées') + coord
+      + (sit ? pclSec('Situation actuelle') + sit : '')
+      + (p.titulaire ? pclSec('Titulaire du contrat') + line('👤', pcEsc(p.titulaire)) : '')
+      + pclSec('Suivi') + suivi
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
       + '<select onchange="pcChangeStatus(\'cl\', \'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
-      + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
+      + PC_STATUTS.map(function (st) { return '<option value="' + st + '"' + (p.statut === st ? ' selected' : '') + '>' + st + '</option>'; }).join('')
       + '</select>'
       + pcRdvButtons('cl', p)
       + '<button onclick="pclEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
@@ -8222,7 +8357,7 @@ window.pclMigrateConverted = async function () {
 window.pclConvertToClient = function (docId) {
   var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
   if (!p) return;
-  window.ctrOpenNew({ prospectId: p.docId, nom: p.titulaire || p.nom || '', contactNom: p.nom || '', titulaire: p.titulaire || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: p.ville || '', referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', referenceTel: p.referenceTel || '' });
+  window.ctrOpenNew({ prospectId: p.docId, nom: p.titulaire || p.nom || '', contactNom: p.nom || '', titulaire: p.titulaire || '', tel: p.tel || '', email: p.email || '', societe: p.societe || '', tva: p.tva || '', adresse: pclAddr(p), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', referenceTel: p.referenceTel || '' });
 };
 
 window.pclDeleteProspect = async function (docId) {
@@ -8599,22 +8734,25 @@ function pcoRenderList(list) {
   filtered = pcSortRdv(filtered, statutFilter);
   window._pcoShown = filtered;
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
+  var line = function (icon, html) { return '<div style="font-size:12px;color:#444;margin:1px 0;">' + icon + ' ' + html + '</div>'; };
   el.innerHTML = filtered.map(function (p) {
+    var coord = pclQuickActions(p)
+      + (p.tel ? line('📞', pcTelLink(p.tel) + (p.operateurActuel ? ' ' + pcOpBadge(p.operateurActuel) : '')) : '')
+      + (p.email ? line('📧', pcMailLink(p.email)) : '')
+      + (p.tva ? line('💳', pcEsc(p.tva)) : '');
+    var profil = line('🏷', pcEsc(pcoNormSource(p.source) || '-'))
+      + (p.statutPro ? line('💼', pcEsc(pcoNormStatutPro(p.statutPro))) : '')
+      + pcoQrExtras(p);
+    var suivi = (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '') + pcContactInfo(p) + pcRdvInfo(p) + pcBomInfo(p);
     return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
-      + '<b style="font-size:13px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
-      + ' <span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p)
-      + pclQuickActions(p)
-      + (p.tel ? '<div style="font-size:12px;color:#555;">📞 ' + pcTelLink(p.tel) + (p.operateurActuel ? ' ' + pcOpBadge(p.operateurActuel) : '') + '</div>' : '')
-      + (p.email ? '<div style="font-size:12px;color:#555;">📧 ' + pcMailLink(p.email) + '</div>' : '')
-      + (p.tva ? '<div style="font-size:12px;color:#555;">💳 ' + pcEsc(p.tva) + '</div>' : '')
-      + '<div style="font-size:12px;color:#555;">🏷 ' + pcEsc(pcoNormSource(p.source) || '-') + '</div>'
-      + (p.statutPro ? '<div style="font-size:12px;color:#555;">💼 ' + pcEsc(pcoNormStatutPro(p.statutPro)) + '</div>' : '')
-      + pcoQrExtras(p)
-      + (p.commentaire ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.commentaire) + '</div>' : '')
-      + pcContactInfo(p) + pcRdvInfo(p) + pcBomInfo(p)
+      + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><b style="font-size:14px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
+      + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p) + pclRefLine(p) + '</div>'
+      + pclSec('Coordonnées') + coord
+      + pclSec('Profil') + profil
+      + (suivi ? pclSec('Suivi') + suivi : '')
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
       + '<select onchange="pcChangeStatus(\'co\', \'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
-      + PC_STATUTS.map(function (s) { return '<option value="' + s + '"' + (p.statut === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
+      + PC_STATUTS.map(function (st) { return '<option value="' + st + '"' + (p.statut === st ? ' selected' : '') + '>' + st + '</option>'; }).join('')
       + '</select>'
       + pcRdvButtons('co', p)
       + '<button onclick="pcoEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
@@ -8774,10 +8912,7 @@ var PC_BTN_KO = 'background:#f3f4f6;color:#4b5563;border:none;border-radius:8px;
 var PC_BTN_SM = 'padding:4px 9px;border:1px solid #c4b5fd;border-radius:6px;background:#f5f3ff;color:#6d28d9;font-size:11px;font-weight:700;cursor:pointer;';
 
 // Pastille colorée par opérateur (couleurs de repère, pas les logos officiels)
-var PC_OP_COLORS = {
-  'orange': ['#ff7900', '#fff'], 'proximus': ['#8b5cf6', '#fff'], 'base': ['#16a34a', '#fff'], 'voo': ['#dc2626', '#fff'],
-  'telenet': ['#facc15', '#1a1a1a'], 'mobile vikings': ['#2563eb', '#fff'], 'scarlet': ['#ec4899', '#fff'], 'hey': ['#14b8a6', '#fff']
-};
+var PC_OP_COLORS = { 'orange': ['#ff7900', '#fff'], 'proximus': ['#8b5cf6', '#fff'], 'base': ['#16a34a', '#fff'] };   // les autres opérateurs : gris
 function pcOpBadge(name) {
   if (!name) return '';
   var c = PC_OP_COLORS[String(name).trim().toLowerCase()] || ['#e5e7eb', '#4b5563'];
@@ -8822,7 +8957,7 @@ window.pcModalClose = function (kind) {
 // Historique des rdv : on archive le rdv courant avec son issue avant de le remplacer / clôturer
 function pcRdvHistoryPatch(p, issue) {
   if (!p.rdv || !p.rdv.date) return {};
-  return { rdvHistory: window.arrayUnion({ date: p.rdv.date, note: p.rdv.note || '', issue: issue, closedAt: new Date().toISOString() }) };
+  return { rdvHistory: window.arrayUnion({ date: p.rdv.date, note: p.rdv.note || '', lieu: p.rdv.lieu || '', issue: issue, closedAt: new Date().toISOString() }) };
 }
 
 // --- Changement de statut (liste déroulante) ---
@@ -8887,15 +9022,46 @@ window.pcRdvOpen = function (kind, docId) {
   var d;
   if (p.rdv && p.rdv.date && !isNaN(new Date(p.rdv.date))) d = new Date(p.rdv.date);
   else { d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); }
+  var cur = (p.rdv && p.rdv.lieu) || '';
+  var lieuHtml = '';
+  window._pcRdvOpts = null;
+  if (kind === 'cl') {
+    // Lieu du rdv : adresse de la fiche, adresse lue sur la facture, ou une autre adresse
+    var opts = [], seen = {};
+    var add = function (label, addr) { var k = String(addr || '').toLowerCase(); if (!k || seen[k]) return; seen[k] = 1; opts.push({ label: label, addr: addr }); };
+    add('Adresse du client', pclAddr(p));
+    (p.factures || []).forEach(function (f) { var l = f.lu || {}; add('Adresse lue sur la facture', [l.adresse, [l.cp, l.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ')); });
+    var sel = -1;
+    opts.forEach(function (o, i) { if (cur && o.addr.toLowerCase() === cur.toLowerCase()) sel = i; });
+    if (sel < 0) sel = cur ? opts.length : 0;
+    window._pcRdvOpts = opts;
+    var radio = function (i, label, addr) {
+      return '<label style="display:block;border:1px solid #e5e7eb;border-radius:8px;padding:6px 9px;margin-top:5px;font-size:12px;cursor:pointer;"><input type="radio" name="pc-rdv-lieu" value="' + i + '"' + (sel === i ? ' checked' : '') + ' onchange="pcRdvLieuSel()"> <b>' + pcEsc(label) + '</b>'
+        + (addr ? '<div style="color:#555;margin-left:20px;">' + pcEsc(addr) + '</div>' : '') + '</label>';
+    };
+    lieuHtml = '<div style="font-size:12px;font-weight:700;margin-top:10px;">📍 Lieu du rdv</div>'
+      + opts.map(function (o, i) { return radio(i, o.label, o.addr); }).join('')
+      + radio(opts.length, 'Autre adresse', '')
+      + '<input id="pc-rdv-lieu-autre" type="text" placeholder="Rue, n°, code postal, ville" value="' + (sel === opts.length ? pcEsc(cur) : '') + '" style="' + PC_INP + 'display:' + (sel === opts.length ? 'block' : 'none') + ';">';
+  } else {
+    lieuHtml = '<div style="font-size:12px;font-weight:700;margin-top:10px;">📍 Adresse du rdv (facultatif)</div>'
+      + '<input id="pc-rdv-lieu-autre" type="text" placeholder="Rue, n°, code postal, ville" value="' + pcEsc(cur) + '" style="' + PC_INP + '">';
+  }
   pcModal(
     '<h3 style="color:#f97316;margin:0 0 4px;font-size:15px;">📅 Rendez-vous</h3>'
     + '<div style="font-size:12px;color:#666;margin-bottom:10px;">Pour : ' + pcEsc(p.nom || '') + '</div>'
     + '<div style="font-size:12px;font-weight:700;">Date et heure</div>'
     + '<input id="pc-rdv-date" type="datetime-local" value="' + pcLocalInput(d) + '" style="' + PC_INP + '">'
-    + '<input id="pc-rdv-note" type="text" placeholder="Lieu / visio / remarque (facultatif)" value="' + pcEsc((p.rdv && p.rdv.note) || '') + '" style="' + PC_INP + '">'
+    + lieuHtml
+    + '<input id="pc-rdv-note" type="text" placeholder="Remarque / visio (facultatif)" value="' + pcEsc((p.rdv && p.rdv.note) || '') + '" style="' + PC_INP + '">'
     + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'flex:1;" onclick="pcRdvSave(\'' + kind + '\',\'' + docId + '\')">Enregistrer le rdv</button>'
     + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose(\'' + kind + '\')">Annuler</button></div>'
   );
+};
+window.pcRdvLieuSel = function () {
+  var r = document.querySelector('input[name="pc-rdv-lieu"]:checked'), o = window._pcRdvOpts || [];
+  var inp = document.getElementById('pc-rdv-lieu-autre');
+  if (inp) inp.style.display = (r && parseInt(r.value, 10) === o.length) ? 'block' : 'none';
 };
 window.pcRdvSave = async function (kind, docId) {
   var p = pcFind(kind, docId);
@@ -8905,7 +9071,12 @@ window.pcRdvSave = async function (kind, docId) {
   if (!d || isNaN(d)) { alert('Merci de choisir une date et une heure.'); return; }
   if (d < new Date() && !confirm('Cette date est dans le passé. Enregistrer quand même ?')) return;
   var iso = d.toISOString();
-  var patch = Object.assign(pcStatusPatch('Rdv'), { rdv: { date: iso, note: document.getElementById('pc-rdv-note').value.trim() } });
+  var lieu = '', other = document.getElementById('pc-rdv-lieu-autre');
+  if (window._pcRdvOpts) {
+    var r = document.querySelector('input[name="pc-rdv-lieu"]:checked'), i = r ? parseInt(r.value, 10) : -1;
+    lieu = (i >= 0 && i < window._pcRdvOpts.length) ? window._pcRdvOpts[i].addr : (other ? other.value.trim() : '');
+  } else lieu = other ? other.value.trim() : '';
+  var patch = Object.assign(pcStatusPatch('Rdv'), { rdv: { date: iso, note: document.getElementById('pc-rdv-note').value.trim(), lieu: lieu } });
   if (p.rdv && p.rdv.date && p.rdv.date !== iso) Object.assign(patch, pcRdvHistoryPatch(p, 'Reporté / nouveau rdv'));
   try {
     await window.updateDoc(pcRef(kind, docId), patch);
@@ -8961,7 +9132,7 @@ window.pcConvertOpen = function (kind, docId) {
   var f = function (id, ph, val) { return '<input id="pc-cv-' + id + '" placeholder="' + ph + '" value="' + pcEsc(val || '') + '" style="' + PC_INP + '">'; };
   var extra;
   if (kind === 'cl') {
-    extra = f('ville', 'Ville / adresse', p.ville) + f('societe', 'Société', p.societe) + f('tva', 'N° de TVA', p.tva);
+    extra = f('ville', 'Adresse complète (rue, cp ville)', pclAddr(p)) + f('societe', 'Société', p.societe) + f('tva', 'N° de TVA', p.tva);
   } else {
     var sp = (p.statutPro || '').toLowerCase();
     var spv = sp.indexOf('ind') >= 0 ? 'independant' : (sp.indexOf('sal') >= 0 || sp.indexOf('employ') >= 0 ? 'salarie' : '');
@@ -9005,6 +9176,8 @@ window.pcConvertSave = async function (kind, docId) {
       coll = 'clients';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: g('ville'), adresse: g('ville'), cp: '',
         societe: g('societe'), tva: pcNormTva(g('tva')), reference: pcNormTel(p.referenceTel || ''), referencePrenom: p.referencePrenom || '', referenceNom: p.referenceNom || '', titulaire: p.titulaire || '', type: p.type || '', factures: Array.isArray(p.factures) ? p.factures : [], etat: 'actif', sourceProspectId: docId, createdAt: now };
+      var fxc = pcFixAdresse(data);
+      if (fxc) { data.adresse = fxc.adresse; data.cp = fxc.cp; data.ville = fxc.ville; }
     } else {
       coll = 'consultantsCrm';
       data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: pcNormTva(g('tva')),
@@ -9089,7 +9262,7 @@ window.pcRdvIcs = function (kind, docId) {
   var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Phil-Mobile//Rdv//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', 'UID:' + docId + '-' + s.getTime() + '@phil-mobile.be', 'DTSTAMP:' + utc(new Date()),
     'DTSTART:' + loc(s), 'DTEND:' + loc(e), 'SUMMARY:' + esc('Rdv ' + (kind === 'cl' ? 'client' : 'consultant') + ' — ' + (p.nom || '')),
-    'DESCRIPTION:' + esc(desc), p.rdv.note ? 'LOCATION:' + esc(p.rdv.note) : '',
+    'DESCRIPTION:' + esc(desc), (p.rdv.lieu || p.rdv.note) ? 'LOCATION:' + esc(p.rdv.lieu || p.rdv.note) : '',
     'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:Rdv dans 30 minutes', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'
   ].filter(Boolean);
   var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
@@ -9114,7 +9287,8 @@ function pcRdvInfo(p) {
   var badge = st === 'today' ? ' <span style="background:#fef3c7;color:#92400e;border-radius:99px;padding:1px 8px;font-size:10px;">Aujourd\'hui</span>'
     : st === 'late' ? ' <span style="background:#fde2e1;color:#c0392b;border-radius:99px;padding:1px 8px;font-size:10px;">⚠️ Rdv passé — à clôturer</span>' : '';
   return '<div style="font-size:12px;font-weight:700;color:#6d28d9;margin-top:3px;">📅 Rdv : ' + pcEsc(pcFmtRdv(p.rdv.date)) + badge + '</div>'
-    + (p.rdv.note ? '<div style="font-size:12px;color:#555;">📍 ' + pcEsc(p.rdv.note) + '</div>' : '');
+    + (p.rdv.lieu ? '<div style="font-size:12px;color:#555;">📍 ' + pcMapLink(p.rdv.lieu) + '</div>' : '')
+    + (p.rdv.note ? '<div style="font-size:12px;color:#555;">📝 ' + pcEsc(p.rdv.note) + '</div>' : '');
 }
 function pcRdvButtons(kind, p) {
   var k = '\'' + kind + '\',\'' + p.docId + '\'';
@@ -9238,6 +9412,7 @@ function rdvPageRender() {
       + '<div style="font-size:13px;font-weight:700;color:' + (late ? '#c0392b' : '#5b21b6') + ';">' + pcEsc(pcFmtRdv(p.rdv.date)) + '</div>'
       + '<div style="font-size:14px;font-weight:700;margin-top:2px;">' + pcEsc(p.nom || '') + '</div>'
       + (p.tel ? '<div style="font-size:12px;color:#555;margin-top:2px;">📞 ' + pcTelLink(p.tel) + '</div>' : '')
+      + (p.rdv.lieu ? '<div style="font-size:12px;color:#555;margin-top:2px;">📍 ' + pcMapLink(p.rdv.lieu) + '</div>' : '')
       + (p.rdv.note ? '<div style="font-size:12px;color:#555;margin-top:2px;">📝 ' + pcEsc(p.rdv.note) + '</div>' : '')
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + pcRdvButtons(_rdvPg.kind, p) + '</div></div>';
   }).join('');
@@ -9959,6 +10134,8 @@ window.pmTvaTypeCheck = async function (pref) {
   var typeEl = document.getElementById(pref + '-type');
   if (!typeEl || !/^BE\d{10}$/.test(tva)) return;
   if (typeEl.value && typeEl.value !== 'Particulier') return;
+  var socEl = document.getElementById(pref + '-societe');
+  if (socEl && socEl.value.trim()) { typeEl.value = 'Société'; if (pref === 'pcl') window.pclToggleSociete(); return; }
   var t = await pmAskType();
   if (!t) return;
   typeEl.value = t;
@@ -10747,19 +10924,37 @@ var CRMFACT_CTX = {
   pcl: {
     coll: 'prospectsClients', box: 'pcl-factures-box', status: 'pcl-facture-status', review: 'pcl-facture-review',
     find: function (id) { return (window._pclData || []).find(function (x) { return x.docId === id; }); },
-    val: function (f) { var el = document.getElementById('pcl-' + f); return el ? el.value.trim() : ''; },
-    set: function (f, v) { var el = document.getElementById('pcl-' + f); if (el && (f === 'type' || !el.value.trim())) { el.value = v; if (f === 'type') window.pclToggleSociete(); } },
+    val: function (f) { var el = document.getElementById('pcl-' + f); if (!el) return ''; return el.type === 'checkbox' ? (el.checked ? '1' : '') : el.value.trim(); },
+    set: function (f, v) {
+      var el = document.getElementById('pcl-' + f);
+      if (!el) return;
+      if (el.type === 'checkbox') { el.checked = v === '1'; if (f === 'smartphone') window.pclToggleSmartphone(); return; }
+      if (f === 'type' || !el.value.trim()) {
+        el.value = v;
+        if (f === 'type') window.pclToggleSociete();
+        if (el.tagName === 'SELECT' && window.pclOpColor) window.pclOpColor(el);
+      }
+    },
     name: function () { return (this.val('prenom') + ' ' + this.val('nom')).trim(); },
     setName: function (full) { var sp = pmSplitName(full), a = document.getElementById('pcl-prenom'), b = document.getElementById('pcl-nom'); if (a) a.value = sp.prenom; if (b) b.value = sp.nom; },
     setTit: function (v) { var el = document.getElementById('pcl-titulaire'); if (el) el.value = v; },
     cands: function (d, meta) {
       var ville = [String(d.cp || '').trim(), String(d.ville || '').trim()].filter(Boolean).join(' ');
-      return [
+      var svc = meta.service || '', mob = /Mobile/.test(svc), net = /Internet/.test(svc);
+      var opm = pclOptMatch('pcl-op-mobile', meta.fournisseur), opi = pclOptMatch('pcl-op-internet', meta.fournisseur);
+      var c = [
         { id: 'type', label: 'Type', v: meta.typeClient || '' },
         { id: 'societe', label: 'Société', v: meta.typeClient === 'Société' ? String(d.societe || '').trim() : '' },
+        { id: 'adresse', label: 'Adresse', v: String(d.adresse || '').trim() },
         { id: 'ville', label: 'Ville', v: ville }, { id: 'tva', label: 'TVA', v: pcNormTva(d.tva || '') },
         { id: 'email', label: 'Email', v: String(d.email || '').trim() }
       ];
+      if (mob && opm) c.push({ id: 'op-mobile', label: 'Opérateur mobile', v: opm });
+      if (mob && meta.numeroClient) c.push({ id: 'num-mobile', label: 'N° client mobile', v: meta.numeroClient });
+      if (net && opi) c.push({ id: 'op-internet', label: 'Opérateur internet', v: opi });
+      if (net && meta.numeroClient) c.push({ id: 'num-internet', label: 'N° client internet', v: meta.numeroClient });
+      if (mob && meta.smartphone) c.push({ id: 'smartphone', label: 'Smartphone dans l\'abonnement (client lié)', v: '1' });
+      return c;
     }
   }
 };
@@ -10798,6 +10993,11 @@ function crmFactRender() {
       + '<div style="min-width:0;"><div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ' + crmEsc(f.name || 'facture.pdf') + '</div>'
       + (info ? '<div style="color:#6b7280;">' + crmEsc(info) + '</div>' : '')
       + (f.titulaire ? '<div style="color:#6b7280;">Au nom de : ' + crmEsc(f.titulaire) + '</div>' : '')
+      + (r.pend ? (f.service ? '<div style="color:#6b7280;">' + crmEsc(f.service) + (f.smartphone ? ' · 📱 smartphone' : '') + '</div>'
+        : '')
+        : '<div style="margin-top:3px;"><select onchange="crmFactSetService(' + r.i + ',this.value)" style="font-size:11px;padding:2px 4px;border:1px solid #ddd;border-radius:6px;">'
+          + [['', '— type de facture —'], ['Mobile', '📱 Mobile'], ['Internet', '🌐 Internet'], ['Mobile + Internet', '📱🌐 Mobile + Internet'], ['Énergie', '⚡ Énergie']].map(function (o) { return '<option value="' + o[0] + '"' + ((f.service || '') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+          + '</select>' + (f.smartphone ? ' <span style="font-size:11px;color:#92400e;font-weight:700;">📱 smartphone lié</span>' : '') + '</div>')
       + '</div><div style="display:flex;gap:5px;flex-shrink:0;">' + btns + '</div></div>';
   }).join('');
 }
@@ -10806,14 +11006,16 @@ function crmFactBuildPrompt() {
 
 Le PDF joint est une facture. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
 
-{ "fournisseur": "", "titulaire": "", "typeClient": "", "societe": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0 }
+{ "fournisseur": "", "titulaire": "", "typeClient": "", "societe": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0, "service": "", "smartphone": false }
 
 Règles :
 - Chaîne vide "" si une info n'est pas trouvée (jamais null, jamais d'invention). "montantTvac" = 0 si absent.
 - "fournisseur" = l'émetteur de la facture (ex: Proximus, Orange, Eneco).
 - "titulaire" = nom du destinataire de la facture, au format "Prénom Nom" (prénom en premier, sans civilité M/Mme/Mr). Si c'est une société, le nom de la société.
 - "typeClient" = "Société" si le destinataire est une société (SRL, SA, SPRL, ASBL, etc.), "Indépendant" si c'est une personne physique avec un numéro de TVA, sinon "Particulier".
-- "societe" = nom de la société destinataire si typeClient est "Société", sinon "".
+- "societe" = nom de la société destinataire (SRL, SA, SPRL, ASBL...) uniquement si le destinataire est une vraie société ; si c'est une personne physique, "".
+- "service" = "Mobile" si la facture concerne des abonnements GSM/mobile, "Internet" si internet, TV ou téléphone fixe, "Mobile + Internet" si les deux, "Énergie" pour électricité/gaz, sinon "".
+- "smartphone" = true UNIQUEMENT si la facture montre un smartphone/appareil acheté ou payé à tempérament avec l'abonnement (lignes « appareil », « smartphone », « paiement de l'appareil », « solde appareil »), sinon false.
 - "adresse" = rue et numéro (avec boîte) du CLIENT destinataire, sans code postal ni ville. "cp" = code postal du client (4 chiffres). "ville" = ville du client. Ne prends jamais l'adresse du fournisseur.
 - "tva" = numéro de TVA du CLIENT uniquement (souvent après "Votre n° de TVA"), au format BE0123456789. Ignore la TVA du fournisseur.
 - "email" = adresse e-mail du client (ex: "Nom d'utilisateur"), jamais celle du fournisseur.
@@ -10849,16 +11051,26 @@ function crmFactPersist() {
   if (item) item.factures = list;
   return window.updateDoc(window.doc(window.db, crmFactCtx().coll, crmFact.clientId), { factures: list, updatedAt: new Date().toISOString() });
 }
+// Type du client selon la facture : TVA + nom de société = Société ; TVA sans nom de société = Indépendant ; sans TVA = Particulier
+function crmFactTypeOf(d) {
+  d = d || {};
+  var tva = pcNormTva(d.tva || ''), soc = String(d.societe || '').trim();
+  if (tva) return soc ? 'Société' : 'Indépendant';
+  if (soc && d.typeClient === 'Société') return 'Société';
+  return d.typeClient === 'Particulier' ? 'Particulier' : '';
+}
 function crmFactCleanMeta(d, file) {
   d = d || {};
-  var n = parseFloat(d.montantTvac);
+  var n = parseFloat(d.montantTvac), typ = crmFactTypeOf(d);
   return {
     name: file.name, uploadedAt: new Date().toISOString(),
     fournisseur: String(d.fournisseur || '').trim(), titulaire: pcNormName(String(d.titulaire || '').trim()),
     numeroFacture: String(d.numeroFacture || '').trim(), numeroClient: String(d.numeroClient || '').trim(),
     dateFacture: /^\d{4}-\d{2}-\d{2}$/.test(d.dateFacture || '') ? d.dateFacture : '', montantTvac: isFinite(n) && n > 0 ? n : 0,
-    typeClient: ['Particulier', 'Indépendant', 'Société'].indexOf(d.typeClient) >= 0 ? d.typeClient : (pcNormTva(d.tva || '') ? 'Indépendant' : ''),
-    lu: { typeClient: ['Particulier', 'Indépendant', 'Société'].indexOf(d.typeClient) >= 0 ? d.typeClient : '', societe: String(d.societe || '').trim(), adresse: String(d.adresse || '').trim(), cp: String(d.cp || '').trim(), ville: String(d.ville || '').trim(), tva: pcNormTva(d.tva || ''), email: String(d.email || '').trim() }
+    typeClient: typ,
+    service: ['Mobile', 'Internet', 'Mobile + Internet', 'Énergie'].indexOf(d.service) >= 0 ? d.service : '',
+    smartphone: d.smartphone === true,
+    lu: { typeClient: typ, societe: String(d.societe || '').trim(), adresse: String(d.adresse || '').trim(), cp: String(d.cp || '').trim(), ville: String(d.ville || '').trim(), tva: pcNormTva(d.tva || ''), email: String(d.email || '').trim() }
   };
 }
 window.crmFactureAdd = async function (file) {
@@ -10892,13 +11104,13 @@ window.crmFactureAdd = async function (file) {
 function crmFactShowReview(d, meta) {
   var ctx = crmFactCtx();
   var rv = document.getElementById(ctx.review); if (!rv) return;
-  if (!meta.typeClient && d && d.tva) meta.typeClient = 'Indépendant';
+  meta.typeClient = crmFactTypeOf(d) || meta.typeClient;
   var cand = ctx.cands(d, meta);
   var html = '', n = 0;
   cand.forEach(function (c) {
     if (!c.v) return;
     var cur = ctx.val(c.id);
-    if (!cur || (c.id === 'type' && cur === 'Particulier')) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="crm-fact-chk" data-field="' + c.id + '" data-val="' + crmEsc(c.v).replace(/"/g, '&quot;') + '" checked> ' + crmEsc(c.label) + ' : <b>' + crmEsc(c.v) + '</b></label>'; n++; }
+    if (!cur || (c.id === 'type' && (cur === 'Particulier' || (cur === 'Société' && c.v === 'Indépendant' && !ctx.val('societe'))))) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="crm-fact-chk" data-field="' + c.id + '" data-val="' + crmEsc(c.v).replace(/"/g, '&quot;') + '" checked> ' + crmEsc(c.label) + ' : <b>' + crmEsc(c.v) + '</b></label>'; n++; }
     else if (cur.toLowerCase() !== c.v.toLowerCase()) html += '<div style="font-size:12px;color:#6b7280;margin:2px 0;">' + crmEsc(c.label) + ' : facture « ' + crmEsc(c.v) + ' », fiche « ' + crmEsc(cur) + ' » (non modifié)</div>';
   });
   var warn = '';
@@ -10920,6 +11132,11 @@ function crmFactShowReview(d, meta) {
     + (n ? '<button type="button" onclick="crmFactApply()" style="margin-top:5px;border:none;background:#f97316;color:#fff;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">Compléter la fiche</button>' : '')
     + '</div>';
 }
+window.crmFactSetService = function (i, v) {
+  var f = crmFact.list[i]; if (!f) return;
+  f.service = v;
+  crmFactPersist().catch(function (e) { console.error(e); });
+};
 window.crmFactName = function (mode) {
   var ctx = crmFactCtx(), tit = crmFact.review && crmFact.review.titulaire;
   if (!tit) return;
@@ -10931,7 +11148,7 @@ window.crmFactName = function (mode) {
 window.crmFactReread = async function (i) {
   var f = crmFact.list[i]; if (!f) return;
   try {
-    if (!f.lu) {
+    if (!f.lu || f.service === undefined) {
       crmFactStatus('wait', '🤖 Relecture de la facture…');
       var url = await window.getDownloadURL(window.storageRef(window.storage, f.path));
       var blob = await (await fetch(url)).blob();
