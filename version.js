@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.91 - Connexion et messages";
+  scope.APP_VERSION = "14.92 - Conversion et consultant";
 })();

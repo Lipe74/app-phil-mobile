@@ -8223,7 +8223,8 @@ function pclRenderList(list) {
     sit += pclQrExtras(p);
     // Suivi
     var src = pclSourcesHtml(p);
-    var suivi = ((src || p.provenance) ? line('🎯', src + (p.provenance ? (src ? ' · ' : '') + '🧭 ' + pcEsc(p.provenance) : '')) : '')
+    var suivi = (p.venteLaisseeA ? line('🤝', '<b>Vente laissée à ' + pcEsc(p.venteLaisseeA) + '</b> (devenu consultant)') : '')
+      + ((src || p.provenance) ? line('🎯', src + (p.provenance ? (src ? ' · ' : '') + '🧭 ' + pcEsc(p.provenance) : '')) : '')
       + (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '')
       + pcContactInfo(p) + pcRdvInfo(p, 'cl')
       + pclContactSummary(p);
@@ -9030,8 +9031,34 @@ window.pcRdvDoneOpen = function (kind, docId) {
     + '<button style="' + big + 'background:#fef9c3;color:#a16207;" onclick="pcRdvWait(\'' + kind + '\',\'' + docId + '\')">⏳ En attente</button>'
     + '<button style="' + big + 'background:#f1f1f1;color:#555;" onclick="pcRdvLost(\'' + kind + '\',\'' + docId + '\')">❌ ' + lbl + ' perdu</button>'
     + '<button style="' + big + 'background:#E8F5E9;color:#2E7D32;" onclick="pcConvertOpen(\'' + kind + '\',\'' + docId + '\')">✅ ' + lbl + ' converti</button>'
+    + (kind === 'cl' ? '<button style="' + big + 'background:#e0f2fe;color:#0369a1;" onclick="pcBecomeConsultant(\'' + docId + '\')">🧑‍💼 Il devient consultant</button>' : '')
     + '<button style="' + PC_BTN_KO + 'width:100%;margin-top:12px;" onclick="pcModalClose()">Fermer</button>'
   );
+};
+// Le prospect client devient consultant : fiche dans Prospects Consultants ; la vente lui est laissée (Perdu pour moi, archivé, hors stats)
+window.pcBecomeConsultant = async function (docId) {
+  var p = pcFind('cl', docId);
+  if (!p) return;
+  var nom = pcNormName(p.nom || '');
+  if (!confirm('« ' + nom + ' » devient consultant ?\n\n• une fiche est créée dans Prospects Consultants\n• la vente lui est laissée : ce prospect client passe en Perdu (archivé) et ne compte pas dans tes stats.')) return;
+  var parts = nom.split(/\s+/), prenom = parts.length > 1 ? parts.slice(0, -1).join(' ') : '', fam = parts.length > 1 ? parts[parts.length - 1] : nom;
+  var now = new Date().toISOString();
+  var data = {
+    consultantId: p.consultantId || window.pmCurrentUser.id, nom: nom, prenom: prenom, nomFamille: fam,
+    tel: pcNormTel(p.tel || ''), email: p.email || '', tva: p.tva ? pcNormTva(p.tva) : '',
+    source: 'Prospect client devenu consultant', operateurActuel: '', statutPro: p.tva ? PCO_INDEP : '',
+    commentaire: 'Ancien prospect client' + (p.rdv && p.rdv.date ? ' (rdv du ' + pcFmtDate(p.rdv.date) + ')' : '') + ' — vente laissée à ses soins.',
+    referencePrenom: '', referenceNom: '', referenceTel: '',
+    statut: 'Nouveau', dateCreation: now, dateMaj: now, sourceProspectId: docId
+  };
+  try {
+    if (!(await pcDupWarnNew('prospectsConsultants', data))) return;
+    var ref = await window.addDoc(window.collection(window.db, 'prospectsConsultants'), data);
+    await window.updateDoc(pcRef('cl', docId), Object.assign(pcStatusPatch('Perdu'), pcRdvHistoryPatch(p, 'Devenu consultant'), { rdv: null, venteLaisseeA: nom, consultantProspectId: ref.id }));
+    pcToast('🧑‍💼 Fiche créée dans Prospects Consultants. Vente laissée à ' + (prenom || nom) + '.');
+    pcModalClose('cl');
+    try { pcoLoadList(); } catch (e) {}
+  } catch (err) { alert('Erreur: ' + err.message); }
 };
 window.pcRdvWait = async function (kind, docId) {
   var p = pcFind(kind, docId);
@@ -9054,7 +9081,72 @@ window.pcRdvLost = async function (kind, docId) {
 };
 
 // --- Conversion : fiche pré-remplie à valider (Gestion Clients / Gestion Consultants), sans créer l'application ---
-window.pcConvertOpen = function (kind, docId) {
+// Fiche déjà présente dans Gestion Clients / Consultants (même lien, même contrat, même téléphone / e-mail ou mêmes nom et prénom)
+async function pcFindExisting(kind, p) {
+  var coll = kind === 'cl' ? 'clients' : 'consultantsCrm';
+  var uid = p.consultantId || window.pmCurrentUser.id;
+  var snap = await window.getDocs(window.query(window.collection(window.db, coll), window.where('consultantId', '==', uid)));
+  var list = [];
+  snap.forEach(function (d) { list.push(Object.assign({ docId: d.id }, d.data())); });
+  return list.find(function (x) {
+    return x.sourceProspectId === p.docId
+      || (p.contractId && (x.sourceContractId === p.contractId || (x.contrats || []).some(function (c) { return c.contractId === p.contractId; })))
+      || pcSamePerson(p, x);
+  }) || null;
+}
+window.pcConvertOpen = async function (kind, docId) {
+  var p = pcFind(kind, docId);
+  if (!p) return;
+  var rec = null;
+  try { rec = await pcFindExisting(kind, p); } catch (err) { console.log('Recherche de fiche existante impossible:', err.message); }
+  if (!rec) { window.pcConvertForm(kind, docId); return; }
+  window._pcConvMatch = { kind: kind, docId: docId, rec: rec };
+  var big = 'display:block;width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;';
+  var nomRec = ((rec.prenom || '') + ' ' + (rec.nom || '')).trim() || 'sans nom';
+  var where = kind === 'cl' ? 'Gestion Clients' : 'Gestion Consultants';
+  pcModal(
+    '<h3 style="color:#2E7D32;margin:0 0 4px;font-size:15px;">✅ Fiche déjà existante</h3>'
+    + '<div style="font-size:13px;margin:8px 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:9px;">Une fiche existe déjà dans ' + where + ' :<br><b>' + pcEsc(nomRec) + '</b>' + (rec.tel ? ' · ' + pcEsc(pcTelFmt(rec.tel)) : '') + (rec.email ? '<br>' + pcEsc(rec.email) : '') + '</div>'
+    + '<div style="font-size:12px;color:#666;">Lier le prospect à cette fiche reprend les informations qui lui manquent (sans écraser les tiennes) et archive le prospect en « Converti ».</div>'
+    + '<button style="' + big + 'background:#16a34a;color:#fff;" onclick="pcConvertLink(\'' + kind + '\',\'' + docId + '\')">🔗 Lier à cette fiche et la compléter</button>'
+    + '<button style="' + big + 'background:#f3f4f6;color:#4b5563;" onclick="pcConvertForm(\'' + kind + '\',\'' + docId + '\')">➕ Créer une nouvelle fiche quand même</button>'
+    + '<button style="' + PC_BTN_KO + 'width:100%;margin-top:12px;" onclick="pcModalClose(\'' + kind + '\')">Annuler</button>'
+    + '<div style="text-align:center;margin-top:10px;"><a href="javascript:void(0)" onclick="pcConvertSkip(\'' + kind + '\',\'' + docId + '\')" style="font-size:11px;color:#6b7280;text-decoration:underline;">Passer en Converti sans lier de fiche</a></div>'
+  );
+};
+window.pcConvertLink = async function (kind, docId) {
+  var m = window._pcConvMatch, p = pcFind(kind, docId);
+  if (!m || m.docId !== docId || m.kind !== kind || !p) { alert('Fiche introuvable, recommence la conversion.'); return; }
+  var c = m.rec, coll = kind === 'cl' ? 'clients' : 'consultantsCrm', upd = { updatedAt: new Date().toISOString() };
+  try {
+    (kind === 'cl' ? ['tel', 'email', 'societe', 'tva', 'type', 'titulaire', 'referencePrenom', 'referenceNom'] : ['tel', 'email', 'tva', 'statutPro']).forEach(function (f) {
+      if (pcIsEmpty(c[f]) && !pcIsEmpty(p[f])) upd[f] = p[f];
+    });
+    if (kind === 'cl') {
+      if (pcIsEmpty(c.reference) && p.referenceTel) upd.reference = pcNormTel(p.referenceTel);
+      if (Array.isArray(p.factures) && p.factures.length) {
+        var have = (Array.isArray(c.factures) ? c.factures : []).slice(), seen = {};
+        have.forEach(function (f) { seen[f.path || JSON.stringify(f)] = 1; });
+        p.factures.forEach(function (f) { var k = f.path || JSON.stringify(f); if (!seen[k]) { seen[k] = 1; have.push(f); } });
+        if (have.length !== (Array.isArray(c.factures) ? c.factures.length : 0)) upd.factures = have;
+      }
+      if (pcIsEmpty(c.adresse) && pcIsEmpty(c.ville)) {
+        var a = pclAddr(p);
+        if (a) {
+          var d = { adresse: a, ville: a, cp: '' }, fx = pcFixAdresse(d);
+          if (fx) { upd.adresse = fx.adresse; upd.cp = fx.cp; upd.ville = fx.ville; } else { upd.adresse = a; }
+        }
+      }
+    }
+    if (!c.sourceProspectId) upd.sourceProspectId = docId;
+    await window.updateDoc(window.doc(window.db, coll, c.docId), upd);
+    await pcConvertFinish(kind, docId, { convertedId: c.docId });
+    pcToast('✅ Prospect lié à la fiche de ' + (((c.prenom || '') + ' ' + (c.nom || '')).trim() || 'ce client') + ' et complété.');
+    pcModalClose(kind);
+    [crmLoadClients, crmLoadConsultants].forEach(function (fn) { try { fn(); } catch (e) {} });
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+window.pcConvertForm = function (kind, docId) {
   var p = pcFind(kind, docId);
   if (!p) return;
   var parts = (p.nom || '').trim().split(' ');
