@@ -2296,6 +2296,7 @@ async function loadPMUsers() {
         email: c.email,
         agent: c.fullName,
         isAdmin: !!c.isAdmin,
+        accountType: c.accountType || '',
         pqsValidated: !!c.pqsValidated,
         fastSCValidated: !!c.fastSCValidated,
         fastECValidated: !!c.fastECValidated,
@@ -7051,7 +7052,9 @@ function crmRenderCard(item, col) {
   var bg = inactive ? '#f9fafb' : '#fffaf7';
   var br = inactive ? '#e5e7eb' : '#fdba74';
   var op = inactive ? '0.6' : '1';
-  var isAuth = col === 'consultants';
+  var isApp = item._source === 'consultants';   // vrai compte de l'app (pas une simple fiche) : géré dans l'admin
+  var isAuth = col === 'consultants' || isApp;
+  var canOffer = !!window.pmCurrentUser && (window.pmCurrentUser.isAdmin === true || window.pmCurrentUser.accountType === 'philmobile');
   var editBtn = isAuth ? '' : '<button onclick="openCrmModal(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ Modifier</button>';
   var toggleBtn = isAuth ? '' : (inactive
     ? '<button onclick="crmToggle(&#39;' + col + '&#39;,&#39;' + item._id + '&#39;,false)" style="padding:3px 10px;border:1px solid #22c55e;border-radius:6px;background:#fff;color:#166534;font-size:11px;cursor:pointer;white-space:nowrap;">✅ Réactiver</button>'
@@ -7075,14 +7078,17 @@ function crmRenderCard(item, col) {
   var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
-  var offerBtn = (col === 'consultantsCrm' && !inactive && !isAuth) ? '<button type="button" title="Envoyer à l\'admin la demande d\'accès (app offerte)" onclick="crmOfferAccess(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #7dd3fc;border-radius:6px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎁 Préparer son accès</button>' : '';
-  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + offerBtn + toggleBtn + importBtn + '</div>';
+  var offerBtn = (col === 'consultantsCrm' && !inactive && !isAuth && canOffer) ? '<button type="button" title="Envoyer à l\'admin la demande d\'accès (app offerte)" onclick="crmOfferAccess(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #7dd3fc;border-radius:6px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎁 Préparer son accès</button>' : '';
+  var hideBtn = isApp ? '<button type="button" title="Retire seulement de ta liste, sans toucher à son compte" onclick="crmHide(&#39;' + item._id + '&#39;,' + (item._hidden ? 'false' : 'true') + ')" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;white-space:nowrap;">' + (item._hidden ? '👁 Réafficher' : '🙈 Masquer de ma liste') + '</button>' : '';
+  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn || hideBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + offerBtn + toggleBtn + hideBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
   if (item.type || item.tva) h += '<div style="font-size:12px;color:#555;margin-top:2px;">🏷️ ' + crmEsc([item.type, item.tva ? '🧾 TVA ' + item.tva : ''].filter(Boolean).join(' · ')) + '</div>';
   var _idS = item.idSmart || (item._source === 'consultants' ? item._id : '');
   var _dEn = item.dateEntree || item.dateDemarrage || '';
   if (_idS || _dEn) h += '<div style="font-size:12px;color:#555;margin-top:2px;">' + (_idS ? '🪪 ID Smart : <b>' + crmEsc(_idS) + '</b>' : '') + (_idS && _dEn ? ' · ' : '') + (_dEn ? '📅 Entrée : ' + crmEsc(/^\d{4}-\d{2}-\d{2}/.test(_dEn) ? pcFmtDate(_dEn) : _dEn) : '') + '</div>';
+  if (isApp && !inactive) h += '<div style="font-size:12px;color:#166534;">✅ Compte actif dans l\'app</div>';
+  if (inactive && (item.dateSortie || item.motifSortie)) h += '<div style="font-size:12px;color:#92400e;">🚪 Sortie' + (item.dateSortie ? ' le ' + crmEsc(/^\d{4}-\d{2}-\d{2}/.test(item.dateSortie) ? pcFmtDate(item.dateSortie) : item.dateSortie) : '') + (item.motifSortie ? ' · ' + crmEsc(item.motifSortie) : '') + '</div>';
   if (item.accesDemandeAt) h += '<div style="font-size:12px;color:#0369a1;">🎁 Accès (app offerte) demandé le ' + crmEsc(pcFmtDate(item.accesDemandeAt)) + '</div>';
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(pcTelFmt(item.tel)) + '</div>';
   if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
@@ -7107,10 +7113,13 @@ function crmRenderList(data, listId, col) {
   window._crmShown = window._crmShown || {};
   window._crmShown[listId] = data;
   if (!data.length) { el.innerHTML = '<div style="color:#999;">Aucun enregistrement.</div>'; return; }
+  var masques = data.filter(function(x){ return x._hidden; });
+  data = data.filter(function(x){ return !x._hidden; });
   var actifs = data.filter(function(x){ return x.etat !== 'desactive'; });
   var inactifs = data.filter(function(x){ return x.etat === 'desactive'; });
   var h = actifs.map(function(x){ return crmRenderCard(x, col); }).join('');
   if (inactifs.length) h += '<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Inactifs (' + inactifs.length + ')</summary><div style="margin-top:6px;">' + inactifs.map(function(x){ return crmRenderCard(x, col); }).join('') + '</div></details>';
+  if (masques.length) h += '<details style="margin-top:10px;"><summary style="font-size:12px;color:#9ca3af;cursor:pointer;">Masqués de ma liste (' + masques.length + ')</summary><div style="margin-top:6px;">' + masques.map(function(x){ return crmRenderCard(x, col); }).join('') + '</div></details>';
   el.innerHTML = h;
 }
 
@@ -7135,7 +7144,21 @@ function crmLoadClients() {
 var _crmCoUnsubs = [];
 var _crmCoSrc = { auth: [], crm: [] };
 function crmRebuildConsultants() {
-  _crmCoData = _crmCoSrc.auth.concat(_crmCoSrc.crm);
+  var hidden = window._crmHidden || [], crm = _crmCoSrc.crm.slice();
+  var low = function (v) { return String(v || '').trim().toLowerCase(); };
+  // Un compte de l'app et sa fiche de suivi (même ID Smart, e-mail ou téléphone) = une seule carte
+  var auth = _crmCoSrc.auth.map(function (a) {
+    var m = crm.find(function (f) {
+      return (f.idSmart && low(f.idSmart) === low(a._id)) || (f.email && a.email && low(f.email) === low(a.email)) || (pcNormTel(f.tel) && pcNormTel(f.tel) === pcNormTel(a.tel));
+    });
+    var r = Object.assign({}, a, { _hidden: hidden.indexOf(a._id) >= 0 });
+    if (m) {
+      ['adresse', 'cp', 'ville', 'societe', 'tva', 'type', 'dateEntree', 'idSmart', 'accesDemandeAt', 'statutPro'].forEach(function (k) { if (pcIsEmpty(r[k]) && !pcIsEmpty(m[k])) r[k] = m[k]; });
+      crm = crm.filter(function (f) { return f !== m; });
+    }
+    return r;
+  });
+  _crmCoData = auth.concat(crm);
   _crmCoData.sort(function(a,b){ return (a.nom||'').localeCompare(b.nom||''); });
   crmRenderList(_crmCoData, 'crm-co-list', 'consultantsCrm');
 }
@@ -7155,10 +7178,14 @@ function crmLoadConsultants() {
         var parts=fn.split(' ');
         var nom=parts.length>1?parts[parts.length-1]:'';
         var prenom=parts.length>1?parts.slice(0,-1).join(' '):fn;
-        _crmCoSrc.auth.push({ _id:d.id, _source:'consultants', prenom:prenom, nom:nom, tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', dateDemarrage:data.startDate||'', etat:data.active===false?'desactive':'actif', _aspInit:data.aspInit||0, _aspFromContracts:data.aspFromContracts||0 });
+        _crmCoSrc.auth.push({ _id:d.id, _source:'consultants', prenom:prenom, nom:nom, tel:data.phone||'', email:data.email||'', ville:'', adresse:'', cp:'', societe:'', tva:'', dateDemarrage:data.startDate||'', dateSortie:data.exitDate||'', motifSortie:data.exitReason||'', etat:data.active===false?'desactive':'actif', _aspInit:data.aspInit||0, _aspFromContracts:data.aspFromContracts||0 });
       });
       crmRebuildConsultants();
     }, onErr));
+    _crmCoUnsubs.push(window.onSnapshot(window.doc(window.db,'consultants',myId), function(snap) {
+      window._crmHidden = ((snap.data() || {}).crmHidden) || [];
+      crmRebuildConsultants();
+    }, function(){ /* liste des masqués indisponible : on affiche tout */ }));
     _crmCoUnsubs.push(window.onSnapshot(window.query(window.collection(window.db,'consultantsCrm'), window.where('consultantId','==',myId)), function(snap) {
       _crmCoSrc.crm = [];
       snap.forEach(function(d){ _crmCoSrc.crm.push(Object.assign({ _id:d.id, _source:'consultantsCrm' }, d.data())); });
@@ -7196,9 +7223,43 @@ window.crmImportContract = function(docId) {
   });
 };
 
+// Masquer / réafficher un compte de l'app dans ma liste (enregistré sur mon propre compte, sans toucher à celui de l'autre)
+window.crmHide = function (id, hide) {
+  var cur = (window._crmHidden || []).filter(function (x) { return x !== id; });
+  if (hide) cur.push(id);
+  window._crmHidden = cur;
+  crmRebuildConsultants();
+  window.updateDoc(window.doc(window.db, 'consultants', window.pmCurrentUser.id), { crmHidden: hide ? window.arrayUnion(id) : window.arrayRemove(id) })
+    .catch(function (err) { alert('Erreur: ' + err.message); });
+};
+// Sortie d'un consultant : date + motif
+window.crmExitOpen = function (docId) {
+  var it = (_crmCoData || []).find(function (x) { return x._id === docId; });
+  var inp = 'width:100%;margin:4px 0;padding:9px;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;font-size:13px;';
+  pcModal(
+    '<h3 style="color:#f97316;margin:0 0 4px;font-size:15px;">🚪 Sortie du consultant</h3>'
+    + '<div style="font-size:12px;color:#666;margin-bottom:10px;">' + crmEsc(it ? ((it.prenom || '') + ' ' + (it.nom || '')).trim() : '') + '</div>'
+    + '<div style="font-size:11px;color:#666;">Date de sortie</div><input id="crm-exit-date" type="date" value="' + pcLocalDate(new Date()) + '" style="' + inp + '">'
+    + '<div style="font-size:11px;color:#666;margin-top:6px;">Motif (facultatif)</div>'
+    + '<select id="crm-exit-motif" style="' + inp + '">' + ['', 'Arrêt volontaire', 'Pas de résultats', 'Pas de temps', 'Autre'].map(function (m) { return '<option value="' + m + '">' + (m || '— choisir —') + '</option>'; }).join('') + '</select>'
+    + '<input id="crm-exit-note" placeholder="Précision (facultatif)" style="' + inp + '">'
+    + '<div style="display:flex;gap:8px;margin-top:14px;"><button style="' + PC_BTN_OK + 'flex:1;" onclick="crmExitSave(\'' + docId + '\')">Valider la sortie</button>'
+    + '<button style="' + PC_BTN_KO + '" onclick="pcModalClose()">Annuler</button></div>'
+  );
+};
+window.crmExitSave = function (docId) {
+  var v = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  var motif = [v('crm-exit-motif'), v('crm-exit-note')].filter(Boolean).join(' — ');
+  window.updateDoc(window.doc(window.db, 'consultantsCrm', docId), { etat: 'desactive', dateSortie: v('crm-exit-date') || pcLocalDate(new Date()), motifSortie: motif, updatedAt: new Date().toISOString() })
+    .then(function () { pcModalClose(); crmLoadConsultants(); })
+    .catch(function (err) { alert('Erreur: ' + err.message); });
+};
 window.crmToggle = function(col, docId, desactiver) {
+  if (desactiver && col === 'consultantsCrm') { window.crmExitOpen(docId); return; }
   if (!confirm(desactiver ? 'Desactiver ce contact ?' : 'Reactiver ce contact ?')) return;
-  window.updateDoc(window.doc(window.db, col, docId), { etat: desactiver ? 'desactive' : 'actif', updatedAt: new Date().toISOString() }).then(function() {
+  var upd = { etat: desactiver ? 'desactive' : 'actif', updatedAt: new Date().toISOString() };
+  if (!desactiver && col === 'consultantsCrm') { upd.dateSortie = null; upd.motifSortie = ''; }
+  window.updateDoc(window.doc(window.db, col, docId), upd).then(function() {
     if (col === 'clients') crmLoadClients(); else crmLoadConsultants();
   }).catch(function(err){ alert('Erreur: ' + err.message); });
 };

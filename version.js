@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.93 - Fiche consultant et accès offert";
+  scope.APP_VERSION = "14.94 - Comptes équipe et sortie";
 })();
