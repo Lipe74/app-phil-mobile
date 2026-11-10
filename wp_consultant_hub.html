@@ -7075,10 +7075,15 @@ function crmRenderCard(item, col) {
   var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
-  if (editBtn || toggleBtn || importBtn || vcfBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + toggleBtn + importBtn + '</div>';
+  var offerBtn = (col === 'consultantsCrm' && !inactive && !isAuth) ? '<button type="button" title="Envoyer à l\'admin la demande d\'accès (app offerte)" onclick="crmOfferAccess(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #7dd3fc;border-radius:6px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎁 Préparer son accès</button>' : '';
+  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + offerBtn + toggleBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
   if (item.type || item.tva) h += '<div style="font-size:12px;color:#555;margin-top:2px;">🏷️ ' + crmEsc([item.type, item.tva ? '🧾 TVA ' + item.tva : ''].filter(Boolean).join(' · ')) + '</div>';
+  var _idS = item.idSmart || (item._source === 'consultants' ? item._id : '');
+  var _dEn = item.dateEntree || item.dateDemarrage || '';
+  if (_idS || _dEn) h += '<div style="font-size:12px;color:#555;margin-top:2px;">' + (_idS ? '🪪 ID Smart : <b>' + crmEsc(_idS) + '</b>' : '') + (_idS && _dEn ? ' · ' : '') + (_dEn ? '📅 Entrée : ' + crmEsc(/^\d{4}-\d{2}-\d{2}/.test(_dEn) ? pcFmtDate(_dEn) : _dEn) : '') + '</div>';
+  if (item.accesDemandeAt) h += '<div style="font-size:12px;color:#0369a1;">🎁 Accès (app offerte) demandé le ' + crmEsc(pcFmtDate(item.accesDemandeAt)) + '</div>';
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(pcTelFmt(item.tel)) + '</div>';
   if (item.email) h += '<div style="font-size:12px;color:#555;">Email: ' + crmEsc(item.email) + '</div>';
   if (item.cp || item.ville) h += '<div style="font-size:12px;color:#555;">' + crmEsc([item.adresse, item.cp, item.ville].filter(Boolean).join(' ')) + '</div>';
@@ -7198,6 +7203,33 @@ window.crmToggle = function(col, docId, desactiver) {
   }).catch(function(err){ alert('Erreur: ' + err.message); });
 };
 
+// Type d'après la TVA : TVA + société = Société ; TVA seule = Indépendant ; sans TVA = Particulier
+function pcTypeAuto(tva, societe) { return tva ? (societe ? 'Société' : 'Indépendant') : 'Particulier'; }
+
+// Demande d'accès « app offerte » (Team Phil-Mobile) envoyée à l'admin, déjà remplie : il ne reste qu'à activer le compte
+window.crmOfferAccess = async function (docId) {
+  var it = (window._crmCoData || _crmCoData || []).find(function (x) { return x._id === docId; });
+  if (!it) return;
+  var nm = ((it.prenom || '') + ' ' + (it.nom || '')).trim();
+  if (it.accesDemandeAt && !confirm('Une demande d\'accès a déjà été envoyée le ' + pcFmtDate(it.accesDemandeAt) + '.\nL\'envoyer à nouveau ?')) return;
+  if (!confirm('Envoyer à l\'admin la demande d\'accès (app offerte — Team Phil-Mobile) pour « ' + nm + ' » ?' + (it.idSmart ? '' : '\n\n⚠️ Son ID Smart n\'est pas renseigné : tu pourras le compléter dans l\'admin.'))) return;
+  var u = window.pmCurrentUser || {}, now = new Date().toISOString();
+  var vat = String(it.tva || '').toUpperCase().replace(/^BE/, '').replace(/[^0-9]/g, '');
+  try {
+    await window.addDoc(window.collection(window.db, 'prospects'), {
+      smartId: (it.idSmart || '').trim(), firstName: it.prenom || '', lastName: it.nom || '',
+      company: it.societe || '', vat: vat ? 'BE' + vat : '', email: it.email || '', phone: it.tel || '',
+      asp: String(it.asp || ''), startDate: /^\d{4}-\d{2}-\d{2}$/.test(it.dateEntree || '') ? it.dateEntree.split('-').reverse().join('/') : '',
+      pqsValidated: false, fastSCValidated: false, fastECValidated: false,
+      upline: u.fullName || u.name || '', uplineId: u.id || '', uplinePhone: u.phone || '', uplineEmail: u.email || '',
+      comment: '🎁 App offerte (Team Phil-Mobile)', accessType: 'none', recommendedBy: '',
+      status: 'pending', createdAt: now
+    });
+    await window.updateDoc(window.doc(window.db, 'consultantsCrm', docId), { accesDemandeAt: now });
+    pcToast('🎁 Demande envoyée à l\'admin : il ne reste qu\'à activer son accès.');
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
 window.openCrmModal = function(col, docId) {
   var isC = col === 'consultantsCrm';
   document.getElementById('modal-crm-title').textContent = (docId ? 'Modifier' : 'Nouveau') + (isC ? ' consultant' : ' client');
@@ -7206,16 +7238,18 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('crm-ref-row').style.display = isC ? 'none' : 'grid';
   document.getElementById('crm-titulaire-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-asp-row').style.display = isC ? '' : 'none';
+  document.getElementById('crm-idsmart-row').style.display = isC ? '' : 'none';
+  document.getElementById('crm-dateentree-row').style.display = isC ? '' : 'none';
   document.getElementById('crm-numorange-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-numeneco-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-contrats-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-factures-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-operateur-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-statutpro-row').style.display = isC ? '' : 'none';
-  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
+  ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro','idSmart','dateEntree'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=''; });
   if (docId) {
     var item = (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; });
-    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=((f==='tel'||f==='reference') ? pcTelFmt(item[f]) : (item[f]||'')); }); }
+    if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro','idSmart','dateEntree'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=((f==='tel'||f==='reference') ? pcTelFmt(item[f]) : (item[f]||'')); }); }
   }
   var _it = docId ? (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; }) : null;
   crmContratsFill(!isC && _it ? crmContrats(_it) : []);
@@ -7233,7 +7267,7 @@ window.saveCrmModal = function() {
   var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), updatedAt:new Date().toISOString() };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
   if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.titulaire=pcNormName(g('titulaire')); data.type=g('type'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
-  if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); }
+  if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); data.type = g('type'); data.idSmart = g('idSmart').trim(); data.dateEntree = g('dateEntree'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   var p;
   if (docId) {
@@ -8671,6 +8705,7 @@ function pcoRenderList(list) {
     var coord = pclQuickActions(p)
       + (p.tel ? line('📞', pcTelLink(p.tel) + (p.operateurActuel ? ' ' + pcOpBadge(p.operateurActuel) : '')) : '')
       + (p.email ? line('📧', pcMailLink(p.email)) : '')
+      + (p.adresse ? line('📍', pcMapLink(p.adresse)) : '')
       + (p.tva ? line('💳', pcEsc(p.tva)) : '');
     var profil = line('🏷', pcEsc(pcoNormSource(p.source) || '-'))
       + (p.statutPro ? line('💼', pcEsc(pcoNormStatutPro(p.statutPro))) : '')
@@ -9046,6 +9081,7 @@ window.pcBecomeConsultant = async function (docId) {
   var data = {
     consultantId: p.consultantId || window.pmCurrentUser.id, nom: nom, prenom: prenom, nomFamille: fam,
     tel: pcNormTel(p.tel || ''), email: p.email || '', tva: p.tva ? pcNormTva(p.tva) : '',
+    adresse: pclAddr(p), societe: p.societe || '',
     source: 'Prospect client devenu consultant', operateurActuel: '', statutPro: p.tva ? PCO_INDEP : '',
     commentaire: 'Ancien prospect client' + (p.rdv && p.rdv.date ? ' (rdv du ' + pcFmtDate(p.rdv.date) + ')' : '') + ' — vente laissée à ses soins.',
     referencePrenom: '', referenceNom: '', referenceTel: '',
@@ -9159,7 +9195,9 @@ window.pcConvertForm = function (kind, docId) {
   } else {
     var sp = (p.statutPro || '').toLowerCase();
     var spv = sp.indexOf('ind') >= 0 ? 'independant' : (sp.indexOf('sal') >= 0 || sp.indexOf('employ') >= 0 ? 'salarie' : '');
-    extra = f('tva', 'N° de TVA / entreprise', p.tva)
+    extra = f('adresse', 'Adresse complète (rue, cp ville)', pclAddr(p)) + f('tva', 'N° de TVA / entreprise', p.tva)
+      + f('idsmart', 'ID Smart (facultatif, ex. delta835)', '')
+      + '<div style="font-size:11px;color:#666;margin-top:6px;">Date d\'entrée</div><input id="pc-cv-dateentree" type="date" value="' + pcLocalDate(new Date()) + '" style="' + PC_INP + '">'
       + '<select id="pc-cv-statutpro" style="' + PC_INP + '">'
       + [['', '— statut pro —'], ['independant', 'Indépendant'], ['salarie', 'Salarié / employé']].map(function (o) { return '<option value="' + o[0] + '"' + (spv === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
       + '</select>';
@@ -9203,8 +9241,11 @@ window.pcConvertSave = async function (kind, docId) {
       if (fxc) { data.adresse = fxc.adresse; data.cp = fxc.cp; data.ville = fxc.ville; }
     } else {
       coll = 'consultantsCrm';
-      data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: '', cp: '', societe: '', tva: pcNormTva(g('tva')),
-        dateDemarrage: '', etat: 'actif', statutPro: g('statutpro'), sourceProspectId: docId, createdAt: now };
+      data = { consultantId: uid, prenom: prenom, nom: nom, tel: tel, email: g('email'), ville: '', adresse: g('adresse'), cp: '', societe: '', tva: pcNormTva(g('tva')),
+        dateDemarrage: '', dateEntree: g('dateentree'), idSmart: g('idsmart'), etat: 'actif', statutPro: g('statutpro'), sourceProspectId: docId, createdAt: now };
+      data.type = pcTypeAuto(data.tva, data.societe);
+      var fxo = pcFixAdresse(data);
+      if (fxo) { data.adresse = fxo.adresse; data.cp = fxo.cp; data.ville = fxo.ville; }
     }
     if (tel) {
       var dup = await window.getDocs(window.query(window.collection(window.db, coll), window.where('tel', 'in', pcTelVariants(tel)), window.where('consultantId', '==', window.pmCurrentUser.id)));
@@ -11861,6 +11902,14 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
       <div id="crm-asp-row">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP (Smart Points)</div>
         <input id="crm-asp" placeholder="0" type="number" min="0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-idsmart-row">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ID Smart</div>
+        <input id="crm-idSmart" placeholder="ex. delta835" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+      </div>
+      <div id="crm-dateentree-row">
+        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date d'entrée</div>
+        <input id="crm-dateEntree" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
       </div>
       <div id="crm-titulaire-row" style="grid-column:span 2;">
         <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Titulaire du contrat / de la facture (si différent du contact)</div>
