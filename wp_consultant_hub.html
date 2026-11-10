@@ -7079,15 +7079,16 @@ function crmRenderCard(item, col) {
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
   var offerBtn = (col === 'consultantsCrm' && !inactive && !isAuth && canOffer) ? '<button type="button" title="Envoyer à l\'admin la demande d\'accès (app offerte)" onclick="crmOfferAccess(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #7dd3fc;border-radius:6px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎁 Préparer son accès</button>' : '';
+  var completeBtn = isApp ? '<button type="button" title="Ajouter adresse, TVA, type… (enregistré dans ta fiche de suivi, pas sur son compte)" onclick="openCrmModal(&#39;consultantsCrm&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ Compléter la fiche</button>' : '';
   var hideBtn = isApp ? '<button type="button" title="Retire seulement de ta liste, sans toucher à son compte" onclick="crmHide(&#39;' + item._id + '&#39;,' + (item._hidden ? 'false' : 'true') + ')" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;white-space:nowrap;">' + (item._hidden ? '👁 Réafficher' : '🙈 Masquer de ma liste') + '</button>' : '';
-  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn || hideBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + offerBtn + toggleBtn + hideBtn + importBtn + '</div>';
+  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn || hideBtn || completeBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + completeBtn + offerBtn + toggleBtn + hideBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
   if (item.type || item.tva) h += '<div style="font-size:12px;color:#555;margin-top:2px;">🏷️ ' + crmEsc([item.type, item.tva ? '🧾 TVA ' + item.tva : ''].filter(Boolean).join(' · ')) + '</div>';
   var _idS = item.idSmart || (item._source === 'consultants' ? item._id : '');
   var _dEn = item.dateEntree || item.dateDemarrage || '';
   if (_idS || _dEn) h += '<div style="font-size:12px;color:#555;margin-top:2px;">' + (_idS ? '🪪 ID Smart : <b>' + crmEsc(_idS) + '</b>' : '') + (_idS && _dEn ? ' · ' : '') + (_dEn ? '📅 Entrée : ' + crmEsc(/^\d{4}-\d{2}-\d{2}/.test(_dEn) ? pcFmtDate(_dEn) : _dEn) : '') + '</div>';
-  if (isApp && !inactive) h += '<div style="font-size:12px;color:#166534;">✅ Compte actif dans l\'app</div>';
+  if (isApp && !inactive) h += '<div style="font-size:12px;color:#166534;">✅ Compte actif dans l\'app' + (item.createdAt ? ' depuis le ' + crmEsc(pcFmtDate(item.createdAt)) : '') + '</div>';
   if (inactive && (item.dateSortie || item.motifSortie)) h += '<div style="font-size:12px;color:#92400e;">🚪 Sortie' + (item.dateSortie ? ' le ' + crmEsc(/^\d{4}-\d{2}-\d{2}/.test(item.dateSortie) ? pcFmtDate(item.dateSortie) : item.dateSortie) : '') + (item.motifSortie ? ' · ' + crmEsc(item.motifSortie) : '') + '</div>';
   if (item.accesDemandeAt) h += '<div style="font-size:12px;color:#0369a1;">🎁 Accès (app offerte) demandé le ' + crmEsc(pcFmtDate(item.accesDemandeAt)) + '</div>';
   if (item.tel) h += '<div style="font-size:12px;color:#555;margin-top:5px;">Tel: ' + crmEsc(pcTelFmt(item.tel)) + '</div>';
@@ -7154,6 +7155,7 @@ function crmRebuildConsultants() {
     var r = Object.assign({}, a, { _hidden: hidden.indexOf(a._id) >= 0 });
     if (m) {
       ['adresse', 'cp', 'ville', 'societe', 'tva', 'type', 'dateEntree', 'idSmart', 'accesDemandeAt', 'statutPro'].forEach(function (k) { if (pcIsEmpty(r[k]) && !pcIsEmpty(m[k])) r[k] = m[k]; });
+      r._ficheId = m._id;
       crm = crm.filter(function (f) { return f !== m; });
     }
     return r;
@@ -7313,17 +7315,41 @@ window.openCrmModal = function(col, docId) {
     if (item) { ['prenom','nom','tel','email','adresse','cp','ville','societe','tva','reference','referencePrenom','referenceNom','titulaire','type','orange','eneco','numOrange','numEneco','numSmart','dateContrat','asp','operateurActuel','statutPro','idSmart','dateEntree'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el) el.value=((f==='tel'||f==='reference') ? pcTelFmt(item[f]) : (item[f]||'')); }); }
   }
   var _it = docId ? (col==='clients' ? _crmClData : _crmCoData).find(function(x){ return x._id===docId; }) : null;
+  // Compte de l'app : nom, e-mail, téléphone et ID Smart viennent du compte (lecture seule) ; le reste est enregistré dans ma fiche de suivi liée
+  var appIt = (isC && _it && _it._source === 'consultants') ? _it : null;
+  window._crmAppEdit = appIt ? { id: appIt._id, ficheId: appIt._ficheId || '' } : null;
+  ['prenom','nom','tel','email','idSmart'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el){ el.readOnly=!!appIt; el.style.background = appIt ? '#f3f4f6' : ''; } });
+  document.getElementById('crm-asp-row').style.display = (isC && !appIt) ? '' : 'none';
+  if (appIt) {
+    document.getElementById('modal-crm-title').textContent = 'Compléter la fiche';
+    document.getElementById('crm-idSmart').value = appIt._id;
+    var dm = String(appIt.dateEntree || appIt.dateDemarrage || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (dm && !appIt.dateEntree) document.getElementById('crm-dateEntree').value = dm[3] + '-' + ('0' + dm[2]).slice(-2) + '-' + ('0' + dm[1]).slice(-2);
+  }
   crmContratsFill(!isC && _it ? crmContrats(_it) : []);
   crmFactInit('crm', isC ? null : docId, !isC && _it ? _it.factures : []);
   document.getElementById('modal-crm').style.display = 'flex';
 };
 
-window.closeCrmModal = function() { document.getElementById('modal-crm').style.display = 'none'; };
+window.closeCrmModal = function() { document.getElementById('modal-crm').style.display = 'none'; window._crmAppEdit = null; };
 
+// Compte de l'app : les infos complémentaires vont dans ma fiche de suivi liée (créée si besoin, reliée par l'ID Smart)
+function crmSaveAppFiche() {
+  var ae = window._crmAppEdit;
+  function g(f){ return ((document.getElementById('crm-'+f)||{}).value||'').trim(); }
+  var now = new Date().toISOString();
+  var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), type:g('type'), statutPro:g('statutPro'), dateEntree:g('dateEntree'), idSmart:ae.id, compteApp:true, updatedAt:now };
+  var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
+  var pr;
+  if (ae.ficheId) pr = window.updateDoc(window.doc(window.db, 'consultantsCrm', ae.ficheId), data);
+  else { data.etat = 'actif'; data.createdAt = now; pr = window.addDoc(window.collection(window.db, 'consultantsCrm'), data); }
+  pr.then(function() { window.closeCrmModal(); crmLoadConsultants(); }).catch(function(err) { alert('Erreur: ' + err.message); });
+}
 window.saveCrmModal = function() {
   var col = document.getElementById('crm-col').value;
   var docId = document.getElementById('crm-doc-id').value;
   var isC = col === 'consultantsCrm';
+  if (isC && window._crmAppEdit) { crmSaveAppFiche(); return; }
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), updatedAt:new Date().toISOString() };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
