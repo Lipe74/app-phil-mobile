@@ -7320,6 +7320,7 @@ window.openCrmModal = function(col, docId) {
   window._crmAppEdit = appIt ? { id: appIt._id, ficheId: appIt._ficheId || '' } : null;
   ['prenom','nom','tel','email','idSmart'].forEach(function(f){ var el=document.getElementById('crm-'+f); if(el){ el.readOnly=!!appIt; el.style.background = appIt ? '#f3f4f6' : ''; } });
   document.getElementById('crm-asp-row').style.display = (isC && !appIt) ? '' : 'none';
+  document.getElementById('crm-statutpro-row').style.display = (isC && !appIt) ? '' : 'none';   // doublon avec « Type » pour les comptes app
   if (appIt) {
     document.getElementById('modal-crm-title').textContent = 'Compléter la fiche';
     document.getElementById('crm-idSmart').value = appIt._id;
@@ -7338,7 +7339,7 @@ function crmSaveAppFiche() {
   var ae = window._crmAppEdit;
   function g(f){ return ((document.getElementById('crm-'+f)||{}).value||'').trim(); }
   var now = new Date().toISOString();
-  var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), type:g('type'), statutPro:g('statutPro'), dateEntree:g('dateEntree'), idSmart:ae.id, compteApp:true, updatedAt:now };
+  var data = { consultantId:window.pmCurrentUser.id, prenom:g('prenom'), nom:g('nom'), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), type:g('type'), dateEntree:g('dateEntree'), idSmart:ae.id, compteApp:true, updatedAt:now };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
   var pr;
   if (ae.ficheId) pr = window.updateDoc(window.doc(window.db, 'consultantsCrm', ae.ficheId), data);

@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.95 - Compléter la fiche consultant";
+  scope.APP_VERSION = "14.96 - Notes de build à publier";
 })();
