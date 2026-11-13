@@ -767,43 +767,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
               <div style="font-size:12px;color:#f97316;margin-bottom:16px;">Smart SN, Orange &amp; Eneco</div>
             </div>
 
-            <div style="font-size:11px;font-weight:700;color:#1e3a8a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🏢 Smart SN</div>
-            <a href="tel:+3200077170" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #1e3a8a;">
-              📞 +32 200 77 17
-            </a>
-            <a href="mailto:support@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#1e3a8a;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">
-              📧 support@smartsn.be
-            </a>
-            <a href="mailto:rem@smartsn.be" style="display:flex;align-items:center;gap:10px;background:#1e3a8a;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:20px;">
-              📧 rem@smartsn.be
-            </a>
-
-            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🟠 Orange — Particuliers</div>
-            <a href="tel:5000" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
-              📞 5000 <span style="font-weight:400;color:#9ca3af;">(depuis un numéro Orange)</span>
-            </a>
-            <a href="tel:+3227459500" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:20px;border:1px solid #f97316;">
-              📞 +32 2 745 95 00
-            </a>
-
-            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🟠 Orange Business</div>
-            <a href="tel:5995" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
-              📞 5995 <span style="font-weight:400;color:#9ca3af;">(depuis un numéro Orange)</span>
-            </a>
-            <a href="tel:0800959962" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #f97316;">
-              📞 0800 95 96 2
-            </a>
-            <a href="mailto:businesssupport@orange.be" style="display:flex;align-items:center;gap:10px;background:#f97316;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:20px;">
-              📧 businesssupport@orange.be
-            </a>
-
-            <div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">⚡ Eneco</div>
-            <a href="tel:015256666" style="display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid #7c3aed;">
-              📞 015 25 66 66
-            </a>
-            <a href="mailto:service@eneco.be" style="display:flex;align-items:center;gap:10px;background:#7c3aed;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">
-              📧 service@eneco.be
-            </a>
+            <div id="partners-body"></div>
           </div>
 
           <!-- Panel Contacts Phil-Mobile -->
@@ -2844,8 +2808,15 @@ function showScript(id) {
   document.getElementById('welcome-panel').style.display = 'none';
   document.getElementById('iframe-panel').style.display = 'none';
   document.querySelectorAll('.script-panel').forEach(p => p.style.display = 'none');
-  renderScriptPanel(id);
-  document.getElementById('panel-script-dynamic').style.display = 'block';
+  // Panneau fixe présent dans la page (Nos Partenaires, Support application, Formation) : affichage direct, sans passer par les scripts Firestore
+  const staticPanel = document.getElementById(id);
+  if (staticPanel && staticPanel.classList.contains('script-panel') && id !== 'panel-script-dynamic') {
+    if (id === 'panel-contacts-partners') partnersRender(window._partnersData);
+    staticPanel.style.display = 'block';
+  } else {
+    renderScriptPanel(id);
+    document.getElementById('panel-script-dynamic').style.display = 'block';
+  }
   document.body.classList.add('mobile-panel-open');
 }
 
@@ -2891,6 +2862,64 @@ function renderScriptPanel(id) {
   });
   txtBox.textContent = plainLines.join('\n');
 }
+
+// ===== NOS PARTENAIRES (Build 14.97) — coordonnées gérées depuis l'admin (settings/partenaires) =====
+// Valeurs de départ : affichées tant que rien n'est encodé dans l'admin. Un champ vide n'est pas affiché.
+const PARTNERS_DEFAULTS = {
+  smartsn:  { phone: '+32 200 77 17', emailSupport: 'support@smartsn.be', emailRem: 'rem@smartsn.be' },
+  orange:   { phone: '5000 (depuis un numéro Orange)', phone2: '+32 2 745 95 00', email: '' },
+  sohoOrange: { phone: '', phone2: '', email: '' },
+  business: { phone: '5995 (depuis un numéro Orange)', phone2: '0800 95 96 2', email: 'businesssupport@orange.be' },
+  eneco:    { phone: '015 25 66 66', email: 'service@eneco.be' }
+};
+function partnersPhone(val, color) {
+  val = String(val || '').trim(); if (!val) return '';
+  const m = val.match(/^[\s+0-9().\/-]+/);
+  const num = m ? m[0].trim() : '';
+  const note = val.slice(m ? m[0].length : 0).trim();
+  const noteHtml = note ? ' <span style="font-weight:400;color:#9ca3af;">' + escapeHtmlDocs(note) + '</span>' : '';
+  const st = 'display:flex;align-items:center;gap:10px;background:#f8f8f8;color:#1a1a1a;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;border:1px solid ' + color + ';';
+  const label = '📞 ' + escapeHtmlDocs(num || val) + noteHtml;
+  return num ? '<a href="tel:' + num.replace(/[^\d+]/g, '') + '" style="' + st + '">' + label + '</a>' : '<div style="' + st + '">' + label + '</div>';
+}
+function partnersEmail(val, color, tag) {
+  val = String(val || '').trim(); if (!val || val.indexOf('@') < 0) return '';
+  const tagHtml = tag ? ' <span style="font-weight:400;opacity:.8;">· ' + escapeHtmlDocs(tag) + '</span>' : '';
+  return '<a href="mailto:' + escapeHtmlDocs(val) + '" style="display:flex;align-items:center;gap:10px;background:' + color + ';color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:8px;">📧 ' + escapeHtmlDocs(val) + tagHtml + '</a>';
+}
+function partnersRender(data) {
+  const box = document.getElementById('partners-body');
+  if (!box) return;
+  const g = function (k) { return (data && data[k]) ? data[k] : PARTNERS_DEFAULTS[k]; };
+  const section = function (title, color, rows) {
+    const html = rows.join('');
+    return html ? '<div style="font-size:11px;font-weight:700;color:' + color + ';text-transform:uppercase;letter-spacing:.06em;margin:12px 0 8px;">' + title + '</div>' + html : '';
+  };
+  const s = g('smartsn'), o = g('orange'), so = g('sohoOrange'), b = g('business'), e = g('eneco');
+  const BLUE = '#1e3a8a', ORANGE = '#f97316', PURPLE = '#7c3aed';
+  const html = [
+    section('🏢 Smart SN', BLUE, [partnersPhone(s.phone, BLUE), partnersEmail(s.emailSupport, BLUE, 'Support'), partnersEmail(s.emailRem, BLUE, 'Rémunération')]),
+    section('🟠 Orange — Service clientèle', ORANGE, [partnersPhone(o.phone, ORANGE), partnersPhone(o.phone2, ORANGE), partnersEmail(o.email, ORANGE)]),
+    section('🟠 Orange — Service clientèle SOHO', ORANGE, [partnersPhone(so.phone, ORANGE), partnersPhone(so.phone2, ORANGE), partnersEmail(so.email, ORANGE)]),
+    section('🟠 Orange — Service Business', ORANGE, [partnersPhone(b.phone, ORANGE), partnersPhone(b.phone2, ORANGE), partnersEmail(b.email, ORANGE)]),
+    section('⚡ Eneco', PURPLE, [partnersPhone(e.phone, PURPLE), partnersEmail(e.email, PURPLE)])
+  ].join('');
+  box.innerHTML = html || '<div style="font-size:13px;color:#888;text-align:center;">Aucune coordonnée renseignée pour le moment.</div>';
+}
+let partnersUnsub = null;
+async function partnersListen() {
+  if (partnersUnsub) return;
+  let tries = 0;
+  while ((!window.db || !window.onSnapshot || !window.doc) && tries < 50) { await new Promise(function (r) { setTimeout(r, 200); }); tries++; }
+  if (!window.db || !window.onSnapshot || !window.doc) return;
+  try {
+    partnersUnsub = window.onSnapshot(window.doc(window.db, 'settings', 'partenaires'), function (snap) {
+      window._partnersData = snap.exists() ? snap.data() : null;
+      partnersRender(window._partnersData);
+    }, function (err) { console.log('Partenaires onSnapshot erreur:', err.message); });
+  } catch (e) { console.log('Partenaires:', e.message); }
+}
+// ===== FIN NOS PARTENAIRES =====
 
 function showDashboard(btn) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
@@ -5141,6 +5170,7 @@ function doUnlock(user) {
   // Bandeau + calendrier : rdv prospects du jour
   initRdvBanner(user);
   majListen();   // ligne « Dernière build » dès la connexion
+  partnersListen();   // Nos Partenaires : coordonnées depuis l'admin
   crmReady(function () { recoLoadList(); });
 }
 

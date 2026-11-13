@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.96 - Notes de build à publier</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.97 - Nos Partenaires depuis l'admin</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -286,6 +286,7 @@
           <button onclick="showAdminPanel('panel-feedback', this)" class="menu-item" id="menu-feedback">🐞 Bugs &amp; Suggestions <span id="feedback-count"></span></button>
           <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
           <button onclick="showAdminPanel('panel-teams-link', this)" class="menu-item" id="menu-teams-link">📹 Réunion Teams</button>
+          <button onclick="showAdminPanel('panel-partners', this)" class="menu-item" id="menu-partners">🤝 Partenaires</button>
           <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
           <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Les builds de Phil-Mobile <span id="bn-count"></span></button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
@@ -1026,6 +1027,35 @@
               <input type="url" id="teams-link" placeholder="https://teams.microsoft.com/meet/...">
             </div>
             <button class="btn btn-primary" onclick="saveTeamsLink()">Enregistrer le lien</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-partners">
+          <div class="section-title">🤝 Partenaires (Smart SN, Orange, Eneco)</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Coordonnées affichées aux consultants dans le hub, menu « Nos Partenaires ». Un champ laissé vide n'est pas affiché. Après le numéro, tu peux ajouter une précision entre parenthèses (ex : « 5000 (depuis un numéro Orange) »).
+            </div>
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin:16px 0 8px;">🏢 Smart SN</div>
+            <div class="form-row"><label>Téléphone</label><input type="text" id="pt-smartsn-phone" placeholder=""></div>
+            <div class="form-row"><label>Email Support</label><input type="text" id="pt-smartsn-emailSupport" placeholder=""></div>
+            <div class="form-row"><label>Email Rémunération</label><input type="text" id="pt-smartsn-emailRem" placeholder=""></div>
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin:16px 0 8px;">🟠 Orange — Service clientèle</div>
+            <div class="form-row"><label>Téléphone</label><input type="text" id="pt-orange-phone" placeholder="ex : 5000 (depuis un numéro Orange)"></div>
+            <div class="form-row"><label>2e téléphone (optionnel)</label><input type="text" id="pt-orange-phone2" placeholder=""></div>
+            <div class="form-row"><label>Email</label><input type="text" id="pt-orange-email" placeholder=""></div>
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin:16px 0 8px;">🟠 Orange — Service clientèle SOHO</div>
+            <div class="form-row"><label>Téléphone</label><input type="text" id="pt-sohoOrange-phone" placeholder="ex : 5000 (depuis un numéro Orange)"></div>
+            <div class="form-row"><label>2e téléphone (optionnel)</label><input type="text" id="pt-sohoOrange-phone2" placeholder=""></div>
+            <div class="form-row"><label>Email</label><input type="text" id="pt-sohoOrange-email" placeholder=""></div>
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin:16px 0 8px;">🟠 Orange — Service Business</div>
+            <div class="form-row"><label>Téléphone</label><input type="text" id="pt-business-phone" placeholder="ex : 5000 (depuis un numéro Orange)"></div>
+            <div class="form-row"><label>2e téléphone (optionnel)</label><input type="text" id="pt-business-phone2" placeholder=""></div>
+            <div class="form-row"><label>Email</label><input type="text" id="pt-business-email" placeholder=""></div>
+            <div style="font-size:12px;font-weight:700;color:#f97316;margin:16px 0 8px;">⚡ Eneco</div>
+            <div class="form-row"><label>Téléphone</label><input type="text" id="pt-eneco-phone" placeholder=""></div>
+            <div class="form-row"><label>Email</label><input type="text" id="pt-eneco-email" placeholder=""></div>
+            <button class="btn btn-primary" onclick="savePartners()" style="margin-top:8px;">Enregistrer les partenaires</button>
           </div>
         </div>
 
@@ -2134,6 +2164,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-qr') loadQrAdmin();
   if (panelId === 'panel-fav-defaults') loadFavDefaultsAdmin();
+  if (panelId === 'panel-partners') loadPartnersAdmin();
   if (panelId === 'panel-build-notes') loadBuildNotes();
   if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
@@ -2305,7 +2336,8 @@ let bnCache = [];
 const BN_PENDING = [
   { build: '14.94', title: "Comptes de l'équipe et sortie des consultants", description: "- Les consultants de ton équipe peuvent avoir un compte offert (Team Phil-Mobile) : tu le prépares depuis ta fiche, l'admin crée ensuite le compte.\n- Quand un consultant arrête, tu notes sa date et son motif de sortie : il passe en inactif et on voit clairement qui a arrêté.\n- Un consultant qui a déjà un compte dans l'app s'affiche une seule fois dans ta liste, et tu peux le cacher de ta liste sans toucher à son compte.\n- La date d'entrée est reprise automatiquement dans le formulaire d'activation." },
   { build: '14.95', title: "Compléter la fiche des consultants qui ont l'app", description: "- Dans Gestion Consultants, les consultants qui ont déjà un compte dans l'app ont un bouton « Compléter la fiche » : tu ajoutes leur adresse, TVA, société, type et date d'entrée.\n- Ces infos sont enregistrées dans ta fiche de suivi, reliée à leur compte, sans rien modifier sur leur compte.\n- La date de création du compte est maintenant enregistrée et affichée pour les nouveaux comptes." },
-  { build: '14.96', title: "Notes de build à publier", description: "- Dans l'admin, une bulle rouge sur « Les builds de Phil-Mobile » indique combien de mises à jour restent à publier.\n- Les notes en attente sont proposées dans une liste : la plus ancienne est préremplie, tu cliques sur Publier et la suivante arrive.\n- Sur « Compléter la fiche », le champ « Statut » en double a été retiré." }
+  { build: '14.96', title: "Notes de build à publier", description: "- Dans l'admin, une bulle rouge sur « Les builds de Phil-Mobile » indique combien de mises à jour restent à publier.\n- Les notes en attente sont proposées dans une liste : la plus ancienne est préremplie, tu cliques sur Publier et la suivante arrive.\n- Sur « Compléter la fiche », le champ « Statut » en double a été retiré." },
+  { build: '14.97', title: "Nos Partenaires gérés depuis l'admin", description: "- Le menu « Nos Partenaires » fonctionne de nouveau : Smart SN (téléphone, email Support, email Rémunération), Orange (Service clientèle, Service clientèle SOHO, Service Business) et Eneco (téléphone, email).\n- Les coordonnées s'encodent depuis l'admin, section « Partenaires ».\n- Correction : « Support application » et « Formation » s'affichent de nouveau." },
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -2441,6 +2473,58 @@ window.saveTeamsLink = async function () {
   try {
     await setDoc(doc(db, 'settings', 'communication'), { teamsLink }, { merge: true });
     showToast('✅ Lien Teams enregistré.');
+  } catch (err) {
+    alert('Erreur lors de l\'enregistrement: ' + err.message);
+  }
+};
+
+// --- Partenaires (settings/partenaires) : affichés dans le hub, menu « Nos Partenaires » (Build 14.97) ---
+const PARTNERS_DEFAULTS = {
+  smartsn:  { phone: '+32 200 77 17', emailSupport: 'support@smartsn.be', emailRem: 'rem@smartsn.be' },
+  orange:   { phone: '5000 (depuis un numéro Orange)', phone2: '+32 2 745 95 00', email: '' },
+  sohoOrange: { phone: '', phone2: '', email: '' },
+  business: { phone: '5995 (depuis un numéro Orange)', phone2: '0800 95 96 2', email: 'businesssupport@orange.be' },
+  eneco:    { phone: '015 25 66 66', email: 'service@eneco.be' }
+};
+const PARTNERS_FIELDS = {
+  smartsn: ['phone', 'emailSupport', 'emailRem'],
+  orange: ['phone', 'phone2', 'email'],
+  sohoOrange: ['phone', 'phone2', 'email'],
+  business: ['phone', 'phone2', 'email'],
+  eneco: ['phone', 'email']
+};
+async function loadPartnersAdmin() {
+  let data = null;
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'partenaires'));
+    if (snap.exists()) data = snap.data();
+  } catch (err) {
+    console.log('Partenaires non lus:', err.message);
+  }
+  Object.keys(PARTNERS_FIELDS).forEach(key => {
+    const src = (data && data[key]) ? data[key] : PARTNERS_DEFAULTS[key];
+    PARTNERS_FIELDS[key].forEach(fld => {
+      const el = document.getElementById('pt-' + key + '-' + fld);
+      if (el) el.value = src[fld] || '';
+    });
+  });
+}
+window.savePartners = async function () {
+  const out = {};
+  for (const key of Object.keys(PARTNERS_FIELDS)) {
+    out[key] = {};
+    for (const fld of PARTNERS_FIELDS[key]) {
+      const v = (document.getElementById('pt-' + key + '-' + fld).value || '').trim();
+      if (/email/i.test(fld) && v && v.indexOf('@') < 0) {
+        alert('Email invalide : ' + v);
+        return;
+      }
+      out[key][fld] = v;
+    }
+  }
+  try {
+    await setDoc(doc(db, 'settings', 'partenaires'), out);
+    showToast('✅ Partenaires enregistrés.');
   } catch (err) {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
@@ -8988,6 +9072,7 @@ const FAV_ITEMS = {
   'menu-feedback':             { label: '🐞 Bugs & Suggestions',           panelId: 'panel-feedback' },
   'menu-messages':             { label: '💬 Messages',                     panelId: 'panel-messages' },
   'menu-teams-link':           { label: '📹 Réunion Teams',                panelId: 'panel-teams-link' },
+  'menu-partners':             { label: '🤝 Partenaires',                  panelId: 'panel-partners' },
   'menu-fav-defaults':         { label: '❤️ Favoris par défaut',           panelId: 'panel-fav-defaults' },
   'menu-build-notes':          { label: '📝 Les builds de Phil-Mobile', panelId: 'panel-build-notes' },
   'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },
