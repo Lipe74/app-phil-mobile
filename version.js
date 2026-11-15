@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.96 - Notes de build à publier";
+  scope.APP_VERSION = "14.98 - Stats d'utilisation et Mon démarrage";
 })();

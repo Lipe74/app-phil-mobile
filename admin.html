@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.97 - Nos Partenaires depuis l'admin</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.98 - Stats d'utilisation et Mon démarrage</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -287,6 +287,8 @@
           <button onclick="showAdminPanel('panel-messages', this)" class="menu-item" id="menu-messages">💬 Messages <span id="messages-count"></span></button>
           <button onclick="showAdminPanel('panel-teams-link', this)" class="menu-item" id="menu-teams-link">📹 Réunion Teams</button>
           <button onclick="showAdminPanel('panel-partners', this)" class="menu-item" id="menu-partners">🤝 Partenaires</button>
+          <button onclick="showAdminPanel('panel-usage-stats', this)" class="menu-item" id="menu-usage-stats">📈 Statistiques d'utilisation</button>
+          <button onclick="showAdminPanel('panel-onboarding-admin', this)" class="menu-item" id="menu-onboarding-admin">🚀 Démarrage des nouveaux</button>
           <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
           <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Les builds de Phil-Mobile <span id="bn-count"></span></button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
@@ -1056,6 +1058,36 @@
             <div class="form-row"><label>Téléphone</label><input type="text" id="pt-eneco-phone" placeholder=""></div>
             <div class="form-row"><label>Email</label><input type="text" id="pt-eneco-email" placeholder=""></div>
             <button class="btn btn-primary" onclick="savePartners()" style="margin-top:8px;">Enregistrer les partenaires</button>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-usage-stats">
+          <div class="section-title">📈 Statistiques d'utilisation (par consultant)</div>
+          <div class="card">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+              <label style="font-size:11px;color:#666;font-weight:700;">Période</label>
+              <select id="usg-period" onchange="loadUsageStats()" style="padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:6px;width:auto;">
+                <option value="7">7 derniers jours</option>
+                <option value="30" selected>30 derniers jours</option>
+                <option value="90">90 derniers jours</option>
+                <option value="0">Depuis le début</option>
+              </select>
+              <button class="btn btn-secondary" style="padding:5px 10px;font-size:12px;" onclick="loadUsageStats()">↻ Actualiser</button>
+            </div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">Connexions et menus ouverts par chaque consultant. Les comptes de test sont exclus. Le suivi démarre à la mise en place : pas d'historique avant.</div>
+            <div id="usg-info" style="font-size:11px;color:#888;margin-bottom:8px;"></div>
+            <div id="usg-body"><div class="empty">Chargement...</div></div>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-onboarding-admin">
+          <div class="section-title">🚀 Démarrage des nouveaux consultants</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Consultants arrivés depuis moins de 120 jours dont le PQS n'est pas encore validé. Le PQS se compte depuis leurs contrats « Activé » : 12 ASP dont 7 mobile, 3 énergie (Eneco : 0,50 par EAN, 1 pour un indépendant) et 2 internet. Quand tu valides le PQS, le consultant ne voit plus l'onglet « Mon démarrage ».
+            </div>
+            <label style="font-size:12px;color:#555;display:inline-flex;gap:6px;align-items:center;margin-bottom:10px;"><input type="checkbox" id="onba-all" onchange="loadOnboardingAdmin()" style="width:auto;"> Afficher aussi les PQS déjà validés</label>
+            <div id="onba-body"><div class="empty">Chargement...</div></div>
           </div>
         </div>
 
@@ -1845,6 +1877,7 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   arrayUnion,
   arrayRemove,
@@ -2165,6 +2198,8 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-qr') loadQrAdmin();
   if (panelId === 'panel-fav-defaults') loadFavDefaultsAdmin();
   if (panelId === 'panel-partners') loadPartnersAdmin();
+  if (panelId === 'panel-usage-stats') loadUsageStats();
+  if (panelId === 'panel-onboarding-admin') loadOnboardingAdmin();
   if (panelId === 'panel-build-notes') loadBuildNotes();
   if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
@@ -2338,6 +2373,7 @@ const BN_PENDING = [
   { build: '14.95', title: "Compléter la fiche des consultants qui ont l'app", description: "- Dans Gestion Consultants, les consultants qui ont déjà un compte dans l'app ont un bouton « Compléter la fiche » : tu ajoutes leur adresse, TVA, société, type et date d'entrée.\n- Ces infos sont enregistrées dans ta fiche de suivi, reliée à leur compte, sans rien modifier sur leur compte.\n- La date de création du compte est maintenant enregistrée et affichée pour les nouveaux comptes." },
   { build: '14.96', title: "Notes de build à publier", description: "- Dans l'admin, une bulle rouge sur « Les builds de Phil-Mobile » indique combien de mises à jour restent à publier.\n- Les notes en attente sont proposées dans une liste : la plus ancienne est préremplie, tu cliques sur Publier et la suivante arrive.\n- Sur « Compléter la fiche », le champ « Statut » en double a été retiré." },
   { build: '14.97', title: "Nos Partenaires gérés depuis l'admin", description: "- Le menu « Nos Partenaires » fonctionne de nouveau : Smart SN (téléphone, email Support, email Rémunération), Orange (Service clientèle, Service clientèle SOHO, Service Business) et Eneco (téléphone, email).\n- Les coordonnées s'encodent depuis l'admin, section « Partenaires ».\n- Correction : « Support application » et « Formation » s'affichent de nouveau." },
+  { build: '14.98', title: "Mon démarrage pour les nouveaux consultants", description: "- Nouvel onglet « Mon démarrage » tout en haut du menu pour les nouveaux consultants, avec leurs étapes : formations My Smart, formation Success, PQS (12 ASP actifs comptés depuis tes contrats activés), puis Fast SC et Fast EC si tu recrutes.\n- Il disparaît dès que ton PQS est validé.\n- L'app enregistre maintenant les connexions et les menus ouverts, pour mieux savoir ce qui est utilisé et t'aider à progresser." },
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -2529,6 +2565,159 @@ window.savePartners = async function () {
     alert('Erreur lors de l\'enregistrement: ' + err.message);
   }
 };
+
+// --- Statistiques d'utilisation (collection usageDaily, alimentée par le hub) — Build 14.98 ---
+function usgLocalDate(offsetDays) {
+  const d = new Date(Date.now() - (offsetDays || 0) * 86400000);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function usgAgo(iso) {
+  if (!iso) return '<span style="color:#dc2626;font-weight:700;">jamais</span>';
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  const txt = days <= 0 ? "aujourd'hui" : (days === 1 ? 'hier' : 'il y a ' + days + ' j');
+  return '<span style="' + (days >= 14 ? 'color:#dc2626;font-weight:700;' : days >= 7 ? 'color:#d97706;font-weight:700;' : '') + '">' + txt + '</span>';
+}
+// Consultants suivis : actifs, non archivés, hors comptes de test
+function usgTrackedConsultants(all) {
+  return all.filter(c => c.active !== false && c.archived !== true && acctTypeOf(c) !== 'test2j');
+}
+async function loadUsageStats() {
+  const body = document.getElementById('usg-body'), info = document.getElementById('usg-info');
+  if (!body) return;
+  body.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const period = Number(document.getElementById('usg-period').value);
+    const cutoff = period ? usgLocalDate(period - 1) : '0000-00-00';
+    const [consSnap, usageSnap] = await Promise.all([
+      getDocs(collection(db, 'consultants')),
+      getDocs(query(collection(db, 'usageDaily'), where('date', '>=', cutoff)))
+    ]);
+    const cons = []; consSnap.forEach(d => cons.push({ docId: d.id, ...d.data() }));
+    const per = {}, feat = {};
+    let minDate = null;
+    usageSnap.forEach(d => {
+      const u = d.data(); const id = u.consultantId; if (!id) return;
+      if (!minDate || u.date < minDate) minDate = u.date;
+      const p = per[id] || (per[id] = { visits: 0, days: new Set(), lastSeen: '', f: {}, labels: {} });
+      p.visits += u.visits || 0; p.days.add(u.date);
+      if ((u.lastSeen || '') > p.lastSeen) p.lastSeen = u.lastSeen;
+      Object.keys(u.features || {}).forEach(k => {
+        p.f[k] = (p.f[k] || 0) + (u.features[k] || 0);
+        p.labels[k] = (u.labels || {})[k] || p.labels[k] || k;
+        const g = feat[k] || (feat[k] = { label: p.labels[k], total: 0, users: new Set() });
+        g.total += u.features[k] || 0; g.users.add(id);
+      });
+    });
+    const tracked = usgTrackedConsultants(cons);
+    // Dernière connexion « tous temps » pour ceux sans activité sur la période
+    info.textContent = minDate ? 'Données disponibles depuis le ' + minDate.split('-').reverse().join('/') + ' · ' + tracked.length + ' consultants suivis.' : 'Aucune donnée pour le moment : le suivi démarre dès que les consultants ouvrent la nouvelle version.';
+    const rows = tracked.map(c => {
+      const id = c.id || c.docId, p = per[id] || { visits: 0, days: new Set(), lastSeen: '', f: {}, labels: {} };
+      const list = Object.keys(p.f).sort((a, b) => p.f[b] - p.f[a]);
+      return { c, id, p, list };
+    }).sort((a, b) => (b.p.lastSeen || '').localeCompare(a.p.lastSeen || ''));
+    let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="text-align:left;color:#888;border-bottom:1px solid #eee;"><th style="padding:6px;">Consultant</th><th style="padding:6px;">Dernière visite</th><th style="padding:6px;">Jours actifs</th><th style="padding:6px;">Visites</th><th style="padding:6px;">Fonctions les plus utilisées</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      const name = escapeHtmlAdmin(r.c.fullName || r.c.name || r.id);
+      const top = r.list.slice(0, 3).map(k => escapeHtmlAdmin(r.p.labels[k]) + ' <b>' + r.p.f[k] + '</b>').join(' · ') || '<span style="color:#aaa;">—</span>';
+      const detail = r.list.length ? '<details style="margin-top:4px;"><summary style="cursor:pointer;color:#f97316;font-size:11px;">Tout voir (' + r.list.length + ')</summary><div style="margin-top:4px;line-height:1.7;">' + r.list.map(k => escapeHtmlAdmin(r.p.labels[k]) + ' : <b>' + r.p.f[k] + '</b>').join('<br>') + '</div></details>' : '';
+      html += '<tr style="border-bottom:1px solid #f3f3f3;vertical-align:top;"><td style="padding:6px;font-weight:700;">' + name + '</td><td style="padding:6px;">' + usgAgo(r.p.lastSeen) + '</td><td style="padding:6px;">' + r.p.days.size + '</td><td style="padding:6px;">' + r.p.visits + '</td><td style="padding:6px;">' + top + detail + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    const ranking = Object.keys(feat).sort((a, b) => feat[b].total - feat[a].total);
+    html += '<div style="font-size:12px;font-weight:700;color:#f97316;margin:18px 0 6px;">Fonctions les plus utilisées (tous consultants)</div>';
+    html += ranking.length ? '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="text-align:left;color:#888;border-bottom:1px solid #eee;"><th style="padding:5px;">Fonction</th><th style="padding:5px;">Ouvertures</th><th style="padding:5px;">Consultants</th></tr></thead><tbody>'
+      + ranking.map(k => '<tr style="border-bottom:1px solid #f3f3f3;"><td style="padding:5px;">' + escapeHtmlAdmin(feat[k].label) + '</td><td style="padding:5px;">' + feat[k].total + '</td><td style="padding:5px;">' + feat[k].users.size + '</td></tr>').join('') + '</tbody></table>'
+      : '<div class="empty">Rien pour le moment.</div>';
+    body.innerHTML = html;
+  } catch (err) {
+    body.innerHTML = '<div class="empty" style="color:#dc2626;">Lecture impossible : ' + escapeHtmlAdmin(err.message) + '<br><span style="color:#888;">Si c\'est « permission-denied », ajoute dans les règles Firestore : <code>match /usageDaily/{id} { allow read, write: if request.auth != null; }</code></span></div>';
+  }
+}
+
+// --- Démarrage des nouveaux consultants (Mon démarrage côté hub) — Build 14.98 ---
+const ONB_DAYS = 120;
+const ONB_PQS_TARGET = { mobile: 7, energy: 3, internet: 2 };
+const ONB_SERVICES = {
+  child: { c: 'mobile', a: 0, s: 0 }, small: { c: 'mobile', a: 1, s: 0 }, medium: { c: 'mobile', a: 1, s: 0.5 },
+  unlimited: { c: 'mobile', a: 1, s: 0.5 }, large: { c: 'mobile', a: 1, s: 0.5 },
+  internet: { c: 'internet', a: 1, s: 0.5 }, flybox: { c: 'internet', a: 1, s: 0.5 },
+  eneco_elec: { c: 'energy', a: 0.5, s: 0.5 }, eneco_gaz: { c: 'energy', a: 0.5, s: 0.5 }
+};
+function onbParseFR(str) {
+  const m = String(str || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null;
+}
+function onbFmt(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+function onbCalcPqs(contracts) {
+  const got = { mobile: 0, energy: 0, internet: 0 };
+  contracts.forEach(c => {
+    if (c.etatContrat !== 'Activé') return;
+    Object.keys(c.produitsDetail || {}).forEach(pid => {
+      const sv = ONB_SERVICES[pid]; if (!sv) return;
+      (c.produitsDetail[pid] || []).forEach(u => {
+        got[sv.c] += (sv.c === 'energy') ? (u && u.sohoIndep ? 1 : 0.5) : sv.a + (u && u.sohoIndep ? sv.s : 0);
+      });
+    });
+  });
+  const complete = Object.keys(ONB_PQS_TARGET).every(k => got[k] >= ONB_PQS_TARGET[k]);
+  return { got, complete };
+}
+async function loadOnboardingAdmin() {
+  const body = document.getElementById('onba-body');
+  if (!body) return;
+  body.innerHTML = '<div class="empty">Chargement...</div>';
+  try {
+    const showAll = document.getElementById('onba-all').checked;
+    const [consSnap, ctrSnap] = await Promise.all([getDocs(collection(db, 'consultants')), getDocs(collection(db, 'contrats'))]);
+    const cons = []; consSnap.forEach(d => cons.push({ docId: d.id, ...d.data() }));
+    const byCons = {};
+    ctrSnap.forEach(d => { const c = d.data(); (byCons[c.consultantId] = byCons[c.consultantId] || []).push(c); });
+    let lastSeen = {};
+    try {
+      const us = await getDocs(query(collection(db, 'usageDaily'), where('date', '>=', usgLocalDate(ONB_DAYS))));
+      us.forEach(d => { const u = d.data(); if ((u.lastSeen || '') > (lastSeen[u.consultantId] || '')) lastSeen[u.consultantId] = u.lastSeen; });
+    } catch (e) { /* stats facultatives */ }
+    const rows = usgTrackedConsultants(cons).filter(c => c.isAdmin !== true).map(c => {
+      const id = c.id || c.docId, start = onbParseFR(c.startDate);
+      const dayN = start ? Math.floor((Date.now() - start.getTime()) / 86400000) + 1 : null;
+      return { c, id, dayN, pqs: onbCalcPqs(byCons[id] || []) };
+    }).filter(r => r.dayN !== null && r.dayN >= 1 && r.dayN <= ONB_DAYS && (showAll || !r.c.pqsValidated))
+      .sort((a, b) => a.dayN - b.dayN);
+    if (!rows.length) { body.innerHTML = '<div class="empty">Aucun nouveau consultant à suivre pour le moment 🎉</div>'; return; }
+    let html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="text-align:left;color:#888;border-bottom:1px solid #eee;"><th style="padding:6px;">Consultant</th><th style="padding:6px;">Jour</th><th style="padding:6px;">Formations</th><th style="padding:6px;">Success</th><th style="padding:6px;">PQS (ASP)</th><th style="padding:6px;">Dernière visite</th></tr></thead><tbody>';
+    rows.forEach(r => {
+      const ob = r.c.onboarding || {}, g = r.pqs.got, ls = lastSeen[r.id] || '';
+      const lsDays = ls ? Math.floor((Date.now() - new Date(ls).getTime()) / 86400000) : null;
+      const alert = (!r.c.pqsValidated && (lsDays === null || lsDays >= 7)) ? ' <span title="Pas connecté depuis 7 jours ou plus">⚠️</span>' : '';
+      const tog = (key) => '<button class="btn ' + (ob[key] ? 'btn-primary' : 'btn-secondary') + '" style="padding:3px 9px;font-size:11px;" onclick="onbAdminToggle(\'' + r.c.docId + '\',\'' + key + '\',' + (ob[key] ? 'false' : 'true') + ')">' + (ob[key] ? '✅ Fait' : 'À faire') + '</button>';
+      const pqsTxt = r.c.pqsValidated ? '<b style="color:#16a34a;">✅ Validé</b>'
+        : '📱 ' + onbFmt(g.mobile) + '/7 · ⚡ ' + onbFmt(g.energy) + '/3 · 🌐 ' + onbFmt(g.internet) + '/2'
+          + (r.pqs.complete ? ' <button class="btn btn-primary" style="padding:3px 9px;font-size:11px;margin-left:4px;" onclick="onbAdminValidatePqs(\'' + r.c.docId + '\')">Valider le PQS</button>' : '');
+      html += '<tr style="border-bottom:1px solid #f3f3f3;vertical-align:top;"><td style="padding:6px;font-weight:700;">' + escapeHtmlAdmin(r.c.fullName || r.c.name || r.id) + alert + '</td><td style="padding:6px;">J' + r.dayN + '</td><td style="padding:6px;">' + tog('formations') + '</td><td style="padding:6px;">' + tog('success') + '</td><td style="padding:6px;">' + pqsTxt + '</td><td style="padding:6px;">' + usgAgo(ls) + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    body.innerHTML = html;
+  } catch (err) {
+    body.innerHTML = '<div class="empty" style="color:#dc2626;">Lecture impossible : ' + escapeHtmlAdmin(err.message) + '</div>';
+  }
+}
+window.onbAdminToggle = async function (docId, key, val) {
+  try {
+    await updateDoc(doc(db, 'consultants', docId), { ['onboarding.' + key]: val, ['onboarding.' + key + 'At']: new Date().toISOString() });
+    loadOnboardingAdmin();
+  } catch (err) { alert('Erreur : ' + err.message); }
+};
+window.onbAdminValidatePqs = async function (docId) {
+  if (!confirm('Valider le PQS de ce consultant ?')) return;
+  try {
+    await updateDoc(doc(db, 'consultants', docId), { pqsValidated: true });
+    showToast('✅ PQS validé.');
+    loadOnboardingAdmin();
+  } catch (err) { alert('Erreur : ' + err.message); }
+};
+window.loadUsageStats = loadUsageStats;
+window.loadOnboardingAdmin = loadOnboardingAdmin;
 
 // --- Favoris par défaut du menu hub (settings/menuDefaults) ---
 // Le catalogue des menus est lu directement dans wp_consultant_hub.html (toujours synchronisé avec le hub).
@@ -9073,6 +9262,8 @@ const FAV_ITEMS = {
   'menu-messages':             { label: '💬 Messages',                     panelId: 'panel-messages' },
   'menu-teams-link':           { label: '📹 Réunion Teams',                panelId: 'panel-teams-link' },
   'menu-partners':             { label: '🤝 Partenaires',                  panelId: 'panel-partners' },
+  'menu-usage-stats':          { label: '📈 Stats d\'utilisation',          panelId: 'panel-usage-stats' },
+  'menu-onboarding-admin':     { label: '🚀 Démarrage des nouveaux',       panelId: 'panel-onboarding-admin' },
   'menu-fav-defaults':         { label: '❤️ Favoris par défaut',           panelId: 'panel-fav-defaults' },
   'menu-build-notes':          { label: '📝 Les builds de Phil-Mobile', panelId: 'panel-build-notes' },
   'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },

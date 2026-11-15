@@ -534,6 +534,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
 
           <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
           <div id="sec-accueil" class="pm-sec-body">
+          <button onclick="showOnboarding(this)" class="menu-item" id="menu-onboarding" style="display:none;border-color:#f97316;background:#fff7ed;">🚀 Mon démarrage <span id="onb-badge" style="float:right;background:#f97316;color:#fff;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;"></span></button>
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;padding-left:4px;">
@@ -768,6 +769,11 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
             </div>
 
             <div id="partners-body"></div>
+          </div>
+
+          <!-- Panel Mon démarrage (nouveaux consultants) -->
+          <div id="panel-onboarding" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div id="onb-panel-body"></div>
           </div>
 
           <!-- Panel Contacts Phil-Mobile -->
@@ -1832,6 +1838,8 @@ STATUT: independant
 
           <!-- TABLEAU DE BORD (affiché dès connexion) -->
           <div id="welcome-panel" style="display:block;">
+            <!-- Bandeau « Mon démarrage » (nouveaux consultants) -->
+            <div id="onb-banner" onclick="showOnboarding(document.getElementById('menu-onboarding'))" style="display:none;cursor:pointer;border:1px solid #f97316;border-radius:12px;background:#fff7ed;padding:12px 16px;margin-bottom:10px;"></div>
             <!-- Carte Bienvenue -->
             <div style="border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;">
               <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">BIENVENUE</div>
@@ -2735,7 +2743,7 @@ async function initFavorites() {
   buttons.forEach(function (btn) {
     if (btn.tagName !== 'BUTTON') return;
     if (btn.classList.contains('group-toggle')) return;
-    if (btn.id === 'menu-dashboard') return; // Écran par défaut au login : aucun intérêt à le mettre en favori.
+    if (btn.id === 'menu-dashboard' || btn.id === 'menu-onboarding') return; // Écrans d'accueil : aucun intérêt à les mettre en favori.
     if (btn.closest('#pm-favoris-list')) return;
     if (btn.dataset.pmFavReady) return;
     if (!btn.getAttribute('onclick') && !btn.id) return;
@@ -2920,6 +2928,204 @@ async function partnersListen() {
   } catch (e) { console.log('Partenaires:', e.message); }
 }
 // ===== FIN NOS PARTENAIRES =====
+
+// ===== STATS D'UTILISATION (Build 14.98) — compteurs par consultant et par jour (collection usageDaily) =====
+// Un document par consultant et par jour : visites + nombre d'ouvertures de chaque menu. Comptes de test exclus.
+let pmOwnDocPromise = null;
+function pmOwnDoc() {
+  if (pmOwnDocPromise) return pmOwnDocPromise;
+  pmOwnDocPromise = (async function () {
+    let t = 0;
+    while ((!window.db || !window.getDoc || !window.doc) && t < 50) { await new Promise(function (r) { setTimeout(r, 200); }); t++; }
+    if (!window.db || !window.getDoc || !pmCurrentUser) return {};
+    const snap = await window.getDoc(window.doc(window.db, 'consultants', pmCurrentUser.id));
+    return snap.exists() ? snap.data() : {};
+  })().catch(function () { return {}; });
+  return pmOwnDocPromise;
+}
+let usgBuf = {}, usgLabels = {}, usgVisits = 0, usgTimer = null, usgActive = false;
+function usgDay() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function usgSafeKey(k) { return String(k).replace(/[^A-Za-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60) || 'x'; }
+function usgTrack(key, label) {
+  if (!usgActive) return;
+  usgBuf[key] = (usgBuf[key] || 0) + 1;
+  usgLabels[key] = label;
+  if (!usgTimer) usgTimer = setTimeout(usgFlush, 45000);
+}
+async function usgFlush() {
+  if (usgTimer) { clearTimeout(usgTimer); usgTimer = null; }
+  if (!usgActive || !window.setDoc || !window.increment || !pmCurrentUser) return;
+  const keys = Object.keys(usgBuf);
+  if (!usgVisits && !keys.length) return;
+  const u = pmCurrentUser, day = usgDay();
+  const data = { consultantId: u.id, name: u.fullName || u.name || u.id, date: day, lastSeen: new Date().toISOString() };
+  if (usgVisits) data.visits = window.increment(usgVisits);
+  if (keys.length) {
+    data.features = {}; data.labels = {};
+    keys.forEach(function (k) { data.features[k] = window.increment(usgBuf[k]); data.labels[k] = usgLabels[k]; });
+  }
+  usgBuf = {}; usgLabels = {}; usgVisits = 0;
+  try { await window.setDoc(window.doc(window.db, 'usageDaily', u.id + '_' + day), data, { merge: true }); }
+  catch (e) { console.log('Stats d\'utilisation non enregistrées:', e.message); }
+}
+async function usgInit() {
+  if (!pmCurrentUser) return;
+  const d = await pmOwnDoc();
+  const isTest = !!d.isTestAccount || ['test2j', 'newbc30'].indexOf(d.accountType) !== -1;
+  usgActive = !isTest;
+  if (!usgActive) return;
+  let seen = false;
+  try { seen = sessionStorage.getItem('pmVisitLogged') === pmCurrentUser.id; sessionStorage.setItem('pmVisitLogged', pmCurrentUser.id); } catch (e) {}
+  if (!seen) { usgVisits = 1; setTimeout(usgFlush, 4000); }
+}
+document.addEventListener('click', function (e) {
+  const b = e.target && e.target.closest ? e.target.closest('.menu-item') : null;
+  if (!b || b.tagName !== 'BUTTON' || b.classList.contains('group-toggle')) return;
+  if (!b.closest('#pm-left-menu') || b.closest('#pm-favoris-list')) return;
+  const clone = b.cloneNode(true);
+  clone.querySelectorAll('span').forEach(function (x) { x.remove(); });
+  const label = clone.textContent.replace(/\s+/g, ' ').trim().slice(0, 50);
+  usgTrack(usgSafeKey(pmFavKey(b)), label || b.id || 'menu');
+}, true);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') usgFlush(); });
+// ===== FIN STATS D'UTILISATION =====
+
+// ===== MON DÉMARRAGE (Build 14.98) — checklist des nouveaux consultants =====
+// Étapes : formations My Smart (manuel) → formation Success (manuel) → PQS (12 ASP actifs, comptés depuis les contrats)
+// → Fast SC / Fast EC (réseau : seulement si le consultant a recruté ou si c'est déjà validé).
+const ONB_DAYS = 120;
+const ONB_PQS_TARGET = { mobile: 7, energy: 3, internet: 2 };
+const ONB_SERVICES = {
+  child: { c: 'mobile', a: 0, s: 0 }, small: { c: 'mobile', a: 1, s: 0 }, medium: { c: 'mobile', a: 1, s: 0.5 },
+  unlimited: { c: 'mobile', a: 1, s: 0.5 }, large: { c: 'mobile', a: 1, s: 0.5 },
+  internet: { c: 'internet', a: 1, s: 0.5 }, flybox: { c: 'internet', a: 1, s: 0.5 },
+  eneco_elec: { c: 'energy', a: 0.5, s: 0.5 }, eneco_gaz: { c: 'energy', a: 0.5, s: 0.5 }   // Eneco : 0,50 ASP par EAN (particulier), 1 ASP (indépendant)
+};
+let onb = { d: null, pqs: null, recruited: false, steps: [], visible: false, done: 0, total: 0 };
+function onbParseFR(str) {
+  const m = String(str || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])) : null;
+}
+function onbFmt(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+// Contrats « Activé » uniquement : ASP par catégorie (mobile / énergie / internet)
+function onbCalcPqs(contracts) {
+  const got = { mobile: 0, energy: 0, internet: 0 };
+  contracts.forEach(function (c) {
+    if (c.etatContrat !== 'Activé') return;
+    Object.keys(c.produitsDetail || {}).forEach(function (pid) {
+      const sv = ONB_SERVICES[pid]; if (!sv) return;
+      (c.produitsDetail[pid] || []).forEach(function (u) {
+        got[sv.c] += (sv.c === 'energy') ? (u && u.sohoIndep ? 1 : 0.5) : sv.a + (u && u.sohoIndep ? sv.s : 0);
+      });
+    });
+  });
+  let sum = 0, complete = true;
+  Object.keys(ONB_PQS_TARGET).forEach(function (k) { sum += Math.min(got[k], ONB_PQS_TARGET[k]); if (got[k] < ONB_PQS_TARGET[k]) complete = false; });
+  return { got: got, sum: sum, complete: complete };
+}
+async function onbLoad() {
+  const u = pmCurrentUser; if (!u) return;
+  const d = await pmOwnDoc();
+  let contracts = [];
+  try {
+    const snap = await window.getDocs(window.query(window.collection(window.db, 'contrats'), window.where('consultantId', '==', u.id)));
+    snap.forEach(function (x) { contracts.push(x.data()); });
+  } catch (e) { console.log('Mon démarrage : contrats illisibles:', e.message); }
+  onb.d = d || {};
+  onb.pqs = onbCalcPqs(contracts);
+  onb.recruited = Object.keys(PM_USERS || {}).some(function (k) { return PM_USERS[k].uplineId === u.id; });
+  const ob = onb.d.onboarding || {};
+  const startFR = onb.d.startDate || '';
+  const steps = [
+    { id: 'formations', title: 'Faire les formations obligatoires (My Smart)', done: !!ob.formations, manual: true },
+    { id: 'success', title: "T'inscrire à la formation Success (Bruxelles)", done: !!ob.success, manual: true },
+    { id: 'pqs', title: 'Valider ton PQS : 12 ASP actifs', done: !!onb.d.pqsValidated, reached: onb.pqs.complete, days: pmCalcPQSdb(startFR) ? pmCalcPQSdb(startFR).daysLeft : null }
+  ];
+  if (onb.recruited || onb.d.fastSCValidated) steps.push({ id: 'fastsc', title: 'Fast SC : devenir Senior Consultant en 90 jours (réseau)', done: !!onb.d.fastSCValidated, days: pmCalcFastDays(startFR, 90), network: true });
+  if (onb.recruited || onb.d.fastECValidated) steps.push({ id: 'fastec', title: 'Fast EC : devenir Executive Consultant en 120 jours (réseau)', done: !!onb.d.fastECValidated, days: pmCalcFastDays(startFR, 120), network: true });
+  onb.steps = steps;
+  onb.done = steps.filter(function (x) { return x.done; }).length;
+  onb.total = steps.length;
+  const start = onbParseFR(startFR);
+  const dayN = start ? Math.floor((Date.now() - start.getTime()) / 86400000) + 1 : null;
+  onb.dayN = dayN;
+  // Onglet réservé aux nouveaux : visible tant que le PQS n'est pas validé dans l'admin (et dans les 120 premiers jours)
+  onb.visible = !!start && dayN >= 1 && dayN <= ONB_DAYS && !onb.d.pqsValidated && !u.isAdmin;
+  onbRefreshUi();
+}
+function onbRefreshUi() {
+  const btn = document.getElementById('menu-onboarding');
+  const badge = document.getElementById('onb-badge');
+  const banner = document.getElementById('onb-banner');
+  if (btn) btn.style.display = onb.visible ? 'block' : 'none';
+  if (badge) badge.textContent = onb.done + '/' + onb.total;
+  if (banner) {
+    if (!onb.visible) { banner.style.display = 'none'; banner.innerHTML = ''; }
+    else {
+      const next = onb.steps.filter(function (x) { return !x.done; })[0];
+      const pct = Math.round(onb.done / onb.total * 100);
+      banner.style.display = 'block';
+      banner.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><div style="font-size:13px;font-weight:700;color:#c2410c;">🚀 Mon démarrage · jour ' + onb.dayN + ' · ' + onb.done + '/' + onb.total + ' étapes</div><div style="font-size:12px;color:#f97316;font-weight:700;">Voir ›</div></div>'
+        + '<div style="height:6px;background:#fed7aa;border-radius:99px;margin:8px 0 6px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:#f97316;"></div></div>'
+        + (next ? '<div style="font-size:12px;color:#7c2d12;">Prochaine étape : ' + escapeHtmlDocs(next.title) + '</div>' : '');
+    }
+  }
+}
+function onbBar(label, got, target) {
+  const pct = Math.min(100, Math.round(got / target * 100));
+  const ok = got >= target;
+  return '<div style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;font-size:12px;color:#374151;margin-bottom:3px;"><span>' + label + '</span><span style="font-weight:700;color:' + (ok ? '#16a34a' : '#374151') + ';">' + onbFmt(Math.min(got, 9999)) + ' / ' + target + ' ASP' + (ok ? ' ✅' : '') + '</span></div>'
+    + '<div style="height:7px;background:#f3f4f6;border-radius:99px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + (ok ? '#16a34a' : '#f97316') + ';"></div></div></div>';
+}
+function onbRenderPanel() {
+  const box = document.getElementById('onb-panel-body'); if (!box) return;
+  const g = onb.pqs ? onb.pqs.got : { mobile: 0, energy: 0, internet: 0 };
+  let html = '<div style="font-size:15px;font-weight:700;color:#1a1a1a;">🚀 Mon démarrage</div>'
+    + '<div style="font-size:12px;color:#6b7280;margin:2px 0 14px;">Jour ' + (onb.dayN || '?') + ' sur ' + ONB_DAYS + ' · ' + onb.done + '/' + onb.total + ' étapes terminées</div>';
+  onb.steps.forEach(function (st, i) {
+    const late = st.days !== null && st.days !== undefined && st.days < 0;
+    const dl = (st.days === null || st.days === undefined || st.done) ? '' : (late ? '<span style="color:#dc2626;font-weight:700;">délai dépassé</span>' : '<span style="color:#f97316;font-weight:700;">encore ' + st.days + ' j</span>');
+    html += '<div style="border:1px solid ' + (st.done ? '#bbf7d0' : '#f0f0f0') + ';background:' + (st.done ? '#f0fdf4' : '#fff') + ';border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+      + '<div style="display:flex;align-items:flex-start;gap:10px;"><div style="font-size:18px;line-height:1.2;">' + (st.done ? '✅' : (i + 1) + '️⃣') + '</div>'
+      + '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;">' + escapeHtmlDocs(st.title) + '</div>'
+      + (dl ? '<div style="font-size:11px;margin-top:2px;">' + dl + '</div>' : '') + '</div>';
+    if (st.manual) html += '<button type="button" onclick="onbToggle(\'' + st.id + '\')" style="background:' + (st.done ? '#fff' : '#f97316') + ';color:' + (st.done ? '#6b7280' : '#fff') + ';border:1px solid ' + (st.done ? '#d1d5db' : '#f97316') + ';border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;flex-shrink:0;">' + (st.done ? 'Décocher' : "C'est fait") + '</button>';
+    html += '</div>';
+    if (st.id === 'pqs' && !st.done) {
+      html += '<div style="margin-top:12px;">' + (st.reached ? '<div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:8px;">🎉 12 ASP atteints : il ne reste que la validation de ton PQS par l\'admin.</div>' : '') + onbBar('📱 Mobile / Data mobile activés', g.mobile, ONB_PQS_TARGET.mobile)
+        + onbBar('⚡ Énergie validée (Eneco)', g.energy, ONB_PQS_TARGET.energy)
+        + onbBar('🌐 Internet accepté', g.internet, ONB_PQS_TARGET.internet)
+        + '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Calculé depuis tes contrats à l\'état « Activé ». Eneco : 0,50 ASP par EAN (particulier), 1 ASP (indépendant).</div></div>';
+    }
+    if (st.network && !st.done) html += '<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Étape validée par l\'admin quand tu atteins la position.</div>';
+    html += '</div>';
+  });
+  box.innerHTML = html;
+}
+async function onbToggle(id) {
+  const cur = !!((onb.d.onboarding || {})[id]);
+  const patch = {}; patch['onboarding.' + id] = !cur; patch['onboarding.' + id + 'At'] = new Date().toISOString();
+  try {
+    await window.updateDoc(window.doc(window.db, 'consultants', pmCurrentUser.id), patch);
+    pmOwnDocPromise = null;
+    await onbLoad();
+    onbRenderPanel();
+  } catch (e) { alert("Enregistrement impossible : " + e.message); }
+}
+function showOnboarding(btn) {
+  document.querySelectorAll('.menu-item').forEach(function (b) { b.classList.remove('active-item'); });
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(function (p) { p.style.display = 'none'; });
+  onbRenderPanel();
+  document.getElementById('panel-onboarding').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  onbLoad().then(onbRenderPanel);   // rafraîchit (contrats activés depuis la dernière visite)
+}
+async function onbInit() { try { await onbLoad(); } catch (e) { console.log('Mon démarrage:', e.message); } }
+// ===== FIN MON DÉMARRAGE =====
 
 function showDashboard(btn) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
@@ -5158,7 +5364,9 @@ function doUnlock(user) {
       agentSel.value = user.agent;
     }
     renderDashboard();
+    onbInit();   // Mon démarrage : après chargement des consultants (détection du recrutement)
   });
+  usgInit();   // Stats d'utilisation (comptes de test exclus)
   // Si non-admin : masquer les cartes agents autres que lui dans la progression
   pmNiveauAgent = user.agent;
   // Module Messages (contacts + badge non-lu)
@@ -11475,6 +11683,7 @@ import {
   limitToLast,
   arrayUnion,
   arrayRemove,
+  increment,
   deleteDoc
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -11545,6 +11754,7 @@ window.orderBy = orderBy;
 window.limitToLast = limitToLast;
 window.arrayUnion = arrayUnion;
 window.arrayRemove = arrayRemove;
+window.increment = increment;
 window.where = where;
 window.deleteDoc = deleteDoc;
 window.signOut = () => signOut(auth);
