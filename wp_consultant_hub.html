@@ -3039,7 +3039,7 @@ async function onbLoad() {
   const steps = [
     { id: 'formations', title: 'Faire les formations obligatoires (My Smart)', done: !!ob.formations, manual: true },
     { id: 'success', title: "T'inscrire à la formation Success (Bruxelles)", done: !!ob.success, manual: true },
-    { id: 'pqs', title: 'Valider ton PQS : 12 ASP actifs', done: !!onb.d.pqsValidated, reached: onb.pqs.complete, days: pmCalcPQSdb(startFR) ? pmCalcPQSdb(startFR).daysLeft : null }
+    { id: 'pqs', title: 'Valider ton PQS : 12 ASP actifs', done: !!onb.d.pqsValidated || !!ob.pqsDeclared, reached: onb.pqs.complete, days: pmCalcPQSdb(startFR) ? pmCalcPQSdb(startFR).daysLeft : null }
   ];
   if (onb.recruited || onb.d.fastSCValidated) steps.push({ id: 'fastsc', title: 'Fast SC : devenir Senior Consultant en 90 jours (réseau)', done: !!onb.d.fastSCValidated, days: pmCalcFastDays(startFR, 90), network: true });
   if (onb.recruited || onb.d.fastECValidated) steps.push({ id: 'fastec', title: 'Fast EC : devenir Executive Consultant en 120 jours (réseau)', done: !!onb.d.fastECValidated, days: pmCalcFastDays(startFR, 120), network: true });
@@ -3050,7 +3050,7 @@ async function onbLoad() {
   const dayN = start ? Math.floor((Date.now() - start.getTime()) / 86400000) + 1 : null;
   onb.dayN = dayN;
   // Onglet réservé aux nouveaux : visible tant que le PQS n'est pas validé dans l'admin (et dans les 120 premiers jours)
-  onb.visible = !!start && dayN >= 1 && dayN <= ONB_DAYS && !onb.d.pqsValidated && !u.isAdmin;
+  onb.visible = !!start && dayN >= 1 && dayN <= ONB_DAYS && !onb.d.pqsValidated && !ob.pqsDeclared && !u.isAdmin;
   onbRefreshUi();
 }
 function onbRefreshUi() {
@@ -3095,12 +3095,25 @@ function onbRenderPanel() {
       html += '<div style="margin-top:12px;">' + (st.reached ? '<div style="font-size:12px;font-weight:700;color:#16a34a;margin-bottom:8px;">🎉 12 ASP atteints : il ne reste que la validation de ton PQS par l\'admin.</div>' : '') + onbBar('📱 Mobile / Data mobile activés', g.mobile, ONB_PQS_TARGET.mobile)
         + onbBar('⚡ Énergie validée (Eneco)', g.energy, ONB_PQS_TARGET.energy)
         + onbBar('🌐 Internet accepté', g.internet, ONB_PQS_TARGET.internet)
-        + '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Calculé depuis tes contrats à l\'état « Activé ». Eneco : 0,50 ASP par EAN (particulier), 1 ASP (indépendant).</div></div>';
+        + '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Calculé depuis tes contrats à l\'état « Activé ». Eneco : 0,50 ASP par EAN (particulier), 1 ASP (indépendant).</div>'
+        + '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed #e5e7eb;"><div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Tu n\'encodes pas tes contrats ici ? Si ton PQS est déjà validé dans My Smart, dis-le-nous :</div>'
+        + '<button type="button" onclick="onbDeclarePqs()" style="background:#fff;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">✋ J\'ai validé mon PQS dans My Smart</button></div></div>';
     }
     if (st.network && !st.done) html += '<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Étape validée par l\'admin quand tu atteins la position.</div>';
     html += '</div>';
   });
   box.innerHTML = html;
+}
+async function onbDeclarePqs() {
+  if (!confirm('Tu confirmes que ton PQS est validé dans My Smart ? Ton upline le vérifiera avant la validation officielle.')) return;
+  const patch = { 'onboarding.pqsDeclared': true, 'onboarding.pqsDeclaredAt': new Date().toISOString() };
+  try {
+    await window.updateDoc(window.doc(window.db, 'consultants', pmCurrentUser.id), patch);
+    pmOwnDocPromise = null;
+    await onbLoad();
+    showDashboard();
+    if (typeof pcToast === 'function') pcToast('✅ Merci ! Ton PQS est signalé comme validé, il sera vérifié.');
+  } catch (e) { alert('Enregistrement impossible : ' + e.message); }
 }
 async function onbToggle(id) {
   const cur = !!((onb.d.onboarding || {})[id]);
@@ -3126,6 +3139,107 @@ function showOnboarding(btn) {
 }
 async function onbInit() { try { await onbLoad(); } catch (e) { console.log('Mon démarrage:', e.message); } }
 // ===== FIN MON DÉMARRAGE =====
+
+// ===== MESSAGES PRÉ-REMPLIS (Build 14.100) — WhatsApp / SMS depuis les fiches prospects =====
+// Modèles modifiables depuis l'admin (settings/messageTemplates). Variables : {prenom} {consultant} {date} {heure} {lien}
+const PM_MSG_DEFAULTS = {
+  co: [
+    { label: '🙏 Remercier de sa candidature', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Merci d'avoir répondu à notre annonce et de l'intérêt que vous portez à l'activité de consultant indépendant. Je reviens vers vous très vite pour en discuter. À bientôt !" },
+    { label: '📅 Inviter à une BOM', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je vous invite à notre présentation de l'activité (BOM) le {date} à {heure}. Elle se déroule en visio, voici le lien : {lien}\nVous y découvrirez le métier, la rémunération et la suite. Pouvez-vous me confirmer votre présence ?" },
+    { label: '⏰ Rappeler la BOM', text: "Bonjour {prenom}, petit rappel : notre présentation de l'activité (BOM) a lieu le {date} à {heure}. Voici le lien : {lien}\nÀ tout à l'heure !" },
+    { label: '🔔 Relancer', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je me permets de revenir vers vous suite à votre candidature. Êtes-vous toujours intéressé(e) ? Dites-moi quand je peux vous appeler." },
+    { label: '🤝 Après la BOM', text: "Bonjour {prenom}, merci d'avoir suivi notre présentation. Qu'en avez-vous pensé ? Je reste disponible pour répondre à vos questions et envisager la suite ensemble." }
+  ],
+  cl: [
+    { label: '📅 Proposer un rendez-vous', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. J'aimerais vous présenter une offre adaptée à vos besoins (mobile, internet, énergie). Seriez-vous disponible le {date} à {heure} ? Sinon, dites-moi ce qui vous arrange." },
+    { label: '✅ Confirmer le rendez-vous', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je vous confirme notre rendez-vous le {date} à {heure}. N'hésitez pas à me prévenir en cas d'empêchement. À bientôt !" },
+    { label: '🔔 Relancer', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je reviens vers vous au sujet de notre échange. Avez-vous eu le temps d'y réfléchir ? Je reste à votre disposition." },
+    { label: '🙏 Remercier', text: "Bonjour {prenom}, merci pour le temps que vous m'avez accordé, ce fut un plaisir. Je reste à votre disposition pour toute question. Belle journée !" }
+  ]
+};
+let pmMsgTpl = null;
+async function pmMsgLoad() {
+  if (pmMsgTpl) return pmMsgTpl;
+  const t = JSON.parse(JSON.stringify(PM_MSG_DEFAULTS));
+  try {
+    const snap = await window.getDoc(window.doc(window.db, 'settings', 'messageTemplates'));
+    if (snap.exists()) {
+      const d = snap.data();
+      ['co', 'cl'].forEach(function (k) {
+        const list = Array.isArray(d[k]) ? d[k].filter(function (x) { return x && x.label && x.text; }) : [];
+        if (list.length) t[k] = list;
+      });
+    }
+  } catch (e) { console.log('Modèles de messages : valeurs de départ utilisées (' + e.message + ')'); }
+  pmMsgTpl = t;
+  return t;
+}
+let pmMsg = null;
+window.pcMsgOpen = async function (kind, docId) {
+  const p = pcFind(kind, docId);
+  if (!p) return;
+  const tel = pclCleanTel(p.tel);
+  if (!tel) { alert('Pas de numéro de téléphone sur cette fiche.'); return; }
+  const tpls = await pmMsgLoad();
+  if (!pmTeamsLink) { try { await loadTeamsLink(); } catch (e) {} }
+  const names = pmProspectNames(p);
+  pmMsg = { kind: kind, tel: tel, list: tpls[kind], idx: 0, prenom: pcNormName(names.prenom || ''), consultant: (window.pmCurrentUser && window.pmCurrentUser.name) || '' };
+  let dv = '', tv = '';
+  if (p.rdv && p.rdv.date) { const d = new Date(p.rdv.date); if (!isNaN(d)) { dv = pcLocalDate(d); tv = pcZ(d.getHours()) + ':' + pcZ(d.getMinutes()); } }
+  const btns = pmMsg.list.map(function (t, i) {
+    return '<button type="button" id="pm-msg-b' + i + '" onclick="pmMsgPick(' + i + ')" style="display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:5px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">' + pcEsc(t.label) + '</button>';
+  }).join('');
+  pcModal('<div style="font-size:15px;font-weight:700;margin-bottom:2px;">💬 Messages' + (pmMsg.prenom ? ' — ' + pcEsc(pmMsg.prenom) : '') + '</div>'
+    + '<div style="font-size:11px;color:#6b7280;margin-bottom:10px;">Choisis un message, ajuste-le si besoin, puis envoie-le.</div>'
+    + btns
+    + '<div id="pm-msg-dt" style="display:none;gap:8px;margin:8px 0;"><div style="flex:1;"><label style="font-size:11px;color:#6b7280;font-weight:700;">Date</label><input type="date" id="pm-msg-date" value="' + dv + '" oninput="pmMsgRender()" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>'
+    + '<div style="flex:1;"><label style="font-size:11px;color:#6b7280;font-weight:700;">Heure</label><input type="time" id="pm-msg-time" value="' + tv + '" oninput="pmMsgRender()" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div></div>'
+    + '<textarea id="pm-msg-text" rows="7" style="width:100%;margin-top:8px;padding:9px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:13px;font-family:Arial,sans-serif;line-height:1.4;"></textarea>'
+    + '<div id="pm-msg-hint" style="font-size:11px;color:#d97706;min-height:14px;margin:3px 0 8px;"></div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    + '<button type="button" onclick="pmMsgSend(\'wa\')" style="flex:1;background:#25D366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">WhatsApp</button>'
+    + '<button type="button" onclick="pmMsgSend(\'sms\')" style="flex:1;background:#0d6efd;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">SMS</button>'
+    + '<button type="button" onclick="pmMsgSend(\'copy\')" style="flex:1;background:#6b7280;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">Copier</button>'
+    + '<button type="button" onclick="pcModalClose()" style="width:100%;background:none;border:none;color:#6b7280;font-size:12px;padding:6px;cursor:pointer;">Fermer</button></div>');
+  pmMsgPick(0);
+};
+window.pmMsgPick = function (i) {
+  pmMsg.idx = i;
+  pmMsg.list.forEach(function (t, k) {
+    const b = document.getElementById('pm-msg-b' + k);
+    if (b) { b.style.borderColor = k === i ? '#7c3aed' : '#e5e7eb'; b.style.background = k === i ? '#f5f3ff' : '#fff'; }
+  });
+  pmMsgRender();
+};
+window.pmMsgRender = function () {
+  const raw = pmMsg.list[pmMsg.idx].text;
+  const needDt = /\{date\}|\{heure\}/.test(raw);
+  const dtBox = document.getElementById('pm-msg-dt');
+  if (dtBox) dtBox.style.display = needDt ? 'flex' : 'none';
+  const dv = (document.getElementById('pm-msg-date') || {}).value || '', tv = (document.getElementById('pm-msg-time') || {}).value || '';
+  let dateTxt = '[date]', heureTxt = '[heure]';
+  if (dv) { const m = dv.split('-'); dateTxt = new Date(Number(m[0]), Number(m[1]) - 1, Number(m[2])).toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  if (tv) { const h = tv.split(':'); heureTxt = Number(h[0]) + 'h' + (h[1] && h[1] !== '00' ? h[1] : ''); }
+  const lien = pmTeamsLink || '';
+  const txt = raw.replace(/\{prenom\}/g, pmMsg.prenom || '').replace(/\{consultant\}/g, pmMsg.consultant || 'Phil-Mobile')
+    .replace(/\{date\}/g, dateTxt).replace(/\{heure\}/g, heureTxt).replace(/\{lien\}/g, lien).replace(/Bonjour ,/g, 'Bonjour,').replace(/ {2,}/g, ' ');
+  document.getElementById('pm-msg-text').value = txt;
+  const hint = document.getElementById('pm-msg-hint');
+  if (hint) hint.textContent = (/\{lien\}/.test(raw) && !lien) ? "⚠️ Aucun lien Teams n'est défini dans l'admin : le lien manquera dans le message." : '';
+};
+window.pmMsgSend = function (mode) {
+  const text = document.getElementById('pm-msg-text').value;
+  if (/\[date\]|\[heure\]/.test(text)) { alert("Choisis la date et l'heure avant d'envoyer."); return; }
+  if (mode === 'copy') {
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { pcToast('📋 Message copié.'); }, function () { alert('Copie impossible : sélectionne le texte et copie-le.'); });
+    return;
+  }
+  const href = mode === 'sms' ? 'sms:' + pmMsg.tel + '?body=' + encodeURIComponent(text) : pcWaHref(pmMsg.tel, text);
+  const a = document.createElement('a');
+  a.href = href; a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+// ===== FIN MESSAGES PRÉ-REMPLIS =====
 
 function showDashboard(btn) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
@@ -8412,7 +8526,7 @@ function pcWaHref(tel, text) {
   }
   return std;
 }
-function pclQuickActions(p) {
+function pclQuickActions(p, kind) {
   var tel = pclCleanTel(p.tel);
   var buttons = [];
   if (tel) {
@@ -8421,6 +8535,7 @@ function pclQuickActions(p) {
     buttons.push('<a href="sms:' + tel + (msg ? '?body=' + encodeURIComponent(msg) : '') + '" title="SMS' + tip + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#0d6efd;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">💬</a>');
     buttons.push('<a href="' + pcEsc(pcWaHref(tel, msg)) + '" target="_blank" rel="noopener" title="WhatsApp' + tip + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">🟢</a>');
   }
+  if (tel && kind && p.docId) buttons.push('<button type="button" title="Messages prêts à envoyer (WhatsApp / SMS)" onclick="pcMsgOpen(\'' + kind + '\',\'' + p.docId + '\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:none;border-radius:8px;background:#7c3aed;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">💬 Messages</button>');
   if (p.email) buttons.push('<a href="mailto:' + pcEsc(p.email) + '" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#f97316;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📧</a>');
   var qa = pclAddr(p);
   if (qa) buttons.push('<a href="' + pcEsc(pcMapUrl(qa)) + '" target="_blank" rel="noopener" title="Voir sur le plan" style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:8px;background:#1d4ed8;color:#fff;text-decoration:none;font-size:11px;font-weight:700;">📍</a>');
@@ -8561,7 +8676,7 @@ function pclRenderList(list) {
       : '<button onclick="pclConvertToClient(\'' + p.docId + '\')" style="background:#E8F5E9;color:#2E7D32;border:1px solid #c8e6c9;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">🧾 Créer le contrat</button>';
     var typ = p.type || 'Particulier', addr = pclAddr(p);
     // Coordonnées
-    var coord = pclQuickActions(p)
+    var coord = pclQuickActions(p, 'cl')
       + line(TI[typ] || '👤', '<b>' + pcEsc(typ) + '</b>' + (p.societe ? ' · ' + pcEsc(p.societe) : '') + (p.tva ? ' · 🧾 TVA ' + pcEsc(p.tva) : ''))
       + (p.tel ? line('📞', pcTelLink(p.tel)) : '')
       + (p.email ? line('📧', pcMailLink(p.email)) : '')
@@ -9028,7 +9143,7 @@ function pcoRenderList(list) {
   if (!filtered.length) { el.innerHTML = '<div style="color:#999;">Aucune fiche à afficher.</div>'; return; }
   var line = function (icon, html) { return '<div style="font-size:12px;color:#444;margin:1px 0;">' + icon + ' ' + html + '</div>'; };
   el.innerHTML = pcWaChip() + filtered.map(function (p) {
-    var coord = pclQuickActions(p)
+    var coord = pclQuickActions(p, 'co')
       + (p.tel ? line('📞', pcTelLink(p.tel) + (p.operateurActuel ? ' ' + pcOpBadge(p.operateurActuel) : '')) : '')
       + (p.email ? line('📧', pcMailLink(p.email)) : '')
       + (p.adresse ? line('📍', pcMapLink(p.adresse)) : '')

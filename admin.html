@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.99 - Activité encodée et aperçu Mon démarrage</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.100 - Messages prospects et PQS déclaré</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -289,6 +289,7 @@
           <button onclick="showAdminPanel('panel-partners', this)" class="menu-item" id="menu-partners">🤝 Partenaires</button>
           <button onclick="showAdminPanel('panel-usage-stats', this)" class="menu-item" id="menu-usage-stats">📈 Statistiques d'utilisation</button>
           <button onclick="showAdminPanel('panel-onboarding-admin', this)" class="menu-item" id="menu-onboarding-admin">🚀 Démarrage des nouveaux</button>
+          <button onclick="showAdminPanel('panel-msg-templates', this)" class="menu-item" id="menu-msg-templates">💬 Messages prospects</button>
           <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
           <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Les builds de Phil-Mobile <span id="bn-count"></span></button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
@@ -1084,7 +1085,7 @@
           <div class="section-title">🚀 Démarrage des nouveaux consultants</div>
           <div class="card">
             <div style="font-size:11px;color:#888;margin-bottom:10px;">
-              Consultants arrivés depuis moins de 120 jours dont le PQS n'est pas encore validé. Le PQS se compte depuis leurs contrats « Activé » : 12 ASP dont 7 mobile, 3 énergie (Eneco : 0,50 par EAN, 1 pour un indépendant) et 2 internet. Quand tu valides le PQS, le consultant ne voit plus l'onglet « Mon démarrage ».
+              Consultants arrivés depuis moins de 120 jours dont le PQS n'est pas encore validé (ceux qui ont déclaré leur PQS dans My Smart apparaissent ici pour que tu le vérifies). Le PQS se compte depuis leurs contrats « Activé » : 12 ASP dont 7 mobile, 3 énergie (Eneco : 0,50 par EAN, 1 pour un indépendant) et 2 internet. Quand tu valides le PQS, ou quand le consultant déclare qu'il est validé dans My Smart, il ne voit plus l'onglet « Mon démarrage ».
             </div>
             <label style="font-size:12px;color:#555;display:inline-flex;gap:6px;align-items:center;margin-bottom:10px;"><input type="checkbox" id="onba-all" onchange="loadOnboardingAdmin()" style="width:auto;"> Afficher aussi les PQS déjà validés</label>
             <div id="onba-body"><div class="empty">Chargement...</div></div>
@@ -1096,6 +1097,20 @@
                 <button class="btn btn-primary" style="padding:5px 12px;font-size:12px;" onclick="onbaPreview()">Voir l'aperçu</button>
               </div>
               <div id="onba-prev-body"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-msg-templates">
+          <div class="section-title">💬 Messages prêts à envoyer (WhatsApp / SMS)</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Messages proposés aux consultants sur les fiches de leurs prospects (bouton « 💬 Messages »). Variables : <b>{prenom}</b> (prénom du prospect), <b>{consultant}</b> (prénom du consultant), <b>{date}</b> et <b>{heure}</b> (choisies à l'envoi), <b>{lien}</b> (lien Teams de « Réunion Teams »). Le consultant peut ajuster le texte avant d'envoyer.
+            </div>
+            <div id="mt-body"><div class="empty">Chargement...</div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+              <button class="btn btn-primary" onclick="saveMsgTemplates()">Enregistrer les messages</button>
+              <button class="btn btn-secondary" onclick="resetMsgTemplates()">Remettre les messages de départ</button>
             </div>
           </div>
         </div>
@@ -2209,6 +2224,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-partners') loadPartnersAdmin();
   if (panelId === 'panel-usage-stats') loadUsageStats();
   if (panelId === 'panel-onboarding-admin') loadOnboardingAdmin();
+  if (panelId === 'panel-msg-templates') loadMsgTemplates();
   if (panelId === 'panel-build-notes') loadBuildNotes();
   if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
@@ -2384,6 +2400,7 @@ const BN_PENDING = [
   { build: '14.97', title: "Nos Partenaires gérés depuis l'admin", description: "- Le menu « Nos Partenaires » fonctionne de nouveau : Smart SN (téléphone, email Support, email Rémunération), Orange (Service clientèle, Service clientèle SOHO, Service Business) et Eneco (téléphone, email).\n- Les coordonnées s'encodent depuis l'admin, section « Partenaires ».\n- Correction : « Support application » et « Formation » s'affichent de nouveau." },
   { build: '14.98', title: "Mon démarrage pour les nouveaux consultants", description: "- Nouvel onglet « Mon démarrage » tout en haut du menu pour les nouveaux consultants, avec leurs étapes : formations My Smart, formation Success, PQS (12 ASP actifs comptés depuis tes contrats activés), puis Fast SC et Fast EC si tu recrutes.\n- Il disparaît dès que ton PQS est validé.\n- L'app enregistre maintenant les connexions et les menus ouverts, pour mieux savoir ce qui est utilisé et t'aider à progresser." },
   { build: '14.99', title: "Activité encodée et aperçu de Mon démarrage (admin)", description: "- Admin : les statistiques d'utilisation montrent aussi la dernière activité encodée de chaque consultant (contrat, prospect, client), qui couvre le passé.\n- Admin : un aperçu de l'onglet « Mon démarrage » tel que le voit un consultant." },
+  { build: '14.100', title: "Messages prêts à envoyer et PQS déclaré", description: "- Fiches Prospects Clients et Prospects Consultants : nouveau bouton « 💬 Messages ». Tu choisis un message prêt (remercier une candidature, inviter à une BOM, proposer ou confirmer un rendez-vous, relancer…), tu l'ajustes si besoin et tu l'envoies par WhatsApp ou SMS, ou tu le copies.\n- Mon démarrage : si tu n'encodes pas tes contrats ici, tu peux indiquer que ton PQS est déjà validé dans My Smart. Ton upline le vérifie." },
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -2737,7 +2754,11 @@ async function loadOnboardingAdmin() {
       const lsDays = ls ? Math.floor((Date.now() - new Date(ls).getTime()) / 86400000) : null;
       const alert = (!r.c.pqsValidated && (lsDays === null || lsDays >= 7)) ? ' <span title="Pas connecté depuis 7 jours ou plus">⚠️</span>' : '';
       const tog = (key) => '<button class="btn ' + (ob[key] ? 'btn-primary' : 'btn-secondary') + '" style="padding:3px 9px;font-size:11px;" onclick="onbAdminToggle(\'' + r.c.docId + '\',\'' + key + '\',' + (ob[key] ? 'false' : 'true') + ')">' + (ob[key] ? '✅ Fait' : 'À faire') + '</button>';
+      const decl = ob.pqsDeclared ? new Date(ob.pqsDeclaredAt || Date.now()).toLocaleDateString('fr-BE') : '';
       const pqsTxt = r.c.pqsValidated ? '<b style="color:#16a34a;">✅ Validé</b>'
+        : ob.pqsDeclared ? '<b style="color:#7c3aed;">🙋 Déclaré par le consultant le ' + decl + '</b><br><span style="color:#888;">À vérifier dans My Smart</span><br>'
+          + '<button class="btn btn-primary" style="padding:3px 9px;font-size:11px;margin:4px 4px 0 0;" onclick="onbAdminValidatePqs(\'' + r.c.docId + '\')">Valider le PQS</button>'
+          + '<button class="btn btn-secondary" style="padding:3px 9px;font-size:11px;margin-top:4px;" onclick="onbAdminCancelDecl(\'' + r.c.docId + '\')">Annuler la déclaration</button>'
         : '📱 ' + onbFmt(g.mobile) + '/7 · ⚡ ' + onbFmt(g.energy) + '/3 · 🌐 ' + onbFmt(g.internet) + '/2'
           + (r.pqs.complete ? ' <button class="btn btn-primary" style="padding:3px 9px;font-size:11px;margin-left:4px;" onclick="onbAdminValidatePqs(\'' + r.c.docId + '\')">Valider le PQS</button>' : '');
       html += '<tr style="border-bottom:1px solid #f3f3f3;vertical-align:top;"><td style="padding:6px;font-weight:700;">' + escapeHtmlAdmin(r.c.fullName || r.c.name || r.id) + alert + '</td><td style="padding:6px;">J' + r.dayN + '</td><td style="padding:6px;">' + tog('formations') + '</td><td style="padding:6px;">' + tog('success') + '</td><td style="padding:6px;">' + pqsTxt + '</td><td style="padding:6px;">' + usgAgo(ls) + '</td></tr>';
@@ -2767,8 +2788,8 @@ window.onbaPreview = async function () {
     const dayN = start ? Math.floor((Date.now() - start.getTime()) / 86400000) + 1 : null;
     const pq = onbCalcPqs(cache.byCons[id] || []);
     const recruited = cache.cons.some(x => x.active !== false && x.archived !== true && x.uplineId === id);
-    m = { dayN, ob: c.onboarding || {}, got: pq.got, reached: pq.complete, pqsOk: !!c.pqsValidated, recruited, fastSC: !!c.fastSCValidated, fastEC: !!c.fastECValidated,
-          visible: !!start && dayN >= 1 && dayN <= ONB_DAYS && !c.pqsValidated && c.isAdmin !== true, hasStart: !!start };
+    m = { dayN, ob: c.onboarding || {}, got: pq.got, reached: pq.complete, pqsOk: !!c.pqsValidated || !!(c.onboarding || {}).pqsDeclared, recruited, fastSC: !!c.fastSCValidated, fastEC: !!c.fastECValidated,
+          visible: !!start && dayN >= 1 && dayN <= ONB_DAYS && !c.pqsValidated && !(c.onboarding || {}).pqsDeclared && c.isAdmin !== true, hasStart: !!start };
   }
   const left = (limit) => m.dayN ? limit - m.dayN + 1 : null;   // jours restants (même calcul que le hub : départ + limite)
   const steps = [
@@ -2780,7 +2801,7 @@ window.onbaPreview = async function () {
   if (m.recruited || m.fastEC) steps.push({ title: 'Fast EC : devenir Executive Consultant en 120 jours (réseau)', done: m.fastEC, days: left(120), network: true });
   const done = steps.filter(x => x.done).length;
   let html = '<div style="font-size:11px;font-weight:700;margin-bottom:8px;color:' + (m.visible ? '#16a34a' : '#d97706') + ';">'
-    + (m.visible ? "✅ Cet onglet est visible pour ce consultant." : "⚠️ Cet onglet n'est PAS visible pour ce consultant (" + (m.pqsOk ? 'PQS déjà validé' : (m.hasStart === false ? 'pas de date de démarrage' : 'hors des 120 premiers jours ou compte admin')) + ').') + '</div>'
+    + (m.visible ? "✅ Cet onglet est visible pour ce consultant." : "⚠️ Cet onglet n'est PAS visible pour ce consultant (" + (m.pqsOk ? 'PQS déjà validé ou déclaré' : (m.hasStart === false ? 'pas de date de démarrage' : 'hors des 120 premiers jours ou compte admin')) + ').') + '</div>'
     + '<div style="max-width:520px;border:1px solid #f97316;border-radius:12px;padding:16px;background:#fff;">'
     + '<div style="font-size:15px;font-weight:700;color:#1a1a1a;">🚀 Mon démarrage</div>'
     + '<div style="font-size:12px;color:#6b7280;margin:2px 0 12px;">Jour ' + (m.dayN || '?') + ' sur ' + ONB_DAYS + ' · ' + done + '/' + steps.length + ' étapes terminées</div>';
@@ -2805,6 +2826,14 @@ window.onbAdminToggle = async function (docId, key, val) {
     loadOnboardingAdmin();
   } catch (err) { alert('Erreur : ' + err.message); }
 };
+window.onbAdminCancelDecl = async function (docId) {
+  if (!confirm('Annuler la déclaration ? Le consultant verra de nouveau son onglet « Mon démarrage ».')) return;
+  try {
+    await updateDoc(doc(db, 'consultants', docId), { 'onboarding.pqsDeclared': false });
+    showToast('Déclaration annulée.');
+    loadOnboardingAdmin();
+  } catch (err) { alert('Erreur : ' + err.message); }
+};
 window.onbAdminValidatePqs = async function (docId) {
   if (!confirm('Valider le PQS de ce consultant ?')) return;
   try {
@@ -2815,6 +2844,69 @@ window.onbAdminValidatePqs = async function (docId) {
 };
 window.loadUsageStats = loadUsageStats;
 window.loadOnboardingAdmin = loadOnboardingAdmin;
+
+// --- Messages prêts à envoyer (settings/messageTemplates), utilisés par le hub sur les fiches prospects — Build 14.100 ---
+const PM_MSG_DEFAULTS = {
+  co: [
+    { label: '🙏 Remercier de sa candidature', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Merci d'avoir répondu à notre annonce et de l'intérêt que vous portez à l'activité de consultant indépendant. Je reviens vers vous très vite pour en discuter. À bientôt !" },
+    { label: '📅 Inviter à une BOM', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je vous invite à notre présentation de l'activité (BOM) le {date} à {heure}. Elle se déroule en visio, voici le lien : {lien}\nVous y découvrirez le métier, la rémunération et la suite. Pouvez-vous me confirmer votre présence ?" },
+    { label: '⏰ Rappeler la BOM', text: "Bonjour {prenom}, petit rappel : notre présentation de l'activité (BOM) a lieu le {date} à {heure}. Voici le lien : {lien}\nÀ tout à l'heure !" },
+    { label: '🔔 Relancer', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je me permets de revenir vers vous suite à votre candidature. Êtes-vous toujours intéressé(e) ? Dites-moi quand je peux vous appeler." },
+    { label: '🤝 Après la BOM', text: "Bonjour {prenom}, merci d'avoir suivi notre présentation. Qu'en avez-vous pensé ? Je reste disponible pour répondre à vos questions et envisager la suite ensemble." }
+  ],
+  cl: [
+    { label: '📅 Proposer un rendez-vous', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. J'aimerais vous présenter une offre adaptée à vos besoins (mobile, internet, énergie). Seriez-vous disponible le {date} à {heure} ? Sinon, dites-moi ce qui vous arrange." },
+    { label: '✅ Confirmer le rendez-vous', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je vous confirme notre rendez-vous le {date} à {heure}. N'hésitez pas à me prévenir en cas d'empêchement. À bientôt !" },
+    { label: '🔔 Relancer', text: "Bonjour {prenom}, c'est {consultant} de Phil-Mobile. Je reviens vers vous au sujet de notre échange. Avez-vous eu le temps d'y réfléchir ? Je reste à votre disposition." },
+    { label: '🙏 Remercier', text: "Bonjour {prenom}, merci pour le temps que vous m'avez accordé, ce fut un plaisir. Je reste à votre disposition pour toute question. Belle journée !" }
+  ]
+};
+const MT_GROUPS = { co: '🚀 Prospects consultants (candidats)', cl: '🎯 Prospects clients' };
+let mtState = null;
+async function loadMsgTemplates() {
+  const body = document.getElementById('mt-body');
+  if (!body) return;
+  mtState = JSON.parse(JSON.stringify(PM_MSG_DEFAULTS));
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'messageTemplates'));
+    if (snap.exists()) {
+      const d = snap.data();
+      ['co', 'cl'].forEach(k => { const l = Array.isArray(d[k]) ? d[k].filter(x => x && x.label && x.text) : []; if (l.length) mtState[k] = l; });
+    }
+  } catch (err) { console.log('Messages : valeurs de départ affichées:', err.message); }
+  renderMsgTemplates();
+}
+function renderMsgTemplates() {
+  const body = document.getElementById('mt-body');
+  body.innerHTML = Object.keys(MT_GROUPS).map(k => {
+    const rows = mtState[k].map((t, i) =>
+      '<div style="border:1px solid #eee;border-radius:8px;padding:8px;margin-bottom:8px;">'
+      + '<div style="display:flex;gap:6px;margin-bottom:6px;"><input type="text" value="' + escapeHtmlAdmin(t.label).replace(/"/g, '&quot;') + '" oninput="mtSet(\'' + k + '\',' + i + ',\'label\',this.value)" style="flex:1;font-weight:700;" placeholder="Titre du message">'
+      + '<button class="btn btn-secondary" style="padding:3px 9px;font-size:11px;" onclick="mtDel(\'' + k + '\',' + i + ')">🗑️</button></div>'
+      + '<textarea rows="4" oninput="mtSet(\'' + k + '\',' + i + ',\'text\',this.value)" style="width:100%;box-sizing:border-box;font-size:12px;padding:7px;border:1px solid #ddd;border-radius:6px;font-family:Arial,sans-serif;">' + escapeHtmlAdmin(t.text) + '</textarea></div>').join('');
+    return '<div style="font-size:12px;font-weight:700;color:#f97316;margin:14px 0 8px;">' + MT_GROUPS[k] + '</div>' + rows
+      + '<button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="mtAdd(\'' + k + '\')">➕ Ajouter un message</button>';
+  }).join('');
+}
+window.mtSet = function (k, i, f, v) { mtState[k][i][f] = v; };
+window.mtDel = function (k, i) { if (!confirm('Supprimer ce message ?')) return; mtState[k].splice(i, 1); renderMsgTemplates(); };
+window.mtAdd = function (k) { mtState[k].push({ label: 'Nouveau message', text: 'Bonjour {prenom}, ' }); renderMsgTemplates(); };
+window.resetMsgTemplates = function () {
+  if (!confirm('Remettre les messages de départ ? (rien n\'est enregistré tant que tu ne cliques pas sur « Enregistrer »)')) return;
+  mtState = JSON.parse(JSON.stringify(PM_MSG_DEFAULTS)); renderMsgTemplates();
+};
+window.saveMsgTemplates = async function () {
+  const out = {};
+  for (const k of Object.keys(MT_GROUPS)) {
+    out[k] = mtState[k].map(t => ({ label: String(t.label || '').trim(), text: String(t.text || '').trim() })).filter(t => t.label && t.text);
+    if (!out[k].length) { alert('Garde au moins un message pour « ' + MT_GROUPS[k] + ' ».'); return; }
+  }
+  try {
+    await setDoc(doc(db, 'settings', 'messageTemplates'), out);
+    showToast('✅ Messages enregistrés.');
+  } catch (err) { alert('Erreur lors de l\'enregistrement: ' + err.message); }
+};
+window.loadMsgTemplates = loadMsgTemplates;
 
 // --- Favoris par défaut du menu hub (settings/menuDefaults) ---
 // Le catalogue des menus est lu directement dans wp_consultant_hub.html (toujours synchronisé avec le hub).
@@ -9361,6 +9453,7 @@ const FAV_ITEMS = {
   'menu-partners':             { label: '🤝 Partenaires',                  panelId: 'panel-partners' },
   'menu-usage-stats':          { label: '📈 Stats d\'utilisation',          panelId: 'panel-usage-stats' },
   'menu-onboarding-admin':     { label: '🚀 Démarrage des nouveaux',       panelId: 'panel-onboarding-admin' },
+  'menu-msg-templates':        { label: '💬 Messages prospects',           panelId: 'panel-msg-templates' },
   'menu-fav-defaults':         { label: '❤️ Favoris par défaut',           panelId: 'panel-fav-defaults' },
   'menu-build-notes':          { label: '📝 Les builds de Phil-Mobile', panelId: 'panel-build-notes' },
   'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },

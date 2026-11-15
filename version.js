@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.99 - Activité encodée et aperçu Mon démarrage";
+  scope.APP_VERSION = "14.100 - Messages prospects et PQS déclaré";
 })();
