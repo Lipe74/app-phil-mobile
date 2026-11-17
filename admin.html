@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.100 - Messages prospects et PQS déclaré</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.101 - Date des documents</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -8421,6 +8421,14 @@ function loadDocumentsAdmin() {
   });
 }
 
+// Étiquette « novembre 2026 » (date de dernière mise à jour du fichier) — Build 14.101
+function docMoisAnnee(d) {
+  if (!d.url || !d.dateAjout) return '';
+  const dt = new Date(d.dateAjout);
+  if (isNaN(dt)) return '';
+  const txt = dt.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' });
+  return `<span style="font-size:10px;font-weight:600;color:#6b7280;background:#f3f4f6;border-radius:10px;padding:1px 8px;white-space:nowrap;" title="Fichier mis à jour le ${dt.toLocaleDateString('fr-BE')}">${txt}</span>`;
+}
 function renderDocumentsAdmin(items) {
   const container = document.getElementById('documents-content');
   if (!container) return;
@@ -8452,7 +8460,7 @@ function renderDocumentsAdmin(items) {
                    ${DOC_ICON_CHOICES.map(e => `<button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:12px;" onclick="pickDocIcone('doc-edit-icone-${d.id}','${e}')">${e}</button>`).join('')}
                  </div>
                </div>`
-            : `<span>${d.icone || '📄'} ${escapeHtmlDocs(d.titre)}</span>`}
+            : `<span>${d.icone || '📄'} ${escapeHtmlDocs(d.titre)}</span>${docMoisAnnee(d)}`}
         </span>
         ${window._documentsEditingId === d.id
           ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
