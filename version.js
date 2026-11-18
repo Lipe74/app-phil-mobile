@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.104 - Simulateur mobile : ligne de prix";
+  scope.APP_VERSION = "14.105 - Simulateur mobile : correctif ligne";
 })();
