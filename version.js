@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.106 - Simulateur mobile : sans en-tête";
+  scope.APP_VERSION = "14.107 - Commissions : tableau mobile";
 })();
