@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.101 - Date des documents";
+  scope.APP_VERSION = "14.102 - Couleurs, logos et noms des menus";
 })();

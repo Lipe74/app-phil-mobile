@@ -28,7 +28,7 @@
 <style>
 .menu-item {
   display:block;width:100%;text-align:left;padding:9px 12px;
-  background:#fff;border:1px solid #f97316;border-radius:8px;
+  background:#fff;border:1px solid var(--pm-accent,#f97316);border-radius:8px;
   color:#1a1a1a;font-size:12px;font-weight:600;cursor:pointer;
   font-family:Arial,sans-serif;transition:all .15s;
 }
@@ -49,7 +49,7 @@
 .pm-sec-toggle{
   display:flex;align-items:center;justify-content:space-between;width:100%;
   background:none;border:none;cursor:pointer;padding:0;
-  font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;
+  font-size:11px;font-weight:700;color:var(--pm-accent,#f97316);text-transform:uppercase;
   letter-spacing:.08em;margin:10px 0 4px;font-family:Arial,sans-serif;
 }
 .pm-sec-toggle:first-child{ margin-top:0; }
@@ -86,8 +86,16 @@
 #ctr-import-pdf-btn:disabled{ opacity:.6;cursor:default; }
 @keyframes ctr-import-spin{ to{ transform:rotate(360deg); } }
 
-.menu-item:hover { background:#fff3e8; }
-.active-item { background:#f97316 !important;color:#fff !important;border-color:#f97316 !important; }
+.menu-item:hover { background:var(--pm-accent-soft,#fff3e8); }
+.active-item { background:var(--pm-accent,#f97316) !important;color:#fff !important;border-color:var(--pm-accent,#f97316) !important; }
+/* Build 14.102 : barre de couleur par famille / catégorie de documents */
+.menu-item[data-bar]{ background-image:var(--bar);background-repeat:no-repeat;background-size:5px 100%;background-position:left center;padding-left:16px; }
+.menu-item[data-bar]:hover{ background-image:var(--bar); }
+.active-item[data-bar]{ background-image:var(--bar) !important; }
+.pm-fav-grouphead{ display:flex;align-items:center;gap:5px;margin:8px 0 4px 18px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em; }
+.pm-fav-grouphead img{ width:15px;height:15px;object-fit:contain; }
+.pm-fav-grouphead i{ display:inline-block;width:8px;height:8px;border-radius:50%; }
+.pm-doc-logo{ width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0; }
 @media(max-width:600px){
   #outils-unlocked > div { flex-direction:column !important; }
   #outils-unlocked > div > div:first-child { width:100% !important; }
@@ -1816,6 +1824,12 @@ STATUT: independant
             <button onclick="saveMonProfilInfo()" style="width:100%;padding:10px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">💾 Enregistrer mes informations</button>
             <div id="mp-save-status" style="font-size:12px;font-weight:600;text-align:center;margin-bottom:10px;"></div>
 
+            <!-- Couleur perso (Build 14.102) -->
+            <div style="margin:6px 0 12px;padding:12px;border:1px solid #f0f0f0;border-radius:10px;background:#fafafa;">
+              <div style="font-size:12px;font-weight:700;margin-bottom:8px;">🎨 Ma couleur</div>
+              <div id="mp-accent-swatches" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+              <div style="font-size:11px;color:#888;margin-top:8px;">Change la couleur de ton menu et de ses boutons. Les couleurs des catégories restent les mêmes pour tout le monde. L'orange Phil-Mobile est la couleur de départ.</div>
+            </div>
             <!-- Accordéon mot de passe -->
             <button onclick="toggleMenu('mp-password-accordion')" class="menu-item group-toggle" style="margin-top:6px;">🔒 Changer mon mot de passe</button>
             <div id="mp-password-accordion" class="submenu" style="margin-left:0;padding:10px;border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
@@ -2135,15 +2149,20 @@ async function loadHubDocuments() {
         { label: 'Divers',      icone: '📁' },
       ];
       const cats = hubCats.length > 0 ? hubCats.filter(c => !c.hidden) : FALLBACK_CATS;
+      window._pmDocCats = {};
       container.innerHTML = cats.map(cat => {
         const slug = 'docs-' + cat.label.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').toLowerCase();
         const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
-        return `<button onclick="toggleMenu('${slug}')" class="menu-item group-toggle">
-          ${escapeHtmlDocs(cat.icone || '📁')} ${escapeHtmlDocs(cat.label)}
+        const dInfo = { color: cat.color || '', color2: cat.color2 || '', logo: cat.logoUrl || '' };
+        window._pmDocCats[cat.label] = dInfo;
+        const dBar = dInfo.color ? ' data-bar="1" style="--bar:' + pmBarCss(dInfo) + ';"' : '';
+        const dLogo = dInfo.logo ? '<img class="pm-doc-logo" src="' + pmAttr(dInfo.logo) + '" alt="">' : escapeHtmlDocs(cat.icone || '📁');
+        return `<button onclick="toggleMenu('${slug}')" class="menu-item group-toggle" data-doccat="${pmAttr(cat.label)}"${dBar}>
+          ${dLogo} ${escapeHtmlDocs(cat.label)}
         </button>
         <div id="${slug}" class="submenu">
           ${docs.length
-            ? docs.map(d => `<button onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" style="display:flex;align-items:flex-start;gap:6px;"><span>${escapeHtmlDocs(d.icone||'📄')}</span><span style="flex:1;">${escapeHtmlDocs(d.titre)}</span></button>`).join('')
+            ? docs.map(d => `<button id="doc-${d.id}" onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" data-doccat="${pmAttr(cat.label)}"${dInfo.color ? ' data-bar="1"' : ''} style="${dInfo.color ? '--bar:' + pmBarCss(dInfo) + ';' : ''}display:flex;align-items:flex-start;gap:6px;"><span>${dInfo.logo ? '<img class="pm-doc-logo" src="' + pmAttr(dInfo.logo) + '" alt="">' : escapeHtmlDocs(d.icone||'📄')}</span><span style="flex:1;">${escapeHtmlDocs(d.titre)}</span></button>`).join('')
             : '<div class="menu-item" style="opacity:.5;">Aucun document</div>'}
         </div>`;
       }).join('');
@@ -2393,6 +2412,170 @@ function initSections() {
   });
 }
 
+// ===== COULEURS, NOMS DES MENUS, LOGOS ET COULEUR PERSO (Build 14.102) =====
+// Familles de menus (couleurs modifiables depuis l'admin : settings/menuTheme) ; l'identifiant du menu ne change jamais,
+// seul l'affichage est modifié (settings/menuLabels : { labels: { <clé du menu>: "texte affiché" } }).
+var PM_FAMILIES = {
+  clients:              { label: 'Clients',                color: '#2563eb' },
+  prospectsClients:     { label: 'Prospects clients',      color: '#38bdf8' },
+  consultants:          { label: 'Consultants',            color: '#16a34a' },
+  prospectsConsultants: { label: 'Prospects consultants',  color: '#84cc16' },
+  rdv:                  { label: 'Rdv & QR code',          color: '#7c3aed' },
+  comm:                 { label: 'Communication',          color: '#0d9488' },
+  info:                 { label: 'Agenda, formations & news', color: '#6366f1' },
+  outils:               { label: 'Outils & simulateurs',   color: '#f97316' },
+  ressources:           { label: 'Liens & ressources',     color: '#64748b' },
+  scripts:              { label: 'Scripts',                color: '#db2777' },
+  admin:                { label: 'Administration',         color: '#475569' }
+};
+var PM_SEC_FAMILY = { 'sec-communication': 'comm', 'sec-agenda': 'info', 'sec-outils': 'outils', 'sec-ressources': 'ressources', 'sec-scripts': 'scripts', 'sec-admin': 'admin' };
+var PM_ID_FAMILY = {
+  'btn-contrats': 'clients', 'btn-crm-clients': 'clients', 'btn-simulateur': 'clients',
+  'btn-prosp-clients': 'prospectsClients', 'btn-prosp-consultants': 'prospectsConsultants',
+  'btn-rdvs': 'rdv', 'btn-mon-qr': 'rdv',
+  'btn-crm-consultants': 'consultants', 'btn-recommander': 'consultants', 'menu-monprofil': 'consultants'
+};
+var PM_ACCENTS = [['Orange Phil-Mobile', '#f97316'], ['Bleu', '#1e40af'], ['Turquoise', '#0d9488'], ['Vert', '#16a34a'], ['Violet', '#7c3aed'], ['Rose', '#db2777'], ['Rouge', '#dc2626'], ['Ardoise', '#475569']];
+window._pmTheme = {};
+window._pmLabels = {};
+window._pmDocCats = {};
+
+function pmAttr(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function pmBarCss(info) {
+  var c1 = info.color || '#999', c2 = info.color2;
+  return c2 ? 'linear-gradient(to bottom,' + c1 + ' 0,' + c1 + ' 50%,' + c2 + ' 50%,' + c2 + ' 100%)' : 'linear-gradient(to bottom,' + c1 + ',' + c1 + ')';
+}
+function pmFamInfo(fk) {
+  if (fk.indexOf('doc:') === 0) {
+    var lab = fk.slice(4), dc = window._pmDocCats[lab] || {};
+    return { label: lab, color: dc.color || '', color2: dc.color2 || '', logo: dc.logo || '' };
+  }
+  var base = PM_FAMILIES[fk] || { label: fk, color: '#999' };
+  var ov = (window._pmTheme && window._pmTheme.families && window._pmTheme.families[fk]) || {};
+  return { label: base.label, color: ov.color || base.color, color2: '', logo: '' };
+}
+function pmFamilyOf(btn) {
+  if (btn.dataset.doccat) return 'doc:' + btn.dataset.doccat;
+  if (PM_ID_FAMILY[btn.id]) return PM_ID_FAMILY[btn.id];
+  var body = btn.closest ? btn.closest('.pm-sec-body') : null;
+  return (body && PM_SEC_FAMILY[body.id]) || '';
+}
+// Barre de couleur sur chaque menu + titre de section coloré
+function pmApplyMenuStyle() {
+  var c = document.getElementById('pm-left-menu');
+  if (!c) return;
+  c.querySelectorAll('button.menu-item').forEach(function (btn) {
+    if (btn.closest('#pm-favoris-list') || btn.id === 'menu-dashboard') return;
+    var fk = pmFamilyOf(btn), info = fk ? pmFamInfo(fk) : null;
+    if (!info || !info.color) { btn.removeAttribute('data-bar'); btn.style.removeProperty('--bar'); btn.dataset.famkey = fk || ''; return; }
+    btn.dataset.famkey = fk; btn.dataset.famlabel = info.label; btn.dataset.famcolor = info.color; btn.dataset.famlogo = info.logo || '';
+    btn.dataset.bar = '1';
+    btn.style.setProperty('--bar', pmBarCss(info));
+  });
+  c.querySelectorAll('button.pm-sec-toggle').forEach(function (t) {
+    var m = (t.getAttribute('onclick') || '').match(/toggleSection\('([^']+)'\)/);
+    var fk = m && PM_SEC_FAMILY[m[1]];
+    t.style.color = fk ? pmFamInfo(fk).color : '';
+  });
+}
+// Noms des menus modifiables depuis l'admin (texte du bouton uniquement ; badges et clé de favori inchangés)
+function pmLabelNode(btn) {
+  var w = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null), n;
+  while ((n = w.nextNode())) {
+    if (!n.nodeValue.trim()) continue;
+    var p = n.parentNode, bad = false;
+    while (p && p !== btn) {
+      if (p.classList && (p.classList.contains('pm-sec-arrow') || p.classList.contains('pm-qr-badge') || p.classList.contains('pm-maj-badge') || /badge/.test(p.id || ''))) { bad = true; break; }
+      p = p.parentNode;
+    }
+    if (!bad) return n;
+  }
+  return null;
+}
+function pmApplyMenuLabels() {
+  var c = document.getElementById('pm-left-menu');
+  if (!c) return;
+  var labels = window._pmLabels || {};
+  c.querySelectorAll('button.menu-item, button.pm-sec-toggle').forEach(function (btn) {
+    if (btn.closest('#pm-favoris-list')) return;
+    if (!btn.id && !btn.getAttribute('onclick')) return;
+    var key = pmFavKey(btn), node = pmLabelNode(btn);
+    if (!node) return;
+    if (btn.dataset.pmOrig === undefined) btn.dataset.pmOrig = node.nodeValue;
+    var want = labels[key];
+    var tail = /\s$/.test(btn.dataset.pmOrig) ? ' ' : '';
+    var next = (typeof want === 'string' && want.trim()) ? want.trim() + tail : btn.dataset.pmOrig;
+    if (node.nodeValue !== next) node.nodeValue = next;
+  });
+}
+function pmWatchMenuSettings() {
+  if (window._pmMenuSettingsWatch || !window.onSnapshot || !window.db || !window.doc) return;
+  window._pmMenuSettingsWatch = true;
+  try {
+    window.onSnapshot(window.doc(window.db, 'settings', 'menuTheme'), function (snap) {
+      window._pmTheme = snap.exists() ? snap.data() : {};
+      pmApplyMenuStyle(); pmRenderFavoritesList();
+    }, function () {});
+    window.onSnapshot(window.doc(window.db, 'settings', 'menuLabels'), function (snap) {
+      window._pmLabels = (snap.exists() && snap.data().labels) || {};
+      pmApplyMenuLabels(); pmRenderFavoritesList();
+    }, function () {});
+  } catch (e) { console.log('Réglages menu:', e.message); }
+}
+// Favoris regroupés par famille (affichage seulement : l'ordre enregistré n'est pas modifié)
+function pmGroupedOrder(favs) {
+  var out = [], seg = [];
+  function flush() {
+    var fams = [], by = {};
+    seg.forEach(function (k) { var o = pmFavMap[k]; if (!o) return; var f = o.dataset.famkey || ''; if (!by[f]) { by[f] = []; fams.push(f); } by[f].push(k); });
+    fams.forEach(function (f) { out = out.concat(by[f]); });
+    seg = [];
+  }
+  favs.forEach(function (k) { if (k.indexOf('sep:') === 0) { flush(); out.push(k); } else seg.push(k); });
+  flush();
+  return out;
+}
+function pmFavGroupHead(orig) {
+  var h = document.createElement('div');
+  h.className = 'pm-fav-grouphead';
+  h.style.color = orig.dataset.famcolor || '#999';
+  if (orig.dataset.famlogo) { var im = document.createElement('img'); im.src = orig.dataset.famlogo; im.alt = ''; h.appendChild(im); }
+  else { var dot = document.createElement('i'); dot.style.background = orig.dataset.famcolor || '#999'; h.appendChild(dot); }
+  h.appendChild(document.createTextNode(orig.dataset.famlabel || ''));
+  return h;
+}
+// Couleur d'accent personnelle (consultants.uiAccent) : couleur du menu et des boutons du menu
+function pmAccentApply(hex) {
+  var r = document.documentElement.style;
+  if (!hex || !/^#[0-9a-f]{6}$/i.test(hex)) { r.removeProperty('--pm-accent'); r.removeProperty('--pm-accent-soft'); return; }
+  var n = parseInt(hex.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
+  var soft = 'rgb(' + Math.round(R + (255 - R) * .9) + ',' + Math.round(G + (255 - G) * .9) + ',' + Math.round(B + (255 - B) * .9) + ')';
+  r.setProperty('--pm-accent', hex); r.setProperty('--pm-accent-soft', soft);
+}
+function pmAccentRender() {
+  var box = document.getElementById('mp-accent-swatches');
+  if (!box) return;
+  var cur = ''; try { cur = localStorage.getItem('pmAccent') || ''; } catch (e) {}
+  box.innerHTML = PM_ACCENTS.map(function (a) {
+    var on = (cur || '#f97316').toLowerCase() === a[1];
+    return '<button type="button" title="' + a[0] + '" onclick="pmAccentSet(\'' + a[1] + '\')" style="width:30px;height:30px;border-radius:50%;background:' + a[1] + ';cursor:pointer;border:3px solid ' + (on ? '#1a1a1a' : '#fff') + ';box-shadow:0 0 0 1px #ddd;"></button>';
+  }).join('');
+}
+window.pmAccentSet = function (hex) {
+  var v = hex === '#f97316' ? '' : hex;
+  try { if (v) localStorage.setItem('pmAccent', v); else localStorage.removeItem('pmAccent'); } catch (e) {}
+  pmAccentApply(v); pmAccentRender();
+  if (pmCurrentUser && window.db && window.updateDoc && window.doc) {
+    window.updateDoc(window.doc(window.db, 'consultants', pmCurrentUser.id), { uiAccent: v }).catch(function (e) { console.log('Couleur perso non enregistrée:', e.message); });
+  }
+};
+(function () { try { var a = localStorage.getItem('pmAccent'); if (a) pmAccentApply(a); } catch (e) {} })();
+function pmAccentFromDoc(d) {
+  var v = (d && d.uiAccent) || '';
+  try { if (v) localStorage.setItem('pmAccent', v); else localStorage.removeItem('pmAccent'); } catch (e) {}
+  pmAccentApply(v);
+}
+
 // ===== FAVORIS DU MENU =====
 // Chaque bouton d'action du menu (hors titres de sous-menu) reçoit un cœur cliquable
 // pour l'ajouter/retirer de la section "❤️ Favoris" (sous "Mon Profil" dans Accueil).
@@ -2636,9 +2819,11 @@ function pmRenderFavoritesList() {
 
   }
 
-  pmFavorites.forEach(function (key) {
+  var pmLastFam = null;
+  pmGroupedOrder(pmFavorites).forEach(function (key) {
     // Séparation : simple ligne déplaçable / supprimable
     if (key.indexOf('sep:') === 0) {
+      pmLastFam = null;
       var sepItem = document.createElement('div');
       sepItem.className = 'pm-fav-item';
       sepItem.draggable = true;
@@ -2671,6 +2856,10 @@ function pmRenderFavoritesList() {
     var orig = pmFavMap[key];
     if (!orig) return;
 
+    var pmFk = orig.dataset.famkey || '';
+    if (pmFk && pmFk !== pmLastFam && orig.dataset.famlabel) list.appendChild(pmFavGroupHead(orig));
+    pmLastFam = pmFk;
+
     var item = document.createElement('div');
     item.className = 'pm-fav-item';
     item.draggable = true;
@@ -2688,7 +2877,10 @@ function pmRenderFavoritesList() {
     // Libellé sans le badge du bouton d'origine, puis badge "live" propre au favori (mis à jour par qrBadgesRender)
     var origClone = orig.cloneNode(true);
     origClone.querySelectorAll('.pm-qr-badge, .pm-maj-badge').forEach(function (b) { b.remove(); });
-    btn.textContent = origClone.textContent.trim();
+    btn.textContent = origClone.textContent.replace(/\s+/g, ' ').trim();
+    if (orig.dataset.bar) { btn.dataset.bar = '1'; btn.style.setProperty('--bar', orig.style.getPropertyValue('--bar')); }
+    var origLogo = orig.querySelector('img.pm-doc-logo');
+    if (origLogo) { var fl = origLogo.cloneNode(true); btn.insertBefore(fl, btn.firstChild); btn.insertBefore(document.createTextNode(' '), fl.nextSibling); btn.style.display = 'flex'; btn.style.alignItems = 'center'; btn.style.gap = '6px'; }
     var origBadge = orig.querySelector('.pm-qr-badge');
     if (origBadge && origBadge.id) {
       var favBadge = document.createElement('span');
@@ -2768,7 +2960,10 @@ async function initFavorites() {
     };
     wrap.appendChild(heart);
   });
+  pmApplyMenuLabels();
+  pmApplyMenuStyle();
   pmRenderFavoritesList();
+  pmWatchMenuSettings();
   pmWatchDefaultFavorites();
   pmWatchOwnFavorites();
 }
@@ -2971,6 +3166,7 @@ async function usgFlush() {
 async function usgInit() {
   if (!pmCurrentUser) return;
   const d = await pmOwnDoc();
+  pmAccentFromDoc(d);
   const isTest = !!d.isTestAccount || ['test2j', 'newbc30'].indexOf(d.accountType) !== -1;
   usgActive = !isTest;
   if (!usgActive) return;
@@ -3273,6 +3469,7 @@ function showMonProfil(btn) {
   document.getElementById('panel-mon-profil').style.display = 'block';
   document.body.classList.add('mobile-panel-open');
   renderMonProfil();
+  pmAccentRender();
 }
 
 // ===== MON PROFIL =====
