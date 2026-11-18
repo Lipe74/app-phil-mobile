@@ -109,6 +109,20 @@
 #orange-sticky-summary { border:3px solid transparent; border-radius:10px; padding:6px 12px;
   background: linear-gradient(#fff,#fff) padding-box, linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%) border-box; }
 @media (max-width: 480px) { #orange-sticky-summary { border-width:2px; padding:7px 13px; } }
+/* Build 14.104 — mobile : en-tête non collé, bandeau des prix réduit à une ligne (dépliable avec le bouton ▾) */
+#pm-sum-toggle { display:none; }
+@media (max-width: 600px) {
+  .header { position:static !important; }
+  #pm-sum-toggle { display:inline-flex; align-items:center; justify-content:center; }
+  #orange-sticky-summary.pm-compact { padding:5px 9px; margin-bottom:10px; }
+  #orange-sticky-summary.pm-compact .pm-sum-detail { display:none !important; }
+  #orange-sticky-summary.pm-compact .pm-sum-lbl { display:none; }
+  #orange-sticky-summary.pm-compact .pm-sum-row { flex-wrap:nowrap !important; gap:6px !important; }
+  #orange-sticky-summary.pm-compact .pm-sum-prices { gap:9px !important; flex-wrap:nowrap !important; }
+  #orange-sticky-summary.pm-compact .pm-sum-prices > div { font-size:12px !important; }
+  #orange-sticky-summary.pm-compact .pm-sum-btns { flex-wrap:nowrap !important; gap:4px !important; }
+  #orange-sticky-summary.pm-compact .pm-sum-btns button { padding:6px 8px !important; font-size:11px !important; }
+}
 </style>
 
 <div style="height:6px;width:100%;background:linear-gradient(90deg,#FF681D 0 33%,#84BD00 33% 66%,#00A7FF 66% 100%);"></div>
@@ -147,20 +161,21 @@
   </div>
 
   <div id="orange-sticky-summary" style="position:sticky;top:0;z-index:50;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.08);">
-    <div style="font-size:11.5px;color:#333;margin-bottom:4px;">Prix sans promo : <span id="sticky-price-before-promo" style="font-weight:700;">0,00 €</span> <span style="font-size:10.5px;color:#888;">(Love déduite)</span> &nbsp;·&nbsp; <span style="white-space:nowrap;">🧡 Remise Love : <span id="sticky-price-love" style="font-weight:700;color:#cc4400;">- 0,00 €</span></span> &nbsp;·&nbsp; 🎁 Frais uniques : <span id="sticky-price-unique" style="font-weight:700;">0,00 €</span></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-      <div style="display:flex;gap:18px;flex-wrap:wrap;">
-        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢 Aujourd'hui</span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
-        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#f97316;font-weight:700;">🟠 6 mois</span> <span id="sticky-price-6m" style="font-weight:800;color:#222;">0,00 €</span></div>
-        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#dc2626;font-weight:700;">🔴 12 mois</span> <span id="sticky-price-12m" style="font-weight:800;color:#222;">0,00 €</span></div>
+    <div class="pm-sum-detail" style="font-size:11.5px;color:#333;margin-bottom:4px;">Prix sans promo : <span id="sticky-price-before-promo" style="font-weight:700;">0,00 €</span> <span style="font-size:10.5px;color:#888;">(Love déduite)</span> &nbsp;·&nbsp; <span style="white-space:nowrap;">🧡 Remise Love : <span id="sticky-price-love" style="font-weight:700;color:#cc4400;">- 0,00 €</span></span> &nbsp;·&nbsp; 🎁 Frais uniques : <span id="sticky-price-unique" style="font-weight:700;">0,00 €</span></div>
+    <div class="pm-sum-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div class="pm-sum-prices" style="display:flex;gap:18px;flex-wrap:wrap;">
+        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#16a34a;font-weight:700;">🟢<span class="pm-sum-lbl"> Aujourd'hui</span></span> <span id="sticky-price-today" style="font-weight:800;color:#222;">0,00 €</span></div>
+        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#f97316;font-weight:700;">🟠<span class="pm-sum-lbl"> 6 mois</span></span> <span id="sticky-price-6m" style="font-weight:800;color:#222;">0,00 €</span></div>
+        <div style="font-size:12.5px;white-space:nowrap;"><span style="color:#dc2626;font-weight:700;">🔴<span class="pm-sum-lbl"> 12 mois</span></span> <span id="sticky-price-12m" style="font-weight:800;color:#222;">0,00 €</span></div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <div class="pm-sum-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
         <button id="btn-tvac" onclick="setTVAC(true)" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#062B68;color:#fff;">TVAC</button>
         <button id="btn-htva" onclick="setTVAC(false)" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#fff3e8;color:#f97316;">HTVA</button>
-        <button onclick="resetAll()" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#fdecea;color:#dc2626;"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+        <button class="pm-sum-detail" onclick="resetAll()" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;background:#fdecea;color:#dc2626;"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+        <button id="pm-sum-toggle" type="button" onclick="pmSumToggle()" aria-label="Afficher ou masquer le détail" title="Détail" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#eef2f7;color:#062B68;">▾</button>
       </div>
     </div>
-    <div id="orange-quick-nav" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+    <div id="orange-quick-nav" class="pm-sum-detail" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
     </div>
   </div>
 
@@ -1973,10 +1988,24 @@ function pmSyncOrangeStickyOffsets() {
   const header = document.querySelector('.header');
   const bar = document.getElementById('orange-sticky-summary');
   if (!header || !bar) return;
-  const headerH = header.offsetHeight;
+  const mobile = window.matchMedia('(max-width: 600px)').matches;
+  const headerH = mobile ? 0 : header.offsetHeight; // mobile : l'en-tête n'est plus collé
   bar.style.top = headerH + 'px';
   document.documentElement.style.setProperty('--pm-scroll-offset', (headerH + bar.offsetHeight + 16) + 'px');
 }
+// Mobile : bandeau des prix replié par défaut (une ligne), le bouton ▾ affiche / masque le détail
+function pmSumToggle() {
+  const bar = document.getElementById('orange-sticky-summary');
+  const btn = document.getElementById('pm-sum-toggle');
+  if (!bar) return;
+  const compact = bar.classList.toggle('pm-compact');
+  if (btn) btn.textContent = compact ? '▾' : '▴';
+  pmSyncOrangeStickyOffsets();
+}
+(function () {
+  const bar = document.getElementById('orange-sticky-summary');
+  if (bar && window.matchMedia('(max-width: 600px)').matches) bar.classList.add('pm-compact');
+})();
 window.addEventListener('load', pmSyncOrangeStickyOffsets);
 window.addEventListener('resize', pmSyncOrangeStickyOffsets);
 setTimeout(pmSyncOrangeStickyOffsets, 300);
