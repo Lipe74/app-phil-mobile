@@ -13,16 +13,52 @@
 <script src="version.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-// Vérifie en arrière-plan (sans bloquer l'affichage) si une version plus récente est en ligne,
-// et recharge automatiquement la page si c'est le cas — évite de rester bloqué sur une vieille version.
+// Build 14.108 : détection des mises à jour — à l'ouverture, au retour dans l'app et toutes les 10 min.
+// Au premier chargement : rechargement automatique (une seule fois par version, anti-boucle).
+// Ensuite : bannière « Nouvelle version disponible » (pas de rechargement forcé pendant une saisie).
 (function(){
-  fetch('version.js?t='+Date.now(), {cache:'no-store'})
-    .then(r=>r.text())
-    .then(txt=>{
-      const m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
-      if(m && window.APP_VERSION && m[1]!==window.APP_VERSION) location.reload();
-    })
-    .catch(()=>{});
+  function showBanner(){
+    if(document.getElementById('pm-update-banner')) return;
+    var show=function(){
+      if(document.getElementById('pm-update-banner')||!document.body) return;
+      var d=document.createElement('div');
+      d.id='pm-update-banner';
+      d.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:100000;background:#062B68;color:#fff;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;font:600 13px Arial,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.3);max-width:92vw;';
+      d.innerHTML='<span>🔄 Nouvelle version disponible</span><button type="button" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer;">Actualiser</button>';
+      d.querySelector('button').onclick=function(){ pmApplyUpdate(); };
+      document.body.appendChild(d);
+    };
+    if(document.body) show(); else document.addEventListener('DOMContentLoaded',show);
+  }
+  window.pmApplyUpdate=function(){
+    try{ if('caches' in window) caches.keys().then(function(n){ return Promise.all(n.map(function(k){return caches.delete(k);})); }).finally(function(){ location.reload(); }); else location.reload(); }
+    catch(e){ location.reload(); }
+  };
+  var firstCheck=true;
+  function check(){
+    fetch('version.js?t='+Date.now(), {cache:'no-store'})
+      .then(function(r){return r.text();})
+      .then(function(txt){
+        var m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+        if(!m||!window.APP_VERSION||m[1]===window.APP_VERSION) return;
+        var tried=null; try{ tried=sessionStorage.getItem('pm_auto_reload'); }catch(e){}
+        if(firstCheck && tried!==m[1]){
+          try{ sessionStorage.setItem('pm_auto_reload', m[1]); }catch(e){}
+          pmApplyUpdate();
+        } else { showBanner(); }
+      })
+      .catch(function(){})
+      .finally(function(){ firstCheck=false; });
+  }
+  window.pmCheckUpdate=check;
+  check();
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'){
+      check();
+      if('serviceWorker' in navigator) navigator.serviceWorker.getRegistration().then(function(r){ if(r) r.update(); }).catch(function(){});
+    }
+  });
+  setInterval(function(){ if(document.visibilityState==='visible') check(); }, 10*60*1000);
 })();
 </script>
 <style>
@@ -11936,8 +11972,8 @@ window.crmFactDelete = async function (i) {
 
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(() => console.log('App offline activée !'))
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+      .then(reg => { console.log('App offline activée !'); try { reg.update(); } catch(e) {} })
       .catch(err => console.log('SW error:', err));
   }
 </script>

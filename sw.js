@@ -1,7 +1,7 @@
 // IMPORTANT : importScripts('version.js') a été retiré — il empêchait l'installation PWA sur Android
 // (Chrome Android est strict : un échec d'importScripts bloque toute la PWA, contrairement à Chrome desktop).
 // Le CACHE_NAME doit donc être synchronisé MANUELLEMENT avec version.js à chaque changement de version.
-const CACHE_NAME = 'phil-mobile-Build 14.107';
+const CACHE_NAME = 'phil-mobile-Build 14.108';
 const ASSETS = [
   '/',
     '/wp_consultant_hub.html',
@@ -70,7 +70,8 @@ self.addEventListener('fetch', event => {
 
   if (isAppShell) {
     event.respondWith(
-      fetch(event.request).then(response => {
+      // Build 14.108 : cache:'no-cache' = revalide toujours auprès du serveur (le cache HTTP de GitHub Pages ne sert plus de vieille version)
+      fetch(event.request, { cache: 'no-cache' }).then(response => {
         if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
