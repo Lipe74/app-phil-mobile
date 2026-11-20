@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.110 - Recherche de documents à droite";
+  scope.APP_VERSION = "14.111 - Vidéos tutoriels";
 })();

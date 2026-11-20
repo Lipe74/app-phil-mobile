@@ -293,6 +293,7 @@
           <button onclick="showAdminPanel('panel-menu-theme', this)" class="menu-item" id="menu-menu-theme">🎨 Couleurs &amp; noms des menus</button>
           <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
           <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Les builds de Phil-Mobile <span id="bn-count"></span></button>
+          <button onclick="showAdminPanel('panel-videos-hub', this)" class="menu-item" id="menu-videos-hub">🎬 Vidéos tutoriels <span id="vh-count"></span></button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
           <div id="botFaqMenu" class="submenu">
             <button onclick="showAdminPanel('panel-faq', this)" class="menu-item" id="menu-faq">🤖 FAQ du bot <span id="faq-count"></span></button>
@@ -1194,6 +1195,34 @@
           </div>
           <div class="card" style="margin-top:12px;">
             <div id="bn-list"><div class="empty">Chargement...</div></div>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-videos-hub">
+          <div class="section-title">🎬 Vidéos tutoriels — affichées dans le menu du hub</div>
+          <div class="card">
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">📤 Envoi groupé de vidéos (MP4)</div>
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Sélectionne plusieurs fichiers d'un coup. Le numéro et le titre sont lus dans le nom du fichier :
+              « Phil-Mobile - Video 03 - Communiquer.mp4 » devient le chapitre 3, « Communiquer ». Une vidéo déjà envoyée avec le même numéro est remplacée (après confirmation). 100 Mo maximum par vidéo.
+            </div>
+            <input type="file" id="vh-files" accept="video/mp4,video/quicktime,video/webm,.mp4,.m4v,.mov,.webm" multiple>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-primary" id="vh-upload-btn" onclick="uploadVideosHubBulk()">📤 Envoyer les vidéos</button>
+              <span id="vh-status" style="font-size:12px;color:#555;"></span>
+            </div>
+          </div>
+          <div class="card" style="margin-top:12px;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">🔗 Ou ajouter un lien externe (YouTube, Vimeo…)</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              <input type="text" id="vh-ext-title" placeholder="Titre" style="flex:1;min-width:200px;" maxlength="120">
+              <input type="url" id="vh-ext-url" placeholder="https://..." style="flex:2;min-width:240px;">
+            </div>
+            <input type="text" id="vh-ext-desc" placeholder="Courte description (facultatif)" style="width:100%;" maxlength="200">
+            <div style="margin-top:10px;"><button class="btn btn-secondary" onclick="addVideoHubExternal()">➕ Ajouter le lien</button></div>
+          </div>
+          <div class="card" style="margin-top:12px;">
+            <div id="vh-list"><div class="empty">Chargement...</div></div>
           </div>
         </div>
 
@@ -2264,6 +2293,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-msg-templates') loadMsgTemplates();
   if (panelId === 'panel-menu-theme') loadMenuThemeAdmin();
   if (panelId === 'panel-build-notes') loadBuildNotes();
+  if (panelId === 'panel-videos-hub') loadVideosHubAdmin();
   if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   if (panelId === 'panel-blogphil-list') loadBlogPhilAdmin();
@@ -8840,6 +8870,206 @@ window.deleteDocumentFiche = async function (docId) {
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
+// ===== VIDÉOS TUTORIELS DU HUB (Build 14.111) =====
+// Collection Firestore « videosHub » { titre, description, ordre, url, storagePath, fileName, externe, duree, taille, dateAjout }
+// Les fichiers MP4 sont dans Storage (dossier videos/, règle dédiée : vidéo < 100 Mo). Lus par le hub, onglet « Vidéos tutoriels ».
+const VH_DESCS = {
+  1: "Connexion · Découverte de l'application", 2: 'Votre point de départ au quotidien',
+  3: 'Upline · Partenaires · Support · Messages · Chat', 4: 'Les événements et informations Smart SN',
+  5: "Actus, votes et nouveautés de l'application", 6: 'Le parcours client, étapes 1 à 3',
+  7: 'Le parcours client, étapes 4 à 7', 8: 'Prospect consultant · Conversion · Fiche',
+  9: 'Simulateur commercial · CRM · Rdvs', 10: 'Faire venir les fiches à vous',
+  11: "Préparer l'offre et calculer vos gains", 12: 'Tout pour vendre avec méthode'
+};
+let videosHubUnsub = null;
+
+function vhEsc(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function vhFmtDur(sec) {
+  if (!sec || !isFinite(sec)) return '';
+  const m = Math.floor(sec / 60), r = Math.round(sec % 60);
+  return m + ':' + String(r).padStart(2, '0');
+}
+function vhFmtSize(b) { return b ? (b / 1048576).toFixed(1).replace('.', ',') + ' Mo' : ''; }
+function vhParseName(name) {
+  const m = name.match(/Vid[ée]o\s*0*(\d{1,2})\s*[-–_:]\s*(.+?)\.[A-Za-z0-9]+$/i);
+  if (m) return { ordre: parseInt(m[1], 10), titre: m[2].trim(), parsed: true };
+  return { ordre: null, titre: name.replace(/\.[A-Za-z0-9]+$/, '').trim(), parsed: false };
+}
+function vhSafeName(name) {
+  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_');
+}
+function vhDuration(file) {
+  return new Promise(resolve => {
+    const v = document.createElement('video');
+    const u = URL.createObjectURL(file);
+    let done = false;
+    const end = d => { if (done) return; done = true; try { URL.revokeObjectURL(u); } catch (e) {} resolve(d); };
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => end(isFinite(v.duration) ? Math.round(v.duration) : null);
+    v.onerror = () => end(null);
+    setTimeout(() => end(null), 6000);
+    v.src = u;
+  });
+}
+function vhIsVideoFile(f) { return (f.type || '').startsWith('video/') || /\.(mp4|m4v|mov|webm)$/i.test(f.name); }
+async function vhDeleteStorage(path) {
+  if (!path) return;
+  try { await deleteObject(window.storageRef(window.storage, path)); } catch (e) { console.log('Fichier vidéo déjà absent ou non supprimable:', e.code || e.message); }
+}
+
+function loadVideosHubAdmin() {
+  const box = document.getElementById('vh-list');
+  if (!box) return;
+  if (videosHubUnsub) { try { videosHubUnsub(); } catch (e) {} videosHubUnsub = null; }
+  videosHubUnsub = onSnapshot(collection(db, 'videosHub'), (snap) => {
+    const items = [];
+    snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+    window._videosHubCache = items;
+    const badge = document.getElementById('vh-count');
+    if (badge) badge.textContent = items.length ? '(' + items.length + ')' : '';
+    renderVideosHubAdmin(items);
+  }, () => { box.innerHTML = '<div class="empty">Erreur de chargement.</div>'; });
+}
+
+function renderVideosHubAdmin(items) {
+  const box = document.getElementById('vh-list');
+  if (!box) return;
+  if (!items.length) { box.innerHTML = '<div class="empty">Aucune vidéo pour le moment. Envoie tes MP4 ci-dessus.</div>'; return; }
+  box.innerHTML = items.map(v => {
+    const meta = [vhFmtDur(v.duree), vhFmtSize(v.taille), v.externe ? 'lien externe' : (v.fileName || '')].filter(Boolean).join(' · ');
+    return `<div style="border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input type="number" id="vh-o-${v.id}" value="${vhEsc(v.ordre || 1)}" min="1" max="99" title="Ordre" style="width:64px;">
+        <input type="text" id="vh-t-${v.id}" value="${vhEsc(v.titre)}" maxlength="120" style="flex:1;min-width:200px;font-weight:700;">
+      </div>
+      <div style="font-size:11px;color:#888;margin:4px 0;">${vhEsc(meta)}</div>
+      ${v.externe ? `<input type="url" id="vh-u-${v.id}" value="${vhEsc(v.url)}" placeholder="https://..." style="width:100%;margin-bottom:6px;">` : ''}
+      <textarea id="vh-d-${v.id}" rows="2" maxlength="200" placeholder="Courte description" style="width:100%;">${vhEsc(v.description)}</textarea>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-primary" style="padding:4px 10px;" onclick="saveVideoHubRow('${v.id}')">💾 Enregistrer</button>
+        ${v.externe ? '' : `<label class="btn btn-secondary" style="cursor:pointer;margin:0;padding:4px 10px;">🔄 Remplacer le fichier<input type="file" accept="video/*,.mp4,.m4v,.mov,.webm" style="display:none;" onchange="replaceVideoHubFile('${v.id}', this)"></label>`}
+        <a class="btn btn-secondary" style="padding:4px 10px;text-decoration:none;" href="${vhEsc(v.url)}" target="_blank" rel="noopener">▶️ Voir</a>
+        <button class="btn btn-secondary" style="padding:4px 10px;color:#ef4444;" onclick="deleteVideoHub('${v.id}')">🗑️ Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.uploadVideosHubBulk = async function () {
+  const input = document.getElementById('vh-files');
+  const status = document.getElementById('vh-status');
+  const btn = document.getElementById('vh-upload-btn');
+  const files = Array.from((input && input.files) || []);
+  if (!files.length) { alert('Sélectionne au moins une vidéo.'); return; }
+  const notVideo = files.find(f => !vhIsVideoFile(f));
+  if (notVideo) { alert('Ce fichier n\'est pas une vidéo : ' + notVideo.name); return; }
+  const tooBig = files.find(f => f.size >= 100 * 1024 * 1024);
+  if (tooBig) { alert(tooBig.name + ' dépasse 100 Mo.'); return; }
+  const existing = (window._videosHubCache || []).slice();
+  let nextOrdre = existing.reduce((m, v) => Math.max(m, v.ordre || 0), 0);
+  let jobs = files.map(f => Object.assign({ file: f }, vhParseName(f.name)));
+  jobs.sort((a, b) => (a.ordre || 999) - (b.ordre || 999));
+  jobs.forEach(j => { if (!j.ordre) j.ordre = ++nextOrdre; });
+  const clashes = jobs.filter(j => existing.some(v => !v.externe && v.ordre === j.ordre));
+  if (clashes.length) {
+    const ok = confirm(clashes.length + ' vidéo(s) existent déjà avec le même numéro (' + clashes.map(j => j.ordre).join(', ') + ').\n\nOK = les remplacer (le titre et la description actuels sont conservés)\nAnnuler = les ignorer');
+    if (!ok) jobs = jobs.filter(j => !clashes.includes(j));
+  }
+  if (!jobs.length) { if (status) status.textContent = 'Rien à envoyer.'; return; }
+  if (btn) btn.disabled = true;
+  let ok = 0; const errs = [];
+  for (let i = 0; i < jobs.length; i++) {
+    const j = jobs[i];
+    if (status) status.textContent = '⏳ Envoi ' + (i + 1) + '/' + jobs.length + ' : ' + j.file.name + '…';
+    try {
+      const duree = await vhDuration(j.file);
+      const path = 'videos/' + j.ordre + '_' + Date.now() + '_' + vhSafeName(j.file.name);
+      const sRef = window.storageRef(window.storage, path);
+      await window.uploadBytes(sRef, j.file, { contentType: j.file.type || 'video/mp4' });
+      const url = await window.getDownloadURL(sRef);
+      const data = { url, storagePath: path, fileName: j.file.name, taille: j.file.size, duree: duree || null, externe: false, dateAjout: new Date().toISOString() };
+      const old = existing.find(v => !v.externe && v.ordre === j.ordre);
+      if (old) {
+        await updateDoc(doc(db, 'videosHub', old.id), data);
+        if (old.storagePath && old.storagePath !== path) await vhDeleteStorage(old.storagePath);
+      } else {
+        await addDoc(collection(db, 'videosHub'), Object.assign({ titre: j.titre, description: j.parsed ? (VH_DESCS[j.ordre] || '') : '', ordre: j.ordre }, data));
+      }
+      ok++;
+    } catch (e) { errs.push(j.file.name + ' (' + (e.code || e.message) + ')'); }
+  }
+  if (btn) btn.disabled = false;
+  if (input) input.value = '';
+  if (status) status.textContent = '✅ ' + ok + ' vidéo(s) envoyée(s)' + (errs.length ? ' — ❌ ' + errs.length + ' échec(s)' : '') + '.';
+  if (errs.length) alert('Échec pour :\n' + errs.join('\n'));
+  else showToast('✅ ' + ok + ' vidéo(s) envoyée(s).');
+};
+
+window.addVideoHubExternal = async function () {
+  const t = document.getElementById('vh-ext-title'), u = document.getElementById('vh-ext-url'), d = document.getElementById('vh-ext-desc');
+  const titre = t.value.trim(), url = u.value.trim();
+  if (!titre) { alert('Titre requis.'); return; }
+  if (!/^https?:\/\//i.test(url)) { alert('Lien invalide (doit commencer par https://).'); return; }
+  try {
+    const ordre = (window._videosHubCache || []).reduce((m, v) => Math.max(m, v.ordre || 0), 0) + 1;
+    await addDoc(collection(db, 'videosHub'), { titre, description: d.value.trim(), ordre, url, storagePath: null, fileName: null, taille: null, duree: null, externe: true, dateAjout: new Date().toISOString() });
+    t.value = ''; u.value = ''; d.value = '';
+    showToast('✅ Lien ajouté.');
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.saveVideoHubRow = async function (id) {
+  const v = (window._videosHubCache || []).find(x => x.id === id);
+  if (!v) return;
+  const titre = document.getElementById('vh-t-' + id).value.trim();
+  const ordre = parseInt(document.getElementById('vh-o-' + id).value, 10);
+  const description = document.getElementById('vh-d-' + id).value.trim();
+  if (!titre) { alert('Titre requis.'); return; }
+  if (!ordre || ordre < 1) { alert('Ordre invalide.'); return; }
+  const data = { titre, ordre, description };
+  if (v.externe) {
+    const url = document.getElementById('vh-u-' + id).value.trim();
+    if (!/^https?:\/\//i.test(url)) { alert('Lien invalide (doit commencer par https://).'); return; }
+    data.url = url;
+  }
+  try { await updateDoc(doc(db, 'videosHub', id), data); showToast('✅ Vidéo mise à jour.'); }
+  catch (err) { alert('Erreur: ' + err.message); }
+};
+
+window.replaceVideoHubFile = async function (id, input) {
+  const file = input.files && input.files[0];
+  const v = (window._videosHubCache || []).find(x => x.id === id);
+  if (!file || !v) { input.value = ''; return; }
+  if (!vhIsVideoFile(file)) { alert("Ce fichier n'est pas une vidéo."); input.value = ''; return; }
+  if (file.size >= 100 * 1024 * 1024) { alert('La vidéo dépasse 100 Mo.'); input.value = ''; return; }
+  try {
+    showToast('⏳ Envoi de la vidéo…');
+    const duree = await vhDuration(file);
+    const path = 'videos/' + (v.ordre || 0) + '_' + Date.now() + '_' + vhSafeName(file.name);
+    const sRef = window.storageRef(window.storage, path);
+    await window.uploadBytes(sRef, file, { contentType: file.type || 'video/mp4' });
+    const url = await window.getDownloadURL(sRef);
+    await updateDoc(doc(db, 'videosHub', id), { url, storagePath: path, fileName: file.name, taille: file.size, duree: duree || null, dateAjout: new Date().toISOString() });
+    if (v.storagePath && v.storagePath !== path) await vhDeleteStorage(v.storagePath);
+    showToast('✅ Vidéo remplacée.');
+  } catch (err) { alert("Erreur lors de l'envoi: " + (err.code || err.message)); }
+  finally { input.value = ''; }
+};
+
+window.deleteVideoHub = async function (id) {
+  const v = (window._videosHubCache || []).find(x => x.id === id);
+  if (!v) return;
+  if (!confirm('Supprimer définitivement « ' + v.titre + ' »' + (v.storagePath ? ' ET son fichier vidéo' : '') + ' ? Cette action est irréversible.')) return;
+  try {
+    await vhDeleteStorage(v.storagePath);
+    await deleteDoc(doc(db, 'videosHub', id));
+    showToast('🗑️ Vidéo supprimée' + (v.storagePath ? ' (fiche + fichier).' : '.'));
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
 window.moveDocumentCategorie = async function (docId, newCategorie) {
   try {
     await updateDoc(doc(db, 'documents', docId), { categorie: newCategorie });
@@ -9774,6 +10004,7 @@ const FAV_ITEMS = {
   'menu-menu-theme':           { label: '🎨 Couleurs & noms des menus',     panelId: 'panel-menu-theme' },
   'menu-fav-defaults':         { label: '❤️ Favoris par défaut',           panelId: 'panel-fav-defaults' },
   'menu-build-notes':          { label: '📝 Les builds de Phil-Mobile', panelId: 'panel-build-notes' },
+  'menu-videos-hub':           { label: '🎬 Vidéos tutoriels',            panelId: 'panel-videos-hub' },
   'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },
   'menu-bot-pending':          { label: '📥 Demandes bot',                 panelId: 'panel-bot-pending' },
   'menu-bot-stats':            { label: '📊 Stats du bot',                 panelId: 'panel-bot-stats' },

@@ -1,7 +1,7 @@
 // IMPORTANT : importScripts('version.js') a été retiré — il empêchait l'installation PWA sur Android
 // (Chrome Android est strict : un échec d'importScripts bloque toute la PWA, contrairement à Chrome desktop).
 // Le CACHE_NAME doit donc être synchronisé MANUELLEMENT avec version.js à chaque changement de version.
-const CACHE_NAME = 'phil-mobile-Build 14.110';
+const CACHE_NAME = 'phil-mobile-Build 14.111';
 const ASSETS = [
   '/',
     '/wp_consultant_hub.html',
@@ -55,6 +55,8 @@ self.addEventListener('fetch', event => {
 
   if (event.request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
+  // Build 14.111 : vidéos tutoriels (Firebase Storage) — laissées au navigateur (requêtes Range, lecture fluide sur Safari/iPhone), jamais mises en cache
+  if (url.hostname.indexOf('firebasestorage.googleapis.com') !== -1 || event.request.headers.has('range')) return;
 
   const isAppShell =
     event.request.url.endsWith('.html') ||

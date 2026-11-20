@@ -616,6 +616,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
 <div id="sec-agenda" class="pm-sec-body">
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
+<button onclick="showScript('panel-videos')" class="menu-item" id="menu-videos">🎬 Vidéos tutoriels</button>
 <button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News, Blog Phil-Mobile, Blog Smart SN</button>
 <div id="newsMenu" class="submenu">
   <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
@@ -943,6 +944,14 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
                 <iframe src="https://calendly.com/infos-phil-mobile/30min" style="width:100%;height:500px;border:none;" frameborder="0"></iframe>
               </div>
             </div>
+          </div>
+
+          <!-- Panel Vidéos tutoriels (Build 14.111) -->
+          <div id="panel-videos" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:4px;">🎬 Vidéos tutoriels</div>
+            <div style="font-size:12px;color:#f97316;margin-bottom:14px;">Une courte vidéo par chapitre du manuel : cliquez pour la lire</div>
+            <div id="videos-player-box" style="display:none;margin-bottom:16px;"></div>
+            <div id="videos-list"><div style="font-size:13px;color:#888;">Chargement…</div></div>
           </div>
 
           <!-- Panel Formation -->
@@ -3111,6 +3120,103 @@ const SCRIPT_TYPE_LABELS = {
   chaud: '🔥 Prospect Chaud (Amis, Connaissances)'
 };
 
+// ===== VIDÉOS TUTORIELS (Build 14.111) =====
+// Collection 'videosHub' { titre, description, ordre, url, externe, duree } alimentée depuis admin.html (lecture seule ici)
+var _videosHubUnsub = null, _videosHubData = [], _videosHubCurrentId = null;
+
+function vhEsc(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function vhFmtDur(sec) {
+  if (!sec || !isFinite(sec)) return '';
+  var m = Math.floor(sec / 60), r = Math.round(sec % 60);
+  return m + ':' + (r < 10 ? '0' : '') + r;
+}
+// Lien YouTube / Vimeo -> adresse d'intégration (null = lien à ouvrir dans un nouvel onglet)
+function vhEmbedUrl(url) {
+  var m = String(url || '').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/);
+  if (m) return 'https://www.youtube.com/embed/' + m[1] + '?rel=0';
+  m = String(url || '').match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (m) return 'https://player.vimeo.com/video/' + m[1];
+  return null;
+}
+
+async function startVideosHub() {
+  if (_videosHubUnsub) { renderVideosHubList(); return; }
+  var tries = 0;
+  while ((!window.db || !window.onSnapshot || !window.collection) && tries < 30) { await new Promise(function (r) { setTimeout(r, 200); }); tries++; }
+  var list = document.getElementById('videos-list');
+  if (!window.db || !window.onSnapshot || !window.collection) { if (list) list.innerHTML = '<div style="font-size:13px;color:#888;">Vidéos indisponibles pour le moment.</div>'; return; }
+  _videosHubUnsub = window.onSnapshot(window.collection(window.db, 'videosHub'), function (snap) {
+    var a = [];
+    snap.forEach(function (d) { a.push(Object.assign({ id: d.id }, d.data())); });
+    a.sort(function (x, y) { return (x.ordre || 0) - (y.ordre || 0); });
+    _videosHubData = a;
+    renderVideosHubList();
+  }, function () {
+    _videosHubUnsub = null;
+    if (list) list.innerHTML = '<div style="font-size:13px;color:#888;">Impossible de charger les vidéos. Vérifiez votre connexion.</div>';
+  });
+}
+
+function renderVideosHubList() {
+  var list = document.getElementById('videos-list');
+  if (!list) return;
+  if (!_videosHubData.length) { list.innerHTML = '<div style="font-size:13px;color:#888;">Aucune vidéo pour le moment.</div>'; return; }
+  list.innerHTML = _videosHubData.map(function (v) {
+    var cur = v.id === _videosHubCurrentId;
+    var dur = vhFmtDur(v.duree);
+    return '<button onclick="playVideoHub(\'' + v.id + '\')" style="width:100%;display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;margin-bottom:8px;border:' + (cur ? '2px solid #f97316' : '1px solid #f0f0f0') + ';border-radius:10px;background:' + (cur ? '#fff3e8' : '#fff') + ';cursor:pointer;font-family:inherit;">' +
+      '<span style="flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#f97316;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;">' + vhEsc(v.ordre || '') + '</span>' +
+      '<span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;font-weight:700;color:#1a1a1a;">' + vhEsc(v.titre) + '</span>' +
+      (v.description ? '<span style="display:block;font-size:11px;color:#6b7280;margin-top:2px;">' + vhEsc(v.description) + '</span>' : '') + '</span>' +
+      '<span style="flex-shrink:0;font-size:12px;color:#f97316;font-weight:600;">▶' + (dur ? ' ' + dur : '') + '</span></button>';
+  }).join('');
+}
+
+function playVideoHub(id) {
+  var v = _videosHubData.filter(function (x) { return x.id === id; })[0];
+  if (!v) return;
+  var embed = vhEmbedUrl(v.url);
+  if (v.externe && !embed) { window.open(v.url, '_blank', 'noopener'); return; }
+  _videosHubCurrentId = id;
+  var box = document.getElementById('videos-player-box');
+  if (!box) return;
+  var old = document.getElementById('vh-video');
+  if (old) { try { old.pause(); } catch (e) {} if (old._io) old._io.disconnect(); }
+  var idx = _videosHubData.indexOf(v), next = _videosHubData[idx + 1];
+  var media = embed
+    ? '<div style="position:relative;padding-top:56.25%;"><iframe src="' + vhEsc(embed) + '" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:10px;"></iframe></div>'
+    : '<video id="vh-video" src="' + vhEsc(v.url) + '" controls playsinline preload="metadata" style="width:100%;max-height:62vh;border-radius:10px;background:#000;"></video>';
+  box.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;">' +
+    '<div style="font-size:14px;font-weight:700;color:#1a1a1a;">' + vhEsc(v.ordre ? v.ordre + '. ' : '') + vhEsc(v.titre) + '</div>' +
+    '<button onclick="closeVideoHub()" style="border:none;background:#f3f4f6;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;">✕ Fermer</button></div>' +
+    media +
+    '<div id="vh-next" style="display:none;margin-top:10px;text-align:right;">' + (next ? '<button onclick="playVideoHub(\'' + next.id + '\')" style="border:none;background:#f97316;color:#fff;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer;font-size:12px;">Vidéo suivante ▶ ' + vhEsc(next.titre) + '</button>' : '<span style="font-size:12px;color:#6b7280;">🎉 Vous avez vu toutes les vidéos.</span>') + '</div>';
+  box.style.display = 'block';
+  var vid = document.getElementById('vh-video');
+  if (vid) {
+    vid.addEventListener('ended', function () { var n = document.getElementById('vh-next'); if (n) n.style.display = 'block'; });
+    // Pause automatique si on quitte le panneau (le panneau devient invisible)
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (e) { if (e[0] && !e[0].isIntersecting) { try { vid.pause(); } catch (x) {} } });
+      io.observe(vid); vid._io = io;
+    }
+  }
+  renderVideosHubList();
+  try { box.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+}
+
+function closeVideoHub() {
+  var vid = document.getElementById('vh-video');
+  if (vid) { try { vid.pause(); } catch (e) {} if (vid._io) vid._io.disconnect(); }
+  var box = document.getElementById('videos-player-box');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  _videosHubCurrentId = null;
+  renderVideosHubList();
+}
+
 function showScript(id) {
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   event.currentTarget.classList.add('active-item');
@@ -3121,6 +3227,7 @@ function showScript(id) {
   const staticPanel = document.getElementById(id);
   if (staticPanel && staticPanel.classList.contains('script-panel') && id !== 'panel-script-dynamic') {
     if (id === 'panel-contacts-partners') partnersRender(window._partnersData);
+    if (id === 'panel-videos') startVideosHub();
     staticPanel.style.display = 'block';
   } else {
     renderScriptPanel(id);
