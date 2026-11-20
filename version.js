@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.111 - Vidéos tutoriels";
+  scope.APP_VERSION = "14.112 - Vidéos tutoriels (menu visible)";
 })();
