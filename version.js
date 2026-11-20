@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.108 - Mises à jour plus fiables";
+  scope.APP_VERSION = "14.109 - Documents : tri, recherche, logos";
 })();

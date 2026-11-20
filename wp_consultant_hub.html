@@ -132,6 +132,7 @@
 .pm-fav-grouphead img{ width:15px;height:15px;object-fit:contain; }
 .pm-fav-grouphead i{ display:inline-block;width:8px;height:8px;border-radius:50%; }
 .pm-doc-logo{ width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0; }
+.pm-doc-pin{ margin-left:4px;font-size:11px;flex-shrink:0; }
 @media(max-width:600px){
   #outils-unlocked > div { flex-direction:column !important; }
   #outils-unlocked > div > div:first-child { width:100% !important; }
@@ -711,6 +712,12 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 <!-- DOCUMENTS (chargés dynamiquement depuis Firestore — documents + documentCategories) -->
+<!-- Recherche de documents (Build 14.109) : le bouton est favorisable, le champ s'ouvre au clic -->
+<button id="docs-search-btn" type="button" onclick="pmDocSearchOpen()" class="menu-item">🔎 Rechercher un document</button>
+<div id="hub-docs-search" style="display:none;margin:6px 0;">
+  <input id="hub-docs-q" type="search" placeholder="Titre, catégorie ou mot clé…" oninput="pmDocSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';pmDocSearch('');document.getElementById('hub-docs-search').style.display='none';}" autocomplete="off" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--pm-accent,#f97316);border-radius:8px;font-size:12px;font-family:Arial,sans-serif;background:#fff;">
+</div>
+<div id="hub-docs-results" style="display:none;"></div>
 <div id="hub-docs-container">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
@@ -2160,6 +2167,44 @@ function escapeHtmlDocs(str) {
   return div.innerHTML;
 }
 
+// ----- Tri alphabétique + recherche des documents (Build 14.109) -----
+function pmDocNorm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+function pmDocCmp(a, b) { return String(a.titre || '').localeCompare(String(b.titre || ''), 'fr', { sensitivity: 'base', numeric: true, ignorePunctuation: true }); }
+function pmDocIcon(d, cat, dInfo) {
+  var inner = dInfo && dInfo.logo ? '<img class="pm-doc-logo" src="' + pmAttr(dInfo.logo) + '" alt="">' : escapeHtmlDocs((cat && cat.icone) || '📁');
+  return '<span class="pm-doc-ico">' + inner + '</span>';
+}
+window.pmDocSearch = function (q) {
+  var box = document.getElementById('hub-docs-results'), cont = document.getElementById('hub-docs-container');
+  if (!box || !cont) return;
+  var terms = pmDocNorm(q).split(/\s+/).filter(Boolean);
+  if (!terms.length) { box.style.display = 'none'; box.innerHTML = ''; cont.style.display = ''; return; }
+  var cats = window._pmDocCats || {};
+  var found = (window._pmHubDocs || []).filter(function (d) {
+    var hay = pmDocNorm([d.titre, d.categorie, d.fileName, d.motsCles].join(' '));
+    return terms.every(function (t) { return hay.indexOf(t) !== -1; });
+  }).sort(pmDocCmp);
+  cont.style.display = 'none';
+  box.style.display = '';
+  box.innerHTML = found.length ? found.map(function (d) {
+    var dInfo = cats[d.categorie] || {};
+    var cat = { icone: dInfo.icone || '📁' };
+    var bar = dInfo.color ? ' data-bar="1" style="--bar:' + pmBarCss(dInfo) + ';display:flex;align-items:flex-start;gap:6px;"' : ' style="display:flex;align-items:flex-start;gap:6px;"';
+    return '<button onclick="loadFrame(\'' + d.url + '#toolbar=0&navpanes=0&view=FitH\',this)" class="menu-item"' + bar + '>' + pmDocIcon(d, cat, dInfo) +
+      '<span style="flex:1;">' + escapeHtmlDocs(d.titre) + (d.important ? '<span class="pm-doc-pin">📌</span>' : '') + '<span style="display:block;font-size:10px;font-weight:400;opacity:.6;">' + escapeHtmlDocs(d.categorie || '') + '</span></span></button>';
+  }).join('') : '<div class="menu-item" style="opacity:.6;">Aucun document trouvé</div>';
+};
+window.pmDocSearchOpen = function () {
+  var wrap = document.getElementById('hub-docs-search'), inp = document.getElementById('hub-docs-q');
+  if (!wrap || !inp) return;
+  var sec = wrap.closest('.pm-sec-body');
+  if (sec && !sec.classList.contains('open') && window.toggleSection) window.toggleSection(sec.id);
+  wrap.style.display = 'block';
+  try { wrap.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+  setTimeout(function () { inp.focus(); inp.select(); }, 50);
+};
+window.pmDocSearchRefresh = function () { var i = document.getElementById('hub-docs-q'); if (i && i.value) window.pmDocSearch(i.value); };
+
 async function loadHubDocuments() {
   try {
     let tries = 0;
@@ -2188,8 +2233,8 @@ async function loadHubDocuments() {
       window._pmDocCats = {};
       container.innerHTML = cats.map(cat => {
         const slug = 'docs-' + cat.label.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').toLowerCase();
-        const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort((a,b)=>(a.ordre||0)-(b.ordre||0));
-        const dInfo = { color: cat.color || '', color2: cat.color2 || '', logo: cat.logoUrl || '' };
+        const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort(pmDocCmp);
+        const dInfo = { color: cat.color || '', color2: cat.color2 || '', logo: cat.logoUrl || '', icone: cat.icone || '📁' };
         window._pmDocCats[cat.label] = dInfo;
         const dBar = dInfo.color ? ' data-bar="1" style="--bar:' + pmBarCss(dInfo) + ';"' : '';
         const dLogo = dInfo.logo ? '<img class="pm-doc-logo" src="' + pmAttr(dInfo.logo) + '" alt="">' : escapeHtmlDocs(cat.icone || '📁');
@@ -2198,11 +2243,13 @@ async function loadHubDocuments() {
         </button>
         <div id="${slug}" class="submenu">
           ${docs.length
-            ? docs.map(d => `<button id="doc-${d.id}" onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" data-doccat="${pmAttr(cat.label)}"${dInfo.color ? ' data-bar="1"' : ''} style="${dInfo.color ? '--bar:' + pmBarCss(dInfo) + ';' : ''}display:flex;align-items:flex-start;gap:6px;"><span>${dInfo.logo ? '<img class="pm-doc-logo" src="' + pmAttr(dInfo.logo) + '" alt="">' : escapeHtmlDocs(d.icone||'📄')}</span><span style="flex:1;">${escapeHtmlDocs(d.titre)}</span></button>`).join('')
+            ? docs.map(d => `<button id="doc-${d.id}" onclick="loadFrame('${d.url}#toolbar=0&navpanes=0&view=FitH',this)" class="menu-item" data-doccat="${pmAttr(cat.label)}"${dInfo.color ? ' data-bar="1"' : ''} style="${dInfo.color ? '--bar:' + pmBarCss(dInfo) + ';' : ''}display:flex;align-items:flex-start;gap:6px;">${pmDocIcon(d, cat, dInfo)}<span style="flex:1;">${escapeHtmlDocs(d.titre)}</span>${d.important ? '<span class="pm-doc-pin">📌</span>' : ''}</button>`).join('')
             : '<div class="menu-item" style="opacity:.5;">Aucun document</div>'}
         </div>`;
       }).join('');
+      window._pmHubDocs = hubDocs;
       if (typeof initFavorites === 'function') initFavorites();
+      if (window.pmDocSearchRefresh) window.pmDocSearchRefresh();
     }
 
     // Listener catégories
@@ -2521,7 +2568,7 @@ function pmLabelNode(btn) {
     if (!n.nodeValue.trim()) continue;
     var p = n.parentNode, bad = false;
     while (p && p !== btn) {
-      if (p.classList && (p.classList.contains('pm-sec-arrow') || p.classList.contains('pm-qr-badge') || p.classList.contains('pm-maj-badge') || /badge/.test(p.id || ''))) { bad = true; break; }
+      if (p.classList && (p.classList.contains('pm-sec-arrow') || p.classList.contains('pm-qr-badge') || p.classList.contains('pm-maj-badge') || p.classList.contains('pm-doc-ico') || p.classList.contains('pm-doc-pin') || /badge/.test(p.id || ''))) { bad = true; break; }
       p = p.parentNode;
     }
     if (!bad) return n;

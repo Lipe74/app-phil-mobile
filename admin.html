@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.108 - Mises à jour plus fiables</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.109 - Documents : tri, recherche, logos</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -851,7 +851,7 @@
               <input type="text" id="doc-new-titre" placeholder="ex: Guide Salesforce">
             </div>
             <div class="form-row">
-              <label>Icône (emoji, optionnel — 📄 par défaut)</label>
+              <label>Icône (emoji, optionnel — ignorée tant que la catégorie a un logo)</label>
               <input type="text" id="doc-new-icone" placeholder="ex: 📘" maxlength="4" style="width:80px;">
               <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
                 <button type="button" class="btn btn-secondary" style="padding:3px 8px;" onclick="pickDocIcone('doc-new-icone','📄')">📄</button>
@@ -880,7 +880,21 @@
               <label>Catégorie *</label>
               <select id="doc-new-categorie"><option value="">Chargement...</option></select>
             </div>
+            <div class="form-row">
+              <label>Mots-clés pour la recherche (optionnel, séparés par des virgules)</label>
+              <input type="text" id="doc-new-mots" placeholder="ex: commission, prime, SOHO">
+            </div>
+            <div class="form-row">
+              <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="doc-new-important"> 📌 Document important</label>
+            </div>
             <button class="btn btn-primary" onclick="addDocumentFiche()">➕ Ajouter une fiche document</button>
+          </div>
+
+          <!-- NORMALISER LES TITRES (Build 14.109) -->
+          <div class="card">
+            <button class="btn btn-secondary" onclick="openNormalizeTitles()">🔤 Normaliser les titres</button>
+            <span style="font-size:11px;color:#6b7280;margin-left:8px;">Majuscule au 1er mot seulement — tu vois l'avant/après avant d'enregistrer.</span>
+            <div id="doc-normalize-panel" style="display:none;margin-top:12px;"></div>
           </div>
 
           <div id="documents-content" style="margin-top:16px;"><div class="empty">Chargement...</div></div>
@@ -2425,6 +2439,7 @@ const BN_PENDING = [
   { build: '14.98', title: "Mon démarrage pour les nouveaux consultants", description: "- Nouvel onglet « Mon démarrage » tout en haut du menu pour les nouveaux consultants, avec leurs étapes : formations My Smart, formation Success, PQS (12 ASP actifs comptés depuis tes contrats activés), puis Fast SC et Fast EC si tu recrutes.\n- Il disparaît dès que ton PQS est validé.\n- L'app enregistre maintenant les connexions et les menus ouverts, pour mieux savoir ce qui est utilisé et t'aider à progresser." },
   { build: '14.99', title: "Activité encodée et aperçu de Mon démarrage (admin)", description: "- Admin : les statistiques d'utilisation montrent aussi la dernière activité encodée de chaque consultant (contrat, prospect, client), qui couvre le passé.\n- Admin : un aperçu de l'onglet « Mon démarrage » tel que le voit un consultant." },
   { build: '14.100', title: "Messages prêts à envoyer et PQS déclaré", description: "- Fiches Prospects Clients et Prospects Consultants : nouveau bouton « 💬 Messages ». Tu choisis un message prêt (remercier une candidature, inviter à une BOM, proposer ou confirmer un rendez-vous, relancer…), tu l'ajustes si besoin et tu l'envoies par WhatsApp ou SMS, ou tu le copies.\n- Mon démarrage : si tu n'encodes pas tes contrats ici, tu peux indiquer que ton PQS est déjà validé dans My Smart. Ton upline le vérifie." },
+  { build: '14.109', title: "Documents : tri, recherche et logos", description: "- Documents : classés automatiquement par ordre alphabétique dans chaque catégorie.\n- Nouveau bouton « Rechercher un document » (titre, catégorie ou mot clé) — tu peux l'ajouter à tes favoris.\n- Chaque document affiche le logo de sa catégorie.\n- Un 📌 signale les documents importants.\n- Titres harmonisés (majuscule au 1er mot seulement)." },
   { build: '14.108', title: "Mises à jour plus fiables", description: "- L'app détecte maintenant plus vite qu'une nouvelle version est disponible (à l'ouverture, quand tu reviens dans l'app, et régulièrement).\n- Une petite bannière « Nouvelle version disponible » apparaît avec un bouton Actualiser : plus besoin de vider le cache à la main.\n- Les pages ne restent plus bloquées sur une ancienne version." },
   { build: '14.107', title: "Commissions : tableau adapté au GSM", description: "- Calculateur de commissions sur GSM : le tableau défile dans son cadre, la page ne bouge plus de gauche à droite et le nom du produit reste visible.\n- Le total de la commission reste affiché en haut pendant que tu descends.\n- Meilleur affichage quand tu tournes le téléphone en horizontal." },
   { build: '14.106', title: "Simulateur mobile : plus de place", description: "- Simulateur sur GSM : l'en-tête (titre, version, coordonnées) est masqué pour gagner de la place. Seule la fine ligne de prix reste en haut.\n- Sur ordinateur, rien ne change." },
@@ -8609,6 +8624,7 @@ function loadDocumentsAdmin() {
     items.sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
     window._documentsCache = items;
     renderDocumentsAdmin(items);
+    migrateImportantDocs(items);
   }, (err) => {
     container.innerHTML = '<div class="empty">Erreur de chargement.</div>';
     console.log('Chargement documents impossible:', err.message);
@@ -8623,6 +8639,94 @@ function docMoisAnnee(d) {
   const txt = dt.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' });
   return `<span style="font-size:10px;font-weight:600;color:#6b7280;background:#f3f4f6;border-radius:10px;padding:1px 8px;white-space:nowrap;" title="Fichier mis à jour le ${dt.toLocaleDateString('fr-BE')}">${txt}</span>`;
 }
+// ===== TRI ALPHABÉTIQUE + NORMALISATION DES TITRES (Build 14.109) =====
+function docTitleCmp(a, b) { return String(a.titre || '').localeCompare(String(b.titre || ''), 'fr', { sensitivity: 'base', numeric: true, ignorePunctuation: true }); }
+const DOC_KEEP_DEFAULT = 'Orange, Eneco, Smart, SN, Phil-Mobile, Phil-Fixit, Upline, Fidelity, Love, Flex, Fix, Power, Gas, Dynamic, Belgique, Belgium, Salesforce, Teams, WhatsApp, Deal, Data, Visual, Voice, Mail, Quick, Start, Personal, SOHO, MLM';
+function docKeepWords() {
+  let raw = DOC_KEEP_DEFAULT;
+  try { raw = localStorage.getItem('pmDocKeepWords') || DOC_KEEP_DEFAULT; } catch (e) {}
+  return raw.split(',').map(x => x.trim()).filter(Boolean);
+}
+// Règle « majuscule au 1er mot » : 1re lettre du titre (et après " - " ou " : ") en majuscule, le reste en minuscules,
+// sauf acronymes (SOHO, FR), mots avec majuscule interne (eBilling, Phil-Mobile) et mots protégés (Orange, Eneco…).
+function normalizeDocTitle(title, keepList) {
+  const keep = {};
+  (keepList || docKeepWords()).forEach(w => { keep[w.toLowerCase()] = w; });
+  let t = String(title || '').replace(/\s+/g, ' ').trim().replace(/\s+[-–—]\s+/g, ' - ');
+  let start = true;
+  return t.replace(/\S+/g, tok => {
+    const m = tok.match(/^([^A-Za-zÀ-ÿ0-9]*)(.*?)([^A-Za-zÀ-ÿ0-9]*)$/);
+    const pre = m[1], core = m[2], post = m[3];
+    const wasStart = start;
+    start = (tok === '-' || /:$/.test(tok));
+    if (!core) return tok;
+    let out;
+    if (keep[core.toLowerCase()]) out = keep[core.toLowerCase()];
+    else if (/^[A-ZÀ-Ý0-9]{2,}$/.test(core)) out = core;
+    else if (/[a-zà-ÿ0-9][A-ZÀ-Ý]/.test(core) || /-[A-ZÀ-Ý]/.test(core)) out = core;
+    else out = core.toLowerCase();
+    if (wasStart && !keep[core.toLowerCase()] && out === out.toLowerCase()) out = out.charAt(0).toUpperCase() + out.slice(1);
+    return pre + out + post;
+  });
+}
+function docIconHtml(cat) {
+  const c = (window._categoriesCache || []).find(x => x.label === cat);
+  if (c && c.logoUrl) return `<img src="${escapeAttrDocs(c.logoUrl)}" alt="" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;">`;
+  return escapeHtmlDocs((c && c.icone) || (cat === 'À trier' ? '📋' : '📁'));
+}
+window.openNormalizeTitles = function () {
+  const panel = document.getElementById('doc-normalize-panel');
+  if (!panel) return;
+  const keep = docKeepWords();
+  const rows = (window._documentsCache || []).map(d => ({ d, nt: normalizeDocTitle(d.titre, keep) })).filter(r => r.nt !== r.d.titre)
+    .sort((a, b) => docTitleCmp(a.d, b.d));
+  window._normRows = rows;
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div style="font-size:12px;margin-bottom:6px;"><strong>Mots à garder tels quels</strong> (majuscules conservées, séparés par des virgules) :</div>
+    <input type="text" id="doc-norm-keep" value="${escapeAttrDocs(keep.join(', '))}" style="width:100%;box-sizing:border-box;font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;">
+    <div style="margin:6px 0 10px;"><button class="btn btn-secondary" onclick="saveKeepWordsAndRefresh()">↻ Recalculer</button></div>
+    ${rows.length ? `
+      <div style="font-size:12px;margin-bottom:6px;">${rows.length} titre(s) à modifier — décoche ceux à laisser tels quels, ou corrige directement la proposition :</div>
+      ${rows.map((r, i) => `
+        <div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
+          <input type="checkbox" id="norm-chk-${i}" checked>
+          <span style="flex:1;min-width:150px;font-size:12px;color:#9ca3af;text-decoration:line-through;">${escapeHtmlDocs(r.d.titre)}</span>
+          <span style="color:#9ca3af;">→</span>
+          <input type="text" id="norm-new-${i}" value="${escapeAttrDocs(r.nt)}" style="flex:1;min-width:150px;font-size:13px;font-weight:600;padding:4px 6px;border:1px solid #f97316;border-radius:6px;">
+        </div>`).join('')}
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="applyNormalizeTitles()">✅ Appliquer</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('doc-normalize-panel').style.display='none'">Annuler</button>
+      </div>` : `<div class="empty" style="padding:8px 0;">✅ Tous les titres sont déjà normalisés.</div>
+      <button class="btn btn-secondary" onclick="document.getElementById('doc-normalize-panel').style.display='none'">Fermer</button>`}`;
+};
+window.saveKeepWordsAndRefresh = function () {
+  const v = (document.getElementById('doc-norm-keep') || {}).value || '';
+  try { localStorage.setItem('pmDocKeepWords', v); } catch (e) {}
+  window.openNormalizeTitles();
+};
+window.applyNormalizeTitles = async function () {
+  const rows = window._normRows || [];
+  const todo = [];
+  rows.forEach((r, i) => {
+    const chk = document.getElementById('norm-chk-' + i), inp = document.getElementById('norm-new-' + i);
+    const nt = inp ? inp.value.trim() : '';
+    if (chk && chk.checked && nt && nt !== r.d.titre) todo.push({ id: r.d.id, titre: nt });
+  });
+  if (!todo.length) { showToast('Rien à modifier.'); return; }
+  try {
+    await Promise.all(todo.map(x => updateDoc(doc(db, 'documents', x.id), { titre: x.titre })));
+    document.getElementById('doc-normalize-panel').style.display = 'none';
+    showToast('✅ ' + todo.length + ' titre(s) normalisé(s).');
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+// Reprise de l'existant : les documents qui avaient 📌 comme icône deviennent « importants » (une seule fois par document)
+function migrateImportantDocs(items) {
+  items.filter(d => d.icone === '📌' && d.important === undefined)
+    .forEach(d => { updateDoc(doc(db, 'documents', d.id), { important: true }).catch(() => {}); });
+}
+
 function renderDocumentsAdmin(items) {
   const container = document.getElementById('documents-content');
   if (!container) return;
@@ -8640,7 +8744,7 @@ function renderDocumentsAdmin(items) {
 
   container.innerHTML = allLabels.map(cat => {
     const isSystem = cat === 'À trier';
-    const list = items.filter(d => d.categorie === cat).sort((a,b) => (a.ordre||0)-(b.ordre||0));
+    const list = items.filter(d => d.categorie === cat).sort(docTitleCmp);
     const rows = list.length ? list.map((d, idx) => `
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;">
         <span style="flex:1;min-width:160px;font-weight:600;display:flex;align-items:center;gap:6px;">
@@ -8653,8 +8757,10 @@ function renderDocumentsAdmin(items) {
                  <div style="display:flex;flex-wrap:wrap;gap:3px;">
                    ${DOC_ICON_CHOICES.map(e => `<button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:12px;" onclick="pickDocIcone('doc-edit-icone-${d.id}','${e}')">${e}</button>`).join('')}
                  </div>
+                 <input type="text" id="doc-edit-mots-${d.id}" value="${escapeAttrDocs(d.motsCles || '')}" placeholder="Mots-clés (séparés par des virgules)" style="font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;width:100%;box-sizing:border-box;">
+                 <label style="font-size:12px;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="doc-edit-important-${d.id}" ${d.important ? 'checked' : ''}> 📌 Document important</label>
                </div>`
-            : `<span>${d.icone || '📄'} ${escapeHtmlDocs(d.titre)}</span>${docMoisAnnee(d)}`}
+            : `<span>${docIconHtml(cat)} ${escapeHtmlDocs(d.titre)}${d.important ? ' 📌' : ''}</span>${docMoisAnnee(d)}${d.motsCles ? `<span style="font-size:10px;color:#9ca3af;" title="Mots-clés">🔎 ${escapeHtmlDocs(d.motsCles)}</span>` : ''}`}
         </span>
         ${window._documentsEditingId === d.id
           ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
@@ -8668,10 +8774,6 @@ function renderDocumentsAdmin(items) {
         <select onchange="moveDocumentCategorie('${d.id}', this.value)" style="font-size:11px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;">
           ${moveOptions.replace(`value="${escapeAttrDocs(cat)}"`, `value="${escapeAttrDocs(cat)}" selected`)}
         </select>
-        <span style="display:flex;flex-direction:column;gap:1px;">
-          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === 0 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', -1)" title="Monter">▲</button>
-          <button class="btn btn-secondary" style="padding:1px 6px;font-size:10px;${idx === list.length - 1 ? 'opacity:.3;pointer-events:none;' : ''}" onclick="moveDocumentOrdre('${d.id}', 1)" title="Descendre">▼</button>
-        </span>
         <button class="btn btn-secondary" onclick="deleteDocumentFiche('${d.id}')">🗑️</button>
       </div>`).join('') : '<div class="empty" style="padding:8px 0;">Aucun document</div>';
     return `
@@ -8694,12 +8796,16 @@ window.addDocumentFiche = async function () {
   if (!categorie) { alert('Catégorie requise.'); return; }
   try {
     const ordre = window._documentsCache.filter(d => d.categorie === categorie).length;
+    const motsEl = document.getElementById('doc-new-mots'), impEl = document.getElementById('doc-new-important');
     await addDoc(collection(db, 'documents'), {
-      titre, icone: icone || null, categorie, url: null, storagePath: null, fileName: null,
-      ordre, dateAjout: new Date().toISOString()
+      titre: normalizeDocTitle(titre), icone: icone || null, categorie, url: null, storagePath: null, fileName: null,
+      ordre, dateAjout: new Date().toISOString(),
+      important: !!(impEl && impEl.checked), motsCles: motsEl ? motsEl.value.trim() : ''
     });
     titreInput.value = '';
     iconeInput.value = '';
+    if (motsEl) motsEl.value = '';
+    if (impEl) impEl.checked = false;
     showToast('✅ Fiche document créée.');
   } catch (err) { alert('Erreur: ' + err.message); }
 };
@@ -8750,14 +8856,17 @@ window.saveRenameDocument = async function (docId) {
   const inp = document.getElementById('doc-edit-input-' + docId);
   const iconeInp = document.getElementById('doc-edit-icone-' + docId);
   if (!inp) return;
-  const trimmed = inp.value.trim();
+  const trimmed = normalizeDocTitle(inp.value.trim());
   if (!trimmed) { alert('Le titre ne peut pas être vide.'); return; }
   const icone = iconeInp ? iconeInp.value.trim() : '';
+  const motsInp = document.getElementById('doc-edit-mots-' + docId), impInp = document.getElementById('doc-edit-important-' + docId);
+  const motsCles = motsInp ? motsInp.value.trim() : '';
+  const important = !!(impInp && impInp.checked);
   try {
-    await updateDoc(doc(db, 'documents', docId), { titre: trimmed, icone: icone || null });
+    await updateDoc(doc(db, 'documents', docId), { titre: trimmed, icone: icone || null, motsCles, important });
     window._documentsEditingId = null;
     const item = (window._documentsCache || []).find(d => d.id === docId);
-    if (item) { item.titre = trimmed; item.icone = icone || null; }
+    if (item) { item.titre = trimmed; item.icone = icone || null; item.motsCles = motsCles; item.important = important; }
     renderDocumentsAdmin(window._documentsCache);
     showToast('✅ Document mis à jour.');
   } catch (err) { alert('Erreur: ' + err.message); }
