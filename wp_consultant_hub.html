@@ -712,12 +712,8 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
 <!-- DOCUMENTS (chargés dynamiquement depuis Firestore — documents + documentCategories) -->
-<!-- Recherche de documents (Build 14.109) : le bouton est favorisable, le champ s'ouvre au clic -->
+<!-- Recherche de documents (Build 14.110) : le bouton ouvre le panneau de droite (favorisable) -->
 <button id="docs-search-btn" type="button" onclick="pmDocSearchOpen()" class="menu-item">🔎 Rechercher un document</button>
-<div id="hub-docs-search" style="display:none;margin:6px 0;">
-  <input id="hub-docs-q" type="search" placeholder="Titre, catégorie ou mot clé…" oninput="pmDocSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';pmDocSearch('');document.getElementById('hub-docs-search').style.display='none';}" autocomplete="off" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--pm-accent,#f97316);border-radius:8px;font-size:12px;font-family:Arial,sans-serif;background:#fff;">
-</div>
-<div id="hub-docs-results" style="display:none;"></div>
 <div id="hub-docs-container">
   <div class="menu-item" style="opacity:.5;">Chargement...</div>
 </div>
@@ -2022,6 +2018,13 @@ STATUT: independant
           <!-- Script panels -->
           <!-- Panneau unique dynamique : contenu chargé depuis Firestore (collection "scripts" + doc "scriptsMeta/definitions"),
                géré depuis admin.html > Gestion des Scripts. Remplace les 9 panneaux qui étaient en dur (build 14.14 et avant). -->
+          <div id="panel-docs-search" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:12px;">🔎 Rechercher un document</div>
+            <input id="docs-search-input" type="search" placeholder="Titre, catégorie ou mot clé…" oninput="pmDocSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';pmDocSearch('');}" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px 14px;border:2px solid var(--pm-accent,#f97316);border-radius:10px;font-size:15px;font-family:Arial,sans-serif;background:#fff;margin-bottom:6px;">
+            <div id="docs-search-count" style="font-size:11px;color:#9ca3af;margin:4px 2px 12px;"></div>
+            <div id="docs-search-results"></div>
+          </div>
+
           <div id="panel-script-dynamic" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
             <div id="script-dyn-header" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"></div>
             <div id="script-dyn-def" style="display:none;font-size:12px;color:#6b7280;font-style:italic;background:#f9fafb;border-radius:8px;padding:10px 14px;margin-bottom:16px;border-left:3px solid #d1d5db;"></div>
@@ -2174,36 +2177,55 @@ function pmDocIcon(d, cat, dInfo) {
   var inner = dInfo && dInfo.logo ? '<img class="pm-doc-logo" src="' + pmAttr(dInfo.logo) + '" alt="">' : escapeHtmlDocs((cat && cat.icone) || '📁');
   return '<span class="pm-doc-ico">' + inner + '</span>';
 }
+function pmDocCard(d, dInfo) {
+  var dt = d.dateAjout ? new Date(d.dateAjout) : null;
+  var mois = dt && !isNaN(dt) ? dt.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' }) : '';
+  var col = dInfo.color || '#f97316';
+  return '<button type="button" onclick="loadFrame(\'' + d.url + '#toolbar=0&navpanes=0&view=FitH\',this)" style="display:flex;align-items:flex-start;gap:10px;text-align:left;width:100%;box-sizing:border-box;background:#fff;border:1px solid #e5e7eb;border-left:4px solid ' + pmAttr(col) + ';border-radius:10px;padding:10px 12px;cursor:pointer;font-family:Arial,sans-serif;">' +
+    pmDocIcon(d, { icone: dInfo.icone || '📁' }, dInfo).replace('class="pm-doc-ico"', 'class="pm-doc-ico" style="margin-top:2px;"') +
+    '<span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.3;">' + escapeHtmlDocs(d.titre) + (d.important ? '<span class="pm-doc-pin">📌</span>' : '') + '</span>' +
+    '<span style="display:block;font-size:11px;color:#6b7280;margin-top:2px;">' + escapeHtmlDocs(d.categorie || '') + (mois ? ' · ' + mois : '') + '</span></span></button>';
+}
 window.pmDocSearch = function (q) {
-  var box = document.getElementById('hub-docs-results'), cont = document.getElementById('hub-docs-container');
-  if (!box || !cont) return;
+  window._pmDocQ = q || '';
+  var box = document.getElementById('docs-search-results'), cnt = document.getElementById('docs-search-count');
+  if (!box) return;
+  var cats = window._pmDocCats || {}, all = (window._pmHubDocs || []).filter(function (d) { return d.url; });
+  var grid = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;';
   var terms = pmDocNorm(q).split(/\s+/).filter(Boolean);
-  if (!terms.length) { box.style.display = 'none'; box.innerHTML = ''; cont.style.display = ''; return; }
-  var cats = window._pmDocCats || {};
-  var found = (window._pmHubDocs || []).filter(function (d) {
+  if (!terms.length) {
+    var order = window._pmDocCatOrder || Object.keys(cats);
+    var html = order.map(function (c) {
+      var list = all.filter(function (d) { return d.categorie === c; }).sort(pmDocCmp);
+      if (!list.length) return '';
+      var dInfo = cats[c] || {};
+      return '<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:700;color:' + pmAttr(dInfo.color || '#f97316') + ';text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">' + escapeHtmlDocs(c) + ' <span style="color:#9ca3af;font-weight:400;">(' + list.length + ')</span></div><div style="' + grid + '">' +
+        list.map(function (d) { return pmDocCard(d, dInfo); }).join('') + '</div></div>';
+    }).join('');
+    box.innerHTML = html || '<div style="font-size:13px;color:#9ca3af;">Aucun document.</div>';
+    if (cnt) cnt.textContent = all.length + ' documents — tape pour filtrer';
+    return;
+  }
+  var found = all.filter(function (d) {
     var hay = pmDocNorm([d.titre, d.categorie, d.fileName, d.motsCles].join(' '));
     return terms.every(function (t) { return hay.indexOf(t) !== -1; });
   }).sort(pmDocCmp);
-  cont.style.display = 'none';
-  box.style.display = '';
-  box.innerHTML = found.length ? found.map(function (d) {
-    var dInfo = cats[d.categorie] || {};
-    var cat = { icone: dInfo.icone || '📁' };
-    var bar = dInfo.color ? ' data-bar="1" style="--bar:' + pmBarCss(dInfo) + ';display:flex;align-items:flex-start;gap:6px;"' : ' style="display:flex;align-items:flex-start;gap:6px;"';
-    return '<button onclick="loadFrame(\'' + d.url + '#toolbar=0&navpanes=0&view=FitH\',this)" class="menu-item"' + bar + '>' + pmDocIcon(d, cat, dInfo) +
-      '<span style="flex:1;">' + escapeHtmlDocs(d.titre) + (d.important ? '<span class="pm-doc-pin">📌</span>' : '') + '<span style="display:block;font-size:10px;font-weight:400;opacity:.6;">' + escapeHtmlDocs(d.categorie || '') + '</span></span></button>';
-  }).join('') : '<div class="menu-item" style="opacity:.6;">Aucun document trouvé</div>';
+  if (cnt) cnt.textContent = found.length + ' résultat' + (found.length > 1 ? 's' : '');
+  box.innerHTML = found.length ? '<div style="' + grid + '">' + found.map(function (d) { return pmDocCard(d, cats[d.categorie] || {}); }).join('') + '</div>'
+    : '<div style="font-size:13px;color:#9ca3af;padding:8px 2px;">Aucun document trouvé.</div>';
 };
 window.pmDocSearchOpen = function () {
-  var wrap = document.getElementById('hub-docs-search'), inp = document.getElementById('hub-docs-q');
-  if (!wrap || !inp) return;
-  var sec = wrap.closest('.pm-sec-body');
-  if (sec && !sec.classList.contains('open') && window.toggleSection) window.toggleSection(sec.id);
-  wrap.style.display = 'block';
-  try { wrap.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+  if (typeof showScript === 'function') showScript('panel-docs-search');
+  var inp = document.getElementById('docs-search-input');
+  if (!inp) return;
+  inp.value = window._pmDocQ || '';
+  window.pmDocSearch(inp.value);
   setTimeout(function () { inp.focus(); inp.select(); }, 50);
 };
-window.pmDocSearchRefresh = function () { var i = document.getElementById('hub-docs-q'); if (i && i.value) window.pmDocSearch(i.value); };
+window.pmDocSearchRefresh = function () {
+  var pn = document.getElementById('panel-docs-search');
+  if (pn && pn.style.display !== 'none') window.pmDocSearch((document.getElementById('docs-search-input') || {}).value || '');
+};
 
 async function loadHubDocuments() {
   try {
@@ -2231,6 +2253,7 @@ async function loadHubDocuments() {
       ];
       const cats = hubCats.length > 0 ? hubCats.filter(c => !c.hidden) : FALLBACK_CATS;
       window._pmDocCats = {};
+      window._pmDocCatOrder = cats.map(c => c.label);
       container.innerHTML = cats.map(cat => {
         const slug = 'docs-' + cat.label.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').toLowerCase();
         const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort(pmDocCmp);

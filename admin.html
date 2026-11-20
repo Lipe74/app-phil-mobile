@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.109 - Documents : tri, recherche, logos</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.110 - Recherche de documents à droite</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -2439,6 +2439,7 @@ const BN_PENDING = [
   { build: '14.98', title: "Mon démarrage pour les nouveaux consultants", description: "- Nouvel onglet « Mon démarrage » tout en haut du menu pour les nouveaux consultants, avec leurs étapes : formations My Smart, formation Success, PQS (12 ASP actifs comptés depuis tes contrats activés), puis Fast SC et Fast EC si tu recrutes.\n- Il disparaît dès que ton PQS est validé.\n- L'app enregistre maintenant les connexions et les menus ouverts, pour mieux savoir ce qui est utilisé et t'aider à progresser." },
   { build: '14.99', title: "Activité encodée et aperçu de Mon démarrage (admin)", description: "- Admin : les statistiques d'utilisation montrent aussi la dernière activité encodée de chaque consultant (contrat, prospect, client), qui couvre le passé.\n- Admin : un aperçu de l'onglet « Mon démarrage » tel que le voit un consultant." },
   { build: '14.100', title: "Messages prêts à envoyer et PQS déclaré", description: "- Fiches Prospects Clients et Prospects Consultants : nouveau bouton « 💬 Messages ». Tu choisis un message prêt (remercier une candidature, inviter à une BOM, proposer ou confirmer un rendez-vous, relancer…), tu l'ajustes si besoin et tu l'envoies par WhatsApp ou SMS, ou tu le copies.\n- Mon démarrage : si tu n'encodes pas tes contrats ici, tu peux indiquer que ton PQS est déjà validé dans My Smart. Ton upline le vérifie." },
+  { build: '14.110', title: "Recherche de documents plus confortable", description: "- « Rechercher un document » s'ouvre maintenant dans le grand panneau (comme les autres outils), avec de la place pour lire les résultats, aussi sur GSM.\n- Champ vide : tous les documents, classés par catégorie. En tapant : résultats triés par ordre alphabétique (titre, catégorie ou mot clé).\n- Le bouton se met en favori comme les autres." },
   { build: '14.109', title: "Documents : tri, recherche et logos", description: "- Documents : classés automatiquement par ordre alphabétique dans chaque catégorie.\n- Nouveau bouton « Rechercher un document » (titre, catégorie ou mot clé) — tu peux l'ajouter à tes favoris.\n- Chaque document affiche le logo de sa catégorie.\n- Un 📌 signale les documents importants.\n- Titres harmonisés (majuscule au 1er mot seulement)." },
   { build: '14.108', title: "Mises à jour plus fiables", description: "- L'app détecte maintenant plus vite qu'une nouvelle version est disponible (à l'ouverture, quand tu reviens dans l'app, et régulièrement).\n- Une petite bannière « Nouvelle version disponible » apparaît avec un bouton Actualiser : plus besoin de vider le cache à la main.\n- Les pages ne restent plus bloquées sur une ancienne version." },
   { build: '14.107', title: "Commissions : tableau adapté au GSM", description: "- Calculateur de commissions sur GSM : le tableau défile dans son cadre, la page ne bouge plus de gauche à droite et le nom du produit reste visible.\n- Le total de la commission reste affiché en haut pendant que tu descends.\n- Meilleur affichage quand tu tournes le téléphone en horizontal." },
@@ -8821,16 +8822,21 @@ window.uploadDocumentFile = async function (docId, input) {
     await window.uploadBytes(sRef, file, { contentType: file.type || 'application/pdf' });
     const url = await window.getDownloadURL(sRef);
     await updateDoc(doc(db, 'documents', docId), { url, storagePath: path, fileName: file.name, dateAjout: new Date().toISOString() });
+    if (existing.storagePath && existing.storagePath !== path) { try { await deleteObject(window.storageRef(window.storage, existing.storagePath)); } catch (e) {} }
     showToast('✅ Document importé.');
   } catch (err) { alert("Erreur lors de l'import: " + err.message); }
   finally { input.value = ''; }
 };
 
 window.deleteDocumentFiche = async function (docId) {
-  if (!confirm('Supprimer définitivement cette fiche document ?')) return;
+  const item = (window._documentsCache || []).find(d => d.id === docId);
+  const hasFile = !!(item && item.storagePath);
+  if (!confirm('Supprimer définitivement cette fiche document' + (hasFile ? ' ET son fichier PDF' : '') + ' ? Cette action est irréversible.')) return;
   try {
+    // Build 14.110 : le fichier PDF est aussi supprimé de Storage (plus de fichier orphelin)
+    if (hasFile) { try { await deleteObject(window.storageRef(window.storage, item.storagePath)); } catch (e) { console.log('Fichier déjà absent ou non supprimable:', e.code || e.message); } }
     await deleteDoc(doc(db, 'documents', docId));
-    showToast('🗑️ Document supprimé.');
+    showToast('🗑️ Document supprimé' + (hasFile ? ' (fiche + fichier).' : '.'));
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
