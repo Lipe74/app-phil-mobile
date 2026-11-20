@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.110 - Recherche de documents à droite</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.113 - Vidéos tutoriels</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -2478,6 +2478,7 @@ const BN_PENDING = [
   { build: '14.105', title: "Simulateur mobile : correctif", description: "- Simulateur sur GSM : la ligne tricolore qui apparaissait au milieu de la page en défilant a été supprimée." },
   { build: '14.104', title: "Simulateur mobile : ligne de prix", description: "- Simulateur sur GSM : l'en-tête ne reste plus bloqué en haut, tu gagnes de la place à l'écran.\n- Une fine ligne avec les prix (Aujourd'hui, 6 mois, 12 mois) reste visible en haut quand tu descends.\n- Le bouton ▾ déplie / replie les détails (frais, Réinitialiser, accès rapide)." },
   { build: '14.103', title: "Couleurs, logos et noms des menus", description: "- Menu : une barre de couleur à gauche de chaque menu pour reconnaître d'un coup d'œil les clients, les prospects, les consultants, les rendez-vous, les outils…\n- Documents : chaque catégorie (Phil-Mobile, Smart SN, Orange, Eneco…) a sa couleur et son logo, visibles dans le menu et dans les favoris.\n- Favoris regroupés par catégorie, avec le logo ou la couleur en titre.\n- Mon profil : choisis la couleur de ton menu parmi 8 couleurs (orange Phil-Mobile par défaut).\n- Les favoris de documents ne se perdent plus quand un document est remplacé par une nouvelle version.\n- Mobile : la page ne se décale plus de gauche à droite (le tableau de stats défile seulement dans son cadre)." },
+  { build: '14.113', title: "Vidéos tutoriels dans l'app", description: "- Nouvel onglet « 🎬 Vidéos tutoriels » dans le menu : 12 vidéos (une par chapitre du manuel) à regarder directement dans l'app, sans quitter Phil-Mobile.\n- Admin : menu « 🎬 Vidéos tutoriels » pour importer les vidéos en une fois, les réordonner, les renommer ou ajouter un lien externe (YouTube, Vimeo).\n- L'affichage de la version dans l'admin est de nouveau à jour." },
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
