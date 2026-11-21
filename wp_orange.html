@@ -270,7 +270,7 @@
 
   <div style="margin-bottom:12px;">
     <label style="display:block;font-weight:600;margin-bottom:4px;">
-      Nom du client
+      Nom du client <span style="color:#dc2626;">*</span>
     </label>
     <input id="client-name" type="text"
       placeholder="Ex : Jean Dupont"
@@ -288,7 +288,7 @@
 
   <div style="margin-bottom:12px;">
     <label style="display:block;font-weight:600;margin-bottom:4px;">
-      Téléphone
+      Téléphone <span style="color:#dc2626;">*</span>
     </label>
     <input id="client-phone" type="text"
       placeholder="Ex : 0499 12 34 56"
@@ -310,6 +310,15 @@
     </label>
     <input id="client-tva" type="text"
       placeholder="Ex : BE0123.456.789"
+      style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="display:block;font-weight:600;margin-bottom:4px;">
+      Facture actuelle par mois (facultatif)
+    </label>
+    <input id="client-current" type="text" inputmode="decimal"
+      placeholder="Ex : 89,90 (pour montrer l'économie)"
       style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
   </div>
 
@@ -363,7 +372,12 @@
     
   </div>
 
-  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><button class="reset-btn" onclick="generateClientOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer Offre Client</button><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
+  <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:12px;margin:4px 0 12px;text-align:left;">
+    <div style="font-weight:800;font-size:16px;margin-bottom:6px;">📄 Dossier d'offre (1 à 3 offres)</div>
+    <div id="pm-dossier-list" style="margin-bottom:8px;"></div>
+    <div id="pm-edit-hint" style="display:none;font-size:13px;margin-bottom:8px;"></div>
+    <button type="button" id="pm-add-btn" class="reset-btn" onclick="pmAddSim()" style="margin-bottom:0;background:#062B68;color:white;">➕ Ajouter cette simulation à l'offre</button>
+  </div><button type="button" id="pm-gen-btn" class="reset-btn" onclick="pmGenerateOffer()" style="margin-bottom:10px;background:#ff5a14;color:white;">📄 Générer l'offre</button><div id="pm-offer-status" style="display:none;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;text-align:left;"></div><button class="reset-btn" onclick="resetAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Réinitialiser</button>
 </div>
 
 <div style="margin-top:-4px;margin-bottom:16px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;">
@@ -386,7 +400,10 @@ import {
   getDocs,
   onSnapshot,
   query,
-  where
+  where,
+  addDoc,
+  updateDoc,
+  arrayUnion
 }
 from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -414,6 +431,9 @@ window.where = where;
 window.doc = doc;
 window.getDoc = getDoc;
 window.onSnapshot = onSnapshot;
+window.addDoc = addDoc;
+window.updateDoc = updateDoc;
+window.arrayUnion = arrayUnion;
 
 // Infos par défaut (fallback si aucun consultant identifié dans l'URL)
 window.consultantInfo = {
@@ -483,6 +503,7 @@ window.consultantInfo = {
         const d = snap.data();
         if (d.phone) window.consultantInfo.phone = d.phone;
         if (d.photoURL) window.consultantInfo.logoUrl = d.photoURL;
+        if (/^#[0-9a-f]{6}$/i.test(d.uiAccent || '')) window.consultantInfo.accent = d.uiAccent;
         if (d.fullName || d.name) window.consultantInfo.name = consultantName || d.fullName || d.name;
         if (!consultantEmail && d.emailOffres) window.consultantInfo.email = d.emailOffres;
       }
@@ -1011,216 +1032,519 @@ ${ci.email}`;
 
 
 
-function generateClientOffer(){
-const client=document.getElementById('client-name')?.value||'Client';
-const phone=document.getElementById('client-phone')?.value||'';
-const ref='PM-'+Date.now();
-const today=new Date().toLocaleDateString('fr-BE');
-const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png' };
-
-// Construit une ligne "Nom xQ — Total €/mois" (ou "(unique)" pour les frais uniques)
-function pmOffreLigne(p, q){
- const nom=p.name.replace(/<[^>]*>/g,'');
- const uniteHT=isTVAC?p.price:p.price/TVA;
- const total=fmt(uniteHT*q);
- const oneshot=p.oneshot===true || /unique/i.test(p.sub||'');
- return nom+' x'+q+' — '+total+(oneshot?' (unique)':'/mois');
+// ===== Build 14.114 : dossier d'offre (1 à 3 simulations) + offre PDF A4 neutre, liée à la fiche du client =====
+var PM_MAX_SIMS = 3;
+var pmSims = [];        // simulations du dossier (copies figées)
+var pmRec = null;       // index de l'offre recommandée
+var pmEditIdx = null;   // simulation en cours de modification
+try {
+  var _pmD = JSON.parse(sessionStorage.getItem('pmDossierDraft') || 'null');
+  if (_pmD && Array.isArray(_pmD.sims)) { pmSims = _pmD.sims.slice(0, PM_MAX_SIMS); pmRec = (typeof _pmD.rec === 'number') ? _pmD.rec : null; }
+} catch (e) {}
+function pmDraftSave() { try { sessionStorage.setItem('pmDossierDraft', JSON.stringify({ sims: pmSims, rec: pmRec })); } catch (e) {} }
+function pmEl(id) { return document.getElementById(id); }
+function pmEsc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
+// HTML -> texte simple (retire les balises, les emojis de repère et les espaces en trop)
+function pmPlain(html) {
+  var d = document.createElement('div');
+  d.innerHTML = String(html || '').replace(/<br\s*\/?>/gi, ' · ').replace(/<\/(p|div)>/gi, ' ');
+  return (d.textContent || '').replace(/📌|📅/g, '').replace(/ /g, ' ').replace(/\s+/g, ' ').replace(/^( · )+|( · )+$/g, '').trim();
 }
-
-let produits=[];
-Object.values(productList).flat().forEach(p=>{
- const q=qtyMap[p.id]||0;
- if(q>0) produits.push(pmOffreLigne(p,q));
-});
-options.forEach(p=>{
- const q=qtyMap[p.id]||0;
- if(q>0) produits.push(pmOffreLigne(p,q));
-});
-
-// Cartes de promotions (permanentes + temporaires réunies, triées par type de badge) + remises Love automatiques
-// Le montant par carte reprend exactement la logique de calcPromos() (à garder synchronisé si celle-ci évolue).
-function pmPromoMontant(p){
- if(p.isUnique) return p.price;
- const inetCount=(qtyMap['inet_start']||0)+(qtyMap['inet_zen']||0);
- if(p.mobileId==='_internet') return p.price*inetCount;
- if(p.perAbo && p.mobileId) return p.price*(qtyMap[p.mobileId]||0);
- return p.price;
+function pmHasProducts() {
+  return Object.values(productList).flat().concat(options).some(function (p) { return (qtyMap[p.id] || 0) > 0; });
 }
-function pmPromoBadgeOrder(p){
- if(p.isUnique) return 0;
- if(p.duration===12) return 1;
- if(p.duration===6) return 2;
- return 3; // à vie
+// Montant d'une carte de promo : même logique que calcPromos() (à garder synchronisé si celle-ci évolue)
+function pmPromoMontant(p) {
+  if (p.isUnique) return p.price;
+  var inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
+  if (p.mobileId === '_internet') return p.price * inetCount;
+  if (p.perAbo && p.mobileId) return p.price * (qtyMap[p.mobileId] || 0);
+  return p.price;
 }
-const r=isTVAC?1:1/TVA;
-let promoCards=[...promosPermanent,...promos]
- .filter(p=>togMap[p.id])
- .sort((a,b)=>pmPromoBadgeOrder(a)-pmPromoBadgeOrder(b))
- .map(p=>{
-   const nom=p.name.replace(/<[^>]*>/g,'');
-   const montant=pmPromoMontant(p)*r;
-   const montantTxt='- '+fmt(montant)+(p.isUnique?'':'/mois');
-   return `<div style="border:1px solid #eee;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-<div style="font-size:13px;font-weight:700;">${nom}</div>
-<div style="font-size:13px;font-weight:700;color:#2e7d32;white-space:nowrap;">${montantTxt}</div>
-</div>
-<div style="font-size:12px;margin-top:4px;">${p.sub||''}</div>
-</div>`;
- });
-const loveResult=calcLoveLines();
-const loveTxt=loveResult.lines.filter(l=>l.active).map(l=>l.text+' — '+fmt(l.disc));
-const hasAnyPromo=promoCards.length||loveTxt.length;
-
-// Total des économies mensuelles + uniques (pour l'en-tête du bloc promotions)
-const promosCalc=calcPromos();
-const economieMensuelle=promosCalc.mensuel*r;
-const economieUnique=promosCalc.unique*r;
-
-// Prix catalogue (sans aucune promotion ni remise Love) — pour comparaison avec le prix promo
-const prodCatalog=calcProducts(), optsCatalog=calcOptionsBase();
-const homeFeeCatalog=(hasInternet() && totalMobileAbo()===0)?4:0;
-const catalogPrice=(prodCatalog+optsCatalog+homeFeeCatalog)*r;
-
-// Promos qui expirent à 6 mois / 12 mois (pour annoter les paliers de tarification)
-function pmPromoNamesByDuration(dur){
- return [...promosPermanent,...promos]
-   .filter(p=>togMap[p.id] && !p.isUnique && p.duration===dur)
-   .map(p=>p.name.replace(/<[^>]*>/g,''));
-}
-const namesFin6=pmPromoNamesByDuration(6);
-const namesFin12=pmPromoNamesByDuration(12);
-const prom6Txt=promosCalc.promo6?fmt(promosCalc.promo6*r):null;
-const prom12Txt=promosCalc.promo12?fmt(promosCalc.promo12*r):null;
-
-const w=window.open('','_blank');
-w.document.write(`
-<html><head><title>Offre Client</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
-<style>
-body{font-family:Arial,sans-serif;max-width:900px;margin:auto;padding:30px;color:#222}
-.box{border:1px solid #ddd;border-radius:10px;padding:15px;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;}
-h1{color:#ff5a14;text-align:center}
-.btn{background:#ff5a14;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer}
-</style></head><body>
-<div id="pdf-content">
-<div style="text-align:center">
-<h1>OFFRE COMMERCIALE</h1>
-</div>
-
-<div class="box">
-<b>Référence :</b> ${ref}<br>
-<b>Date :</b> ${today}<br>
-<b>Client :</b> ${client}<br>
-<b>Téléphone :</b> ${phone}<br>
-<b>Mode de prix :</b> ${isTVAC?'TVAC (21%)':'HTVA'}
-</div>
-
-<div class="box">
-<h3>📦 Produits sélectionnés</h3>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
-${produits.length?produits.map(p=>`<div style="font-size:13px;line-height:1.5;">${p}</div>`).join(''):'<div style="font-size:13px;">Aucun produit sélectionné</div>'}
-</div>
-</div>
-
-<div class="box">
-<h3>🎁 Promotions activées</h3>
-${!hasAnyPromo?'<div style="font-size:13px;">Aucune promotion active</div>':`
-<div style="background:#e8f5e9;border:1px solid #66bb6a;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#2e7d32;">
-💶 Total économies : - ${fmt(economieMensuelle)}/mois${economieUnique?' + '+fmt(economieUnique)+' (frais uniques offerts)':''}
-</div>`}
-
-${promoCards.length?`
-<div style="margin-bottom:12px;">${promoCards.join('')}</div>` : ''}
-
-${loveTxt.length?`
-<div style="font-size:12px;font-weight:700;color:#9a3412;margin-bottom:6px;">🧡 Remises Love — automatiques</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;">
-${loveTxt.map(t=>`<div style="font-size:13px;line-height:1.5;">${t}</div>`).join('')}
-</div>
-<div style="font-size:13px;font-weight:700;margin-top:8px;">Total remises Love — ${fmt(loveResult.total)}</div>` : ''}
-</div>
-
-<div class="box">
-<h3>💰 Tarification</h3>
-Prix catalogue (sans promotions) : ${fmt(catalogPrice)}/mois<br><br>
-🟢 Aujourd'hui : <b>${document.getElementById('s-now').textContent}</b><br>
-🟠 Après 6 mois : <b>${document.getElementById('s-6months').textContent}</b>${namesFin6.length?`<br><span style="font-size:12px;color:#856404;">↳ fin de ${namesFin6.join(', ')} (+ ${prom6Txt}/mois)</span>`:''}<br><br>
-🔴 Après 12 mois : <b>${document.getElementById('s-12months').textContent}</b>${namesFin12.length?`<br><span style="font-size:12px;color:#856404;">↳ fin de ${namesFin12.join(', ')} (+ ${prom12Txt}/mois)</span>`:''}<br><br>
-<hr>
-<b>🏁 Tarifs après les promotions : ${document.getElementById('s-total').textContent}</b>
-</div>
-
-<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:12px;color:#856404;font-weight:600;margin-bottom:15px;page-break-inside:avoid;break-inside:avoid;">
-⚠️ Tarifs indicatifs sous réserve de modification par Orange. Simulation réalisée le ${today} — à confirmer lors de la souscription effective.
-</div>
-
-<div class="box" style="text-align:center;">
-<img src="${ci.logoUrl}" crossorigin="anonymous" width="90" onerror="this.onerror=null;this.removeAttribute('crossorigin');this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'" style="display:block;margin:0 auto 10px;"><br>
-<b>${ci.name.toUpperCase()}</b><br>
-${ci.phone}<br>
-${ci.email}
-</div>
-</div>
-
-<button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
-<script>
-// Génère un PDF à UNE seule page, dont la hauteur s'ajuste exactement au contenu
-// (au lieu de découper en pages A4, ce qui coupait les blocs entre deux pages).
-async function downloadOffrePDF(){
-  const btn=document.getElementById('pdf-download-btn');
-  btn.disabled=true;
-  btn.textContent='⏳ Génération en cours...';
-  const el=document.getElementById('pdf-content');
-
-  const genereAndSave=async()=>{
-    try{
-      const scale=2;
-      const canvas=await html2canvas(el,{scale:scale,useCORS:true});
-      const imgData=canvas.toDataURL('image/jpeg',0.98);
-      const mmPerPx=25.4/(96*scale);
-      const marginMm=10;
-      const pdfWidth=canvas.width*mmPerPx+marginMm*2;
-      const pdfHeight=canvas.height*mmPerPx+marginMm*2;
-      const { jsPDF }=window.jspdf;
-      const pdf=new jsPDF({unit:'mm',format:[pdfWidth,pdfHeight],orientation:'portrait'});
-      pdf.addImage(imgData,'JPEG',marginMm,marginMm,canvas.width*mmPerPx,canvas.height*mmPerPx);
-      pdf.save('Offre-${client.replace(/[^a-zA-Z0-9]/g,'_')}-${ref}.pdf');
-    } finally {
-      btn.disabled=false;
-      btn.textContent='📄 Télécharger le PDF';
-    }
+// Copie figée de la simulation en cours (montants TVAC de base ; le mode TVAC/HTVA est appliqué à l'affichage)
+function pmSnapshot() {
+  var lignes = [];
+  var add = function (p) {
+    var q = qtyMap[p.id] || 0;
+    if (q > 0) lignes.push({ nom: pmPlain(p.name), q: q, unit: p.price, total: p.price * q, unique: p.oneshot === true || /unique/i.test(p.sub || '') });
   };
+  Object.values(productList).flat().forEach(add);
+  options.forEach(add);
+  var homeFee = (hasInternet() && totalMobileAbo() === 0) ? 4 : 0;
+  if (homeFee) lignes.push({ nom: 'Supplément Internet seul (sans forfait mobile)', q: 1, unit: homeFee, total: homeFee, unique: false });
 
-  // Attend que le logo soit VRAIMENT chargé (avec ses vraies dimensions) avant de générer
-  // le PDF. On ne peut pas se fier à un seul évènement load/error : si l'image d'origine
-  // échoue, son onerror bascule sur le logo de secours qui doit lui aussi finir de charger,
-  // sinon html2canvas capture l'image en plein milieu du remplacement (logo invisible).
-  const logoImg=document.querySelector('#pdf-content img');
-  if(logoImg){
-    const attendreLogo=()=>new Promise(resolve=>{
-      const debut=Date.now();
-      const verifier=()=>{
-        if((logoImg.complete && logoImg.naturalWidth>0) || Date.now()-debut>4000) resolve();
-        else setTimeout(verifier,50);
-      };
-      verifier();
+  var prod = calcProducts(), opts = calcOptionsBase(), frais = calcFraisUniques();
+  var pc = calcPromos();
+  var love = calcLoveLines().total;
+  var prom = pc.mensuel, prom6 = pc.promo6 || 0, prom12 = pc.promo12 || 0, promUnique = pc.unique;
+  var promAVie = prom - prom6 - prom12;
+  var after = Math.max(0, prod + opts + homeFee - love - promAVie);
+  var today = Math.max(0, after - prom6 - prom12), m6 = Math.max(0, after - prom12), m12 = after;
+
+  var pl = [...promosPermanent, ...promos].filter(function (p) { return togMap[p.id] && pmPromoMontant(p) > 0; }).map(function (p) {
+    var sub = String(p.sub || '').replace(/^\s*<span[^>]*>[^<]*(MOIS|VIE|UNIQUE)[^<]*<\/span>\s*(<br\s*\/?>)?/i, '');
+    var nom = pmPlain(p.name);
+    return { nom: nom, montant: pmPromoMontant(p), duree: p.isUnique ? 'unique' : (p.duration === 12 ? '12' : (p.duration === 6 ? '6' : 'vie')), sub: pmPlain(sub).slice(0, 220), pro: /my comfort/i.test(nom) };
+  });
+  // Unique, puis 12 mois, 6 mois, à vie ; « My Comfort Service » (pro) toujours en dernier
+  var ord = { unique: 0, '12': 1, '6': 2, vie: 3 };
+  pl.sort(function (a, b) { return ((a.pro ? 1 : 0) - (b.pro ? 1 : 0)) || (ord[a.duree] - ord[b.duree]); });
+  var noms = function (d) { return pl.filter(function (x) { return x.duree === d; }).map(function (x) { return x.nom; }); };
+
+  var ll = [], inet = hasInternet(), tot = totalMobileAbo();
+  [{ id: 'mob_small', label: 'Small' }, { id: 'mob_medium', label: 'Medium' }, { id: 'mob_large', label: 'Large' }, { id: 'mob_unlim', label: 'Unlimited' }].forEach(function (o) {
+    var q = qtyMap[o.id] || 0;
+    if (!q) return;
+    var rt = loveRates[o.id], rate, pal;
+    if (inet && tot >= 2) { rate = rt.rateInet2; pal = 'avec Internet (2 abonnements ou plus)'; }
+    else if (inet && tot === 1) { rate = rt.rateInet1; pal = 'avec Internet'; }
+    else if (!inet && tot >= 2) { rate = rt.rateNoInet; pal = 'sans Internet (2 abonnements ou plus)'; }
+    else return;
+    ll.push({ label: o.label, q: q, pal: pal, rate: rate, disc: q * rate });
+  });
+
+  var qty = {}, tog = {};
+  Object.keys(qtyMap).forEach(function (k) { if (qtyMap[k] > 0) qty[k] = qtyMap[k]; });
+  Object.keys(togMap).forEach(function (k) { if (togMap[k]) tog[k] = true; });
+  return {
+    lignes: lignes, promos: pl, love: { lignes: ll, total: love },
+    catalogue: prod + opts + homeFee, today: today, m6: m6, m12: m12,
+    frais: Math.max(0, frais - promUnique), fraisBrut: frais, promUnique: promUnique, eco: prom,
+    fin6: { noms: noms('6'), montant: prom6 }, fin12: { noms: noms('12'), montant: prom12 },
+    qty: qty, tog: tog
+  };
+}
+function pmSig(s) { return JSON.stringify([s.qty, s.tog]); }
+
+// ----- Dossier : liste des simulations -----
+function pmAddSim() {
+  if (!pmHasProducts()) { alert("Ajoute au moins un produit avant d'ajouter la simulation à l'offre."); return; }
+  var snap = pmSnapshot();
+  if (pmEditIdx !== null) { pmSims[pmEditIdx] = snap; pmEditIdx = null; }
+  else {
+    if (pmSims.length >= PM_MAX_SIMS) { alert('Un dossier contient au maximum ' + PM_MAX_SIMS + ' offres.'); return; }
+    pmSims.push(snap);
+  }
+  pmDraftSave(); pmRenderDossier();
+}
+function pmLoadState(s) {
+  Object.keys(qtyMap).forEach(function (k) { qtyMap[k] = (s.qty && s.qty[k]) || 0; });
+  Object.keys(togMap).forEach(function (k) { togMap[k] = !!(s.tog && s.tog[k]); togMapManualOverride.add(k); });
+  document.querySelectorAll('.qty-val').forEach(function (el) { var id = el.id.replace('qty-', ''); el.textContent = qtyMap[id] || 0; });
+  render();
+}
+function pmEditSim(i) { if (!pmSims[i]) return; pmEditIdx = i; pmLoadState(pmSims[i]); pmRenderDossier(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function pmCancelEdit() { pmEditIdx = null; pmRenderDossier(); }
+function pmDupSim(i) {
+  if (!pmSims[i]) return;
+  if (pmSims.length >= PM_MAX_SIMS) { alert('Un dossier contient au maximum ' + PM_MAX_SIMS + ' offres.'); return; }
+  pmSims.push(JSON.parse(JSON.stringify(pmSims[i])));
+  pmDraftSave(); pmRenderDossier();
+}
+function pmDelSim(i) {
+  pmSims.splice(i, 1);
+  if (pmRec === i) pmRec = null; else if (pmRec !== null && pmRec > i) pmRec--;
+  if (pmEditIdx === i) pmEditIdx = null; else if (pmEditIdx !== null && pmEditIdx > i) pmEditIdx--;
+  pmDraftSave(); pmRenderDossier();
+}
+function pmSetRec(i) { pmRec = (pmRec === i) ? null : i; pmDraftSave(); pmRenderDossier(); }
+function pmClearDossier() {
+  if (!confirm('Vider le dossier (toutes les offres ajoutées) ?')) return;
+  pmSims = []; pmRec = null; pmEditIdx = null; pmDraftSave(); pmRenderDossier();
+}
+function pmRenderDossier() {
+  var box = pmEl('pm-dossier-list');
+  if (!box) return;
+  var btn = pmEl('pm-add-btn'), hint = pmEl('pm-edit-hint'), gen = pmEl('pm-gen-btn');
+  var r = isTVAC ? 1 : 1 / TVA;
+  if (btn) btn.textContent = pmEditIdx !== null ? "💾 Mettre à jour l'Offre " + (pmEditIdx + 1) : "➕ Ajouter cette simulation à l'offre";
+  if (hint) {
+    hint.style.display = pmEditIdx !== null ? 'block' : 'none';
+    hint.innerHTML = pmEditIdx !== null ? "✏️ Tu modifies l'Offre " + (pmEditIdx + 1) + '. <a href="javascript:void(0)" onclick="pmCancelEdit()" style="color:#062B68;font-weight:700;text-decoration:underline;">Annuler</a>' : '';
+  }
+  if (gen) gen.textContent = pmSims.length > 1 ? "📄 Générer l'offre (" + pmSims.length + ' offres)' : "📄 Générer l'offre";
+  if (!pmSims.length) {
+    box.innerHTML = '<div style="font-size:14px;color:#777;line-height:1.5;">Le dossier est vide : « Générer l\'offre » utilisera la simulation en cours (offre unique).</div>';
+    return;
+  }
+  var btnS = 'padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;';
+  box.innerHTML = pmSims.map(function (s, i) {
+    var rec = pmRec === i, edit = pmEditIdx === i;
+    return '<div style="border:2px solid ' + (rec ? '#16a34a' : (edit ? '#f97316' : '#eee')) + ';border-radius:12px;padding:10px 12px;margin-bottom:8px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
+      + '<div style="font-weight:700;font-size:15px;">Offre ' + (i + 1) + (rec ? ' <span style="background:#dcfce7;color:#166534;border-radius:99px;padding:1px 8px;font-size:11px;">⭐ Recommandée</span>' : '') + '</div>'
+      + '<div style="font-size:15px;font-weight:800;">' + fmt(s.today * r) + ' <span style="font-size:12px;font-weight:600;color:#777;">/ mois</span></div></div>'
+      + '<div style="font-size:12px;color:#777;margin:3px 0 8px;">Après 6 mois : ' + fmt(s.m6 * r) + ' · Après 12 mois : ' + fmt(s.m12 * r) + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      + '<button type="button" onclick="pmEditSim(' + i + ')" style="' + btnS + '">✏️ Modifier</button>'
+      + '<button type="button" onclick="pmDupSim(' + i + ')" style="' + btnS + '">📑 Dupliquer</button>'
+      + (pmSims.length > 1 ? '<button type="button" onclick="pmSetRec(' + i + ')" style="' + btnS + '">' + (rec ? '⭐ Retirer' : '⭐ Recommander') + '</button>' : '')
+      + '<button type="button" onclick="pmDelSim(' + i + ')" style="' + btnS + 'color:#dc2626;">🗑</button>'
+      + '</div></div>';
+  }).join('') + '<a href="javascript:void(0)" onclick="pmClearDossier()" style="font-size:12px;color:#999;text-decoration:underline;">Vider le dossier</a>';
+}
+
+// ----- Enregistrement dans la fiche du client (prospect client créé si la fiche n'existe pas) -----
+function pmNormName(raw) {
+  return String(raw == null ? '' : raw).trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|[\s\-'’])([a-zà-öø-ÿ])/g, function (m, sep, ch) { return sep + ch.toUpperCase(); });
+}
+// Même normalisation que le hub (+32…), pour que la fiche créée ressemble aux autres
+function pmNormTel(raw) {
+  var s = String(raw == null ? '' : raw).trim();
+  if (!s) return '';
+  var d = s.replace(/\D/g, '');
+  if (!d) return s;
+  var intl;
+  if (s.charAt(0) === '+') intl = d;
+  else if (d.indexOf('00') === 0) intl = d.slice(2);
+  else if (d.charAt(0) === '0') intl = '32' + d.slice(1);
+  else if (/^4\d{8}$/.test(d)) intl = '32' + d;
+  else if (/^32\d{8,9}$/.test(d)) intl = d;
+  else return s;
+  intl = intl.replace(/^320/, '32');
+  if (intl.indexOf('32') === 0) {
+    var n = intl.slice(2);
+    if (!(n.length === 9 && n.charAt(0) === '4') && n.length !== 8) return s;
+  } else if (intl.length < 8 || intl.length > 15) return s;
+  return '+' + intl;
+}
+async function pmFindFiche(cid, c) {
+  var t = String(c.tel || '').replace(/\D/g, '').slice(-8);
+  var em = String(c.email || '').trim().toLowerCase();
+  var colls = ['clients', 'prospectsClients'];   // un client existant est prioritaire sur un prospect
+  for (var k = 0; k < colls.length; k++) {
+    var snap = await window.getDocs(window.query(window.collection(window.db, colls[k]), window.where('consultantId', '==', cid)));
+    var hit = null;
+    snap.forEach(function (d) {
+      if (hit) return;
+      var x = d.data();
+      var tel8 = String(x.tel || '').replace(/\D/g, '').slice(-8);
+      var mail = String(x.email || '').trim().toLowerCase();
+      if ((t.length >= 8 && tel8 === t) || (em && mail === em)) hit = { coll: colls[k], id: d.id, nom: ((x.prenom || '') + ' ' + (x.nom || '')).trim() || x.nom || '' };
     });
-    attendreLogo().then(genereAndSave);
-  } else {
-    genereAndSave();
+    if (hit) return hit;
+  }
+  return null;
+}
+async function pmSaveOfferToCrm(d) {
+  var cid = window.consultantInfo && window.consultantInfo.id;
+  if (!cid) throw new Error('consultant non identifié');
+  if (!window.addDoc || !window.updateDoc || !window.arrayUnion) throw new Error('connexion Firebase pas prête');
+  var offer = JSON.parse(JSON.stringify(d));
+  var fiche = await pmFindFiche(cid, d.client);
+  if (fiche) {
+    var upd = { offres: window.arrayUnion(offer) };
+    if (fiche.coll === 'prospectsClients') upd.dateMaj = new Date().toISOString();
+    await window.updateDoc(window.doc(window.db, fiche.coll, fiche.id), upd);
+    return { coll: fiche.coll, id: fiche.id, nom: fiche.nom || d.client.nom, created: false };
+  }
+  var now = new Date().toISOString();
+  var parts = pmNormName(d.client.nom).split(' ');
+  var prenom = parts.shift() || '', nomF = parts.join(' ');
+  var data = {
+    consultantId: cid, nom: pmNormName(d.client.nom), prenom: prenom, nomFamille: nomF,
+    tel: d.client.tel, email: d.client.email || '',
+    type: (d.client.societe || d.client.tva) ? 'Société' : 'Particulier', societe: d.client.societe || '', tva: d.client.tva || '',
+    ville: '', adresse: '', smartphone: false, smartphoneOk: false,
+    opMobile: '', numMobile: '', opInternet: '', numInternet: '', easySwitch: '', dateFinContrat: '',
+    sources: ['Télécom'], source: 'Télécom', provenance: '', titulaire: '',
+    referencePrenom: '', referenceNom: '', referenceTel: '',
+    commentaire: 'Fiche créée depuis une offre du simulateur Orange.',
+    statut: 'Contacté', archive: false, dateArchive: null, dateCreation: now, dateMaj: now,
+    offres: [offer]
+  };
+  var ref = await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
+  return { coll: 'prospectsClients', id: ref.id, nom: data.nom, created: true };
+}
+
+// ----- Génération de l'offre -----
+function pmBuildDossier(sims, rec, nom, telRaw) {
+  var ci = window.consultantInfo || {};
+  var now = new Date();
+  var actuelRaw = String((pmEl('client-current') || {}).value || '').replace(',', '.').replace(/[^\d.]/g, '');
+  var actuel = parseFloat(actuelRaw);
+  return {
+    id: 'o' + now.getTime(), ref: 'PM-' + now.getTime(), date: now.toISOString(),
+    nom: 'Offre du ' + now.toLocaleDateString('fr-BE'),
+    mode: isTVAC ? 'TVAC' : 'HTVA', statut: 'Envoyée',
+    client: {
+      nom: pmNormName(nom), tel: pmNormTel(telRaw),
+      societe: ((pmEl('client-company') || {}).value || '').trim(),
+      email: ((pmEl('client-email') || {}).value || '').trim(),
+      tva: ((pmEl('client-tva') || {}).value || '').trim(),
+      actuel: (actuel > 0) ? (isTVAC ? actuel : actuel * TVA) : null   // toujours en TVAC
+    },
+    consultant: { name: ci.name || 'Phil-Mobile', phone: ci.phone || '', email: ci.email || '', logoUrl: ci.logoUrl || '', accent: ci.accent || '' },
+    rec: (sims.length > 1 && rec !== null && rec < sims.length) ? rec : null,
+    sims: sims
+  };
+}
+async function pmGenerateOffer() {
+  var nom = ((pmEl('client-name') || {}).value || '').trim();
+  var tel = ((pmEl('client-phone') || {}).value || '').trim();
+  if (!nom) { alert("Renseigne le nom du client : l'offre est enregistrée dans sa fiche."); pmEl('client-name').focus(); return; }
+  if (tel.replace(/\D/g, '').length < 8) { alert("Renseigne le téléphone du client (8 chiffres au moins) : il sert à retrouver ou créer sa fiche."); pmEl('client-phone').focus(); return; }
+
+  var sims = pmSims.slice(), rec = pmRec;
+  var cur = pmHasProducts() ? pmSnapshot() : null;
+  if (!sims.length) {
+    if (!cur) { alert('Ajoute au moins un produit pour générer l\'offre.'); return; }
+    sims = [cur]; rec = null;
+  } else if (cur) {
+    if (pmEditIdx !== null) {
+      if (pmSig(cur) !== pmSig(sims[pmEditIdx]) && confirm("Enregistrer les modifications de l'Offre " + (pmEditIdx + 1) + ' ?')) { pmSims[pmEditIdx] = cur; sims[pmEditIdx] = cur; }
+      pmEditIdx = null;
+    } else if (!sims.some(function (s) { return pmSig(s) === pmSig(cur); }) && sims.length < PM_MAX_SIMS
+        && confirm("La simulation en cours n'est pas dans le dossier.\n\nL'ajouter comme Offre " + (sims.length + 1) + ' ?')) {
+      sims.push(cur); pmSims.push(cur);
+    }
+    pmDraftSave(); pmRenderDossier();
+  }
+
+  // La fenêtre doit s'ouvrir tout de suite (clic), avant l'enregistrement dans la fiche
+  var w = window.open('', '_blank');
+  if (!w) { alert("Autorise les fenêtres pop-up pour afficher l'offre."); return; }
+  w.document.write('<p style="font-family:Arial;padding:30px;color:#555;">Préparation de l\'offre…</p>');
+  var btn = pmEl('pm-gen-btn'), old = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Préparation…'; }
+  var dossier = pmBuildDossier(sims, rec, nom, tel);
+  var st = pmEl('pm-offer-status'), msg = '', err = '';
+  try {
+    var res = await pmSaveOfferToCrm(dossier);
+    msg = res.created ? '✅ Offre enregistrée : nouveau prospect client « ' + res.nom + ' » créé.' : '✅ Offre enregistrée dans la fiche de « ' + res.nom + ' ».';
+  } catch (e) {
+    console.log('Offre non enregistrée dans la fiche:', e.message);
+    err = e.message;
+  }
+  try { pmRenderOffer(w, dossier); } finally { if (btn) { btn.disabled = false; btn.textContent = old; } }
+  if (st) {
+    st.style.display = 'block';
+    st.style.background = err ? '#fef2f2' : '#f0fdf4';
+    st.style.color = err ? '#b91c1c' : '#166534';
+    st.textContent = err ? "⚠️ Offre générée, mais pas enregistrée dans une fiche (" + err + "). Vérifie ta connexion puis recommence." : msg;
   }
 }
-<\/script>
-</body></html>`);
-w.document.close();
+
+// ----- Offre A4 (fenêtre d'aperçu + PDF) -----
+// Script exécuté DANS la fenêtre de l'offre : répartit les blocs sur des pages A4, numérote, génère le PDF
+function pmOfferRuntime() {
+  window.pmImgFail = function (img) {
+    if (!img.getAttribute('data-nc')) { img.setAttribute('data-nc', '1'); img.removeAttribute('crossorigin'); img.src = img.getAttribute('data-src'); }
+    else if (img.parentNode) img.parentNode.removeChild(img);
+  };
+  var src = document.getElementById('src'), pages = document.getElementById('pages');
+  var hd = document.getElementById('tpl-hd').innerHTML;
+  var ref = document.body.getAttribute('data-ref') || '';
+  function newPage() {
+    var p = document.createElement('div');
+    p.className = 'page';
+    p.innerHTML = hd + '<div class="pbody"></div><div class="pft"><span>Réf. ' + ref + '</span><span class="pn"></span></div>';
+    pages.appendChild(p);
+    return p.querySelector('.pbody');
+  }
+  var body = newPage();
+  Array.prototype.slice.call(src.children).forEach(function (b) {
+    body.appendChild(b);
+    if (body.scrollHeight > body.clientHeight + 1 && body.children.length > 1) { body.removeChild(b); body = newPage(); body.appendChild(b); }
+  });
+  src.parentNode.removeChild(src);
+  var all = document.querySelectorAll('.page');
+  Array.prototype.forEach.call(all, function (p, i) { p.querySelector('.pn').textContent = 'Page ' + (i + 1) + ' / ' + all.length; });
+
+  window.pmDownloadPdf = async function () {
+    var btn = document.getElementById('b-pdf'), label = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ Génération…';
+    try {
+      var imgs = Array.prototype.slice.call(document.images);
+      var t0 = Date.now();
+      while (Date.now() - t0 < 4000 && imgs.some(function (im) { return !im.complete; })) await new Promise(function (r) { setTimeout(r, 80); });
+      var pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      var els = document.querySelectorAll('.page');
+      for (var i = 0; i < els.length; i++) {
+        var c = await html2canvas(els[i], { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        if (i > 0) pdf.addPage();
+        pdf.addImage(c.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
+      }
+      pdf.save(document.body.getAttribute('data-file') || 'Offre.pdf');
+    } catch (e) { alert('Le PDF n\'a pas pu être créé : ' + e.message); }
+    btn.disabled = false; btn.textContent = label;
+  };
 }
 
+function pmRenderOffer(w, d) {
+  var mode = d.mode === 'HTVA' ? 'HTVA' : 'TVAC';
+  var r = mode === 'TVAC' ? 1 : 1 / TVA, r2 = mode === 'TVAC' ? 1 / TVA : 1, m2 = mode === 'TVAC' ? 'HTVA' : 'TVAC';
+  var f = function (v) { return fmt(v * r); }, f2 = function (v) { return fmt(v * r2); };
+  var e = pmEsc;
+  var ci = d.consultant || {}, cl = d.client || {}, sims = d.sims || [];
+  var acc = /^#[0-9a-f]{6}$/i.test(ci.accent || '') ? ci.accent : '#1d4f91';
+  var n = parseInt(acc.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
+  var soft = 'rgb(' + Math.round(R + (255 - R) * .92) + ',' + Math.round(G + (255 - G) * .92) + ',' + Math.round(B + (255 - B) * .92) + ')';
+  var dt = new Date(d.date), dateTxt = dt.toLocaleDateString('fr-BE');
+  var until = new Date(dt.getTime() + 30 * 86400000).toLocaleDateString('fr-BE');
+  var multi = sims.length > 1;
+  var name = ci.name || 'Phil-Mobile';
+  var inits = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (x) { return x.charAt(0).toUpperCase(); }).join('') || 'PM';
+  var contact = [ci.phone, ci.email].filter(Boolean).map(e).join(' · ');
+  var fileName = 'Offre-' + String(cl.nom || 'client').replace(/[^a-zA-Z0-9]/g, '_') + '-' + d.ref + '.pdf';
 
+  var hd = '<div class="hd"><div class="av">' + e(inits)
+    + (ci.logoUrl ? '<img crossorigin="anonymous" src="' + e(ci.logoUrl) + '" data-src="' + e(ci.logoUrl) + '" alt="" onerror="pmImgFail(this)">' : '')
+    + '</div><div class="who"><div class="wn">' + e(name) + '</div><div class="wc">' + contact + '</div></div>'
+    + '<div class="hr">Offre de prix</div></div>';
+
+  var yearSave = function (s) { return Math.max(0, 12 * s.catalogue - (6 * s.today + 6 * s.m6)); };
+  var simName = function (i) { return 'Offre ' + (i + 1); };
+  var blocks = [];
+
+  // 1. Titre + client
+  var kv = function (k, v) { return v ? '<div class="k">' + k + '</div><div class="v">' + v + '</div>' : ''; };
+  blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous') + '</div>'
+    + '<div class="kv">' + kv('Client', '<b>' + e(cl.nom) + '</b>') + kv('Société', e(cl.societe)) + kv('Téléphone', e(cl.tel)) + kv('E-mail', e(cl.email)) + kv('N° TVA', e(cl.tva))
+    + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Validité', "jusqu'au " + until)
+    + kv('Prix affichés', mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA') + '</div></div>');
+
+  var actuelLine = function (s) {
+    if (!(cl.actuel > 0) || !(cl.actuel > s.today)) return '';
+    var diff = cl.actuel - s.today;
+    return '<div class="act">Par rapport à votre facture actuelle (' + f(cl.actuel) + ') : <b>- ' + f(diff) + ' par mois</b> (' + f(diff * 12) + ' par an)</div>';
+  };
+
+  if (!multi) {
+    var s0 = sims[0];
+    blocks.push('<div class="blk tot"><div><div class="tl">Votre tarif par mois</div><div class="big">' + f(s0.today) + '</div><div class="tl">' + f2(s0.today) + ' ' + m2 + '</div></div>'
+      + '<div class="tr"><div class="tl">Économie la 1re année</div><div class="eco">' + f(yearSave(s0)) + '</div><div class="tl">au lieu de <s>' + f(s0.catalogue) + '</s> par mois</div></div></div>'
+      + (actuelLine(s0) ? '<div class="blk">' + actuelLine(s0) + '</div>' : ''));
+  } else {
+    var min = Math.min.apply(null, sims.map(function (s) { return s.today; }));
+    var minIdx = sims.findIndex(function (s) { return s.today === min; });
+    var cards = sims.map(function (s, i) {
+      var isRec = d.rec === i;
+      var items = s.lignes.filter(function (l) { return !l.unique; });
+      var shown = items.slice(0, 7).map(function (l) { return '<li>' + e(l.nom) + (l.q > 1 ? ' ×' + l.q : '') + '</li>'; }).join('');
+      var more = items.length > 7 ? '<li class="more">+ ' + (items.length - 7) + ' autre(s)</li>' : '';
+      var later = '';
+      if (s.m6 !== s.today) later += '<div class="later">Puis ' + f(s.m6) + ' après 6 mois</div>';
+      if (s.m12 !== s.m6) later += '<div class="later">Puis ' + f(s.m12) + ' après 12 mois</div>';
+      var diff = (s.today > min) ? '<div class="diff">+ ' + f(s.today - min) + ' / mois par rapport à ' + simName(minIdx) + '</div>' : '<div class="diff low">Le tarif le plus bas</div>';
+      return '<div class="card' + (isRec ? ' rec' : '') + '">' + (isRec ? '<div class="badge">Recommandée</div>' : '')
+        + '<div class="cn">' + simName(i) + '</div><div class="cp">' + f(s.today) + '<span> / mois</span></div>' + later + diff
+        + '<ul>' + shown + more + '</ul>'
+        + '<div class="cs">Remises incluses : <b>- ' + f(Math.max(0, s.catalogue - s.today)) + ' / mois</b></div>'
+        + '<div class="cs">Économie la 1re année : <b>' + f(yearSave(s)) + '</b></div>'
+        + (actuelLine(s) ? '<div class="cs">' + actuelLine(s) + '</div>' : '') + '</div>';
+    }).join('');
+    blocks.push('<div class="blk"><h2>Votre choix</h2><div class="cmp c' + sims.length + '">' + cards + '</div><div class="note">Prix par mois, ' + (mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA') + '. Le détail de chaque offre se trouve dans les pages suivantes.</div></div>');
+  }
+
+  // 2. Détail de chaque offre
+  sims.forEach(function (s, i) {
+    var first = true;
+    var head = function () {
+      if (!multi || !first) return '';
+      first = false;
+      return '<div class="simtag">' + simName(i) + (d.rec === i ? ' · Recommandée' : '') + '</div>';
+    };
+    var mens = s.lignes.filter(function (l) { return !l.unique; }), uniq = s.lignes.filter(function (l) { return l.unique; });
+    var rows = mens.map(function (l) { return '<div class="row"><span>' + e(l.nom) + (l.q > 1 ? ' ×' + l.q : '') + '</span><b>' + f(l.total) + ' / mois</b></div>'; }).join('')
+      + uniq.map(function (l) { return '<div class="row"><span>' + e(l.nom) + (l.q > 1 ? ' ×' + l.q : '') + ' <i>(frais unique)</i></span><b>' + f(l.total) + '</b></div>'; }).join('');
+    blocks.push('<div class="blk">' + head() + '<h2>' + (multi ? 'Produits de l\'' + simName(i).toLowerCase() : 'Produits sélectionnés') + '</h2>' + rows
+      + '<div class="row sum"><span>Total au prix catalogue</span><b>' + f(s.catalogue) + ' / mois</b></div></div>');
+
+    // Remises : un bloc par carte (la mise en page peut couper entre deux cartes)
+    var cards = s.promos.map(function (p) {
+      var lab = p.duree === 'unique' ? 'Remise unique' : (p.duree === '12' ? 'Pendant 12 mois' : (p.duree === '6' ? 'Pendant 6 mois' : 'À vie'));
+      return '<div class="blk pc"><div class="pr"><span class="pn2">' + e(p.nom) + '</span><b class="neg">- ' + f(p.montant) + (p.duree === 'unique' ? '' : ' / mois') + '</b></div>'
+        + '<div class="pl"><span class="tg">' + lab + '</span>' + (p.pro ? '<span class="tg pro">Pour les professionnels</span>' : '') + '</div>'
+        + (p.sub ? '<div class="ps">' + e(p.sub) + '</div>' : '') + '</div>';
+    });
+    if (cards.length) {
+      blocks.push('<div class="blk"><h2>Vos remises</h2><div class="eco-box">Total des remises : <b>- ' + f(s.eco) + ' / mois</b>' + (s.promUnique ? ' + ' + f(s.promUnique) + ' de frais uniques offerts' : '') + '</div></div>');
+      cards.forEach(function (c) { blocks.push(c); });
+    }
+    if (s.love.lignes.length) {
+      blocks.push('<div class="blk"><h2>Remises Love (automatiques)</h2>'
+        + s.love.lignes.map(function (l) { return '<div class="row"><span>' + e(l.label) + ' ×' + l.q + ' ' + e(l.pal) + ' : ' + f(l.rate) + ' par abonnement</span><b class="neg">- ' + f(l.disc) + '</b></div>'; }).join('')
+        + '<div class="row sum"><span>Total remises Love</span><b class="neg">- ' + f(s.love.total) + ' / mois</b></div></div>');
+    }
+    // Tarification
+    var t = '<div class="blk"><h2>Tarification</h2>'
+      + '<div class="row"><span>Prix catalogue (sans remise)</span><b>' + f(s.catalogue) + ' / mois</b></div>'
+      + '<div class="row big2"><span><i class="dot d1"></i>Aujourd\'hui</span><b>' + f(s.today) + ' / mois</b></div>'
+      + '<div class="row big2"><span><i class="dot d2"></i>Après 6 mois'
+      + (s.fin6.noms.length ? '<small>Fin de : ' + e(s.fin6.noms.join(', ')) + ' (+ ' + f(s.fin6.montant) + ' / mois)</small>' : '') + '</span><b>' + f(s.m6) + ' / mois</b></div>'
+      + '<div class="row big2"><span><i class="dot d3"></i>Après 12 mois'
+      + (s.fin12.noms.length ? '<small>Fin de : ' + e(s.fin12.noms.join(', ')) + ' (+ ' + f(s.fin12.montant) + ' / mois)</small>' : '') + '</span><b>' + f(s.m12) + ' / mois</b></div>';
+    if (s.frais > 0 || s.fraisBrut > 0) {
+      t += '<div class="row"><span>Frais uniques (une seule fois)'
+        + (s.promUnique > 0 ? '<small>' + f(s.fraisBrut) + ' moins ' + f(s.promUnique) + ' de remise</small>' : '') + '</span><b>' + f(s.frais) + '</b></div>';
+    }
+    blocks.push(t + '</div>');
+  });
+
+  // 3. Suite + mentions
+  blocks.push('<div class="blk"><h2>Et ensuite ?</h2>'
+    + '<div class="step"><i>1</i><span>' + (multi ? "Vous choisissez l'offre qui vous convient" : "Vous validez l'offre avec " + e(name)) + '</span></div>'
+    + '<div class="step"><i>2</i><span>Signature du contrat et portabilité de vos numéros</span></div>'
+    + '<div class="step"><i>3</i><span>Installation et mise en service</span></div>'
+    + '<div class="who2">Une question ? <b>' + e(name) + '</b>' + (contact ? ' · ' + contact : '') + '</div></div>');
+  blocks.push('<div class="blk warn">Tarifs indicatifs, sous réserve de modification par Orange. Simulation réalisée le ' + dateTxt + ', à confirmer lors de la souscription effective. Offre valable jusqu\'au ' + until + '.</div>');
+
+  var css = '*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#1f2933;background:#e5e7eb;font-size:13px;line-height:1.45;--acc:' + acc + ';--soft:' + soft + '}'
+    + '.bar{position:sticky;top:0;z-index:9;background:#1f2933;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:14px}.bar button{margin-left:8px;padding:8px 14px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:#fff;color:#1f2933;font-size:13px}'
+    + '.page{width:794px;height:1123px;background:#fff;margin:16px auto;position:relative;display:flex;flex-direction:column;overflow:hidden}'
+    + '.hd{display:flex;align-items:center;gap:12px;padding:20px 36px 14px;border-bottom:4px solid var(--acc)}'
+    + '.av{position:relative;width:46px;height:46px;border-radius:50%;background:var(--acc);color:#fff;font-weight:bold;font-size:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none}.av img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}'
+    + '.who{flex:1}.wn{font-size:16px;font-weight:bold}.wc{font-size:12px;color:#52606d;margin-top:2px}.hr{font-size:12px;color:#7b8794;text-align:right}'
+    + '.pbody{flex:1;padding:22px 36px 0;overflow:hidden}.pft{height:38px;padding:0 36px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e4e7eb;color:#7b8794;font-size:11px}'
+    + '.blk{margin-bottom:14px}h1{font-size:30px}h2{font-size:15px;color:var(--acc);margin-bottom:8px}.sub{color:#7b8794;margin:2px 0 12px}'
+    + '.kv{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;background:#f5f7fa;border-radius:8px;padding:12px 14px}.kv .k{color:#7b8794}.kv .v{color:#1f2933}'
+    + '.tot{display:flex;justify-content:space-between;align-items:flex-end;background:#1f2933;color:#fff;border-radius:10px;padding:18px 22px}.tot .tl{font-size:12px;color:#cbd2d9}.tot .big{font-size:40px;font-weight:bold;line-height:1.1}.tot .tr{text-align:right}.tot .eco{font-size:24px;font-weight:bold;color:#7ee0a8}'
+    + '.act{background:#eaf6ef;color:#1b7f4a;border-radius:8px;padding:8px 12px;font-size:12px}'
+    + '.cmp{display:grid;gap:10px}.cmp.c2{grid-template-columns:1fr 1fr}.cmp.c3{grid-template-columns:1fr 1fr 1fr}'
+    + '.card{position:relative;border:1px solid #d9dee3;border-radius:10px;padding:14px 12px 12px}.card.rec{border:2px solid var(--acc);background:var(--soft)}.badge{position:absolute;top:-10px;left:12px;background:var(--acc);color:#fff;font-size:11px;font-weight:bold;border-radius:99px;padding:2px 10px}'
+    + '.cn{font-weight:bold;font-size:14px}.cp{font-size:26px;font-weight:bold;margin:2px 0}.cp span{font-size:12px;color:#7b8794;font-weight:normal}.later{font-size:11px;color:#7b8794}.diff{font-size:11px;font-weight:bold;color:#a8470a;margin:6px 0}.diff.low{color:#1b7f4a}'
+    + '.card ul{margin:6px 0 8px 16px;font-size:12px}.card li.more{color:#7b8794;list-style:none;margin-left:-16px}.cs{font-size:11.5px;color:#52606d;margin-top:3px}.cs .act{padding:5px 8px;font-size:11px}'
+    + '.note{font-size:11px;color:#7b8794;margin-top:8px}'
+    + '.simtag{display:inline-block;background:var(--acc);color:#fff;font-size:11px;font-weight:bold;border-radius:99px;padding:2px 12px;margin-bottom:8px}'
+    + '.row{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid #eef0f2}.row span small{display:block;color:#a8470a;font-size:11px;margin-top:1px}.row.sum{border-bottom:none;font-weight:bold;background:#f5f7fa;padding:7px 8px;border-radius:6px;margin-top:4px}.row i{color:#7b8794;font-style:normal;font-size:11px}'
+    + '.row.big2{font-size:15px}.row.big2 b{font-size:16px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}.d1{background:#16a34a}.d2{background:#f97316}.d3{background:var(--acc)}'
+    + '.neg{color:#1b7f4a}.eco-box{background:#eaf6ef;color:#1b7f4a;border-radius:8px;padding:8px 12px;font-weight:bold}'
+    + '.pc{border:1px solid #e4e7eb;border-radius:8px;padding:8px 12px}.pr{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:bold}.pl{margin-top:4px}.tg{display:inline-block;font-size:10.5px;font-weight:bold;background:#eef2f7;color:#334e68;border-radius:99px;padding:1px 8px;margin-right:6px}.tg.pro{background:#fff1e6;color:#a8470a}.ps{font-size:11.5px;color:#52606d;margin-top:4px}'
+    + '.step{display:flex;gap:10px;align-items:center;margin:6px 0}.step i{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-weight:bold;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}.who2{margin-top:10px;background:var(--soft);border-radius:8px;padding:10px 12px}'
+    + '.warn{background:#fff8e1;border:1px solid #ffe08a;color:#7a5b00;border-radius:8px;padding:9px 12px;font-size:11.5px}'
+    + '@media print{body{background:#fff}.bar{display:none}.page{margin:0;page-break-after:always}@page{size:A4;margin:0}}';
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=820"><title>Offre de prix - ' + e(cl.nom) + '</title>'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>'
+    + '<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>'
+    + '<style>' + css + '</style></head><body data-ref="' + e(d.ref) + '" data-file="' + e(fileName) + '">'
+    + '<div class="bar"><span>Aperçu de l\'offre (A4)</span><span><button id="b-pdf" onclick="pmDownloadPdf()">📄 Télécharger le PDF</button><button onclick="window.print()">🖨 Imprimer</button></span></div>'
+    + '<template id="tpl-hd">' + hd + '</template><div id="src">' + blocks.join('') + '</div><div id="pages"></div>'
+    + '<script>(' + pmOfferRuntime.toString() + ')();<\/script></body></html>';
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+// ----- Ouverture d'une offre déjà enregistrée (lien « Voir l'offre » des fiches du hub) -----
+window.pmOpenSavedOffer = async function () {
+  var p = (new URLSearchParams(location.search).get('viewOffre') || '').split('|');
+  if (p.length !== 3 || (p[0] !== 'clients' && p[0] !== 'prospectsClients')) return false;
+  try {
+    var snap = await window.getDoc(window.doc(window.db, p[0], p[1]));
+    var o = snap.exists() ? (snap.data().offres || []).find(function (x) { return x.id === p[2]; }) : null;
+    if (!o) { alert('Offre introuvable (elle a peut-être été supprimée).'); return false; }
+    pmRenderOffer(window, o);
+    return true;
+  } catch (err) { alert("Impossible d'ouvrir l'offre : " + err.message); return false; }
+};
+
+pmRenderDossier();
 
 function setTVAC(tvac) {
   isTVAC = tvac;
+  if (typeof pmRenderDossier === 'function') pmRenderDossier();
   document.getElementById('btn-tvac').style.background = tvac ? '#062B68' : '#fff3e8';
   document.getElementById('btn-tvac').style.color = tvac ? '#fff' : '#f97316';
   document.getElementById('btn-htva').style.background = tvac ? '#fff3e8' : '#062B68';
@@ -1352,7 +1676,7 @@ function hasInternet() { return (productList.internet || []).some(p => p.countsA
 function totalMobileAbo() { return (productList.mobile || []).reduce((s, p) => s + (qtyMap[p.id] || 0), 0); }
 
 // Calcule les lignes de remise Love (pur, sans toucher au DOM) — réutilisé par calcLove()
-// pour l'affichage à l'écran et par generateClientOffer() pour le PDF.
+// pour l'affichage à l'écran et par pmSnapshot() pour le PDF.
 function calcLoveLines() {
   const inet = hasInternet();
   const totalAbo = totalMobileAbo();
@@ -1973,6 +2297,7 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
 
       if (loginContainer) loginContainer.style.display = 'none';
       if (appDiv) appDiv.style.display = 'block';
+      if (new URLSearchParams(location.search).get('viewOffre') && window.pmOpenSavedOffer) window.pmOpenSavedOffer();
     });
   } catch(err) {
     console.error('Firebase init failed:', err);

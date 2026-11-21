@@ -7862,6 +7862,7 @@ function crmRenderCard(item, col) {
   if (item.numOrange) h += '<div style="font-size:12px;color:#f97316;font-weight:700;">N° Orange: ' + crmEsc(item.numOrange) + '</div>';
   if (item.numEneco) h += '<div style="font-size:12px;color:#22c55e;font-weight:700;">N° Eneco: ' + crmEsc(item.numEneco) + '</div>';
   if (col === 'clients') crmContrats(item).forEach(function (c) { h += '<div style="font-size:12px;color:#555;">📝 ' + crmEsc(crmContratLine(c)) + '</div>'; });
+  if (col === 'clients') h += pmOffresHtml(item, 'clients', item._id);
   if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Produits Orange: ' + crmEsc(item.orange) + '</div>';
   if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Produits Eneco: ' + crmEsc(item.eneco) + '</div>';
   if (item.operateurActuel) h += '<div style="font-size:12px;color:#555;">Opérateur actuel: ' + crmEsc(item.operateurActuel) + '</div>';
@@ -9064,6 +9065,39 @@ window.pclFactReread = function (docId, i) {
   window.pclEditProspect(docId);
   window.crmFactReread(i);
 };
+// ===== Offres de prix liées à une fiche (créées depuis le simulateur Orange, champ « offres » de la fiche) =====
+var PM_OFFRE_STATUTS = ['Envoyée', 'Acceptée', 'Refusée'];
+function pmOffresHtml(item, coll, docId) {
+  var list = Array.isArray(item && item.offres) ? item.offres : [];
+  if (!list.length) return '';
+  var fm = function (v) { return (Math.round(v * 100) / 100).toFixed(2).replace('.', ',') + ' €'; };
+  var rows = list.slice().reverse().map(function (o) {
+    var sims = Array.isArray(o.sims) ? o.sims : [];
+    var r = o.mode === 'HTVA' ? 1 / 1.21 : 1;
+    var min = sims.length ? Math.min.apply(null, sims.map(function (x) { return x.today; })) : 0;
+    var dt = o.date ? new Date(o.date).toLocaleDateString('fr-BE') : '';
+    var col = o.statut === 'Acceptée' ? 'background:#dcfce7;color:#166534;' : (o.statut === 'Refusée' ? 'background:#f1f1f1;color:#757575;' : 'background:#fff3e8;color:#f97316;');
+    return '<div style="font-size:12px;color:#444;margin:3px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">📄 <b>' + pcEsc(dt) + '</b> · ' + sims.length + ' offre' + (sims.length > 1 ? 's' : '')
+      + (sims.length ? ' · dès ' + fm(min * r) + '/mois' : '')
+      + ' <select onchange="pmOffreStatut(\'' + coll + '\',\'' + docId + '\',\'' + pcEsc(o.id) + '\',this.value)" style="width:auto;padding:1px 5px;font-size:11px;border:1px solid #ddd;border-radius:6px;' + col + '">'
+      + PM_OFFRE_STATUTS.map(function (st) { return '<option value="' + st + '"' + (o.statut === st ? ' selected' : '') + '>' + st + '</option>'; }).join('')
+      + '</select> <a href="https://app.phil-mobile.be/wp_orange.html?viewOffre=' + coll + '%7C' + docId + '%7C' + encodeURIComponent(o.id) + '" target="_blank" rel="noopener" style="color:#1d4ed8;text-decoration:underline;">Voir l\'offre</a></div>';
+  }).join('');
+  return pclSec('Offres de prix') + rows;
+}
+window.pmOffreStatut = async function (coll, docId, offreId, statut) {
+  try {
+    var ref = window.doc(window.db, coll, docId);
+    var snap = await window.getDoc(ref);
+    var arr = snap.exists() && Array.isArray(snap.data().offres) ? snap.data().offres.slice() : [];
+    var i = arr.findIndex(function (o) { return o.id === offreId; });
+    if (i < 0) { pcToast('Offre introuvable.'); return; }
+    arr[i] = Object.assign({}, arr[i], { statut: statut });
+    await window.updateDoc(ref, { offres: arr });
+    pcToast('✅ Offre : ' + statut);
+  } catch (e) { pcToast('Statut non enregistré : ' + e.message); }
+};
+
 function pclRenderList(list) {
   var el = document.getElementById('pcl-list');
   if (!el) return;
@@ -9120,6 +9154,7 @@ function pclRenderList(list) {
       + (sit ? pclSec('Situation actuelle') + sit : '')
       + (p.titulaire ? pclSec('Titulaire du contrat') + line('👤', pcEsc(p.titulaire)) : '')
       + pclSec('Suivi') + suivi
+      + pmOffresHtml(p, 'prospectsClients', p.docId)
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;">'
       + '<select onchange="pcChangeStatus(\'cl\', \'' + p.docId + '\', this.value)" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid #ddd;border-radius:6px;">'
       + PC_STATUTS.map(function (st) { return '<option value="' + st + '"' + (p.statut === st ? ' selected' : '') + '>' + st + '</option>'; }).join('')
