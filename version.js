@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.116 - Offre en cadres colorés";
+  scope.APP_VERSION = "14.117 - Offre : fin de page propre";
 })();
