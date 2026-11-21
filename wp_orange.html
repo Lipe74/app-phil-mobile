@@ -375,7 +375,7 @@
   </div>
 
   <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:12px;margin:4px 0 12px;text-align:left;">
-    <div style="font-weight:800;font-size:16px;margin-bottom:6px;">📄 Dossier d'offre (1 à 3 offres)</div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:6px;">📄 Dossier d'offre (jusqu'à 3 sites, 2 offres par site)</div>
     <div id="pm-dossier-list" style="margin-bottom:8px;"></div>
     <div id="pm-edit-hint" style="display:none;font-size:13px;margin-bottom:8px;"></div>
     <button type="button" id="pm-add-btn" class="reset-btn" onclick="pmAddSim()" style="margin-bottom:0;background:#062B68;color:white;">➕ Ajouter cette simulation à l'offre</button>
@@ -1035,7 +1035,7 @@ ${ci.email}`;
 
 
 // ===== Build 14.114 : dossier d'offre (1 à 3 simulations) + offre PDF A4 neutre, liée à la fiche du client =====
-var PM_MAX_SIMS = 3;
+var PM_MAX_SIMS = 6, PM_MAX_SITES = 3, PM_MAX_PER_SITE = 2;   // 3 sites max, 2 offres par site (une moins chère, une plus chère)
 // Fiche d'origine (?fiche=clients|id ou prospectsClients|id) : offre créée depuis une fiche du hub
 window.pmFiche = null;
 var _pmFp = (new URLSearchParams(location.search).get('fiche') || '').split('|');
@@ -1043,14 +1043,21 @@ var PM_FICHE_KEY = (_pmFp.length === 2 && (_pmFp[0] === 'clients' || _pmFp[0] ==
 var PM_DRAFT_KEY = 'pmDossierDraft' + (PM_FICHE_KEY ? ':' + PM_FICHE_KEY : '');
 function pmIsSecondInternet(p) { return /(2|deuxi)[èeé]me\s+internet/i.test(String(p.name || '').replace(/<[^>]*>/g, '')); }
 function pmInternetCount() { return (productList.internet || []).filter(function (x) { return x.countsAsInternet !== false; }).reduce(function (t, x) { return t + (qtyMap[x.id] || 0); }, 0); }
-var pmSims = [];        // simulations du dossier (copies figées)
-var pmRec = null;       // index de l'offre recommandée
-var pmEditIdx = null;   // simulation en cours de modification
+var pmSims = [];        // offres du dossier (copies figées) ; s.site = site de l'offre, s.rec = recommandée de son site
+var pmSites = [''];     // adresse d'installation de chaque site (3 max)
+var pmSiteSel = 0;      // site qui recevra la prochaine offre (pmSites.length = nouveau site)
+var pmEditIdx = null;   // offre en cours de modification
 try {
   var _pmD = JSON.parse(sessionStorage.getItem(PM_DRAFT_KEY) || 'null');
-  if (_pmD && Array.isArray(_pmD.sims)) { pmSims = _pmD.sims.slice(0, PM_MAX_SIMS); pmRec = (typeof _pmD.rec === 'number') ? _pmD.rec : null; }
+  if (_pmD && Array.isArray(_pmD.sims)) {
+    pmSims = _pmD.sims.slice(0, PM_MAX_SIMS);
+    if (typeof _pmD.rec === 'number' && pmSims[_pmD.rec]) pmSims[_pmD.rec].rec = true;
+    if (Array.isArray(_pmD.sites) && _pmD.sites.length) pmSites = _pmD.sites.slice(0, PM_MAX_SITES).map(String);
+    pmSims.forEach(function (x) { x.site = Math.min(x.site || 0, pmSites.length - 1); });
+    pmSiteSel = Math.min(_pmD.sel || 0, pmSites.length);
+  }
 } catch (e) {}
-function pmDraftSave() { try { sessionStorage.setItem(PM_DRAFT_KEY, JSON.stringify({ sims: pmSims, rec: pmRec })); } catch (e) {} }
+function pmDraftSave() { try { sessionStorage.setItem(PM_DRAFT_KEY, JSON.stringify({ sims: pmSims, sites: pmSites, sel: pmSiteSel })); } catch (e) {} }
 function pmEl(id) { return document.getElementById(id); }
 function pmEsc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 // HTML -> texte simple (retire les balises, les emojis de repère et les espaces en trop)
@@ -1126,15 +1133,33 @@ function pmSnapshot() {
 }
 function pmSig(s) { return JSON.stringify([s.qty, s.tog]); }
 
-// ----- Dossier : liste des simulations -----
+// ----- Dossier : sites (3 max) et offres (2 par site) -----
+function pmSimsOfSite(k) { return pmSims.filter(function (x) { return (x.site || 0) === k; }); }
+function pmCanPlace() {
+  var k = pmSiteSel;
+  if (pmSims.length >= PM_MAX_SIMS) return false;
+  if (k >= pmSites.length) return pmSites.length < PM_MAX_SITES;
+  return pmSimsOfSite(k).length < PM_MAX_PER_SITE;
+}
+function pmPlaceSim(snap) {
+  var k = pmSiteSel;
+  if (k >= pmSites.length) {
+    if (pmSites.length >= PM_MAX_SITES) { alert('Un dossier contient au maximum ' + PM_MAX_SITES + ' sites.'); return false; }
+    k = pmSites.length;
+  } else if (pmSimsOfSite(k).length >= PM_MAX_PER_SITE) {
+    alert('Un site contient au maximum ' + PM_MAX_PER_SITE + ' offres (une moins chère, une plus chère). Choisis un autre site ou crées-en un nouveau.'); return false;
+  }
+  if (pmSims.length >= PM_MAX_SIMS) { alert('Un dossier contient au maximum ' + PM_MAX_SIMS + ' offres.'); return false; }
+  if (k >= pmSites.length) pmSites.push('');
+  pmSiteSel = k; snap.site = k; pmSims.push(snap);
+  return true;
+}
+function pmReplaceSim(i, snap) { var old = pmSims[i]; snap.site = old.site || 0; if (old.rec) snap.rec = true; pmSims[i] = snap; }
 function pmAddSim() {
   if (!pmHasProducts()) { alert("Ajoute au moins un produit avant d'ajouter la simulation à l'offre."); return; }
   var snap = pmSnapshot();
-  if (pmEditIdx !== null) { pmSims[pmEditIdx] = snap; pmEditIdx = null; }
-  else {
-    if (pmSims.length >= PM_MAX_SIMS) { alert('Un dossier contient au maximum ' + PM_MAX_SIMS + ' offres.'); return; }
-    pmSims.push(snap);
-  }
+  if (pmEditIdx !== null) { pmReplaceSim(pmEditIdx, snap); pmEditIdx = null; }
+  else if (!pmPlaceSim(snap)) return;
   pmDraftSave(); pmRenderDossier();
 }
 function pmLoadState(s) {
@@ -1143,55 +1168,85 @@ function pmLoadState(s) {
   document.querySelectorAll('.qty-val').forEach(function (el) { var id = el.id.replace('qty-', ''); el.textContent = qtyMap[id] || 0; });
   render();
 }
-function pmEditSim(i) { if (!pmSims[i]) return; pmEditIdx = i; pmLoadState(pmSims[i]); pmRenderDossier(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function pmEditSim(i) { if (!pmSims[i]) return; pmEditIdx = i; pmSiteSel = pmSims[i].site || 0; pmLoadState(pmSims[i]); pmRenderDossier(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 function pmCancelEdit() { pmEditIdx = null; pmRenderDossier(); }
 function pmDupSim(i) {
   if (!pmSims[i]) return;
-  if (pmSims.length >= PM_MAX_SIMS) { alert('Un dossier contient au maximum ' + PM_MAX_SIMS + ' offres.'); return; }
-  pmSims.push(JSON.parse(JSON.stringify(pmSims[i])));
+  var c = JSON.parse(JSON.stringify(pmSims[i])); delete c.rec;
+  pmSiteSel = c.site || 0;
+  if (!pmPlaceSim(c)) return;
   pmDraftSave(); pmRenderDossier();
 }
 function pmDelSim(i) {
+  var k = pmSims[i].site || 0;
   pmSims.splice(i, 1);
-  if (pmRec === i) pmRec = null; else if (pmRec !== null && pmRec > i) pmRec--;
   if (pmEditIdx === i) pmEditIdx = null; else if (pmEditIdx !== null && pmEditIdx > i) pmEditIdx--;
+  if (pmSites.length > 1 && !pmSimsOfSite(k).length) {
+    pmSites.splice(k, 1);
+    pmSims.forEach(function (x) { if ((x.site || 0) > k) x.site--; });
+  }
+  if (pmSiteSel > pmSites.length) pmSiteSel = pmSites.length;
   pmDraftSave(); pmRenderDossier();
 }
-function pmSetRec(i) { pmRec = (pmRec === i) ? null : i; pmDraftSave(); pmRenderDossier(); }
+function pmSetRec(i) {
+  var x = pmSims[i]; if (!x) return;
+  var on = !x.rec;
+  pmSimsOfSite(x.site || 0).forEach(function (y) { delete y.rec; });
+  if (on) x.rec = true;
+  pmDraftSave(); pmRenderDossier();
+}
+function pmSetAdr(k, v) { pmSites[k] = String(v || ''); pmDraftSave(); }
+function pmSetSite(v) { pmSiteSel = Math.max(0, parseInt(v, 10) || 0); pmDraftSave(); pmRenderDossier(); }
 function pmClearDossier() {
-  if (!confirm('Vider le dossier (toutes les offres ajoutées) ?')) return;
-  pmSims = []; pmRec = null; pmEditIdx = null; pmDraftSave(); pmRenderDossier();
+  if (!confirm('Vider le dossier (tous les sites et toutes les offres ajoutées) ?')) return;
+  pmSims = []; pmSites = ['']; pmSiteSel = 0; pmEditIdx = null; pmDraftSave(); pmRenderDossier();
 }
 function pmRenderDossier() {
   var box = pmEl('pm-dossier-list');
   if (!box) return;
   var btn = pmEl('pm-add-btn'), hint = pmEl('pm-edit-hint'), gen = pmEl('pm-gen-btn');
   var r = isTVAC ? 1 : 1 / TVA;
-  if (btn) btn.textContent = pmEditIdx !== null ? "💾 Mettre à jour l'Offre " + (pmEditIdx + 1) : "➕ Ajouter cette simulation à l'offre";
+  var multiSite = pmSites.length > 1;
+  var editSite = pmEditIdx !== null && pmSims[pmEditIdx] ? (pmSims[pmEditIdx].site || 0) : 0;
+  if (btn) btn.textContent = pmEditIdx !== null ? "💾 Mettre à jour l'offre" + (multiSite ? ' du site ' + (editSite + 1) : '') : "➕ Ajouter cette simulation à l'offre";
   if (hint) {
     hint.style.display = pmEditIdx !== null ? 'block' : 'none';
-    hint.innerHTML = pmEditIdx !== null ? "✏️ Tu modifies l'Offre " + (pmEditIdx + 1) + '. <a href="javascript:void(0)" onclick="pmCancelEdit()" style="color:#062B68;font-weight:700;text-decoration:underline;">Annuler</a>' : '';
+    hint.innerHTML = pmEditIdx !== null ? "✏️ Tu modifies une offre" + (multiSite ? ' du site ' + (editSite + 1) : '') + '. <a href="javascript:void(0)" onclick="pmCancelEdit()" style="color:#062B68;font-weight:700;text-decoration:underline;">Annuler</a>' : '';
   }
-  if (gen) gen.textContent = pmSims.length > 1 ? "📄 Générer l'offre (" + pmSims.length + ' offres)' : "📄 Générer l'offre";
-  if (!pmSims.length) {
-    box.innerHTML = '<div style="font-size:14px;color:#777;line-height:1.5;">Le dossier est vide : « Générer l\'offre » utilisera la simulation en cours (offre unique).</div>';
-    return;
-  }
+  if (gen) gen.textContent = pmSims.length > 1 ? "📄 Générer l'offre (" + (multiSite ? pmSites.length + ' sites, ' : '') + pmSims.length + ' offres)' : "📄 Générer l'offre";
+  var attr = function (v) { return pmEsc(v).replace(/"/g, '&quot;'); };
   var btnS = 'padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;';
-  box.innerHTML = pmSims.map(function (s, i) {
-    var rec = pmRec === i, edit = pmEditIdx === i;
-    return '<div style="border:2px solid ' + (rec ? '#16a34a' : (edit ? '#f97316' : '#eee')) + ';border-radius:12px;padding:10px 12px;margin-bottom:8px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
-      + '<div style="font-weight:700;font-size:15px;">Offre ' + (i + 1) + (rec ? ' <span style="background:#dcfce7;color:#166534;border-radius:99px;padding:1px 8px;font-size:11px;">⭐ Recommandée</span>' : '') + '</div>'
-      + '<div style="font-size:15px;font-weight:800;">' + fmt(s.today * r) + ' <span style="font-size:12px;font-weight:600;color:#777;">/ mois</span></div></div>'
-      + '<div style="font-size:12px;color:#777;margin:3px 0 8px;">Après 6 mois : ' + fmt(s.m6 * r) + ' · Après 12 mois : ' + fmt(s.m12 * r) + '</div>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
-      + '<button type="button" onclick="pmEditSim(' + i + ')" style="' + btnS + '">✏️ Modifier</button>'
-      + '<button type="button" onclick="pmDupSim(' + i + ')" style="' + btnS + '">📑 Dupliquer</button>'
-      + (pmSims.length > 1 ? '<button type="button" onclick="pmSetRec(' + i + ')" style="' + btnS + '">' + (rec ? '⭐ Retirer' : '⭐ Recommander') + '</button>' : '')
-      + '<button type="button" onclick="pmDelSim(' + i + ')" style="' + btnS + 'color:#dc2626;">🗑</button>'
-      + '</div></div>';
-  }).join('') + '<a href="javascript:void(0)" onclick="pmClearDossier()" style="font-size:12px;color:#999;text-decoration:underline;">Vider le dossier</a>';
+  var html = pmSites.map(function (adr, k) {
+    var list = pmSims.map(function (x, i) { return { s: x, i: i }; }).filter(function (x) { return (x.s.site || 0) === k; });
+    var cards = list.map(function (x, pos) {
+      var sm = x.s, i = x.i, rec = !!sm.rec, edit = pmEditIdx === i;
+      return '<div style="border:2px solid ' + (rec ? '#16a34a' : (edit ? '#f97316' : '#eee')) + ';border-radius:12px;padding:10px 12px;margin-top:8px;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">'
+        + '<div style="font-weight:700;font-size:15px;">Offre ' + (pos + 1) + (rec ? ' <span style="background:#dcfce7;color:#166534;border-radius:99px;padding:1px 8px;font-size:11px;">⭐ Recommandée</span>' : '') + '</div>'
+        + '<div style="font-size:15px;font-weight:800;">' + fmt(sm.today * r) + ' <span style="font-size:12px;font-weight:600;color:#777;">/ mois</span></div></div>'
+        + '<div style="font-size:12px;color:#777;margin:3px 0 8px;">Après 6 mois : ' + fmt(sm.m6 * r) + ' · Après 12 mois : ' + fmt(sm.m12 * r) + '</div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+        + '<button type="button" onclick="pmEditSim(' + i + ')" style="' + btnS + '">✏️ Modifier</button>'
+        + (list.length < PM_MAX_PER_SITE ? '<button type="button" onclick="pmDupSim(' + i + ')" style="' + btnS + '">📑 Dupliquer</button>' : '')
+        + (list.length > 1 ? '<button type="button" onclick="pmSetRec(' + i + ')" style="' + btnS + '">' + (rec ? '⭐ Retirer' : '⭐ Recommander') + '</button>' : '')
+        + '<button type="button" onclick="pmDelSim(' + i + ')" style="' + btnS + 'color:#dc2626;">🗑</button>'
+        + '</div></div>';
+    }).join('');
+    return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fafbfc;">'
+      + '<div style="font-weight:800;font-size:14px;margin-bottom:6px;">' + (multiSite || pmSims.length ? '🏠 Site ' + (k + 1) : '🏠 Adresse d\'installation') + '</div>'
+      + '<input type="text" value="' + attr(adr) + '" oninput="pmSetAdr(' + k + ',this.value)" placeholder="Adresse d\'installation (facultatif) : rue, n°, code postal, ville" style="width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">'
+      + cards + '</div>';
+  }).join('');
+  if (!pmSims.length) html += '<div style="font-size:14px;color:#777;line-height:1.5;">Le dossier est vide : « Générer l\'offre » utilisera la simulation en cours (offre unique).</div>';
+  if (pmSims.length && pmEditIdx === null) {
+    var opts = pmSites.map(function (a, k) {
+      return '<option value="' + k + '"' + (pmSiteSel === k ? ' selected' : '') + '>Site ' + (k + 1) + (a ? ' · ' + pmEsc(a.length > 28 ? a.slice(0, 28) + '…' : a) : '') + '</option>';
+    }).join('') + (pmSites.length < PM_MAX_SITES ? '<option value="' + pmSites.length + '"' + (pmSiteSel >= pmSites.length ? ' selected' : '') + '>➕ Nouveau site</option>' : '');
+    html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px;font-size:13px;"><span style="font-weight:700;">Ajouter la prochaine simulation à :</span>'
+      + '<select onchange="pmSetSite(this.value)" style="padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;">' + opts + '</select></div>';
+  }
+  if (pmSims.length) html += '<a href="javascript:void(0)" onclick="pmClearDossier()" style="font-size:12px;color:#999;text-decoration:underline;">Vider le dossier</a>';
+  box.innerHTML = html;
 }
 
 // ----- Enregistrement dans la fiche du client (prospect client créé si la fiche n'existe pas) -----
@@ -1302,6 +1357,10 @@ window.pmInitFiche = async function () {
     window.pmFiche = { coll: q[0], id: q[1], nom: nom };
     var set = function (id, v) { var el = pmEl(id); if (el && v) el.value = v; };
     set('client-name', nom); set('client-company', d.societe); set('client-phone', d.tel); set('client-email', d.email); set('client-tva', d.tva);
+    if (!String(pmSites[0] || '').trim()) {
+      var ad = [d.adresse, [d.cp, d.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      if (ad) { pmSites[0] = ad; pmDraftSave(); pmRenderDossier(); }
+    }
     var act = pmActuelFromFiche(d), curEl = pmEl('client-current'), noteEl = pmEl('client-current-note');
     if (act && curEl && !curEl.value) {
       window.pmActuelAuto = act.tvac; pmShowActuel();
@@ -1366,7 +1425,8 @@ function pmBuildDossier(sims, rec, nom, telRaw) {
       actuel: (actuel > 0) ? (isTVAC ? actuel : actuel * TVA) : null   // toujours en TVAC
     },
     consultant: { id: ci.id || '', name: ci.name || 'Phil-Mobile', phone: ci.phone || '', email: ci.email || '', logoUrl: ci.logoUrl || '', accent: ci.accent || '' },
-    rec: (sims.length > 1 && rec !== null && rec < sims.length) ? rec : null,
+    rec: (function () { var ri = null; sims.forEach(function (x, i) { if (ri === null && x.rec) ri = i; }); return sims.length > 1 ? ri : null; })(),
+    sites: pmSites.map(function (a) { return { adr: String(a || '').trim() }; }),
     sims: sims
   };
 }
@@ -1417,18 +1477,18 @@ async function pmGenerateOffer() {
   if (!nom) { alert("Renseigne le nom du client : l'offre est enregistrée dans sa fiche."); pmEl('client-name').focus(); return; }
   if (!window.pmFiche && tel.replace(/\D/g, '').length < 8) { alert("Renseigne le téléphone du client (8 chiffres au moins) : il sert à retrouver ou créer sa fiche."); pmEl('client-phone').focus(); return; }
 
-  var sims = pmSims.slice(), rec = pmRec;
+  var sims = pmSims.slice(), rec = null;
   var cur = pmHasProducts() ? pmSnapshot() : null;
   if (!sims.length) {
     if (!cur) { alert('Ajoute au moins un produit pour générer l\'offre.'); return; }
     sims = [cur]; rec = null;
   } else if (cur) {
     if (pmEditIdx !== null) {
-      if (pmSig(cur) !== pmSig(sims[pmEditIdx]) && confirm("Enregistrer les modifications de l'Offre " + (pmEditIdx + 1) + ' ?')) { pmSims[pmEditIdx] = cur; sims[pmEditIdx] = cur; }
+      if (pmSig(cur) !== pmSig(sims[pmEditIdx]) && confirm("Enregistrer les modifications de l'offre en cours de modification ?")) { pmReplaceSim(pmEditIdx, cur); sims = pmSims.slice(); }
       pmEditIdx = null;
-    } else if (!sims.some(function (s) { return pmSig(s) === pmSig(cur); }) && sims.length < PM_MAX_SIMS
-        && confirm("La simulation en cours n'est pas dans le dossier.\n\nL'ajouter comme Offre " + (sims.length + 1) + ' ?')) {
-      sims.push(cur); pmSims.push(cur);
+    } else if (!sims.some(function (s) { return pmSig(s) === pmSig(cur); }) && pmCanPlace()
+        && confirm("La simulation en cours n'est pas dans le dossier.\n\nL'ajouter à l'offre ?")) {
+      if (pmPlaceSim(cur)) sims = pmSims.slice();
     }
     pmDraftSave(); pmRenderDossier();
   }
@@ -1476,7 +1536,7 @@ function pmOfferRuntime() {
     pages.appendChild(p);
     return p.querySelector('.pbody');
   }
-  var body = newPage();
+  var body;
   var over = function () { return body.scrollHeight > body.clientHeight + 1; };
   function place(b) {
     body.appendChild(b);
@@ -1500,7 +1560,31 @@ function pmOfferRuntime() {
     }
     if (body.children.length > 1) { body.removeChild(b); body = newPage(); place(b); }
   }
-  Array.prototype.slice.call(src.children).forEach(place);
+  var srcHtml = src.innerHTML;
+  function build(level) {
+    document.body.className = level ? 'compact c' + level : '';
+    pages.innerHTML = '';
+    var tmp = document.createElement('div');
+    tmp.innerHTML = srcHtml;
+    body = newPage();
+    Array.prototype.slice.call(tmp.children).forEach(place);
+    return pages.children.length;
+  }
+  // Remplissage de la dernière page (0 à 1)
+  function lastFill() {
+    var b = pages.lastChild.querySelector('.pbody'), h = 0;
+    Array.prototype.forEach.call(b.children, function (x) { h += x.offsetHeight; });
+    return h / b.clientHeight;
+  }
+  // Mode compact automatique : si la dernière page est presque vide, on resserre la mise en page et on garde la version qui a le moins de pages
+  var bestLevel = 0, bestN = build(0);
+  if (bestN > 1 && lastFill() < 0.35) {
+    for (var lv = 1; lv <= 2; lv++) {
+      var n2 = build(lv);
+      if (n2 < bestN) { bestN = n2; bestLevel = lv; if (lastFill() >= 0.35) break; }
+    }
+    build(bestLevel);
+  }
   src.parentNode.removeChild(src);
   var all = document.querySelectorAll('.page');
   Array.prototype.forEach.call(all, function (p, i) { p.querySelector('.pn').textContent = 'Page ' + (i + 1) + ' / ' + all.length; });
@@ -1537,6 +1621,11 @@ async function pmRenderOffer(w, d) {
   var soft = 'rgb(' + Math.round(R + (255 - R) * .92) + ',' + Math.round(G + (255 - G) * .92) + ',' + Math.round(B + (255 - B) * .92) + ')';
   var dt = new Date(d.date), dateTxt = dt.toLocaleDateString('fr-BE');
   var multi = sims.length > 1;
+  var siteIdx = [];
+  sims.forEach(function (x) { var k = x.site || 0; if (siteIdx.indexOf(k) < 0) siteIdx.push(k); });
+  siteIdx.sort(function (a, b) { return a - b; });
+  var multiSite = siteIdx.length > 1;
+  var adrOf = function (k) { return (d.sites && d.sites[k] && d.sites[k].adr) ? String(d.sites[k].adr).trim() : ''; };
   var name = ci.name || 'Phil-Mobile';
   var inits = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (x) { return x.charAt(0).toUpperCase(); }).join('') || 'PM';
   var contact = [ci.phone, ci.email].filter(Boolean).map(e).join(' · ');
@@ -1553,39 +1642,14 @@ async function pmRenderOffer(w, d) {
 
   // 1. Titre + client
   var kv = function (k, v) { return v ? '<div class="k">' + k + '</div><div class="v">' + v + '</div>' : ''; };
-  blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous') + '</div>'
-    + '<div class="kv">' + kv('Client', '<b>' + e(cl.nom) + '</b>') + kv('Société', e(cl.societe)) + kv('Téléphone', e(cl.tel)) + kv('E-mail', e(cl.email)) + kv('N° TVA', e(cl.tva))
+  blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multiSite ? 'Notre proposition pour vos ' + siteIdx.length + ' sites' : (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous')) + '</div>'
+    + '<div class="kv">' + kv('Client', '<b>' + e(cl.nom) + '</b>') + kv('Société', e(cl.societe)) + kv('Téléphone', e(cl.tel)) + kv('E-mail', e(cl.email)) + kv('N° TVA', e(cl.tva)) + kv("Adresse d'installation", multiSite ? '' : e(adrOf(siteIdx[0])))
     + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Tarifs Orange', 'en vigueur au ' + dateTxt)
     + kv('Prix affichés', mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA') + '</div></div>');
 
   var monthEco = function (s) { return cl.actuel > 0 ? Math.max(0, cl.actuel - s.today) : 0; };
   var yearEco = function (s) { return cl.actuel > 0 ? Math.max(0, 12 * cl.actuel - (6 * s.today + 6 * s.m6)) : 0; };
   var modeTxt = mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA';
-
-  if (!multi) {
-    var s0 = sims[0];
-    blocks.push('<div class="blk tot"><div><div class="tl">Votre tarif par mois</div><div class="big">' + f(s0.today) + '</div><div class="tl">' + f2(s0.today) + ' ' + m2 + '</div></div>'
-      + '<div class="tr"><div class="tl">Économie la 1re année</div><div class="eco">' + f(yearSave(s0)) + '</div><div class="tl">au lieu de <s>' + f(s0.catalogue) + '</s> par mois</div></div></div>');
-  } else {
-    var min = Math.min.apply(null, sims.map(function (s) { return s.today; }));
-    var minIdx = sims.findIndex(function (s) { return s.today === min; });
-    var cards = sims.map(function (s, i) {
-      var isRec = d.rec === i;
-      var items = s.lignes.filter(function (l) { return !l.unique; });
-      var shown = items.slice(0, 7).map(function (l) { return '<li>' + e(l.nom) + (l.q > 1 ? ' ×' + l.q : '') + '</li>'; }).join('');
-      var more = items.length > 7 ? '<li class="more">+ ' + (items.length - 7) + ' autre(s)</li>' : '';
-      var later = '';
-      if (s.m6 !== s.today) later += '<div class="later">Puis ' + f(s.m6) + ' après 6 mois</div>';
-      if (s.m12 !== s.m6) later += '<div class="later">Puis ' + f(s.m12) + ' après 12 mois</div>';
-      var diff = (s.today > min) ? '<div class="diff">+ ' + f(s.today - min) + ' / mois par rapport à ' + simName(minIdx) + '</div>' : '<div class="diff low">Le tarif le plus bas</div>';
-      return '<div class="card' + (isRec ? ' rec' : '') + '">' + (isRec ? '<div class="badge">Recommandée</div>' : '')
-        + '<div class="cn">' + simName(i) + '</div><div class="cp">' + f(s.today) + '<span> / mois</span></div>' + later + diff
-        + '<ul>' + shown + more + '</ul>'
-        + '<div class="cs">Remises incluses : <b>- ' + f(Math.max(0, s.catalogue - s.today)) + ' / mois</b></div>'
-        + '<div class="cs">Économie la 1re année : <b>' + f(yearSave(s)) + '</b></div></div>';
-    }).join('');
-    blocks.push('<div class="blk"><h2>Votre choix</h2><div class="cmp c' + sims.length + '">' + cards + '</div><div class="note">Prix par mois, ' + modeTxt + '. Le détail de chaque offre se trouve dans les pages suivantes.</div></div>');
-  }
 
   // Cadres : en-tête coloré + lignes + pied (les cadres trop longs continuent sur la page suivante, ligne par ligne)
   var rw = function (left, sub, right, rcls, rowcls) {
@@ -1595,67 +1659,142 @@ async function pmRenderOffer(w, d) {
   var fr = function (color, title, inner, extra, nosplit) {
     return '<div class="fr' + (nosplit ? ' nosplit' : '') + '"><div class="fh" style="background:' + color + '"><span>' + title + '</span>' + (extra ? '<span class="fx">' + extra + '</span>' : '') + '</div>' + inner + '</div>';
   };
+  var grid = function (n, label, vals, rowcls, vcls) {
+    return '<div class="rw g ' + (rowcls || '') + '" style="grid-template-columns:1.25fr repeat(' + n + ',1fr)"><span class="l">' + label + '</span>'
+      + vals.map(function (v) { return '<b' + (vcls ? ' class="' + vcls + '"' : '') + '>' + v + '</b>'; }).join('') + '</div>';
+  };
   var C_GREEN = '#1b7f4a', C_ORANGE = '#e8590c';
-
-  // 2. Détail de chaque offre : produits, remises, Love
-  sims.forEach(function (s, i) {
-    var pre = multi ? simName(i) + ' · ' : '';
-    var mens = s.lignes.filter(function (l) { return !l.unique; }), uniq = s.lignes.filter(function (l) { return l.unique; });
-    var rows = mens.map(function (l) { return rw(e(l.nom) + (l.q > 1 ? ' ×' + l.q : ''), '', f(l.total) + ' / mois'); }).join('')
-      + uniq.map(function (l) { return rw(e(l.nom) + (l.q > 1 ? ' ×' + l.q : ''), 'Frais unique', f(l.total)); }).join('')
-      + ft('Total au prix catalogue', f(s.catalogue) + ' / mois');
-    blocks.push(fr(acc, pre + 'Produits sélectionnés', rows));
-
-    if (s.promos.length) {
-      var prow = s.promos.map(function (p) {
-        var lab = p.duree === 'unique' ? 'Remise unique' : (p.duree === '12' ? 'Pendant 12 mois' : (p.duree === '6' ? 'Pendant 6 mois' : 'À vie'));
-        var left = e(p.nom) + ' <span class="bd">' + lab + '</span>' + (p.pro ? '<span class="bd pro">Pour les pros</span>' : '');
-        return rw(left, p.sub ? e(p.sub) : '', '- ' + f(p.montant) + (p.duree === 'unique' ? '' : ' / mois'), 'neg');
-      }).join('');
-      if (s.eco > 0) prow += ft('Total des remises mensuelles', '- ' + f(s.eco) + ' / mois', 'neg');
-      if (s.promUnique > 0) prow += ft('Remises sur frais uniques', '- ' + f(s.promUnique), 'neg');
-      blocks.push(fr(C_GREEN, pre + 'Vos remises', prow));
-    }
-    if (s.love.lignes.length) {
-      var lrow = s.love.lignes.map(function (l) { return rw(e(l.label) + ' ×' + l.q + ' ' + e(l.pal), f(l.rate) + ' par abonnement', '- ' + f(l.disc), 'neg'); }).join('')
-        + ft('Total remises Love', '- ' + f(s.love.total) + ' / mois', 'neg');
-      blocks.push(fr(C_ORANGE, pre + 'Remises Love (automatiques)', lrow));
-    }
-  });
-
-  // 3. Récapitulatif (une offre : tableau simple ; plusieurs : comparatif, une colonne par offre)
   var recNote = '<div class="fn">Les tarifs et promotions Orange peuvent changer à tout moment. Offre établie sur les conditions en vigueur le ' + dateTxt + ', confirmée lors de la souscription.</div>';
-  var anyFrais = sims.some(function (s) { return s.frais > 0 || s.fraisBrut > 0; });
   var fin = function (x) { return x.noms.length ? 'Fin de : ' + e(x.noms.join(', ')) + ' (+ ' + f(x.montant) + ' / mois)' : ''; };
-  if (!multi) {
-    var q0 = sims[0];
-    var rec0 = rw('Prix catalogue (sans remise)', '', f(q0.catalogue) + ' / mois', '', 'grey')
-      + rw('Aujourd\'hui', '', f(q0.today) + ' / mois', 'hl', 'today')
-      + rw('Après 6 mois', fin(q0.fin6), f(q0.m6) + ' / mois')
-      + rw('Après 12 mois', fin(q0.fin12), f(q0.m12) + ' / mois');
-    if (anyFrais) rec0 += rw('Frais uniques (une seule fois)', q0.promUnique > 0 ? f(q0.fraisBrut) + ' moins ' + f(q0.promUnique) + ' de remise' : '', f(q0.frais));
-    if (cl.actuel > 0) rec0 += rw('Votre facture actuelle', '', f(cl.actuel) + ' / mois');
-    if (monthEco(q0) > 0) rec0 += '<div class="eco2">Vous économisez <b>' + f(monthEco(q0)) + ' par mois</b> · <b>' + f(yearEco(q0)) + ' sur la 1re année</b></div>';
-    blocks.push(fr(acc, 'Récapitulatif de votre tarif', rec0 + recNote, 'Prix ' + modeTxt, true));
-  } else {
-    var gtc = '1.25fr repeat(' + sims.length + ',1fr)';
-    var gr = function (label, vals, rowcls, vcls) {
-      return '<div class="rw g ' + (rowcls || '') + '" style="grid-template-columns:' + gtc + '"><span class="l">' + label + '</span>'
-        + vals.map(function (v) { return '<b' + (vcls ? ' class="' + vcls + '"' : '') + '>' + v + '</b>'; }).join('') + '</div>';
-    };
-    var rc = gr('', sims.map(function (s, i) { return simName(i) + (d.rec === i ? '<small class="rcm">Recommandée</small>' : ''); }), 'chd')
-      + gr('Prix catalogue', sims.map(function (s) { return f(s.catalogue); }), 'grey')
-      + gr('Aujourd\'hui', sims.map(function (s) { return f(s.today); }), 'today', 'hl')
-      + gr('Après 6 mois', sims.map(function (s) { return f(s.m6); }))
-      + gr('Après 12 mois', sims.map(function (s) { return f(s.m12); }));
-    if (anyFrais) rc += gr('Frais uniques', sims.map(function (s) { return f(s.frais); }));
-    if (cl.actuel > 0) rc += gr('Votre facture actuelle', sims.map(function () { return f(cl.actuel); }));
-    if (sims.some(function (s) { return monthEco(s) > 0; })) {
-      rc += gr('Économie par mois', sims.map(function (s) { return monthEco(s) > 0 ? f(monthEco(s)) : '–'; }), 'ecor')
-        + gr('Économie la 1re année', sims.map(function (s) { return monthEco(s) > 0 ? f(yearEco(s)) : '–'; }), 'ecor');
+
+  // Un site : bandeau ou comparatif des offres, cadres produits / remises / Love, récapitulatif
+  var sitePart = function (items, k, withActuel, withNote) {
+    var mlt = items.length > 1;
+    var sp = multiSite ? 'Site ' + (k + 1) + ' · ' : '';
+    var nm = function (j) { return 'Offre ' + (j + 1); };
+    var S = items.map(function (x) { return x.s; });
+    var isRec = function (j) { return items[j].s.rec === true || (d.rec !== null && d.rec !== undefined && d.rec === items[j].i); };
+    var head = multiSite ? '<div class="sitehd"><div class="sh1">Site ' + (k + 1) + '</div>' + (adrOf(k) ? '<div class="sh2">' + e(adrOf(k)) + '</div>' : '') + '</div>' : '';
+    if (!mlt) {
+      var s0 = S[0];
+      blocks.push('<div class="blk">' + head + '<div class="tot"><div><div class="tl">Votre tarif par mois</div><div class="big">' + f(s0.today) + '</div><div class="tl">' + f2(s0.today) + ' ' + m2 + '</div></div>'
+        + '<div class="tr"><div class="tl">Économie la 1re année</div><div class="eco">' + f(yearSave(s0)) + '</div><div class="tl">au lieu de <s>' + f(s0.catalogue) + '</s> par mois</div></div></div></div>');
+    } else {
+      var min = Math.min.apply(null, S.map(function (x) { return x.today; }));
+      var minIdx = S.findIndex(function (x) { return x.today === min; });
+      var cards = S.map(function (x, j) {
+        var rc = isRec(j);
+        var its = x.lignes.filter(function (l) { return !l.unique; });
+        var shown = its.slice(0, 7).map(function (l) { return '<li>' + e(l.nom) + (l.q > 1 ? ' ×' + l.q : '') + '</li>'; }).join('');
+        var more = its.length > 7 ? '<li class="more">+ ' + (its.length - 7) + ' autre(s)</li>' : '';
+        var later = '';
+        if (x.m6 !== x.today) later += '<div class="later">Puis ' + f(x.m6) + ' après 6 mois</div>';
+        if (x.m12 !== x.m6) later += '<div class="later">Puis ' + f(x.m12) + ' après 12 mois</div>';
+        var diff = (x.today > min) ? '<div class="diff">+ ' + f(x.today - min) + ' / mois par rapport à ' + nm(minIdx) + '</div>' : '<div class="diff low">Le tarif le plus bas</div>';
+        return '<div class="card' + (rc ? ' rec' : '') + '">' + (rc ? '<div class="badge">Recommandée</div>' : '')
+          + '<div class="cn">' + nm(j) + '</div><div class="cp">' + f(x.today) + '<span> / mois</span></div>' + later + diff
+          + '<ul>' + shown + more + '</ul>'
+          + '<div class="cs">Remises incluses : <b>- ' + f(Math.max(0, x.catalogue - x.today)) + ' / mois</b></div>'
+          + '<div class="cs">Économie la 1re année : <b>' + f(yearSave(x)) + '</b></div></div>';
+      }).join('');
+      blocks.push('<div class="blk">' + head + '<h2>Votre choix</h2><div class="cmp c' + Math.min(S.length, 3) + '">' + cards + '</div><div class="note">Prix par mois, ' + modeTxt + '. Le détail de chaque offre se trouve dans les pages suivantes.</div></div>');
     }
-    blocks.push(fr(acc, 'Récapitulatif de vos offres', rc + recNote, 'Prix par mois, ' + modeTxt, true));
+
+    S.forEach(function (x, j) {
+      var pre = sp + (mlt ? nm(j) + ' · ' : '');
+      var mens = x.lignes.filter(function (l) { return !l.unique; }), uniq = x.lignes.filter(function (l) { return l.unique; });
+      var rows = mens.map(function (l) { return rw(e(l.nom) + (l.q > 1 ? ' ×' + l.q : ''), '', f(l.total) + ' / mois'); }).join('')
+        + uniq.map(function (l) { return rw(e(l.nom) + (l.q > 1 ? ' ×' + l.q : ''), 'Frais unique', f(l.total)); }).join('')
+        + ft('Total au prix catalogue', f(x.catalogue) + ' / mois');
+      blocks.push(fr(acc, pre + 'Produits sélectionnés', rows));
+      if (x.promos.length) {
+        var prow = x.promos.map(function (p) {
+          var lab = p.duree === 'unique' ? 'Remise unique' : (p.duree === '12' ? 'Pendant 12 mois' : (p.duree === '6' ? 'Pendant 6 mois' : 'À vie'));
+          var left = e(p.nom) + ' <span class="bd">' + lab + '</span>' + (p.pro ? '<span class="bd pro">Pour les pros</span>' : '');
+          return rw(left, p.sub ? e(p.sub) : '', '- ' + f(p.montant) + (p.duree === 'unique' ? '' : ' / mois'), 'neg');
+        }).join('');
+        if (x.eco > 0) prow += ft('Total des remises mensuelles', '- ' + f(x.eco) + ' / mois', 'neg');
+        if (x.promUnique > 0) prow += ft('Remises sur frais uniques', '- ' + f(x.promUnique), 'neg');
+        blocks.push(fr(C_GREEN, pre + 'Vos remises', prow));
+      }
+      if (x.love.lignes.length) {
+        var lrow = x.love.lignes.map(function (l) { return rw(e(l.label) + ' ×' + l.q + ' ' + e(l.pal), f(l.rate) + ' par abonnement', '- ' + f(l.disc), 'neg'); }).join('')
+          + ft('Total remises Love', '- ' + f(x.love.total) + ' / mois', 'neg');
+        blocks.push(fr(C_ORANGE, pre + 'Remises Love (automatiques)', lrow));
+      }
+    });
+
+    // Récapitulatif du site
+    var anyFrais = S.some(function (x) { return x.frais > 0 || x.fraisBrut > 0; });
+    var ttl = multiSite ? 'Site ' + (k + 1) + ' · Récapitulatif' : (mlt ? 'Récapitulatif de vos offres' : 'Récapitulatif de votre tarif');
+    var note = withNote ? recNote : '';
+    if (!mlt) {
+      var q0 = S[0];
+      var rec0 = rw('Prix catalogue (sans remise)', '', f(q0.catalogue) + ' / mois', '', 'grey')
+        + rw('Aujourd\'hui', '', f(q0.today) + ' / mois', 'hl', 'today')
+        + rw('Après 6 mois', fin(q0.fin6), f(q0.m6) + ' / mois')
+        + rw('Après 12 mois', fin(q0.fin12), f(q0.m12) + ' / mois');
+      if (anyFrais) rec0 += rw('Frais uniques (une seule fois)', q0.promUnique > 0 ? f(q0.fraisBrut) + ' moins ' + f(q0.promUnique) + ' de remise' : '', f(q0.frais));
+      if (withActuel && cl.actuel > 0) rec0 += rw('Votre facture actuelle', '', f(cl.actuel) + ' / mois');
+      if (withActuel && monthEco(q0) > 0) rec0 += '<div class="eco2">Vous économisez <b>' + f(monthEco(q0)) + ' par mois</b> · <b>' + f(yearEco(q0)) + ' sur la 1re année</b></div>';
+      blocks.push(fr(acc, ttl, rec0 + note, 'Prix ' + modeTxt, true));
+    } else {
+      var n = S.length;
+      var rc = grid(n, '', S.map(function (x, j) { return nm(j) + (isRec(j) ? '<small class="rcm">Recommandée</small>' : ''); }), 'chd')
+        + grid(n, 'Prix catalogue', S.map(function (x) { return f(x.catalogue); }), 'grey')
+        + grid(n, 'Aujourd\'hui', S.map(function (x) { return f(x.today); }), 'today', 'hl')
+        + grid(n, 'Après 6 mois', S.map(function (x) { return f(x.m6); }))
+        + grid(n, 'Après 12 mois', S.map(function (x) { return f(x.m12); }));
+      if (anyFrais) rc += grid(n, 'Frais uniques', S.map(function (x) { return f(x.frais); }));
+      if (withActuel && cl.actuel > 0) rc += grid(n, 'Votre facture actuelle', S.map(function () { return f(cl.actuel); }));
+      if (withActuel && S.some(function (x) { return monthEco(x) > 0; })) {
+        rc += grid(n, 'Économie par mois', S.map(function (x) { return monthEco(x) > 0 ? f(monthEco(x)) : '–'; }), 'ecor')
+          + grid(n, 'Économie la 1re année', S.map(function (x) { return monthEco(x) > 0 ? f(yearEco(x)) : '–'; }), 'ecor');
+      }
+      blocks.push(fr(acc, ttl, rc + note, 'Prix par mois, ' + modeTxt, true));
+    }
+  };
+
+  var groups = siteIdx.map(function (k) {
+    var items = sims.map(function (x, i) { return { s: x, i: i }; }).filter(function (x) { return (x.s.site || 0) === k; });
+    if (multiSite) items.sort(function (a, b) { return a.s.today - b.s.today; });   // offre 1 = la moins chère
+    return { k: k, items: items };
+  });
+  groups.forEach(function (g) { sitePart(g.items, g.k, !multiSite, !multiSite); });
+
+  // Résumé total (plusieurs sites) : une ligne par site, une colonne par offre, totaux en bas
+  if (multiSite) {
+    var K = Math.max.apply(null, groups.map(function (g) { return g.items.length; }));
+    var cols = []; for (var c = 0; c < K; c++) cols.push(c);
+    var pick = function (g, c2) { return g.items[Math.min(c2, g.items.length - 1)]; };
+    var sum = function (c2, fn) { return groups.reduce(function (t, g) { return t + fn(pick(g, c2).s); }, 0); };
+    var tr = grid(K, '', cols.map(function (c2) { return 'Offre ' + (c2 + 1); }), 'chd');
+    groups.forEach(function (g) {
+      tr += grid(K, 'Site ' + (g.k + 1) + (adrOf(g.k) ? '<small>' + e(adrOf(g.k)) + '</small>' : ''), cols.map(function (c2) {
+        var x = pick(g, c2), rcm = x.s.rec === true || (d.rec !== null && d.rec !== undefined && d.rec === x.i);
+        return rcm ? '<span class="orc">' + f(x.s.today) + ' ★</span>' : f(x.s.today);
+      }));
+    });
+    var totToday = cols.map(function (c2) { return sum(c2, function (x) { return x.today; }); });
+    var totM6 = cols.map(function (c2) { return sum(c2, function (x) { return x.m6; }); });
+    var totM12 = cols.map(function (c2) { return sum(c2, function (x) { return x.m12; }); });
+    var totFr = cols.map(function (c2) { return sum(c2, function (x) { return x.frais; }); });
+    tr += grid(K, 'Total par mois aujourd\'hui', totToday.map(f), 'today', 'hl')
+      + grid(K, 'Après 6 mois', totM6.map(f))
+      + grid(K, 'Après 12 mois', totM12.map(f));
+    if (totFr.some(function (v) { return v > 0; })) tr += grid(K, 'Frais uniques', totFr.map(f));
+    if (cl.actuel > 0) {
+      var eM = totToday.map(function (v) { return Math.max(0, cl.actuel - v); });
+      var eY = totToday.map(function (v, j) { return Math.max(0, 12 * cl.actuel - (6 * v + 6 * totM6[j])); });
+      tr += grid(K, 'Votre facture actuelle', cols.map(function () { return f(cl.actuel); }));
+      if (eM.some(function (v) { return v > 0; })) {
+        tr += grid(K, 'Économie par mois', eM.map(function (v) { return v > 0 ? f(v) : '–'; }), 'ecor')
+          + grid(K, 'Économie la 1re année', eY.map(function (v, j) { return eM[j] > 0 ? f(v) : '–'; }), 'ecor');
+      }
+    }
+    blocks.push(fr(acc, 'Résumé total de vos ' + groups.length + ' sites', tr + recNote, 'Prix par mois, ' + modeTxt, true));
   }
+
   // Parrainage : réduction de 5 % par abonnement mobile pris par un proche (+ QR personnel du client)
   var first = String(cl.nom || '').trim().split(/\s+/)[0] || '';
   var chips = [['1 abo', '5 %'], ['2 abos', '10 %'], ['3 abos', '15 %'], ['…', '…'], ['20 abos', '100 %']].map(function (c) { return '<div><small>' + c[0] + '</small><b>' + c[1] + '</b></div>'; }).join('');
@@ -1683,6 +1822,9 @@ async function pmRenderOffer(w, d) {
     + '.card ul{margin:6px 0 8px 16px;font-size:12px}.card li.more{color:#7b8794;list-style:none;margin-left:-16px}.cs{font-size:11.5px;color:#52606d;margin-top:3px}'
     + '.note{font-size:11px;color:#7b8794;margin-top:8px}'
     + '.fr{border:1px solid #d9dee3;border-radius:8px;overflow:hidden;margin-bottom:14px;background:#fff}.fh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 14px;color:#fff;font-weight:bold;font-size:14px}.fh .fx{font-weight:normal;font-size:11px;opacity:.9}'
+    + '.sitehd{background:var(--soft);border-left:6px solid var(--acc);border-radius:6px;padding:10px 14px;margin-bottom:10px}.sh1{font-size:17px;font-weight:bold;color:var(--acc)}.sh2{color:#52606d;font-size:12.5px;margin-top:2px}.orc{color:#e8590c;font-weight:bold}'
+    + '.compact .pbody{padding-top:14px}.compact .blk,.compact .fr{margin-bottom:9px}.compact .rw{padding:4px 14px}.compact .ft,.compact .eco2{padding:5px 14px}.compact .fh{padding:5px 14px;font-size:13px}.compact h1{font-size:24px}.compact .sub{margin-bottom:8px}.compact .kv{padding:8px 12px;gap:2px 12px}.compact .tot{padding:12px 18px}.compact .tot .big{font-size:32px}.compact .ref{padding:10px 14px}.compact .ref p{margin:3px 0}.compact .sitehd{margin-bottom:6px;padding:7px 12px}.compact .rw.today{font-size:14px}.compact .card{padding:10px 10px 8px}.compact .cp{font-size:22px}'
+    + '.c2{font-size:12px}.c2 .rw{padding:3px 12px}.c2 .rw .l small,.c2 .fn,.c2 .ref .fine{font-size:10px}.c2 .ft,.c2 .eco2{padding:4px 12px}.c2 .blk,.c2 .fr{margin-bottom:7px}.c2 .ref .scale{margin:5px 0}.c2 h2{margin-bottom:5px}'
     + '.rw{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:7px 14px;border-top:1px solid #eef0f2}.rw .l small{display:block;color:#7b8794;font-size:11px;margin-top:1px;font-weight:normal}.rw b{white-space:nowrap}'
     + '.rw.g{display:grid;align-items:center}.rw.g b{text-align:center}.rw.chd{background:#f5f7fa;font-size:12px}.rw.chd b{color:#1f2933}.rcm{display:block;color:#e8590c;font-size:10.5px;font-weight:bold}'
     + '.rw.grey{background:#f5f7fa;color:#52606d}.rw.today{background:#fff3e6;border-left:5px solid #ff7900;font-size:15px}.rw.today .hl{color:#e8590c;font-size:16px}.rw.ecor{background:#eaf6ef;color:#1b7f4a;font-weight:bold}'
