@@ -7827,6 +7827,7 @@ function crmRenderCard(item, col) {
   var importBtn = (col === 'clients' && !inactive)
     ? '<button onclick="crmImportContract(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #1a1a1a;border-radius:6px;background:#1a1a1a;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📥 Importer</button>'
     : '';
+  var newOfferBtn = (col === 'clients' && !inactive) ? pmNewOfferBtn('clients', item._id) : '';
   // Badge ASP
   var aspVal = 0;
   if (item._source === 'consultants') { aspVal = (item._aspInit||0) + (item._aspFromContracts||0); }
@@ -7843,7 +7844,7 @@ function crmRenderCard(item, col) {
   var offerBtn = (col === 'consultantsCrm' && !inactive && !isAuth && canOffer) ? '<button type="button" title="Envoyer à l\'admin la demande d\'accès (app offerte)" onclick="crmOfferAccess(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #7dd3fc;border-radius:6px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎁 Préparer son accès</button>' : '';
   var completeBtn = isApp ? '<button type="button" title="Ajouter adresse, TVA, type… (enregistré dans ta fiche de suivi, pas sur son compte)" onclick="openCrmModal(&#39;consultantsCrm&#39;,&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ Compléter la fiche</button>' : '';
   var hideBtn = isApp ? '<button type="button" title="Retire seulement de ta liste, sans toucher à son compte" onclick="crmHide(&#39;' + item._id + '&#39;,' + (item._hidden ? 'false' : 'true') + ')" style="padding:3px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;color:#6b7280;font-size:11px;cursor:pointer;white-space:nowrap;">' + (item._hidden ? '👁 Réafficher' : '🙈 Masquer de ma liste') + '</button>' : '';
-  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn || hideBtn || completeBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + completeBtn + offerBtn + toggleBtn + hideBtn + importBtn + '</div>';
+  if (editBtn || toggleBtn || importBtn || vcfBtn || offerBtn || hideBtn || completeBtn || newOfferBtn) h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">' + vcfBtn + editBtn + completeBtn + offerBtn + newOfferBtn + toggleBtn + hideBtn + importBtn + '</div>';
   h += '</div>';
   if (item.societe) h += '<div style="font-size:11px;color:#888;margin-top:2px;">' + crmEsc(item.societe) + '</div>';
   if (item.type || item.tva) h += '<div style="font-size:12px;color:#555;margin-top:2px;">🏷️ ' + crmEsc([item.type, item.tva ? '🧾 TVA ' + item.tva : ''].filter(Boolean).join(' · ')) + '</div>';
@@ -9085,6 +9086,13 @@ function pmOffresHtml(item, coll, docId) {
   }).join('');
   return pclSec('Offres de prix') + rows;
 }
+// Ouvre le simulateur Orange pour une fiche : l'offre générée est rangée directement dans cette fiche
+window.pmNewOffer = function (coll, docId) {
+  openSimulator('https://app.phil-mobile.be/wp_orange.html?fiche=' + encodeURIComponent(coll + '|' + docId), document.getElementById('menu-sim-orange'));
+};
+function pmNewOfferBtn(coll, docId) {
+  return '<button type="button" onclick="pmNewOffer(\'' + coll + '\',\'' + docId + '\')" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#eef2ff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">➕ Ajouter une offre</button>';
+}
 window.pmOffreStatut = async function (coll, docId, offreId, statut) {
   try {
     var ref = window.doc(window.db, coll, docId);
@@ -9162,6 +9170,7 @@ function pclRenderList(list) {
       + pcRdvButtons('cl', p)
       + '<button onclick="pclEditProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">✏️</button>'
       + '<button onclick="pclOpenContactModal(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f97316;border-radius:6px;background:#fff3e8;color:#f97316;font-size:11px;font-weight:700;cursor:pointer;">📞 Log</button>'
+      + pmNewOfferBtn('prospectsClients', p.docId)
       + contratBtn
       + pcArchiveButton('pclArchive', p)
       + '<button onclick="pclDeleteProspect(\'' + p.docId + '\')" style="padding:4px 9px;border:1px solid #f5b7b1;border-radius:6px;background:#fde2e1;color:#c0392b;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'

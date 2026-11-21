@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.114 - Nouvelle offre de prix";
+  scope.APP_VERSION = "14.115 - Offres liées aux fiches";
 })();

@@ -267,6 +267,7 @@
   
 <div class="section">
   <div class="section-title">👤 Informations client</div>
+  <div id="pm-fiche-banner" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;"></div>
 
   <div style="margin-bottom:12px;">
     <label style="display:block;font-weight:600;margin-bottom:4px;">
@@ -1034,14 +1035,21 @@ ${ci.email}`;
 
 // ===== Build 14.114 : dossier d'offre (1 à 3 simulations) + offre PDF A4 neutre, liée à la fiche du client =====
 var PM_MAX_SIMS = 3;
+// Fiche d'origine (?fiche=clients|id ou prospectsClients|id) : offre créée depuis une fiche du hub
+window.pmFiche = null;
+var _pmFp = (new URLSearchParams(location.search).get('fiche') || '').split('|');
+var PM_FICHE_KEY = (_pmFp.length === 2 && (_pmFp[0] === 'clients' || _pmFp[0] === 'prospectsClients') && _pmFp[1]) ? _pmFp[0] + '|' + _pmFp[1] : '';
+var PM_DRAFT_KEY = 'pmDossierDraft' + (PM_FICHE_KEY ? ':' + PM_FICHE_KEY : '');
+function pmIsSecondInternet(p) { return /(2|deuxi)[èeé]me\s+internet/i.test(String(p.name || '').replace(/<[^>]*>/g, '')); }
+function pmInternetCount() { return (productList.internet || []).filter(function (x) { return x.countsAsInternet !== false; }).reduce(function (t, x) { return t + (qtyMap[x.id] || 0); }, 0); }
 var pmSims = [];        // simulations du dossier (copies figées)
 var pmRec = null;       // index de l'offre recommandée
 var pmEditIdx = null;   // simulation en cours de modification
 try {
-  var _pmD = JSON.parse(sessionStorage.getItem('pmDossierDraft') || 'null');
+  var _pmD = JSON.parse(sessionStorage.getItem(PM_DRAFT_KEY) || 'null');
   if (_pmD && Array.isArray(_pmD.sims)) { pmSims = _pmD.sims.slice(0, PM_MAX_SIMS); pmRec = (typeof _pmD.rec === 'number') ? _pmD.rec : null; }
 } catch (e) {}
-function pmDraftSave() { try { sessionStorage.setItem('pmDossierDraft', JSON.stringify({ sims: pmSims, rec: pmRec })); } catch (e) {} }
+function pmDraftSave() { try { sessionStorage.setItem(PM_DRAFT_KEY, JSON.stringify({ sims: pmSims, rec: pmRec })); } catch (e) {} }
 function pmEl(id) { return document.getElementById(id); }
 function pmEsc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
 // HTML -> texte simple (retire les balises, les emojis de repère et les espaces en trop)
@@ -1056,6 +1064,7 @@ function pmHasProducts() {
 // Montant d'une carte de promo : même logique que calcPromos() (à garder synchronisé si celle-ci évolue)
 function pmPromoMontant(p) {
   if (p.isUnique) return p.price;
+  if (pmIsSecondInternet(p)) return p.price * Math.max(0, pmInternetCount() - 1);
   var inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
   if (p.mobileId === '_internet') return p.price * inetCount;
   if (p.perAbo && p.mobileId) return p.price * (qtyMap[p.mobileId] || 0);
@@ -1226,12 +1235,60 @@ async function pmFindFiche(cid, c) {
   }
   return null;
 }
+function pmNameTokens(x) { return String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean); }
+// Même personne si tous les mots du nom le plus court se retrouvent dans l'autre (« Philippe » / « Philippe Tomaszewsky »)
+function pmSameName(a, b) {
+  var x = pmNameTokens(a), y = pmNameTokens(b);
+  if (!x.length || !y.length) return false;
+  var sh = x.length <= y.length ? x : y, lo = x.length <= y.length ? y : x;
+  return sh.every(function (t) { return lo.indexOf(t) >= 0; });
+}
+// Fenêtre de choix : ajouter à la fiche trouvée, créer un nouveau prospect ou annuler
+function pmAskFiche(f, nomSaisi) {
+  return new Promise(function (res) {
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+    var kind = f.coll === 'clients' ? 'client' : 'prospect';
+    var bs = 'display:block;width:100%;padding:12px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;border:1px solid #ddd;background:#fff;';
+    ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:420px;width:100%;padding:18px;font-family:Arial,sans-serif;">'
+      + '<div style="font-weight:800;font-size:17px;margin-bottom:8px;">Une fiche existe déjà</div>'
+      + '<div style="font-size:14px;color:#444;line-height:1.5;">Ce numéro ou cet e-mail correspond à la fiche <b>' + pmEsc(f.nom || 'sans nom') + '</b> (' + kind + '), mais tu as saisi <b>' + pmEsc(nomSaisi) + '</b>.</div>'
+      + '<button type="button" id="pm-ask-add" style="' + bs + 'background:#062B68;color:#fff;border-color:#062B68;">Ajouter à la fiche de ' + pmEsc(f.nom || 'ce ' + kind) + '</button>'
+      + '<button type="button" id="pm-ask-new" style="' + bs + '">Créer un nouveau prospect</button>'
+      + '<button type="button" id="pm-ask-cancel" style="' + bs + 'color:#777;">Annuler</button></div>';
+    document.body.appendChild(ov);
+    var done = function (v) { document.body.removeChild(ov); res(v); };
+    ov.querySelector('#pm-ask-add').onclick = function () { done('add'); };
+    ov.querySelector('#pm-ask-new').onclick = function () { done('new'); };
+    ov.querySelector('#pm-ask-cancel').onclick = function () { done('cancel'); };
+  });
+}
+window.pmInitFiche = async function () {
+  if (!PM_FICHE_KEY || window.pmFiche) return;
+  var q = PM_FICHE_KEY.split('|');
+  try {
+    var snap = await window.getDoc(window.doc(window.db, q[0], q[1]));
+    if (!snap.exists()) { alert('Fiche introuvable.'); return; }
+    var d = snap.data();
+    var nom = q[0] === 'prospectsClients' ? (d.nom || ((d.prenom || '') + ' ' + (d.nomFamille || '')).trim()) : ((d.prenom || '') + ' ' + (d.nom || '')).trim();
+    window.pmFiche = { coll: q[0], id: q[1], nom: nom };
+    var set = function (id, v) { var el = pmEl(id); if (el && v) el.value = v; };
+    set('client-name', nom); set('client-company', d.societe); set('client-phone', d.tel); set('client-email', d.email); set('client-tva', d.tva);
+    var b = pmEl('pm-fiche-banner');
+    if (b) { b.style.display = 'block'; b.innerHTML = '📌 Offre pour la fiche <b>' + pmEsc(nom) + '</b> (' + (q[0] === 'clients' ? 'client' : 'prospect') + '). Elle sera ajoutée directement à cette fiche.'; }
+  } catch (e) { console.log('Fiche non chargée:', e.message); }
+};
 async function pmSaveOfferToCrm(d) {
   var cid = window.consultantInfo && window.consultantInfo.id;
   if (!cid) throw new Error('consultant non identifié');
   if (!window.addDoc || !window.updateDoc || !window.arrayUnion) throw new Error('connexion Firebase pas prête');
   var offer = JSON.parse(JSON.stringify(d));
-  var fiche = await pmFindFiche(cid, d.client);
+  var fiche = window.pmFiche ? { coll: window.pmFiche.coll, id: window.pmFiche.id, nom: window.pmFiche.nom } : await pmFindFiche(cid, d.client);
+  if (fiche && !window.pmFiche && !pmSameName(fiche.nom, d.client.nom)) {
+    var choix = await pmAskFiche(fiche, d.client.nom);
+    if (choix === 'cancel') return { cancelled: true };
+    if (choix === 'new') fiche = null;
+  }
   if (fiche) {
     var upd = { offres: window.arrayUnion(offer) };
     if (fiche.coll === 'prospectsClients') upd.dateMaj = new Date().toISOString();
@@ -1274,16 +1331,57 @@ function pmBuildDossier(sims, rec, nom, telRaw) {
       tva: ((pmEl('client-tva') || {}).value || '').trim(),
       actuel: (actuel > 0) ? (isTVAC ? actuel : actuel * TVA) : null   // toujours en TVAC
     },
-    consultant: { name: ci.name || 'Phil-Mobile', phone: ci.phone || '', email: ci.email || '', logoUrl: ci.logoUrl || '', accent: ci.accent || '' },
+    consultant: { id: ci.id || '', name: ci.name || 'Phil-Mobile', phone: ci.phone || '', email: ci.email || '', logoUrl: ci.logoUrl || '', accent: ci.accent || '' },
     rec: (sims.length > 1 && rec !== null && rec < sims.length) ? rec : null,
     sims: sims
   };
+}
+// Le QR n'est proposé que si le formulaire de contact du consultant est ouvert (mêmes règles que wp_contact.html)
+async function pmQrUrlIfAllowed(d) {
+  var cid = (window.consultantInfo || {}).id;
+  if (!cid) return '';
+  try {
+    var r = await Promise.all([window.getDoc(window.doc(window.db, 'settings', 'qrMode')), window.getDoc(window.doc(window.db, 'profilsPublics', cid))]);
+    var q = r[0].exists() ? r[0].data() : null, pr = r[1].exists() ? r[1].data() : null;
+    var ok = !!q && !!pr && pr.active === true && (pr.expiresAtMs == null || Date.now() < pr.expiresAtMs) && (q.mode === 'all' || (Array.isArray(q.pilotIds) && q.pilotIds.indexOf(cid) >= 0));
+    if (!ok) return '';
+  } catch (e) { return ''; }
+  var parts = String(d.client.nom || '').trim().split(/\s+/), rp = parts.shift() || '', rn = parts.join(' ');
+  var u = 'https://app.phil-mobile.be/wp_contact.html?c=' + encodeURIComponent(cid) + '&type=client';
+  if (rp) u += '&rp=' + encodeURIComponent(rp);
+  if (rn) u += '&rn=' + encodeURIComponent(rn);
+  if (d.client.tel) u += '&rt=' + encodeURIComponent(d.client.tel);
+  return u;
+}
+function pmLoadQrLib() {
+  return new Promise(function (res) {
+    if (window.QRCode) return res(true);
+    var sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    sc.onload = function () { res(true); };
+    sc.onerror = function () { res(false); };
+    document.head.appendChild(sc);
+    setTimeout(function () { res(!!window.QRCode); }, 6000);
+  });
+}
+async function pmQrDataUrl(url) {
+  try {
+    if (!(await pmLoadQrLib())) return '';
+    var box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(box);
+    new window.QRCode(box, { text: url, width: 240, height: 240, colorDark: '#1f2933', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+    var c = box.querySelector('canvas');
+    var out = c ? c.toDataURL('image/png') : '';
+    document.body.removeChild(box);
+    return out;
+  } catch (e) { return ''; }
 }
 async function pmGenerateOffer() {
   var nom = ((pmEl('client-name') || {}).value || '').trim();
   var tel = ((pmEl('client-phone') || {}).value || '').trim();
   if (!nom) { alert("Renseigne le nom du client : l'offre est enregistrée dans sa fiche."); pmEl('client-name').focus(); return; }
-  if (tel.replace(/\D/g, '').length < 8) { alert("Renseigne le téléphone du client (8 chiffres au moins) : il sert à retrouver ou créer sa fiche."); pmEl('client-phone').focus(); return; }
+  if (!window.pmFiche && tel.replace(/\D/g, '').length < 8) { alert("Renseigne le téléphone du client (8 chiffres au moins) : il sert à retrouver ou créer sa fiche."); pmEl('client-phone').focus(); return; }
 
   var sims = pmSims.slice(), rec = pmRec;
   var cur = pmHasProducts() ? pmSnapshot() : null;
@@ -1308,15 +1406,17 @@ async function pmGenerateOffer() {
   var btn = pmEl('pm-gen-btn'), old = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Préparation…'; }
   var dossier = pmBuildDossier(sims, rec, nom, tel);
+  dossier.qrUrl = await pmQrUrlIfAllowed(dossier);
   var st = pmEl('pm-offer-status'), msg = '', err = '';
   try {
     var res = await pmSaveOfferToCrm(dossier);
+    if (res.cancelled) { try { w.close(); } catch (e2) {} if (btn) { btn.disabled = false; btn.textContent = old; } return; }
     msg = res.created ? '✅ Offre enregistrée : nouveau prospect client « ' + res.nom + ' » créé.' : '✅ Offre enregistrée dans la fiche de « ' + res.nom + ' ».';
   } catch (e) {
     console.log('Offre non enregistrée dans la fiche:', e.message);
     err = e.message;
   }
-  try { pmRenderOffer(w, dossier); } finally { if (btn) { btn.disabled = false; btn.textContent = old; } }
+  try { await pmRenderOffer(w, dossier); } finally { if (btn) { btn.disabled = false; btn.textContent = old; } }
   if (st) {
     st.style.display = 'block';
     st.style.background = err ? '#fef2f2' : '#f0fdf4';
@@ -1371,7 +1471,8 @@ function pmOfferRuntime() {
   };
 }
 
-function pmRenderOffer(w, d) {
+async function pmRenderOffer(w, d) {
+  var qrImg = d.qrUrl ? await pmQrDataUrl(d.qrUrl) : '';
   var mode = d.mode === 'HTVA' ? 'HTVA' : 'TVAC';
   var r = mode === 'TVAC' ? 1 : 1 / TVA, r2 = mode === 'TVAC' ? 1 / TVA : 1, m2 = mode === 'TVAC' ? 'HTVA' : 'TVAC';
   var f = function (v) { return fmt(v * r); }, f2 = function (v) { return fmt(v * r2); };
@@ -1381,7 +1482,6 @@ function pmRenderOffer(w, d) {
   var n = parseInt(acc.slice(1), 16), R = n >> 16, G = (n >> 8) & 255, B = n & 255;
   var soft = 'rgb(' + Math.round(R + (255 - R) * .92) + ',' + Math.round(G + (255 - G) * .92) + ',' + Math.round(B + (255 - B) * .92) + ')';
   var dt = new Date(d.date), dateTxt = dt.toLocaleDateString('fr-BE');
-  var until = new Date(dt.getTime() + 30 * 86400000).toLocaleDateString('fr-BE');
   var multi = sims.length > 1;
   var name = ci.name || 'Phil-Mobile';
   var inits = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (x) { return x.charAt(0).toUpperCase(); }).join('') || 'PM';
@@ -1401,7 +1501,7 @@ function pmRenderOffer(w, d) {
   var kv = function (k, v) { return v ? '<div class="k">' + k + '</div><div class="v">' + v + '</div>' : ''; };
   blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous') + '</div>'
     + '<div class="kv">' + kv('Client', '<b>' + e(cl.nom) + '</b>') + kv('Société', e(cl.societe)) + kv('Téléphone', e(cl.tel)) + kv('E-mail', e(cl.email)) + kv('N° TVA', e(cl.tva))
-    + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Validité', "jusqu'au " + until)
+    + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Tarifs Orange', 'en vigueur au ' + dateTxt)
     + kv('Prix affichés', mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA') + '</div></div>');
 
   var actuelLine = function (s) {
@@ -1488,7 +1588,17 @@ function pmRenderOffer(w, d) {
     + '<div class="step"><i>2</i><span>Signature du contrat et portabilité de vos numéros</span></div>'
     + '<div class="step"><i>3</i><span>Installation et mise en service</span></div>'
     + '<div class="who2">Une question ? <b>' + e(name) + '</b>' + (contact ? ' · ' + contact : '') + '</div></div>');
-  blocks.push('<div class="blk warn">Tarifs indicatifs, sous réserve de modification par Orange. Simulation réalisée le ' + dateTxt + ', à confirmer lors de la souscription effective. Offre valable jusqu\'au ' + until + '.</div>');
+  // Parrainage : réduction de 5 % par abonnement mobile pris par un proche (+ QR personnel du client)
+  var first = String(cl.nom || '').trim().split(/\s+/)[0] || '';
+  var chips = [['1 abo', '5 %'], ['2 abos', '10 %'], ['3 abos', '15 %'], ['…', '…'], ['20 abos', '100 %']].map(function (c) { return '<div><small>' + c[0] + '</small><b>' + c[1] + '</b></div>'; }).join('');
+  blocks.push('<div class="blk ref"><div class="rt"><h2>Envie de diminuer encore vos factures ?</h2>'
+    + '<p>Pour <b>chaque abonnement mobile Orange souscrit par un proche</b> que vous nous recommandez, vous obtenez <b>5 % de réduction</b> sur le numéro mobile que vous indiquez. Cumulable jusqu\'à <b>100 %</b> : quand ce numéro est à 0 €, vous passez au suivant.</p>'
+    + '<div class="scale">' + chips + '</div>'
+    + '<p class="ex">Exemple : 20 abonnements pris par vos proches = un de vos abonnements est gratuit.</p>'
+    + (qrImg ? '<p>Faites scanner ce code à vos proches : ils arrivent directement chez ' + e(name) + '.</p>' : '<p>Donnez les coordonnées de ' + e(name) + ' à vos proches' + (contact ? ' : ' + contact : '') + '.</p>')
+    + '<p class="fine">La réduction est maintenue tant que votre proche reste chez Orange. Selon les conditions du programme de référencement Orange en vigueur.</p></div>'
+    + (qrImg ? '<div class="qr"><img src="' + qrImg + '" alt="QR code"><span>' + (first ? 'Code personnel de ' + e(first) : 'Code personnel') + '</span></div>' : '') + '</div>');
+  blocks.push('<div class="blk warn">Les tarifs et promotions Orange peuvent changer à tout moment. Cette offre est établie sur les conditions en vigueur le ' + dateTxt + ' et sera confirmée lors de la souscription effective.</div>');
 
   var css = '*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#1f2933;background:#e5e7eb;font-size:13px;line-height:1.45;--acc:' + acc + ';--soft:' + soft + '}'
     + '.bar{position:sticky;top:0;z-index:9;background:#1f2933;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:14px}.bar button{margin-left:8px;padding:8px 14px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:#fff;color:#1f2933;font-size:13px}'
@@ -1497,22 +1607,25 @@ function pmRenderOffer(w, d) {
     + '.av{position:relative;width:46px;height:46px;border-radius:50%;background:var(--acc);color:#fff;font-weight:bold;font-size:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none}.av img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}'
     + '.who{flex:1}.wn{font-size:16px;font-weight:bold}.wc{font-size:12px;color:#52606d;margin-top:2px}.hr{font-size:12px;color:#7b8794;text-align:right}'
     + '.pbody{flex:1;padding:22px 36px 0;overflow:hidden}.pft{height:38px;padding:0 36px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e4e7eb;color:#7b8794;font-size:11px}'
-    + '.blk{margin-bottom:14px}h1{font-size:30px}h2{font-size:15px;color:var(--acc);margin-bottom:8px}.sub{color:#7b8794;margin:2px 0 12px}'
+    + '.blk{margin-bottom:14px}h1{font-size:30px}h2{font-size:15px;color:var(--acc);margin-bottom:8px}h2:before{content:\'\';display:inline-block;width:9px;height:9px;border-radius:2px;background:#ff7900;margin-right:8px}.sub{color:#7b8794;margin:2px 0 12px}'
     + '.kv{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;background:#f5f7fa;border-radius:8px;padding:12px 14px}.kv .k{color:#7b8794}.kv .v{color:#1f2933}'
-    + '.tot{display:flex;justify-content:space-between;align-items:flex-end;background:#1f2933;color:#fff;border-radius:10px;padding:18px 22px}.tot .tl{font-size:12px;color:#cbd2d9}.tot .big{font-size:40px;font-weight:bold;line-height:1.1}.tot .tr{text-align:right}.tot .eco{font-size:24px;font-weight:bold;color:#7ee0a8}'
+    + '.tot{display:flex;justify-content:space-between;align-items:flex-end;background:#fff7ed;border:1px solid #fed7aa;border-left:6px solid #ff7900;border-radius:10px;padding:18px 22px}.tot .tl{font-size:12px;color:#7c5e45}.tot .big{font-size:40px;font-weight:bold;line-height:1.1;color:#e8590c}.tot .tr{text-align:right}.tot .eco{font-size:24px;font-weight:bold;color:#1b7f4a}'
     + '.act{background:#eaf6ef;color:#1b7f4a;border-radius:8px;padding:8px 12px;font-size:12px}'
     + '.cmp{display:grid;gap:10px}.cmp.c2{grid-template-columns:1fr 1fr}.cmp.c3{grid-template-columns:1fr 1fr 1fr}'
-    + '.card{position:relative;border:1px solid #d9dee3;border-radius:10px;padding:14px 12px 12px}.card.rec{border:2px solid var(--acc);background:var(--soft)}.badge{position:absolute;top:-10px;left:12px;background:var(--acc);color:#fff;font-size:11px;font-weight:bold;border-radius:99px;padding:2px 10px}'
+    + '.card{position:relative;border:1px solid #d9dee3;border-radius:10px;padding:14px 12px 12px}.card.rec{border:2px solid #ff7900;background:#fff7ed}.badge{position:absolute;top:-10px;left:12px;background:#ff7900;color:#fff;font-size:11px;font-weight:bold;border-radius:99px;padding:2px 10px}'
     + '.cn{font-weight:bold;font-size:14px}.cp{font-size:26px;font-weight:bold;margin:2px 0}.cp span{font-size:12px;color:#7b8794;font-weight:normal}.later{font-size:11px;color:#7b8794}.diff{font-size:11px;font-weight:bold;color:#a8470a;margin:6px 0}.diff.low{color:#1b7f4a}'
     + '.card ul{margin:6px 0 8px 16px;font-size:12px}.card li.more{color:#7b8794;list-style:none;margin-left:-16px}.cs{font-size:11.5px;color:#52606d;margin-top:3px}.cs .act{padding:5px 8px;font-size:11px}'
     + '.note{font-size:11px;color:#7b8794;margin-top:8px}'
-    + '.simtag{display:inline-block;background:var(--acc);color:#fff;font-size:11px;font-weight:bold;border-radius:99px;padding:2px 12px;margin-bottom:8px}'
+    + '.simtag{display:inline-block;background:#ff7900;color:#fff;font-size:11px;font-weight:bold;border-radius:99px;padding:2px 12px;margin-bottom:8px}'
     + '.row{display:flex;justify-content:space-between;gap:14px;padding:6px 0;border-bottom:1px solid #eef0f2}.row span small{display:block;color:#a8470a;font-size:11px;margin-top:1px}.row.sum{border-bottom:none;font-weight:bold;background:#f5f7fa;padding:7px 8px;border-radius:6px;margin-top:4px}.row i{color:#7b8794;font-style:normal;font-size:11px}'
     + '.row.big2{font-size:15px}.row.big2 b{font-size:16px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}.d1{background:#16a34a}.d2{background:#f97316}.d3{background:var(--acc)}'
     + '.neg{color:#1b7f4a}.eco-box{background:#eaf6ef;color:#1b7f4a;border-radius:8px;padding:8px 12px;font-weight:bold}'
     + '.pc{border:1px solid #e4e7eb;border-radius:8px;padding:8px 12px}.pr{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:bold}.pl{margin-top:4px}.tg{display:inline-block;font-size:10.5px;font-weight:bold;background:#eef2f7;color:#334e68;border-radius:99px;padding:1px 8px;margin-right:6px}.tg.pro{background:#fff1e6;color:#a8470a}.ps{font-size:11.5px;color:#52606d;margin-top:4px}'
     + '.step{display:flex;gap:10px;align-items:center;margin:6px 0}.step i{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-weight:bold;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}.who2{margin-top:10px;background:var(--soft);border-radius:8px;padding:10px 12px}'
     + '.warn{background:#fff8e1;border:1px solid #ffe08a;color:#7a5b00;border-radius:8px;padding:9px 12px;font-size:11.5px}'
+    + '.ref{display:flex;gap:16px;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px}.ref .rt{flex:1}.ref h2{color:#e8590c;margin-bottom:6px}.ref p{margin:5px 0}.ref .ex{font-weight:bold}.ref .fine{font-size:10.5px;color:#7c5e45}'
+    + '.scale{display:flex;gap:6px;margin:8px 0}.scale div{flex:1;text-align:center;background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:4px 2px}.scale small{display:block;color:#7c5e45;font-size:10px}.scale b{color:#e8590c;font-size:14px}'
+    + '.ref .qr{text-align:center;flex:none;width:130px}.ref .qr img{width:120px;height:120px}.ref .qr span{display:block;font-size:10px;color:#7c5e45;margin-top:2px}'
     + '@media print{body{background:#fff}.bar{display:none}.page{margin:0;page-break-after:always}@page{size:A4;margin:0}}';
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=820"><title>Offre de prix - ' + e(cl.nom) + '</title>'
@@ -1535,7 +1648,7 @@ window.pmOpenSavedOffer = async function () {
     var snap = await window.getDoc(window.doc(window.db, p[0], p[1]));
     var o = snap.exists() ? (snap.data().offres || []).find(function (x) { return x.id === p[2]; }) : null;
     if (!o) { alert('Offre introuvable (elle a peut-être été supprimée).'); return false; }
-    pmRenderOffer(window, o);
+    await pmRenderOffer(window, o);
     return true;
   } catch (err) { alert("Impossible d'ouvrir l'offre : " + err.message); return false; }
 };
@@ -1661,6 +1774,7 @@ const togMapManualOverride = new Set();
 function autoApplyPromos() {
   if (window._promoAutoActivationEnabled === false) return; // interrupteur général désactivé depuis l'admin
   [...promos, ...promosPermanent].forEach(p => {
+    if (pmIsSecondInternet(p)) { if (!togMapManualOverride.has(p.id)) togMap[p.id] = pmInternetCount() >= 2; return; }
     const hasAllGroup = p.autoProducts && p.autoProducts.length;
     const hasAnyGroup = p.autoProductsAny && p.autoProductsAny.length;
     if (!hasAllGroup && !hasAnyGroup) return; // pas d'activation automatique configurée pour cette promo
@@ -1757,7 +1871,8 @@ function calcPromos() {
     if(p.isUnique){ unique += p.price; return; }
 
     let montant=0;
-    if(p.mobileId === '_internet') montant = p.price * inetCount;
+    if(pmIsSecondInternet(p)) montant = p.price * Math.max(0, pmInternetCount() - 1);
+    else if(p.mobileId === '_internet') montant = p.price * inetCount;
     // Note 7.8.3 : l'ancienne condition "requiresChild" (Mobile Child obligatoire) est neutralisée.
     // Les conditions particulières sont désormais purement informatives (champ "condition" géré dans l'admin).
     else if(p.perAbo && p.mobileId){
@@ -1821,6 +1936,12 @@ function render() {
   const total = Math.max(0, prod + opts + homeFee - love - prom);
   const after = Math.max(0, prod + opts + homeFee - love - promAVie);
   const r = isTVAC ? 1 : 1/TVA;
+  // Remise « 2ème Internet » : le montant affiché suit le nombre d'internets (10 € par internet en plus du 1er)
+  [...promos, ...promosPermanent].forEach(p => {
+    if (!pmIsSecondInternet(p)) return;
+    const el = document.querySelector('.toggle-row[data-id="' + p.id + '"] .toggle-price');
+    if (el) el.textContent = '- ' + priceFmt(p.price * Math.max(1, pmInternetCount() - 1));
+  });
   document.getElementById('s-products').textContent = fmt(prod*r);
   document.getElementById('s-mobiles').textContent = fmt(mob*r);
   document.getElementById('s-internet').textContent = fmt(inetBase*r);
@@ -2298,6 +2419,7 @@ if (simDateEl) simDateEl.textContent = new Date().toLocaleDateString('fr-BE');
       if (loginContainer) loginContainer.style.display = 'none';
       if (appDiv) appDiv.style.display = 'block';
       if (new URLSearchParams(location.search).get('viewOffre') && window.pmOpenSavedOffer) window.pmOpenSavedOffer();
+      if (window.pmInitFiche) window.pmInitFiche();
     });
   } catch(err) {
     console.error('Firebase init failed:', err);

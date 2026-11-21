@@ -438,6 +438,14 @@ const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const cid = (params.get('c') || '').trim();
 let currentType = params.get('type') === 'consultant' ? 'consultant' : 'client';
+// QR personnel d'un client (offre de prix) : « Référencé par » pré-rempli (le proche peut le modifier)
+function prefillRef() {
+  const cut = (v, n) => (v || '').trim().slice(0, n);
+  const rp = cut(params.get('rp'), 60), rn = cut(params.get('rn'), 60), rt = cut(params.get('rt'), 24);
+  if (rp) $('refPrenom').value = rp;
+  if (rn) $('refNom').value = rn;
+  if (rt && /^\+?[\d\s.\-]{8,24}$/.test(rt)) $('refTel').value = rt;
+}
 let profil = null;
 const openedAt = Date.now();
 
@@ -461,6 +469,7 @@ async function init() {
     profil = p;
     renderProfil();
     applyType();
+    prefillRef();
     show('view-main');
   } catch (e) {
     console.warn('Profil indisponible:', e.message);
