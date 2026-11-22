@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.120 - Contrats à deux numéros + Coller depuis Smart";
+  scope.APP_VERSION = "14.121 - Type client automatique + import contrat";
 })();
