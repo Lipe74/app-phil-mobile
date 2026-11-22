@@ -9531,6 +9531,28 @@ window.pmFactApi = {
     await window.updateDoc(ref, { factures: list, updatedAt: new Date().toISOString() });
     return { coll: coll, id: id };
   },
+  // Cherche une fiche existante (même nom, même TVA ou même email) parmi les prospects puis les clients du consultant
+  async findExisting(meta) {
+    var u = window.pmCurrentUser, lu = meta.lu || {};
+    var tok = function (x) { return String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).sort().join(' '); };
+    var name = tok(meta.titulaire || lu.societe), tva = String(lu.tva || '').replace(/\W/g, '').toUpperCase(), email = String(lu.email || '').trim().toLowerCase();
+    var same = function (r) {
+      var rn = tok(r.nom || ((r.prenom || '') + ' ' + (r.nomFamille || '')));
+      var rs = tok(r.societe);
+      if (name && (rn === name || (rs && rs === name))) return true;
+      if (tva && String(r.tva || '').replace(/\W/g, '').toUpperCase() === tva) return true;
+      if (email && String(r.email || '').trim().toLowerCase() === email) return true;
+      return false;
+    };
+    var colls = ['prospectsClients', 'clients'];
+    for (var i = 0; i < colls.length; i++) {
+      var snap = await window.getDocs(window.query(window.collection(window.db, colls[i]), window.where('consultantId', '==', u.id)));
+      var hit = null;
+      snap.forEach(function (x) { if (!hit) { var r = x.data(); if (r.archive !== true && same(r)) { r._id = x.id; hit = r; } } });
+      if (hit) return { coll: colls[i], id: hit._id, rec: hit };
+    }
+    return null;
+  },
   async createProspect(file, meta) {
     var u = window.pmCurrentUser; if (!u) throw new Error('Session expirée.');
     var lu = meta.lu || {}, now = new Date().toISOString();
@@ -9547,6 +9569,19 @@ window.pmFactApi = {
       referencePrenom: '', referenceNom: '', referenceTel: '', commentaire: 'Créé depuis le comparatif (facture ' + (meta.fournisseur || '') + ')',
       statut: 'Nouveau', origine: 'comparatif', dateCreation: now, dateMaj: now
     };
+    // Doublon : on fusionne dans la fiche existante (champs vides complétés + facture), jamais de second prospect
+    var ex = null;
+    try { ex = await this.findExisting(meta); } catch (e) { console.log('Doublon non vérifié:', e.message); }
+    if (ex && ex.coll === 'clients') return { existingClient: true, nom: ex.rec.nom || full, coll: ex.coll, id: ex.id };
+    if (ex) {
+      var upd = { dateMaj: now }, r = ex.rec;
+      ['email', 'societe', 'tva', 'ville', 'cp', 'adresse', 'titulaire', 'opMobile', 'numMobile', 'opInternet', 'numInternet'].forEach(function (k) { if (!String(r[k] || '').trim() && String(data[k] || '').trim()) upd[k] = data[k]; });
+      if (!String(r.type || '').trim() && data.type) upd.type = data.type;
+      await window.updateDoc(window.doc(window.db, ex.coll, ex.id), upd);
+      var nomEx = r.nom || ((r.prenom || '') + ' ' + (r.nomFamille || '')).trim() || full;
+      try { await this.attach(ex.coll, ex.id, file, meta); } catch (e) { return { coll: ex.coll, id: ex.id, nom: nomEx, merged: true, factureErr: e.message }; }
+      return { coll: ex.coll, id: ex.id, nom: nomEx, merged: true };
+    }
     var ref = await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
     try { await this.attach('prospectsClients', ref.id, file, meta); } catch (e) { return { coll: 'prospectsClients', id: ref.id, nom: full, factureErr: e.message }; }
     return { coll: 'prospectsClients', id: ref.id, nom: full };

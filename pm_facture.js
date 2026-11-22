@@ -83,17 +83,8 @@
         card.appendChild(el('div', 'font-size:12px;font-weight:700;color:#f97316;margin:12px 0 6px;', 'Détail trouvé sur la facture (informatif)'));
         Object.keys(labels).forEach(function (k) { if (c[k] > 0) row('n_' + k, labels[k], String(c[k]), 'num'); });
       }
-      // Rangement de la facture
-      var chk = null, chkTxt = '';
-      if (FICHE && FICHE.coll === 'prospectsClients') { chkTxt = 'Ranger la facture dans la fiche du prospect'; }
-      else if (!FICHE) { chkTxt = '➕ Créer un prospect avec ces infos et y ranger la facture'; }
-      if (chkTxt) {
-        var lab = el('label', 'display:flex;gap:8px;align-items:flex-start;margin:12px 0 4px;font-size:13px;color:#1a1a1a;cursor:pointer;');
-        chk = el('input'); chk.type = 'checkbox'; chk.checked = !!FICHE; chk.style.marginTop = '2px';
-        lab.appendChild(chk); lab.appendChild(el('span', '', chkTxt)); card.appendChild(lab);
-      } else if (FICHE && FICHE.coll === 'clients') {
-        card.appendChild(el('div', 'font-size:12px;color:#6b7280;margin-top:10px;', 'Fiche client : la facture n\'est pas gardée (seulement pour les prospects).'));
-      }
+      if (FICHE && FICHE.coll === 'clients') card.appendChild(el('div', 'font-size:12px;color:#6b7280;margin-top:10px;', "Fiche client : la facture n'est pas gardée (seulement pour les prospects)."));
+      else card.appendChild(el('div', 'font-size:12px;color:#6b7280;margin-top:10px;', FICHE ? 'La facture sera rangée dans la fiche du prospect.' : 'Un prospect sera créé avec ces informations (ou complété s\'il existe déjà), avec la facture.'));
       var bar = el('div', 'display:flex;gap:8px;margin-top:14px;');
       var ok = el('button', 'flex:1;padding:11px;border:none;background:#f97316;color:#fff;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;', 'Valider et remplir');
       var no = el('button', 'padding:11px 16px;border:1px solid #ddd;background:#fff;color:#374151;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;', 'Annuler');
@@ -111,7 +102,7 @@
         // Les corrections de l'écran de vérification sont aussi enregistrées avec la facture
         var meta = Object.assign({}, m, { fournisseur: v.fournisseur, montantTvac: v.montantTvac, service: v.service, titulaire: v.titulaire,
           lu: Object.assign({}, lu, { societe: v.societe, tva: v.tva, adresse: v.adresse, cp: v.cp, ville: v.ville, email: v.email }) });
-        var save = !!(chk && chk.checked);
+        var save = !(FICHE && FICHE.coll === 'clients');
         ov.remove();
         try { cfg.apply(v); } catch (e) { console.log('Remplissage:', e.message); }
         say('ok', '✅ Comparatif rempli d\'après la facture' + (v.fournisseur ? ' ' + v.fournisseur : '') + '. Vérifie les chiffres.');
@@ -119,7 +110,12 @@
         try {
           var A = api(), res;
           if (FICHE) { await A.attach(FICHE.coll, FICHE.id, file, meta); say('ok', '✅ Comparatif rempli et facture rangée dans la fiche du prospect.'); }
-          else { res = await A.createProspect(file, meta); say(res.factureErr ? 'err' : 'ok', res.factureErr ? '⚠️ Prospect « ' + res.nom + ' » créé, mais la facture n\'a pas pu être rangée (' + res.factureErr + ').' : '✅ Prospect « ' + res.nom + ' » créé avec la facture.'); }
+          else {
+            res = await A.createProspect(file, meta);
+            if (res.existingClient) say('ok', '✅ Comparatif rempli. « ' + res.nom + ' » est déjà dans tes clients : la facture n\'est pas gardée.');
+            else if (res.factureErr) say('err', '⚠️ Fiche « ' + res.nom + ' » ' + (res.merged ? 'complétée' : 'créée') + ', mais la facture n\'a pas pu être rangée (' + res.factureErr + ').');
+            else say('ok', res.merged ? '✅ Comparatif rempli. Le prospect « ' + res.nom + ' » existait déjà : fiche complétée et facture rangée.' : '✅ Comparatif rempli. Prospect « ' + res.nom + ' » créé avec la facture.');
+          }
         } catch (e) { say('err', '⚠️ Comparatif rempli, mais la facture n\'a pas pu être rangée : ' + (e.message || e)); }
       };
     }
