@@ -580,6 +580,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
           <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
           <div id="sec-accueil" class="pm-sec-body">
           <button onclick="showOnboarding(this)" class="menu-item" id="menu-onboarding" style="display:none;border-color:#f97316;background:#fff7ed;">🚀 Mon démarrage <span id="onb-badge" style="float:right;background:#f97316;color:#fff;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;"></span></button>
+          <button onclick="showSuiviConso(this)" class="menu-item" id="menu-suivi-conso" style="display:none;border-color:#f97316;background:#fff7ed;">👥 Suivi de mes consultants <span id="suivi-conso-badge" style="float:right;background:#f97316;color:#fff;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;"></span></button>
           <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;padding-left:4px;">
@@ -817,6 +818,11 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
             </div>
 
             <div id="partners-body"></div>
+          </div>
+
+          <!-- Panel Suivi de mes consultants (sponsor) -->
+          <div id="panel-suivi-conso" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div id="suivi-conso-body"></div>
           </div>
 
           <!-- Panel Mon démarrage (nouveaux consultants) -->
@@ -3475,7 +3481,153 @@ async function onbLoad() {
   onb.dayN = dayN;
   // Onglet réservé aux nouveaux : visible tant que le PQS n'est pas validé dans l'admin (et dans les 120 premiers jours)
   onb.visible = !!start && dayN >= 1 && dayN <= ONB_DAYS && !onb.d.pqsValidated && !ob.pqsDeclared && !u.isAdmin;
+  if (onb.visible) await onbLoadProspects();
   onbRefreshUi();
+  if (onb.visible || onb.synced) onbSyncSummary();
+}
+// Prospects du consultant (vraies collections) : sert à l'affichage du bloc et aux compteurs du suivi
+async function onbLoadProspects() {
+  const u = pmCurrentUser; if (!u) return;
+  const out = { co: [], cl: [] };
+  const pairs = [['co', 'prospectsConsultants'], ['cl', 'prospectsClients']];
+  for (let i = 0; i < pairs.length; i++) {
+    try {
+      const snap = await window.getDocs(window.query(window.collection(window.db, pairs[i][1]), window.where('consultantId', '==', u.id)));
+      snap.forEach(function (x) { const r = x.data(); if (r.archive === true) return; r.docId = x.id; out[pairs[i][0]].push(r); });
+    } catch (e) { console.log('Mon démarrage : prospects illisibles:', e.message); }
+  }
+  onb.pros = out;
+}
+function onbProCounts() {
+  const p = onb.pros || { co: [], cl: [] };
+  const called = function (r) { return !!r.statut && r.statut !== 'Nouveau'; };
+  return { coCount: p.co.length, coCalled: p.co.filter(called).length, clCount: p.cl.length, clContacted: p.cl.filter(called).length };
+}
+// Synthèse « compteurs uniquement » lue par le sponsor : aucun nom, téléphone ou email de prospect (RGPD)
+async function onbSyncSummary() {
+  const u = pmCurrentUser; if (!u || !window.setDoc || !onb.d) return;
+  const ob = onb.d.onboarding || {};
+  const c = onbProCounts();
+  const g = onb.pqs ? onb.pqs.got : { mobile: 0, energy: 0, internet: 0 };
+  const data = {
+    consultantId: u.id, uplineId: u.uplineId || '',
+    nom: ((u.name || '') + ' ' + (u.lastName || '')).trim() || u.id,
+    actif: !!onb.visible, dayN: onb.dayN || 0, startDate: onb.d.startDate || '',
+    formations: !!ob.formations, success: !!ob.success,
+    pqsValidated: !!onb.d.pqsValidated, pqsDeclared: !!ob.pqsDeclared, pqsReached: !!(onb.pqs && onb.pqs.complete),
+    pqsMobile: g.mobile, pqsEnergy: g.energy, pqsInternet: g.internet,
+    coCount: c.coCount, coCalled: c.coCalled, clCount: c.clCount, clContacted: c.clContacted,
+    majLe: new Date().toISOString()
+  };
+  try { await window.setDoc(window.doc(window.db, 'demarrageSuivi', u.id), data); onb.synced = true; }
+  catch (e) { console.log('Mon démarrage : synthèse non enregistrée:', e.message); }
+}
+const ONB_LIENS = ['Famille', 'Ami(e)', 'Collègue', 'Voisin(e)', 'Connaissance', 'Autre'];
+function onbProBlocks() {
+  const pr = onb.pros || { co: [], cl: [] };
+  const c = onbProCounts();
+  const inp = 'width:100%;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px;font-size:13px;font-family:Arial,sans-serif;';
+  const row = function (r, kind) {
+    const done = r.statut && r.statut !== 'Nouveau';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #f3f4f6;font-size:12px;">'
+      + '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#1a1a1a;">' + escapeHtmlDocs(r.nom || '') + (kind === 'cl' && r.lienConnaissance ? ' <span style="font-weight:400;color:#9ca3af;">· ' + escapeHtmlDocs(r.lienConnaissance) + '</span>' : '') + '</div>'
+      + '<div style="color:#6b7280;">' + escapeHtmlDocs([r.tel, r.email].filter(Boolean).join(' · ')) + '</div></div>'
+      + (done ? '<span style="color:#16a34a;font-weight:700;white-space:nowrap;">✅ ' + escapeHtmlDocs(r.statut) + '</span>'
+        : '<button type="button" onclick="onbMarkCalled(\'' + kind + '\',\'' + r.docId + '\')" style="background:#fff;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap;">📞 ' + (kind === 'co' ? 'Appelé' : 'Contacté') + '</button>')
+      + '</div>';
+  };
+  const list = function (arr, kind) { return arr.slice().sort(function (a, b) { return String(b.dateCreation || '').localeCompare(String(a.dateCreation || '')); }).map(function (r) { return row(r, kind); }).join(''); };
+  let h = '<div style="border:1px solid #fed7aa;background:#fff7ed;border-radius:10px;padding:12px 14px;margin:16px 0 10px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;font-weight:700;color:#c2410c;">🎯 Mes 5 prospects consultants à appeler</div><div style="font-size:12px;font-weight:700;color:' + (c.coCount >= 5 ? '#16a34a' : '#c2410c') + ';">' + Math.min(c.coCount, 5) + '/5' + (c.coCount >= 5 ? ' ✅' : '') + '</div></div>'
+    + '<div style="font-size:11px;color:#9a3412;margin:2px 0 10px;">Conseillé (pas une étape obligatoire) : 5 personnes à qui proposer l\'activité. Elles arrivent directement dans ton CRM « Prospects Consultants ».</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><input id="onb-co-prenom" placeholder="Prénom" style="' + inp + '"><input id="onb-co-nom" placeholder="Nom" style="' + inp + '"><input id="onb-co-tel" placeholder="Téléphone" inputmode="tel" style="' + inp + '"><input id="onb-co-email" placeholder="Email" inputmode="email" style="' + inp + '"></div>'
+    + '<button type="button" onclick="onbSaveProspect(\'co\')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">➕ Ajouter</button>'
+    + '<div style="margin-top:8px;">' + list(pr.co, 'co') + '</div></div>';
+  h += '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;">👥 Ma liste de prospects clients</div><div style="font-size:12px;font-weight:700;color:#6b7280;">' + c.clCount + ' encodé(s)</div></div>'
+    + '<div style="font-size:11px;color:#6b7280;margin:2px 0 10px;">Famille, amis, collègues… Ils arrivent directement dans ton CRM « Prospects Clients ».</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><input id="onb-cl-prenom" placeholder="Prénom" style="' + inp + '"><input id="onb-cl-nom" placeholder="Nom" style="' + inp + '"><input id="onb-cl-tel" placeholder="Téléphone" inputmode="tel" style="' + inp + '"><input id="onb-cl-email" placeholder="Email" inputmode="email" style="' + inp + '">'
+    + '<select id="onb-cl-lien" style="' + inp + 'grid-column:1/-1;background:#fff;">' + ONB_LIENS.map(function (l) { return '<option>' + l + '</option>'; }).join('') + '</select></div>'
+    + '<button type="button" onclick="onbSaveProspect(\'cl\')" style="margin-top:8px;background:#f97316;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">➕ Ajouter</button>'
+    + '<div style="margin-top:8px;">' + list(pr.cl, 'cl') + '</div></div>';
+  return h;
+}
+async function onbSaveProspect(kind) {
+  const u = pmCurrentUser; if (!u) return;
+  const v = function (id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  const pre = 'onb-' + kind + '-';
+  const prenom = pcNormName(v(pre + 'prenom')), fam = pcNormName(v(pre + 'nom'));
+  const nom = (prenom + ' ' + fam).trim();
+  if (!nom) { alert('Merci de renseigner au moins un prénom ou un nom.'); return; }
+  const now = new Date().toISOString();
+  const coll = kind === 'co' ? 'prospectsConsultants' : 'prospectsClients';
+  const data = { consultantId: u.id, nom: nom, prenom: prenom, nomFamille: fam, tel: pcNormTel(v(pre + 'tel')), email: v(pre + 'email'), source: 'Autre', statut: 'Nouveau', origine: 'démarrage', dateCreation: now, dateMaj: now };
+  if (kind === 'cl') { data.lienConnaissance = v('onb-cl-lien'); data.provenance = ''; }
+  try {
+    if (!(await pcDupWarnNew(coll, data))) return;
+    await window.addDoc(window.collection(window.db, coll), data);
+    await onbLoadProspects();
+    onbRenderPanel();
+    onbSyncSummary();
+    pcToast('✅ Prospect ajouté à ton CRM.');
+  } catch (e) { alert('Enregistrement impossible : ' + e.message); }
+}
+async function onbMarkCalled(kind, docId) {
+  const coll = kind === 'co' ? 'prospectsConsultants' : 'prospectsClients';
+  try {
+    await window.updateDoc(window.doc(window.db, coll, docId), pcStatusPatch('Contacté'));
+    await onbLoadProspects();
+    onbRenderPanel();
+    onbSyncSummary();
+  } catch (e) { alert('Enregistrement impossible : ' + e.message); }
+}
+// ----- Suivi de mes consultants (sponsor) : lit uniquement les synthèses « compteurs » des consultants dont il est l'upline direct -----
+let onbTeam = [];
+async function onbSponsorLoad() {
+  const u = pmCurrentUser; if (!u) return;
+  try {
+    const snap = await window.getDocs(window.query(window.collection(window.db, 'demarrageSuivi'), window.where('uplineId', '==', u.id)));
+    const list = [];
+    snap.forEach(function (x) { const r = x.data(); if (r.consultantId && r.consultantId !== u.id && r.actif === true) list.push(r); });
+    list.sort(function (a, b) { return (b.dayN || 0) - (a.dayN || 0); });
+    onbTeam = list;
+  } catch (e) { onbTeam = []; console.log('Suivi consultants:', e.message); }
+  const btn = document.getElementById('menu-suivi-conso');
+  const bd = document.getElementById('suivi-conso-badge');
+  if (btn) btn.style.display = onbTeam.length ? 'block' : 'none';
+  if (bd) bd.textContent = onbTeam.length;
+}
+function onbTeamRender() {
+  const box = document.getElementById('suivi-conso-body'); if (!box) return;
+  const chk = function (ok, label) { return '<div style="font-size:12px;color:' + (ok ? '#16a34a' : '#6b7280') + ';font-weight:' + (ok ? '700' : '400') + ';">' + (ok ? '✅ ' : '⬜ ') + label + '</div>'; };
+  let h = '<div style="font-size:15px;font-weight:700;color:#1a1a1a;">👥 Suivi de mes consultants</div>'
+    + '<div style="font-size:12px;color:#6b7280;margin:2px 0 14px;">Nouveaux consultants de ton équipe directe (120 premiers jours). Tu vois leur progression et le nombre de prospects, jamais les coordonnées de leurs prospects.</div>';
+  if (!onbTeam.length) h += '<div style="font-size:13px;color:#9ca3af;">Aucun consultant en démarrage pour le moment.</div>';
+  onbTeam.forEach(function (r) {
+    const pqsOk = r.pqsValidated || r.pqsDeclared;
+    const bar = function (lbl, got, t) { return '<span style="display:inline-block;margin-right:10px;font-size:11px;color:' + (got >= t ? '#16a34a' : '#374151') + ';font-weight:' + (got >= t ? '700' : '400') + ';">' + lbl + ' ' + onbFmt(got || 0) + '/' + t + '</span>'; };
+    h += '<div style="border:1px solid #f0f0f0;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:14px;font-weight:700;color:#1a1a1a;">' + escapeHtmlDocs(r.nom || r.consultantId) + '</div><div style="font-size:12px;font-weight:700;color:#f97316;">Jour ' + (r.dayN || '?') + '/' + ONB_DAYS + '</div></div>'
+      + chk(r.formations, 'Formations obligatoires My Smart')
+      + chk(r.success, 'Formation Success (Bruxelles)')
+      + chk(pqsOk, pqsOk ? (r.pqsValidated ? 'PQS validé' : 'PQS déclaré validé dans My Smart') : (r.pqsReached ? 'PQS : 12 ASP atteints (à valider)' : 'PQS en cours'))
+      + (pqsOk ? '' : '<div style="margin:2px 0 0 20px;">' + bar('📱', r.pqsMobile, ONB_PQS_TARGET.mobile) + bar('⚡', r.pqsEnergy, ONB_PQS_TARGET.energy) + bar('🌐', r.pqsInternet, ONB_PQS_TARGET.internet) + '</div>')
+      + '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e7eb;font-size:12px;color:#374151;">🎯 Prospects consultants : <b>' + (r.coCount || 0) + '/5</b> encodés · <b>' + (r.coCalled || 0) + '</b> appelés<br>👥 Prospects clients : <b>' + (r.clCount || 0) + '</b> encodés · <b>' + (r.clContacted || 0) + '</b> contactés</div>'
+      + '</div>';
+  });
+  box.innerHTML = h;
+}
+function showSuiviConso(btn) {
+  document.querySelectorAll('.menu-item').forEach(function (b) { b.classList.remove('active-item'); });
+  if (btn) btn.classList.add('active-item');
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(function (p) { p.style.display = 'none'; });
+  onbTeamRender();
+  document.getElementById('panel-suivi-conso').style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+  onbSponsorLoad().then(onbTeamRender);
 }
 function onbRefreshUi() {
   const btn = document.getElementById('menu-onboarding');
@@ -3526,7 +3678,7 @@ function onbRenderPanel() {
     if (st.network && !st.done) html += '<div style="font-size:11px;color:#9ca3af;margin-top:8px;">Étape validée par l\'admin quand tu atteins la position.</div>';
     html += '</div>';
   });
-  box.innerHTML = html;
+  box.innerHTML = html + onbProBlocks();
 }
 async function onbDeclarePqs() {
   if (!confirm('Tu confirmes que ton PQS est validé dans My Smart ? Ton upline le vérifiera avant la validation officielle.')) return;
@@ -3561,7 +3713,7 @@ function showOnboarding(btn) {
   document.body.classList.add('mobile-panel-open');
   onbLoad().then(onbRenderPanel);   // rafraîchit (contrats activés depuis la dernière visite)
 }
-async function onbInit() { try { await onbLoad(); } catch (e) { console.log('Mon démarrage:', e.message); } }
+async function onbInit() { try { await onbLoad(); } catch (e) { console.log('Mon démarrage:', e.message); } try { await onbSponsorLoad(); } catch (e) { } }
 // ===== FIN MON DÉMARRAGE =====
 
 // ===== MESSAGES PRÉ-REMPLIS (Build 14.100) — WhatsApp / SMS depuis les fiches prospects =====

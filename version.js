@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.122 - Barème ASP corrigé + comparatif à jour";
+  scope.APP_VERSION = "14.123 - Démarrage : prospects + suivi sponsor";
 })();
