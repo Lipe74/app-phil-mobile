@@ -1539,6 +1539,7 @@ function pmOfferRuntime() {
   var body;
   var over = function () { return body.scrollHeight > body.clientHeight + 1; };
   function place(b) {
+    if (b.classList.contains('pgbrk')) { if (body.children.length) body = newPage(); return; }
     body.appendChild(b);
     if (!over()) return;
     if (b.classList.contains('fr') && !b.classList.contains('nosplit')) {
@@ -1577,11 +1578,13 @@ function pmOfferRuntime() {
     return h / b.clientHeight;
   }
   // Mode compact automatique : si la dernière page est presque vide, on resserre la mise en page et on garde la version qui a le moins de pages
+  // Plusieurs sites : chaque site commence sur une nouvelle page (repères .pgbrk), on cherche le niveau qui tient sur le moins de pages
+  var hasBrk = srcHtml.indexOf('pgbrk') >= 0;
   var bestLevel = 0, bestN = build(0);
-  if (bestN > 1 && lastFill() < 0.35) {
+  if (bestN > 1 && (hasBrk || lastFill() < 0.35)) {
     for (var lv = 1; lv <= 2; lv++) {
       var n2 = build(lv);
-      if (n2 < bestN) { bestN = n2; bestLevel = lv; if (lastFill() >= 0.35) break; }
+      if (n2 < bestN) { bestN = n2; bestLevel = lv; if (!hasBrk && lastFill() >= 0.35) break; }
     }
     build(bestLevel);
   }
@@ -1674,6 +1677,7 @@ async function pmRenderOffer(w, d) {
     var nm = function (j) { return 'Offre ' + (j + 1); };
     var S = items.map(function (x) { return x.s; });
     var isRec = function (j) { return items[j].s.rec === true || (d.rec !== null && d.rec !== undefined && d.rec === items[j].i); };
+    if (multiSite) blocks.push('<div class="pgbrk"></div>');
     var head = multiSite ? '<div class="sitehd"><div class="sh1">Site ' + (k + 1) + '</div>' + (adrOf(k) ? '<div class="sh2">' + e(adrOf(k)) + '</div>' : '') + '</div>' : '';
     if (!mlt) {
       var s0 = S[0];
@@ -1755,6 +1759,15 @@ async function pmRenderOffer(w, d) {
     }
   };
 
+  var groups0 = siteIdx.map(function (k) { return { k: k, list: sims.filter(function (x) { return (x.site || 0) === k; }) }; });
+  if (multiSite) {
+    // Page de garde : liste des sites (adresse, nombre d'offres, tarif dès)
+    var ov = groups0.map(function (g) {
+      var low = Math.min.apply(null, g.list.map(function (x) { return x.today; }));
+      return rw('Site ' + (g.k + 1), adrOf(g.k) ? e(adrOf(g.k)) : '', g.list.length + (g.list.length > 1 ? ' offres' : ' offre') + ' · dès ' + f(low) + ' / mois');
+    }).join('');
+    blocks.push(fr(acc, 'Vos ' + siteIdx.length + ' sites', ov, 'Prix par mois, ' + modeTxt, true));
+  }
   var groups = siteIdx.map(function (k) {
     var items = sims.map(function (x, i) { return { s: x, i: i }; }).filter(function (x) { return (x.s.site || 0) === k; });
     if (multiSite) items.sort(function (a, b) { return a.s.today - b.s.today; });   // offre 1 = la moins chère
@@ -1792,6 +1805,7 @@ async function pmRenderOffer(w, d) {
           + grid(K, 'Économie la 1re année', eY.map(function (v, j) { return eM[j] > 0 ? f(v) : '–'; }), 'ecor');
       }
     }
+    blocks.push('<div class="pgbrk"></div>');
     blocks.push(fr(acc, 'Résumé total de vos ' + groups.length + ' sites', tr + recNote, 'Prix par mois, ' + modeTxt, true));
   }
 

@@ -1119,7 +1119,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville ou adresse</div><input id="ctr-adresse" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Orange</div><input id="ctr-clientOrange" placeholder="1.9763217" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat Eneco</div><input id="ctr-contratEneco" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                <div style="grid-column:span 2;"><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat My Smart</div><input id="ctr-contratSmart" placeholder="0000282697" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div style="grid-column:span 2;"><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat My Smart</div><input id="ctr-contratSmart" placeholder="0000282697" onblur="this.value=ctrSmartNorm(this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date du contrat</div><input type="date" id="ctr-dateContrat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div>
                   <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">État du contrat</div>
@@ -1318,11 +1318,16 @@ STATUT: independant
             </div>
 
             <!-- Modale : ajouter / modifier un prospect client (uniformisé avec Gestion Clients) -->
-            <div id="modal-pcl-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
+            <style>
+#modal-pcl-edit .crm-sec,#modal-pco-edit .crm-sec{border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
+#modal-pcl-edit .crm-sh,#modal-pco-edit .crm-sh{color:#fff;font-weight:700;font-size:13px;padding:7px 12px}
+#modal-pcl-edit .crm-sb,#modal-pco-edit .crm-sb{padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+</style>
+<div id="modal-pcl-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
               <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
                 <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;">📇 Coordonnées</div>
+                <div>
+                  <div class="crm-sec"><div class="crm-sh" style="background:#1f5fa8;">📇 Coordonnées</div><div class="crm-sb">
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
                     <input id="pcl-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1369,7 +1374,8 @@ STATUT: independant
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Titulaire du contrat / de la facture (si différent du contact)</div>
                     <input id="pcl-titulaire" placeholder="Prénom Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
-                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">📡 Opérateurs actuels</div>
+                  </div></div>
+<div class="crm-sec"><div class="crm-sh" style="background:#0e7490;">📡 Opérateurs actuels</div><div class="crm-sb">
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur Mobile</div>
                     <select id="pcl-op-mobile" onchange="pclOpColor(this)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1419,13 +1425,15 @@ STATUT: independant
                       <input type="file" accept="application/pdf" style="display:none;" onchange="crmFactureAdd(this.files[0]); this.value='';">
                     </label>
                   </div>
-                  <div id="pcl-ref-title" style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">👥 Référencé par (facultatif)</div>
+                  </div></div>
+<div class="crm-sec"><div class="crm-sh" id="pcl-ref-title" style="background:#e8590c;">👥 Référencé par (facultatif)</div><div class="crm-sb">
                   <div id="pcl-reference-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom du référent</div><input id="pcl-ref-prenom" oninput="pclAutoOrigine()" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom du référent</div><input id="pcl-ref-nom" oninput="pclAutoOrigine()" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM du référent</div><input id="pcl-ref-tel" oninput="pclAutoOrigine()" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                   </div>
-                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">🎯 Source et origine du lead</div>
+                  </div></div>
+<div class="crm-sec"><div class="crm-sh" style="background:#7c3aed;">🎯 Source et origine du lead</div><div class="crm-sb">
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
                     <div><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;margin-right:14px;cursor:pointer;"><input type="checkbox" id="pcl-src-0"> 📡 Télécom</label><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;margin-right:14px;cursor:pointer;"><input type="checkbox" id="pcl-src-1"> ⚡ Énergie</label><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;margin-right:14px;cursor:pointer;"><input type="checkbox" id="pcl-src-2"> 🎯 Consultant</label></div>
@@ -1445,9 +1453,10 @@ STATUT: independant
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
                     <textarea id="pcl-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
                   </div>
-                </div>
+                </div></div>
+</div>
                 <div id="pcl-modal-summary"></div>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                <div style="position:sticky;bottom:-22px;display:flex;gap:10px;justify-content:flex-end;margin:6px -22px -22px;padding:12px 22px;background:#fff;border-top:1px solid #eee;border-radius:0 0 16px 16px;">
                   <button onclick="pclCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
                   <button onclick="pclSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
                 </div>
@@ -1579,8 +1588,8 @@ OPERATEUR: Proximus
             <div id="modal-pco-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
               <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
                 <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;">📇 Coordonnées</div>
+                <div>
+                  <div class="crm-sec"><div class="crm-sh" style="background:#1f5fa8;">📇 Coordonnées</div><div class="crm-sb">
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
                     <input id="pco-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1617,7 +1626,8 @@ OPERATEUR: Proximus
                     </select>
                     <input id="pco-tva" placeholder="BE0123456789" style="display:none;width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;margin-top:6px;">
                   </div>
-                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">💼 Profil</div>
+                  </div></div>
+<div class="crm-sec"><div class="crm-sh" style="background:#0e7490;">💼 Profil</div><div class="crm-sb">
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Source</div>
                     <select id="pco-source" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
@@ -1640,20 +1650,21 @@ OPERATEUR: Proximus
                       <option value="Chômage - CPAS">🗂 Chômage - CPAS</option>
                     </select>
                   </div>
-                  <div style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                    <div style="grid-column:1/-1;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">👥 Référencé par (facultatif)</div>
+                  </div></div>
+<div class="crm-sec"><div class="crm-sh" style="background:#e8590c;">👥 Référencé par (facultatif)</div><div class="crm-sb" style="grid-template-columns:1fr 1fr 1fr;">
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div><input id="pco-ref-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div><input id="pco-ref-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                     <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM</div><input id="pco-ref-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                  </div>
-                  <div style="grid-column:span 2;font-size:12px;font-weight:800;color:#f97316;border-top:1px solid #fed7aa;padding-top:10px;margin-top:6px;">📝 Notes</div>
+                  </div></div>
+                  <div class="crm-sec"><div class="crm-sh" style="background:#6b7280;">📝 Notes</div><div class="crm-sb">
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Commentaire</div>
                     <textarea id="pco-commentaire" rows="3" placeholder="Commentaire" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></textarea>
                   </div>
-                </div>
+                </div></div>
+</div>
                 <div id="pco-modal-summary"></div>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                <div style="position:sticky;bottom:-22px;display:flex;gap:10px;justify-content:flex-end;margin:6px -22px -22px;padding:12px 22px;background:#fff;border-top:1px solid #eee;border-radius:0 0 16px 16px;">
                   <button onclick="pcoCloseModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
                   <button onclick="pcoSaveProspect()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
                 </div>
@@ -7862,7 +7873,7 @@ function crmRenderCard(item, col) {
   if (Array.isArray(item.factures) && item.factures.length) h += '<div style="font-size:12px;color:#555;">📄 ' + item.factures.length + ' facture(s)</div>';
   if (item.numOrange) h += '<div style="font-size:12px;color:#f97316;font-weight:700;">N° Orange: ' + crmEsc(item.numOrange) + '</div>';
   if (item.numEneco) h += '<div style="font-size:12px;color:#22c55e;font-weight:700;">N° Eneco: ' + crmEsc(item.numEneco) + '</div>';
-  if (col === 'clients') crmContrats(item).forEach(function (c) { h += '<div style="font-size:12px;color:#555;">📝 ' + crmEsc(crmContratLine(c)) + '</div>'; });
+  if (col === 'clients') crmContrats(item).forEach(function (c) { h += '<div style="font-size:12px;color:#555;">📝 ' + crmEsc(crmContratLine(c)) + (c.date ? '' : ' <span style="background:#fff1e6;color:#c2410c;border:1px solid #fdba74;border-radius:99px;font-size:10.5px;font-weight:700;padding:1px 7px;">⚠️ date manquante</span>') + '</div>'; });
   if (col === 'clients') h += pmOffresHtml(item, 'clients', item._id);
   if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Produits Orange: ' + crmEsc(item.orange) + '</div>';
   if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Produits Eneco: ' + crmEsc(item.eneco) + '</div>';
@@ -8062,7 +8073,9 @@ window.openCrmModal = function(col, docId) {
   document.getElementById('modal-crm-title').textContent = (docId ? 'Modifier' : 'Nouveau') + (isC ? ' consultant' : ' client');
   document.getElementById('crm-doc-id').value = docId || '';
   document.getElementById('crm-col').value = col;
-  document.getElementById('crm-ref-row').style.display = isC ? 'none' : 'grid';
+  document.getElementById('crm-ref-row').style.display = isC ? 'none' : '';
+  document.getElementById('crm-sec-op').style.display = isC ? 'none' : '';
+  document.getElementById('crm-sec-cons').style.display = isC ? '' : 'none';
   document.getElementById('crm-titulaire-row').style.display = isC ? 'none' : '';
   document.getElementById('crm-asp-row').style.display = isC ? '' : 'none';
   document.getElementById('crm-idsmart-row').style.display = isC ? '' : 'none';
@@ -8092,6 +8105,7 @@ window.openCrmModal = function(col, docId) {
     if (dm && !appIt.dateEntree) document.getElementById('crm-dateEntree').value = dm[3] + '-' + ('0' + dm[2]).slice(-2) + '-' + ('0' + dm[1]).slice(-2);
   }
   crmContratsFill(!isC && _it ? crmContrats(_it) : []);
+  crmSocInit();
   crmFactInit('crm', isC ? null : docId, !isC && _it ? _it.factures : []);
   document.getElementById('modal-crm').style.display = 'flex';
 };
@@ -8121,6 +8135,10 @@ window.saveCrmModal = function() {
   if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.titulaire=pcNormName(g('titulaire')); data.type=g('type'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); data.type = g('type'); data.idSmart = g('idSmart').trim(); data.dateEntree = g('dateEntree'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
+  if (!isC) {
+    var dupS = crmSmartElsewhere(data.contrats, docId);
+    if (dupS && !confirm('⚠️ Le N° Smart ' + dupS.smart + ' est déjà sur la fiche de « ' + pcDupName(dupS.fiche) + ' ».\n\nUn même numéro = un même contrat. Vérifie le numéro.\n\nOK = enregistrer quand même\nAnnuler = corriger')) return;
+  }
   var p;
   if (docId) {
     p = window.updateDoc(window.doc(window.db, col, docId), data);
@@ -8564,7 +8582,7 @@ window.pclToggleReference = function () {
   document.getElementById('pcl-reference-row').style.display = 'grid';
   var req = document.getElementById('pcl-provenance').value === 'Référence client existant';
   var t = document.getElementById('pcl-ref-title');
-  if (t) { t.textContent = req ? '👥 Référencé par (obligatoire : origine « Référence client existant »)' : '👥 Référencé par (facultatif)'; t.style.color = req ? '#c0392b' : '#f97316'; }
+  if (t) { t.textContent = req ? '👥 Référencé par (obligatoire : origine « Référence client existant »)' : '👥 Référencé par (facultatif)'; t.style.background = req ? '#c0392b' : '#e8590c'; }
 };
 // Dès qu'un référent est renseigné, l'origine passe sur « Référence client existant » (sauf si une autre origine est déjà choisie)
 window.pclAutoOrigine = function () {
@@ -8796,8 +8814,20 @@ function pcFixAdresse(o) {
 // Numéro (Smart SN) lu dans le nom du fichier : « Orange_0000138335.pdf », « Connective package Name 0000147106 »…
 function ctrSmartFromFileName(name) {
   var m = String(name || '').replace(/\.[a-z0-9]{2,4}$/i, '').match(/\d{8,12}(?!.*\d{8,})/);
-  return m ? m[0] : '';
+  return m ? ctrSmartNorm(m[0]) : '';
 }
+// N° Smart normalisé : espaces et symboles retirés, complété à 10 chiffres (« 299515 » et « 0000299515 » = même contrat).
+// Si on colle un lien (…/contract/a09…/0000299515), on garde le dernier numéro de 6 chiffres ou plus.
+function ctrSmartNorm(v) {
+  var s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  var d;
+  if (/^[\d\s.\-]+$/.test(s)) d = s.replace(/\D/g, '');
+  else { var runs = s.match(/\d{6,}/g); d = runs ? runs[runs.length - 1] : ''; }
+  if (!d) return s;
+  return d.length < 10 ? ('0000000000' + d).slice(-10) : d;
+}
+window.ctrSmartNorm = ctrSmartNorm;
 function pcNormTel(raw) {
   var s = String(raw == null ? '' : raw).trim();
   if (!s) return '';
@@ -10682,9 +10712,6 @@ window.ctrShowTab = function (id) {
 
 // Point d'entrée : appelé par showCrmPanel() à chaque ouverture du panneau "Mes Contrats".
 window.ctrInit = async function () {
-  if (!document.getElementById('ctr-dateContrat').value) {
-    document.getElementById('ctr-dateContrat').value = new Date().toISOString().slice(0, 10);
-  }
   if (!window._ctrProductsBuilt) {
     ctrBuildProductsUI();
     window.ctrUpdateContractPreview();
@@ -10740,6 +10767,7 @@ window.ctrSaveContract = async function () {
   });
   if (Object.keys(produitsDetail).length === 0) { alert("Merci d'ajouter au moins un produit au contrat."); return; }
 
+  if (!document.getElementById('ctr-dateContrat').value && !window._ctrEditingId && !confirm('⚠️ Aucune date de signature.\n\nOK = enregistrer sans date (à compléter plus tard)\nAnnuler = encoder la date')) { document.getElementById('ctr-dateContrat').focus(); return; }
   var ancien = document.getElementById('ctr-ancien').checked;
   var data = {
     consultantId: window.pmCurrentUser.id,
@@ -10751,7 +10779,7 @@ window.ctrSaveContract = async function () {
     tva: pcNormTva(document.getElementById('ctr-tva').value),
     clientOrange: document.getElementById('ctr-clientOrange').value.trim(),
     contratEneco: document.getElementById('ctr-contratEneco').value.trim(),
-    contratSmart: document.getElementById('ctr-contratSmart').value.trim(),
+    contratSmart: ctrSmartNorm(document.getElementById('ctr-contratSmart').value),
     email: document.getElementById('ctr-email').value.trim(),
     adresse: document.getElementById('ctr-adresse').value.trim(),
     dateContrat: document.getElementById('ctr-dateContrat').value,
@@ -10768,6 +10796,11 @@ window.ctrSaveContract = async function () {
   if (!editingId) {
     try {
       var dupC = await ctrFindDuplicate(data);
+      if (dupC && data.contratSmart && ctrSmartNorm(dupC.contratSmart) === data.contratSmart) {
+        // Même n° Smart = même contrat : on complète l'existant, jamais de 2e contrat ni de points en double
+        await ctrCompleteExisting(dupC, data);
+        return;
+      }
       if (dupC) {
         var lib = (dupC.nom || '') + (dupC.dateContrat ? ', ' + pcFmtDate(dupC.dateContrat) : '') + (dupC.contratSmart ? ', Smart ' + dupC.contratSmart : '');
         if (confirm('⚠️ Ce contrat existe déjà : ' + lib + '.\n\nOK = mettre à jour le contrat existant (rien n\'est compté en double)\nAnnuler = autres choix')) {
@@ -10822,6 +10855,64 @@ window.ctrSaveContract = async function () {
     await window.ctrRefreshAspTotal();
   } catch (err) { alert('Erreur lors de l\'enregistrement: ' + err.message); }
 };
+
+// Contrat déjà existant (même n° Smart) : complète les infos manquantes, remplace la date par celle de la signature, ne recompte aucun point
+async function ctrCompleteExisting(old, nw) {
+  var FIELDS = [['nom', 'Nom'], ['societe', 'Société'], ['tel', 'Téléphone'], ['tva', 'TVA'], ['clientOrange', 'N° client Orange'], ['contratEneco', 'N° client Eneco'], ['email', 'E-mail'], ['adresse', 'Adresse']];
+  var norm = function (f, v) {
+    v = String(v || '').trim();
+    if (f === 'tel') return pcNormTel(v);
+    if (f === 'tva') return pcNormTva(v);
+    if (f === 'nom') return pmNameTok(v);
+    return v.toLowerCase().replace(/\s+/g, ' ');
+  };
+  var patch = {}, diffs = [], did = [];
+  FIELDS.forEach(function (x) {
+    var f = x[0], ov = old[f], nv = nw[f];
+    if (!nv) return;
+    if (!ov) { patch[f] = nv; did.push(x[1].toLowerCase()); }
+    else if (norm(f, ov) !== norm(f, nv)) diffs.push({ f: f, label: x[1], ov: ov, nv: nv });
+  });
+  if (old.contratSmart !== nw.contratSmart) patch.contratSmart = nw.contratSmart;
+  // produits : on ajoute seulement ceux qui manquent (les points déjà comptés ne changent pas)
+  var addedP = Object.keys(nw.produitsDetail || {}).filter(function (id) { return !(old.produitsDetail || {})[id]; });
+  if (addedP.length) {
+    patch.produitsDetail = Object.assign({}, old.produitsDetail || {});
+    addedP.forEach(function (id) { patch.produitsDetail[id] = nw.produitsDetail[id]; });
+    did.push('produits');
+  }
+  // date de signature
+  var oldD = old.dateContrat || '', newD = nw.dateContrat || '', dateChange = false;
+  if (newD && newD !== oldD) {
+    var m0 = (oldD || String(old.date || '').slice(0, 10)).slice(0, 7), m1 = newD.slice(0, 7);
+    var okDate = true;
+    if (oldD && m0 && m0 !== m1) okDate = confirm('📅 La date du contrat passe du ' + pcFmtDate(oldD) + ' au ' + pcFmtDate(newD) + ' (date de signature du PDF).\n\n⚠️ Le contrat change de mois : ses ASP seront comptés dans le nouveau mois.\n\nOK = corriger la date\nAnnuler = garder ' + pcFmtDate(oldD));
+    if (okDate) { patch.dateContrat = newD; dateChange = true; did.unshift('date'); }
+  }
+  // champs déjà remplis mais différents : on montre l'ancien et le nouveau
+  if (diffs.length) {
+    var txt = diffs.map(function (d) { return '• ' + d.label + ' : « ' + d.ov + ' » → « ' + d.nv + ' »'; }).join('\n');
+    if (confirm('Contrat déjà existant (Smart ' + nw.contratSmart + ', ' + (old.nom || '?') + ').\n\nDifférences avec le PDF :\n' + txt + '\n\nOK = remplacer par les nouvelles valeurs\nAnnuler = garder les valeurs actuelles (le reste est quand même complété)')) {
+      diffs.forEach(function (d) { patch[d.f] = d.nv; did.push(d.label.toLowerCase()); });
+    }
+  }
+  if (Object.keys(patch).length) {
+    await window.updateDoc(window.doc(window.db, 'contrats', old.docId), patch);
+    await ctrSyncContractToClients(Object.assign({}, old, patch), old.docId);
+  }
+  pcToast(did.length ? '✅ Contrat déjà existant : complété (' + did.join(', ') + '). Points non recomptés.' : 'ℹ️ Contrat déjà existant : rien à compléter. Points non recomptés.');
+  ['ctr-nom', 'ctr-societe', 'ctr-tel', 'ctr-tva', 'ctr-clientOrange', 'ctr-contratEneco', 'ctr-contratSmart', 'ctr-email', 'ctr-adresse', 'ctr-dateContrat'].forEach(function (id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('ctr-ancien').checked = false;
+  ctrProducts.forEach(function (p) { ctrUnits[p.id] = []; });
+  ctrBuildProductsUI();
+  window.ctrUpdateContractPreview();
+  window._ctrProspectId = null;
+  var bn = document.getElementById('ctr-prospect-link-banner');
+  if (bn) bn.style.display = 'none';
+  await window.ctrRefreshAspTotal();
+}
 
 window.ctrEditContract = function (docId) {
   var c = (window._ctrAllContracts || []).find(function (x) { return x.docId === docId; });
@@ -11038,6 +11129,7 @@ Le PDF joint est un contrat. Réponds UNIQUEMENT avec un objet JSON valide, sans
 
 {
   "fournisseur": "Orange" | "Eneco" | "VOO" | "Proximus" | "Base" | "Autre",
+  "dateContrat": "",
   "client": { "nom": "", "societe": "", "tel": "", "tva": "", "email": "", "adresse": "", "clientOrange": "", "contratEneco": "", "contratSmart": "" },
   "produits": [ { "id": "", "quantite": 1, "convergence": false, "portabilite": false, "sohoIndep": false } ]
 }
@@ -11056,6 +11148,9 @@ Règles :
 - "clientOrange" = uniquement le numéro de client/contrat Orange, s'il apparaît sur un contrat Orange.
 - "contratEneco" = uniquement le numéro de client/contrat Eneco, s'il apparaît sur un contrat Eneco (souvent en haut du document ou près des coordonnées du client).
 - "contratSmart" = numéro interne "My Smart" : ce numéro n'apparaît JAMAIS dans le CONTENU du contrat (PDF) — ne le déduis jamais d'un nom de société, revendeur ou intermédiaire présent dans le PDF. En revanche, le NOM DU FICHIER suit souvent le format "Fournisseur_XXXXXXXXXX.pdf" (ex: "Orange_0000138335.pdf" ou "Eneco_0000139314.pdf"), où la partie numérique après le tiret bas est le numéro My Smart. Si le nom de fichier fourni ci-dessus correspond à ce format, extrais cette partie numérique comme "contratSmart". Sinon, laisse ce champ vide ("").
+- "dateContrat" = DATE DE SIGNATURE du contrat par le client, au format AAAA-MM-JJ. Cherche d'abord le cachet de signature numérique (« Signé numériquement par … Date : JJ/MM/AAAA hh:mm:ss ») : s'il y en a plusieurs, prends la plus ancienne. Sinon, prends la date de la mention « Le JJ/MM/AAAA » dans le bloc « Signature de la demande » (contrats Orange). IGNORE : les dates de version des conditions générales (ex. « Date : 18 janvier 2026 »), la date de naissance, la date de création du PDF, les dates d'activation ou de début de fourniture. Si aucune date de signature n'est trouvée : "".
+- Les numéros EAN (souvent 18 chiffres, commençant par 541…) ne sont PAS des numéros de client Eneco : ne les mets jamais dans "contratEneco". Si le numéro de client n'apparaît pas dans le document (nouveau client), laisse "" : n'invente rien.
+- Ne renvoie JAMAIS le numéro de registre national ni le numéro de carte d'identité du client.
 - N'ajoute AUCUN champ en dehors de ce schéma.`;
 }
 
@@ -11170,6 +11265,10 @@ function ctrApplyImportedContract(data) {
     }
   });
 
+  // Date de signature du PDF (vide si introuvable : jamais la date du jour)
+  var dEl = document.getElementById('ctr-dateContrat');
+  if (dEl) dEl.value = /^\d{4}-\d{2}-\d{2}$/.test(String(data.dateContrat || '')) ? data.dateContrat : '';
+
   ctrBuildProductsUI();
   window.ctrUpdateContractPreview();
 }
@@ -11190,7 +11289,10 @@ window.ctrHandleImportPdf = async function (file) {
 
     var fournisseur = data.fournisseur || 'Fournisseur inconnu';
     var nbProduits = (data.produits || []).reduce(function (s, p) { return s + (p.quantite || 1); }, 0);
-    ctrSetImportStatus('ok', '✅ Contrat ' + fournisseur + ' importé — ' + nbProduits + ' produit(s) ajouté(s). Vérifie les champs avant d\'enregistrer.');
+    var dTxt = /^\d{4}-\d{2}-\d{2}$/.test(String(data.dateContrat || '')) ? ' Signé le ' + pcFmtDate(data.dateContrat) + '.' : ' ⚠️ Date de signature introuvable : à encoder.';
+    var exist = null;
+    try { var smN = ctrSmartNorm(data.client.contratSmart); if (smN) exist = (await ctrLoadContracts()).find(function (c) { return ctrSmartNorm(c.contratSmart) === smN; }) || null; } catch (e2) { exist = null; }
+    ctrSetImportStatus('ok', '✅ Contrat ' + fournisseur + ' importé — ' + nbProduits + ' produit(s).' + dTxt + (exist ? ' ℹ️ N° Smart déjà enregistré (' + (exist.nom || '?') + ') : à l\'enregistrement, le contrat existant sera complété (pas de doublon, points non recomptés).' : ' Vérifie les champs avant d\'enregistrer.'));
   } catch (err) {
     console.error(err);
     ctrSetImportStatus('err', '❌ ' + (err.message || "Échec de l'import automatique. Tu peux encoder le contrat manuellement."));
@@ -11236,7 +11338,7 @@ function crmMergeContrats(a, b, overwrite) {
   (b || []).forEach(function (n) {
     var i = out.findIndex(function (o) {
       if (n.contractId && o.contractId === n.contractId) return true;
-      if (n.smart && o.smart && n.smart === o.smart) return true;
+      if (n.smart && o.smart && ctrSmartNorm(n.smart) === ctrSmartNorm(o.smart)) return true;
       return !!(n.date && o.date === n.date && (!o.smart || !n.smart) && (!o.contractId || !n.contractId));
     });
     if (i < 0) { out.push(Object.assign({}, n)); return; }
@@ -11261,38 +11363,117 @@ function crmMatchContract(x, c) {
   return false;
 }
 
-// --- Éditeur de contrats dans la fiche client ---
+// --- Éditeur de contrats dans la fiche client (cartes colorées + pastilles produits) ---
+function crmPillDefs() {
+  return (ctrProducts || []).filter(function (p) { return p.cat !== 'other'; }).map(function (p) {
+    return { id: p.id, label: p.label, short: String(p.label).replace(/^[^A-Za-zÀ-ÿ]+/, '').replace(/^Eneco /, '') };
+  });
+}
+function crmNormLabel(t) { return pcStripAcc(String(t || '').replace(/×\s*\d+\s*$/, '')).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+// Texte d'un produit enregistré -> { id, q } si c'est un produit connu
+function crmParseProduit(t) {
+  var m = String(t || '').match(/×\s*(\d+)\s*$/), q = m ? Math.max(1, parseInt(m[1], 10)) : 1, n = crmNormLabel(t);
+  var def = crmPillDefs().find(function (d) { return crmNormLabel(d.label) === n || crmNormLabel(d.short) === n || crmNormLabel('eneco ' + d.short) === n; });
+  return def ? { id: def.id, q: q } : null;
+}
+function crmCtrColor(f) { return /orange/i.test(f || '') ? '#e8590c' : (/eneco/i.test(f || '') ? '#1b7f4a' : '#6b7280'); }
+function crmPillHtml(d, q) {
+  var on = q > 0;
+  return '<span class="crm-pill' + (on ? ' on' : '') + '" data-pid="' + crmEsc(d.id) + '" data-q="' + q + '"' + (on ? '' : ' onclick="crmPillStep(this,1)"') + '>'
+    + (on ? '<button type="button" onclick="crmPillStep(this.parentNode,-1)">−</button>' + crmEsc(d.short) + (q > 1 ? ' ×' + q : '') + '<button type="button" onclick="crmPillStep(this.parentNode,1)">+</button>' : crmEsc(d.short)) + '</span>';
+}
+window.crmPillStep = function (el, delta) {
+  var d = crmPillDefs().find(function (x) { return x.id === el.getAttribute('data-pid'); });
+  if (!d) return;
+  var q = Math.max(0, Math.min(9, (parseInt(el.getAttribute('data-q'), 10) || 0) + delta));
+  var tmp = document.createElement('div');
+  tmp.innerHTML = crmPillHtml(d, q);
+  el.parentNode.replaceChild(tmp.firstChild, el);
+};
+window.crmCtrDateChk = function (inp) {
+  var row = inp.closest('.crm-ctr-row'), miss = !inp.value;
+  inp.classList.toggle('crm-miss', miss);
+  var w = row && row.querySelector('.crm-ctr-warn');
+  if (w) w.style.display = miss ? 'inline-block' : 'none';
+};
+window.crmCtrFournChg = function (sel) {
+  var row = sel.closest('.crm-ctr-row');
+  if (row) row.style.borderLeftColor = crmCtrColor(sel.value);
+};
 function crmContratRowHtml(c) {
   c = c || {};
-  var st = 'padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;width:100%;';
-  var fs = ['Orange', 'Eneco'];
-  if (c.fournisseur && fs.indexOf(c.fournisseur) < 0) fs.push(c.fournisseur);
-  return '<div class="crm-ctr-row" data-cid="' + crmEsc(c.contractId || '') + '" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px;padding:7px;border:1px solid #eee;border-radius:8px;background:#fafafa;">'
-    + '<select class="crm-ctr-f" style="' + st + '">' + fs.map(function (f) { return '<option value="' + crmEsc(f) + '"' + (f === (c.fournisseur || 'Orange') ? ' selected' : '') + '>' + crmEsc(f) + '</option>'; }).join('') + '</select>'
-    + '<input class="crm-ctr-d" type="date" value="' + crmEsc(c.date || '') + '" style="' + st + '">'
-    + '<input class="crm-ctr-s" placeholder="N° Smart" value="' + crmEsc(c.smart || '') + '" style="' + st + '">'
-    + '<input class="crm-ctr-p" placeholder="Produits (Mobile, Internet, TV…)" value="' + crmEsc((c.produits || []).join(', ')) + '" style="' + st + '">'
-    + '<button type="button" onclick="this.parentNode.remove()" style="grid-column:span 2;border:1px solid #fca5a5;background:#fff;color:#b91c1c;border-radius:6px;padding:4px;font-size:11px;cursor:pointer;">🗑️ Retirer ce contrat</button></div>';
+  var fs = ['Orange', 'Eneco', 'Autre'];
+  var cur = c.fournisseur || 'Orange';
+  if (fs.indexOf(cur) < 0) fs.splice(2, 0, cur);
+  var qty = {}, others = [];
+  (c.produits || []).forEach(function (t) {
+    var pr = crmParseProduit(t);
+    if (pr) qty[pr.id] = (qty[pr.id] || 0) + pr.q; else if (String(t).trim()) others.push(String(t).trim());
+  });
+  var pills = crmPillDefs().map(function (d) { return crmPillHtml(d, qty[d.id] || 0); }).join('');
+  var miss = !c.date;
+  return '<div class="crm-ctr-row" data-cid="' + crmEsc(c.contractId || '') + '" style="border-left-color:' + crmCtrColor(cur) + ';">'
+    + '<div class="crm-ctr-top"><select class="crm-ctr-f" onchange="crmCtrFournChg(this)">' + fs.map(function (f) { return '<option value="' + crmEsc(f) + '"' + (f === cur ? ' selected' : '') + '>' + crmEsc(f) + '</option>'; }).join('') + '</select>'
+    + '<span class="crm-ctr-warn" style="' + (miss ? 'display:inline-block;' : '') + '">⚠️ date manquante</span>'
+    + '<button type="button" class="crm-ctr-x" title="Retirer ce contrat" onclick="this.closest(\'.crm-ctr-row\').remove()">×</button></div>'
+    + '<div class="crm-ctr-g"><div><div class="crm-l">Date de signature</div><input class="crm-ctr-d' + (miss ? ' crm-miss' : '') + '" type="date" value="' + crmEsc(c.date || '') + '" onchange="crmCtrDateChk(this)" oninput="crmCtrDateChk(this)"></div>'
+    + '<div><div class="crm-l">N° Smart</div><input class="crm-ctr-s" inputmode="numeric" placeholder="0000123456" value="' + crmEsc(c.smart || '') + '" onblur="this.value=ctrSmartNorm(this.value)"></div></div>'
+    + '<div class="crm-l">Produits</div><div class="crm-pills">' + pills + '</div>'
+    + '<input class="crm-ctr-o" placeholder="Autre produit (séparés par des virgules)" value="' + crmEsc(others.join(', ')) + '"></div>';
 }
-window.crmContratAddRow = function () {
+window.crmContratAddRow = function (f) {
   var box = document.getElementById('crm-contrats-box');
-  if (box) box.insertAdjacentHTML('beforeend', crmContratRowHtml({}));
+  if (box) box.insertAdjacentHTML('beforeend', crmContratRowHtml({ fournisseur: f || 'Orange' }));
 };
 function crmContratsFill(lines) {
   var box = document.getElementById('crm-contrats-box');
   if (box) box.innerHTML = (lines || []).map(crmContratRowHtml).join('');
 }
 function crmContratsRead() {
-  var out = [];
+  var out = [], defs = crmPillDefs();
   document.querySelectorAll('#crm-contrats-box .crm-ctr-row').forEach(function (r) {
     var q = function (s) { return (r.querySelector(s) || {}).value || ''; };
-    var o = { fournisseur: q('.crm-ctr-f'), date: q('.crm-ctr-d'), smart: q('.crm-ctr-s').trim(), produits: q('.crm-ctr-p').split(',').map(function (t) { return t.trim(); }).filter(Boolean) };
+    var prods = [];
+    r.querySelectorAll('.crm-pill.on').forEach(function (pl) {
+      var d = defs.find(function (x) { return x.id === pl.getAttribute('data-pid'); }), n = parseInt(pl.getAttribute('data-q'), 10) || 1;
+      if (d) prods.push(n > 1 ? d.label + ' ×' + n : d.label);
+    });
+    q('.crm-ctr-o').split(',').forEach(function (t) { t = t.trim(); if (t) prods.push(t); });
+    var o = { fournisseur: q('.crm-ctr-f'), date: q('.crm-ctr-d'), smart: ctrSmartNorm(q('.crm-ctr-s')), produits: prods };
     if (r.dataset.cid) o.contractId = r.dataset.cid;
     if (o.date || o.smart || o.produits.length) out.push(o);
   });
   return crmMergeContrats([], out, false);
 }
+// Société / TVA : replié pour un particulier
+window.crmSocToggle = function (force) {
+  var body = document.getElementById('crm-soc-body'), ar = document.getElementById('crm-soc-arrow');
+  if (!body) return;
+  var open = force === undefined ? body.style.display === 'none' : !!force;
+  body.style.display = open ? 'grid' : 'none';
+  if (ar) ar.textContent = open ? '▾' : '▸';
+};
+window.crmSocInit = function (fromType) {
+  var t = (document.getElementById('crm-type') || {}).value || '';
+  var has = ((document.getElementById('crm-societe') || {}).value || '').trim() || ((document.getElementById('crm-tva') || {}).value || '').trim();
+  if (fromType) { if (t === 'Société' || t === 'Indépendant') crmSocToggle(true); return; }
+  crmSocToggle(!!has || t === 'Société' || t === 'Indépendant');
+};
 
+// N° Smart d'une des lignes déjà présent sur une AUTRE fiche client ?
+function crmSmartElsewhere(lines, selfId) {
+  var mine = (lines || []).map(function (l) { return ctrSmartNorm(l.smart); }).filter(Boolean);
+  if (!mine.length) return null;
+  var list = (typeof _crmClData !== 'undefined' && _crmClData) ? _crmClData : [];
+  for (var i = 0; i < list.length; i++) {
+    var x = list[i];
+    if (x._id === selfId) continue;
+    var theirs = crmContrats(x).map(function (c) { return ctrSmartNorm(c.smart); });
+    var hit = mine.find(function (m) { return theirs.indexOf(m) >= 0; });
+    if (hit) return { fiche: x, smart: hit };
+  }
+  return null;
+}
 // ===== DOUBLONS =====
 function pcStripAcc(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 // Clés « certaines » : deux fiches qui en partagent une sont la même personne
@@ -11303,7 +11484,7 @@ function pcDupKeys(r) {
   add('orange', crmDigits(r.numOrange));
   add('eneco', crmDigits(r.numEneco));
   var smarts = (r.contrats || []).map(function (c) { return c.smart; }).concat([r.numSmart]);
-  smarts.forEach(function (s) { add('smart', crmDigits(s)); });
+  smarts.forEach(function (s) { add('smart', ctrSmartNorm(s)); });
   return k.filter(function (v, i) { return k.indexOf(v) === i; });
 }
 // Clé « possible » : mêmes nom + prénom (ordre et accents ignorés) et même code postal
@@ -11631,17 +11812,17 @@ async function ctrSyncContractToClients(contractData, contractId) {
 // Contrat déjà enregistré ? (même N° Smart, ou même client + même date + mêmes produits)
 // N° Smart déjà utilisé par un contrat d'une AUTRE personne ?
 async function ctrSmartConflict(d) {
-  var sm = crmDigits(d.contratSmart);
+  var sm = ctrSmartNorm(d.contratSmart);
   if (!sm) return null;
   var list = await ctrLoadContracts();
-  return list.find(function (c) { return crmDigits(c.contratSmart) === sm && !pcSamePerson(c, d); }) || null;
+  return list.find(function (c) { return ctrSmartNorm(c.contratSmart) === sm && !pcSamePerson(c, d); }) || null;
 }
 function ctrSig(c) { return Object.keys(c.produitsDetail || {}).sort().map(function (k) { return k + 'x' + ((c.produitsDetail[k] || []).length); }).join(','); }
 async function ctrFindDuplicate(d) {
   var list = await ctrLoadContracts();
-  var t = pcNormTel(d.tel), m = (d.email || '').trim().toLowerCase(), sm = crmDigits(d.contratSmart);
+  var t = pcNormTel(d.tel), m = (d.email || '').trim().toLowerCase(), sm = ctrSmartNorm(d.contratSmart);
   return list.find(function (c) {
-    if (sm && crmDigits(c.contratSmart) === sm && pcSamePerson(c, d)) return true;
+    if (sm && ctrSmartNorm(c.contratSmart) === sm) return true;
     var sameP = (t && pcNormTel(c.tel) === t) || (m && (c.email || '').trim().toLowerCase() === m);
     return !!(sameP && d.dateContrat && c.dateContrat === d.dateContrat && ctrSig(c) === ctrSig(d));
   }) || null;
@@ -11655,7 +11836,7 @@ async function ctrDupGroups() {
     var grp = [c];
     list.forEach(function (o, j) {
       if (j <= i || used[o.docId]) return;
-      var sm = crmDigits(c.contratSmart), same = sm && sm === crmDigits(o.contratSmart) && pcSamePerson(c, o);
+      var sm = ctrSmartNorm(c.contratSmart), same = sm && sm === ctrSmartNorm(o.contratSmart);
       var sameP = (pcNormTel(c.tel) && pcNormTel(c.tel) === pcNormTel(o.tel)) || (c.email && o.email && c.email.trim().toLowerCase() === o.email.trim().toLowerCase());
       if (same || (sameP && c.dateContrat && c.dateContrat === o.dateContrat && ctrSig(c) === ctrSig(o))) grp.push(o);
     });
@@ -12748,113 +12929,112 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
 
 <!-- Modal CRM Clients/Consultants -->
 <div id="modal-crm" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
-  <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;margin:20px auto;max-height:90vh;overflow-y:auto;">
+  <div style="background:#fff;border-radius:16px;padding:22px;max-width:520px;width:92%;margin:20px auto;max-height:90vh;overflow-y:auto;">
     <h3 id="modal-crm-title" style="color:#f97316;margin:0 0 16px;font-size:15px;"></h3>
     <input type="hidden" id="crm-doc-id">
     <input type="hidden" id="crm-col">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
-        <input id="crm-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+    <style>
+      #modal-crm .crm-sec{border:1px solid #e5e7eb;border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
+      #modal-crm .crm-sh{color:#fff;font-weight:700;font-size:13px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center}
+      #modal-crm .crm-sb{padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      #modal-crm .crm-sbx{padding:10px 12px}
+      #modal-crm .crm-l{font-size:11px;font-weight:700;color:#555;margin-bottom:3px}
+      #modal-crm .crm-sb input,#modal-crm .crm-sb select{width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px}
+      #modal-crm .crm-span{grid-column:span 2}
+      #modal-crm .crm-ctr-row{border:1px solid #e5e7eb;border-left:6px solid #6b7280;border-radius:10px;padding:9px 10px;margin-bottom:8px;background:#fafafa}
+      #modal-crm .crm-ctr-top{display:flex;gap:6px;align-items:center;margin-bottom:7px}
+      #modal-crm .crm-ctr-top select{flex:1;font-weight:700;padding:5px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff}
+      #modal-crm .crm-ctr-x{border:1px solid #fca5a5;background:#fff;color:#b91c1c;border-radius:6px;width:28px;height:28px;font-size:14px;cursor:pointer;line-height:1}
+      #modal-crm .crm-ctr-warn{display:none;background:#fff1e6;color:#c2410c;border:1px solid #fdba74;border-radius:99px;font-size:10.5px;font-weight:700;padding:2px 8px;white-space:nowrap}
+      #modal-crm .crm-ctr-g{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
+      #modal-crm .crm-ctr-g input{padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;width:100%}
+      #modal-crm .crm-ctr-g input.crm-miss{border-color:#f97316;background:#fff7ed}
+      #modal-crm .crm-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+      #modal-crm .crm-pill{display:inline-flex;align-items:center;gap:2px;border:1px solid #d1d5db;background:#fff;color:#374151;border-radius:99px;font-size:12px;padding:3px 10px;cursor:pointer;user-select:none}
+      #modal-crm .crm-pill.on{background:#e8f5ee;border-color:#1b7f4a;color:#14532d;font-weight:700;padding:2px 4px 2px 10px;cursor:default}
+      #modal-crm .crm-pill button{border:none;background:#fff;color:#14532d;border-radius:50%;width:20px;height:20px;font-size:13px;font-weight:700;cursor:pointer;line-height:1;padding:0}
+      #modal-crm .crm-ctr-o{width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box}
+      #modal-crm .crm-addb{border:1px dashed;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;margin-right:6px}
+    </style>
+    <div class="crm-sec">
+      <div class="crm-sh" style="background:#1f5fa8;"><span>👤 Contact</span></div>
+      <div class="crm-sb">
+        <div><div class="crm-l">Prénom</div><input id="crm-prenom" placeholder="Prénom"></div>
+        <div><div class="crm-l">Nom</div><input id="crm-nom" placeholder="Nom"></div>
+        <div><div class="crm-l">Téléphone</div><input id="crm-tel" placeholder="0470..."></div>
+        <div><div class="crm-l">Email</div><input id="crm-email" placeholder="email@..."></div>
+        <div class="crm-span"><div class="crm-l">Type</div>
+          <select id="crm-type" onchange="crmSocInit(true)">
+            <option value="">-- Non précisé --</option>
+            <option value="Particulier">👤 Particulier</option>
+            <option value="Indépendant">🧑‍💼 Indépendant</option>
+            <option value="Société">🏢 Société</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
-        <input id="crm-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+    </div>
+    <div class="crm-sec">
+      <div class="crm-sh" style="background:#6b7280;"><span>📍 Adresse</span></div>
+      <div class="crm-sb">
+        <div class="crm-span"><div class="crm-l">Rue, numéro</div><input id="crm-adresse" placeholder="Rue, numéro"></div>
+        <div><div class="crm-l">Code postal</div><input id="crm-cp" placeholder="4000"></div>
+        <div><div class="crm-l">Ville</div><input id="crm-ville" placeholder="Liège"></div>
       </div>
-      <div style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
-        <input id="crm-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+    </div>
+    <div class="crm-sec" id="crm-sec-soc">
+      <div class="crm-sh" style="background:#7c3aed;cursor:pointer;" onclick="crmSocToggle()"><span>🏢 Société / TVA</span><span id="crm-soc-arrow">▸</span></div>
+      <div class="crm-sb" id="crm-soc-body" style="display:none;">
+        <div><div class="crm-l">Société</div><input id="crm-societe" placeholder="Société SRL"></div>
+        <div><div class="crm-l">TVA</div><input id="crm-tva" onchange="pmTvaTypeCheck('crm')" placeholder="BE0123..."></div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
-        <input id="crm-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+    </div>
+    <div class="crm-sec" id="crm-sec-cons" style="display:none;">
+      <div class="crm-sh" style="background:#374151;"><span>🧑‍💼 Consultant</span></div>
+      <div class="crm-sb">
+        <div id="crm-asp-row"><div class="crm-l">ASP (Smart Points)</div><input id="crm-asp" placeholder="0" type="number" min="0"></div>
+        <div id="crm-idsmart-row"><div class="crm-l">ID Smart</div><input id="crm-idSmart" placeholder="ex. delta835" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+        <div id="crm-dateentree-row"><div class="crm-l">Date d'entrée</div><input id="crm-dateEntree" type="date"></div>
+        <div id="crm-statutpro-row" style="display:none;"><div class="crm-l">Statut</div>
+          <select id="crm-statutPro">
+            <option value="">-- Non renseigné --</option>
+            <option value="independant">Indépendant</option>
+            <option value="salarie">Salarié</option>
+          </select>
+        </div>
       </div>
-      <div style="grid-column:span 2">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Adresse</div>
-        <input id="crm-adresse" placeholder="Rue, numéro" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+    </div>
+    <div class="crm-sec" id="crm-ref-row">
+      <div class="crm-sh" style="background:#e8590c;"><span>🎁 Référencé par (facultatif)</span></div>
+      <div class="crm-sb" style="grid-template-columns:1fr 1fr 1fr;">
+        <div><div class="crm-l">Prénom</div><input id="crm-referencePrenom" placeholder="Prénom"></div>
+        <div><div class="crm-l">Nom</div><input id="crm-referenceNom" placeholder="Nom"></div>
+        <div><div class="crm-l">GSM</div><input id="crm-reference" placeholder="0470..."></div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Code postal</div>
-        <input id="crm-cp" placeholder="4000" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+    </div>
+    <div class="crm-sec" id="crm-sec-op">
+      <div class="crm-sh" style="background:#0e7490;"><span>📡 Opérateur actuel</span></div>
+      <div class="crm-sb">
+        <div id="crm-operateur-row" class="crm-span"><div class="crm-l">Opérateur</div><input id="crm-operateurActuel" placeholder="Proximus, Voo, Telenet..."></div>
+        <div id="crm-titulaire-row" class="crm-span"><div class="crm-l">Titulaire du contrat / de la facture (si différent du contact)</div><input id="crm-titulaire" placeholder="Prénom Nom"></div>
+        <div id="crm-numorange-row"><div class="crm-l">N° Client Orange</div><input id="crm-numOrange" placeholder="1.9763217"></div>
+        <div id="crm-numeneco-row"><div class="crm-l">N° Client Eneco</div><input id="crm-numEneco" placeholder="..."></div>
       </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville</div>
-        <input id="crm-ville" placeholder="Liège" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Type</div>
-        <select id="crm-type" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-          <option value="">-- Non précisé --</option>
-          <option value="Particulier">👤 Particulier</option>
-          <option value="Indépendant">🧑‍💼 Indépendant</option>
-          <option value="Société">🏢 Société</option>
-        </select>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Société</div>
-        <input id="crm-societe" placeholder="Société SRL" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
-        <input id="crm-tva" onchange="pmTvaTypeCheck('crm')" placeholder="BE0123..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-asp-row">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ASP (Smart Points)</div>
-        <input id="crm-asp" placeholder="0" type="number" min="0" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-idsmart-row">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">ID Smart</div>
-        <input id="crm-idSmart" placeholder="ex. delta835" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-dateentree-row">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date d'entrée</div>
-        <input id="crm-dateEntree" type="date" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-titulaire-row" style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Titulaire du contrat / de la facture (si différent du contact)</div>
-        <input id="crm-titulaire" placeholder="Prénom Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-ref-row" style="grid-column:span 2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-        <div style="grid-column:1/-1;font-size:11px;font-weight:700;color:#f97316;">Référencé par (facultatif)</div>
-        <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div><input id="crm-referencePrenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-        <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div><input id="crm-referenceNom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-        <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">GSM</div><input id="crm-reference" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-      </div>
-      <div id="crm-orange-row" style="grid-column:span 2;display:none;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Orange (produits)</div>
-        <input id="crm-orange" placeholder="Mobile Medium, Internet..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-eneco-row" style="grid-column:span 2;display:none;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Eneco (produits)</div>
-        <input id="crm-eneco" placeholder="Électricité, Gaz..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-operateur-row" style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Opérateur actuel</div>
-        <input id="crm-operateurActuel" placeholder="Proximus, Voo, Telenet..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-statutpro-row" style="grid-column:span 2;display:none;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Statut</div>
-        <select id="crm-statutPro" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-          <option value="">-- Non renseigné --</option>
-          <option value="independant">Indépendant</option>
-          <option value="salarie">Salarié</option>
-        </select>
-      </div>
-      <div id="crm-numorange-row">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Orange</div>
-        <input id="crm-numOrange" placeholder="1.9763217" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-numeneco-row">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Eneco</div>
-        <input id="crm-numEneco" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
-      </div>
-      <div id="crm-contrats-row" style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Contrats (un par ligne : fournisseur, date, N° Smart, produits)</div>
+    </div>
+    <div style="display:none;"><input id="crm-orange"><input id="crm-eneco"></div>
+    <div class="crm-sec" id="crm-contrats-row">
+      <div class="crm-sh" style="background:#1b7f4a;"><span>📝 Contrats</span></div>
+      <div class="crm-sbx">
         <div id="crm-contrats-box"></div>
-        <button type="button" onclick="crmContratAddRow()" style="border:1px dashed #f97316;background:#fff7ed;color:#f97316;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">➕ Ajouter un contrat</button>
+        <div>
+          <button type="button" class="crm-addb" onclick="crmContratAddRow('Orange')" style="border-color:#e8590c;color:#e8590c;">+ Orange</button>
+          <button type="button" class="crm-addb" onclick="crmContratAddRow('Eneco')" style="border-color:#1b7f4a;color:#1b7f4a;">+ Eneco</button>
+          <button type="button" class="crm-addb" onclick="crmContratAddRow('Autre')" style="border-color:#6b7280;color:#6b7280;">+ Autre</button>
+        </div>
       </div>
-      <div id="crm-factures-row" style="grid-column:span 2;">
-        <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Factures (PDF)</div>
+    </div>
+    <div class="crm-sec" id="crm-factures-row">
+      <div class="crm-sh" style="background:#6b7280;"><span>🧾 Factures (PDF)</span></div>
+      <div class="crm-sbx">
         <div id="crm-factures-box"></div>
         <div id="crm-facture-status" style="display:none;font-size:12px;padding:6px 9px;border-radius:7px;margin-bottom:6px;"></div>
         <div id="crm-facture-review"></div>
@@ -12863,7 +13043,7 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
         </label>
       </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+    <div style="position:sticky;bottom:-22px;display:flex;gap:10px;justify-content:flex-end;margin:6px -22px -22px;padding:12px 22px;background:#fff;border-top:1px solid #eee;border-radius:0 0 16px 16px;">
       <button onclick="closeCrmModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;">Annuler</button>
       <button onclick="saveCrmModal()" style="padding:8px 18px;border:none;border-radius:8px;background:#f97316;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Enregistrer</button>
     </div>
