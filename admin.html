@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.127 - Prospect créé d'office + fusion des doublons</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.128 - App réservée, vente et contenu Smart coupés</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -298,6 +298,7 @@
           <button onclick="showAdminPanel('panel-msg-templates', this)" class="menu-item" id="menu-msg-templates">💬 Messages prospects</button>
           <button onclick="showAdminPanel('panel-menu-theme', this)" class="menu-item" id="menu-menu-theme">🎨 Couleurs &amp; noms des menus</button>
           <button onclick="showAdminPanel('panel-fav-defaults', this)" class="menu-item" id="menu-fav-defaults">❤️ Favoris par défaut</button>
+          <button onclick="showAdminPanel('panel-smart-content', this)" class="menu-item" id="menu-smart-content">👁 Contenu Smart SN</button>
           <button onclick="showAdminPanel('panel-build-notes', this)" class="menu-item" id="menu-build-notes">📝 Les builds de Phil-Mobile <span id="bn-count"></span></button>
           <button onclick="toggleMenu('botFaqMenu')" class="menu-item group-toggle">🤖 Chat (Bot Faq) <span id="botfaq-count-badge"></span></button>
           <div id="botFaqMenu" class="submenu">
@@ -1175,6 +1176,26 @@
             <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="saveFavDefaults()">Enregistrer</button>
               <button class="btn btn-secondary" onclick="clearFavDefaults()">Tout décocher</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-panel" id="panel-smart-content">
+          <div class="section-title">👁 Contenu Smart SN — qui peut le voir ?</div>
+          <div class="card">
+            <div style="font-size:11px;color:#888;margin-bottom:10px;">
+              Les éléments cochés sont <strong>masqués pour tous les consultants</strong>. Toi (administrateur) tu vois toujours tout.
+              Les consultants de la liste « Exceptions » voient aussi tout ce qui est masqué (menus et documents). Les documents se masquent
+              un par un (ou par catégorie) depuis « Documents ». Effet immédiat, sans nouvelle build.
+            </div>
+            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;margin-bottom:4px;">Menus masqués</div>
+            <div id="smart-menus" style="margin-bottom:14px;"></div>
+            <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;margin-bottom:4px;">Exceptions : consultants qui gardent l'accès</div>
+            <input type="text" id="smart-search" placeholder="🔍 Rechercher un consultant…" oninput="smartRenderAllowed()" style="width:100%;box-sizing:border-box;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:6px;margin-bottom:6px;">
+            <div id="smart-allowed" style="max-height:340px;overflow-y:auto;border:1px solid #f0f0f0;border-radius:8px;padding:4px 8px;"><div class="empty">Chargement...</div></div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="saveSmartContent()">Enregistrer</button>
+              <span id="smart-status" style="font-size:12px;color:#16a34a;align-self:center;"></span>
             </div>
           </div>
         </div>
@@ -2294,6 +2315,7 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-app-info') loadAppInfoAdmin();
   if (panelId === 'panel-qr') loadQrAdmin();
   if (panelId === 'panel-fav-defaults') loadFavDefaultsAdmin();
+  if (panelId === 'panel-smart-content') loadSmartAdmin();
   if (panelId === 'panel-partners') loadPartnersAdmin();
   if (panelId === 'panel-usage-stats') loadUsageStats();
   if (panelId === 'panel-onboarding-admin') loadOnboardingAdmin();
@@ -2501,7 +2523,8 @@ const BN_PENDING = [
   { build: '14.124', title: "Recherche globale + menu fixe + en-tête", description: "- Nouveau champ « Rechercher » toujours visible en haut du menu : tape un nom, un téléphone, un email, un n° de contrat, un menu ou un document. Les résultats s'affichent à droite, groupés (Menus, Clients, Prospects, Contrats, Documents) avec des filtres, et un clic ouvre directement la fiche.\n- Zone fixe en haut du menu (non masquable, même taille) : Tableau de bord, Recherche, puis Mon démarrage ou Suivi de mes consultants.\n- Les bandeaux « Infos Smart SN » et « Dernière build » sont remontés dans l'en-tête (cliquer sur le bandeau d'infos pour voir le texte complet).\n- Admin : champ de recherche de menu en haut du menu de l'admin." },
   { build: '14.125', title: "Import de facture dans comparatif et simulateur", description: "- Comparatif Orange et Simulateur Orange : bouton « Importer une facture » (PDF ou photo). Une fenêtre montre ce qui a été lu (fournisseur, montant mensuel TVAC, type, infos client, détail si la facture le donne) ; tu corriges puis tu valides et la page se remplit.\n- Comparatif : l'opérateur actuel, le montant TVAC et les compteurs se remplissent ; ouvert depuis une fiche prospect (bouton « Comparer »), il se pré-remplit avec la facture déjà rangée.\n- La facture se range dans la fiche du prospect ; sans fiche ouverte, tu peux créer le prospect avec ces infos. Aucune facture gardée pour un client." },
   { build: '14.126', title: "Correctif : facture rangée dans le prospect", description: "- Correction : à l'import d'une facture depuis le comparatif ou le simulateur, la facture est maintenant bien rangée dans la fiche du prospect (erreur « Unsupported field value » corrigée)." },
-  { build: '14.127', title: "Prospect créé d'office + fusion des doublons", description: "- Import de facture (comparatif et simulateur) : le prospect est maintenant créé automatiquement avec la facture, sans case à cocher. Depuis une fiche prospect, la facture est rangée dans cette fiche.\n- Doublons : si un prospect existe déjà (même nom, TVA ou email), la fiche est complétée (champs vides) et la facture y est rangée, sans second prospect. Si c'est déjà un client, rien n'est créé et tu en es informé." }
+  { build: '14.127', title: "Prospect créé d'office + fusion des doublons", description: "- Import de facture (comparatif et simulateur) : le prospect est maintenant créé automatiquement avec la facture, sans case à cocher. Depuis une fiche prospect, la facture est rangée dans cette fiche.\n- Doublons : si un prospect existe déjà (même nom, TVA ou email), la fiche est complétée (champs vides) et la facture y est rangée, sans second prospect. Si c'est déjà un client, rien n'est créé et tu en es informé." },
+  { build: '14.128', title: "App réservée, vente et contenu Smart coupés", description: "- L'application est désormais réservée à l'équipe : sur l'écran de connexion, l'essai 3 jours, l'achat, les prix, le renouvellement et le formulaire de demande d'accès sont masqués, remplacés par le message « Application réservée aux consultants Phil-Mobile ».\n- Le menu « Recommander l'application » (parrainage) est masqué dans le hub.\n- Accès expiré : plus de bouton de paiement, un message invite à contacter Philippe.\n- Contenu Smart SN : Agenda, Formation, News et Blog Smart SN sont masqués pour tous les consultants, sauf l'administrateur et une liste d'exceptions choisie dans l'admin (nouveau menu « Contenu Smart SN », effet immédiat).\n- Documents : bouton 👁 Masquer / Afficher par document et par catégorie dans l'admin ; un document masqué disparaît du hub et de la recherche (sauf admin et exceptions).\n- Rien n'est supprimé : un interrupteur dans le code (ACCES_PUBLIC_ACTIF) réactive la vente, les réglages Smart se changent depuis l'admin. Les comptes existants ne changent pas." }
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -8666,6 +8689,55 @@ window.seedDefaultCategories = async function () {
   } catch (err) { alert('Erreur: ' + err.message); }
 };
 
+// ----- CONTENU SMART SN (settings/contenuSmart) — Build 14.128 -----
+const SMART_MENUS = [['agenda', '📅 Agenda'], ['formation', '🎓 Formation'], ['news', '📰 News'], ['blogsmart', '📰 Blog Smart SN']];
+window._smartState = { menus: { agenda: true, formation: true, news: true, blogsmart: true }, allowed: [] };
+async function loadSmartAdmin() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'contenuSmart'));
+    const d = snap.exists() ? snap.data() : {};
+    window._smartState = { menus: Object.assign({ agenda: true, formation: true, news: true, blogsmart: true }, d.menus || {}), allowed: Array.isArray(d.allowed) ? d.allowed.slice() : [] };
+    if (!(window._consultantsCache || []).length) {
+      const cs = await getDocs(collection(db, 'consultants'));
+      const all = []; cs.forEach(x => all.push({ docId: x.id, ...x.data() }));
+      window._consultantsCache = all;
+    }
+  } catch (err) { console.log('Contenu Smart : lecture impossible', err.message); }
+  document.getElementById('smart-menus').innerHTML = SMART_MENUS.map(m =>
+    `<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:5px;"><input type="checkbox" id="smart-menu-${m[0]}" ${window._smartState.menus[m[0]] ? 'checked' : ''}> Masquer ${m[1]}</label>`).join('');
+  smartRenderAllowed();
+}
+window.smartRenderAllowed = function () {
+  const box = document.getElementById('smart-allowed'); if (!box) return;
+  const q = ((document.getElementById('smart-search') || {}).value || '').toLowerCase().trim();
+  const allowed = window._smartState.allowed.map(x => String(x).toLowerCase());
+  const nm = c => [c.firstName, c.lastName].filter(Boolean).join(' ') || c.fullName || c.name || c.docId;
+  const list = (window._consultantsCache || []).filter(c => c.archived !== true)
+    .filter(c => !q || (nm(c) + ' ' + c.docId).toLowerCase().includes(q))
+    .sort((a, b) => nm(a).localeCompare(nm(b), 'fr', { sensitivity: 'base' }));
+  box.innerHTML = list.length ? list.map(c => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;border-bottom:1px solid #f5f5f5;cursor:pointer;">
+      <input type="checkbox" ${allowed.includes(String(c.docId).toLowerCase()) ? 'checked' : ''} onchange="smartToggleAllowed('${escapeAttrDocs(c.docId)}', this.checked)">
+      <span>${escapeHtmlDocs(nm(c))}</span><span style="font-size:11px;color:#9ca3af;">${escapeHtmlDocs(c.docId)}</span>
+    </label>`).join('') : '<div class="empty">Aucun consultant.</div>';
+};
+window.smartToggleAllowed = function (id, on) {
+  const low = String(id).toLowerCase();
+  const a = window._smartState.allowed.filter(x => String(x).toLowerCase() !== low);
+  if (on) a.push(id);
+  window._smartState.allowed = a;
+};
+window.saveSmartContent = async function () {
+  const menus = {};
+  SMART_MENUS.forEach(m => { const el = document.getElementById('smart-menu-' + m[0]); menus[m[0]] = !!(el && el.checked); });
+  try {
+    await setDoc(doc(db, 'settings', 'contenuSmart'), { menus, allowed: window._smartState.allowed, updatedAt: new Date().toISOString() });
+    window._smartState.menus = menus;
+    const st = document.getElementById('smart-status'); if (st) { st.textContent = '✅ Enregistré'; setTimeout(() => { st.textContent = ''; }, 3000); }
+    showToast('✅ Contenu Smart SN enregistré.');
+  } catch (err) { alert('Erreur: ' + err.message); }
+};
+
 // ----- DOCUMENTS -----
 let documentsUnsub = null;
 window._documentsCache = [];
@@ -8816,12 +8888,13 @@ function renderDocumentsAdmin(items) {
                  <input type="text" id="doc-edit-mots-${d.id}" value="${escapeAttrDocs(d.motsCles || '')}" placeholder="Mots-clés (séparés par des virgules)" style="font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;width:100%;box-sizing:border-box;">
                  <label style="font-size:12px;display:flex;align-items:center;gap:6px;"><input type="checkbox" id="doc-edit-important-${d.id}" ${d.important ? 'checked' : ''}> 📌 Document important</label>
                </div>`
-            : `<span>${docIconHtml(cat)} ${escapeHtmlDocs(d.titre)}${d.important ? ' 📌' : ''}</span>${docMoisAnnee(d)}${d.motsCles ? `<span style="font-size:10px;color:#9ca3af;" title="Mots-clés">🔎 ${escapeHtmlDocs(d.motsCles)}</span>` : ''}`}
+            : `<span>${docIconHtml(cat)} ${escapeHtmlDocs(d.titre)}${d.important ? ' 📌' : ''}</span>${d.masque ? '<span style="font-size:10px;font-weight:700;color:#9a3412;background:#ffedd5;border-radius:10px;padding:1px 8px;white-space:nowrap;">👁 masqué</span>' : ''}${docMoisAnnee(d)}${d.motsCles ? `<span style="font-size:10px;color:#9ca3af;" title="Mots-clés">🔎 ${escapeHtmlDocs(d.motsCles)}</span>` : ''}`}
         </span>
         ${window._documentsEditingId === d.id
           ? `<button class="btn btn-primary" onclick="saveRenameDocument('${d.id}')" title="Valider">✅</button>
              <button class="btn btn-secondary" onclick="cancelRenameDocument()" title="Annuler">✖</button>`
           : `<button class="btn btn-secondary" onclick="startRenameDocument('${d.id}')" title="Renommer">✏️</button>`}
+        <button class="btn btn-secondary" onclick="toggleDocMasque('${d.id}', ${d.masque ? 'false' : 'true'})" title="${d.masque ? 'Masqué pour les consultants : cliquer pour afficher' : 'Visible : cliquer pour masquer aux consultants'}">${d.masque ? '🚫 Afficher' : '👁 Masquer'}</button>
         <span style="font-size:10px;color:${d.url ? '#16a34a' : '#f59e0b'};">${d.url ? '✅ Fichier présent' : '⏳ Pas encore de fichier'}</span>
         <label class="btn btn-secondary" style="cursor:pointer;margin:0;">
           ${d.url ? '🔄 Remplacer' : '📥 Importer'}
@@ -8836,11 +8909,24 @@ function renderDocumentsAdmin(items) {
       <div style="margin-bottom:18px;">
         <div style="font-weight:700;color:${isSystem ? '#9a3412' : '#f97316'};font-size:13px;margin-bottom:6px;">
           ${isSystem ? '📋 À trier (admin uniquement)' : escapeHtmlDocs(cat)}
+          ${(!isSystem && list.length) ? `<button class="btn btn-secondary" style="margin-left:8px;padding:2px 8px;font-size:11px;" onclick="toggleCatMasque('${escapeAttrDocs(cat)}', ${list.every(x => x.masque) ? 'false' : 'true'})">${list.every(x => x.masque) ? '🚫 Tout afficher' : '👁 Tout masquer'}</button>` : ''}
         </div>
         ${rows}
       </div>`;
   }).join('');
 }
+
+window.toggleDocMasque = async function (docId, masque) {
+  try { await updateDoc(doc(db, 'documents', docId), { masque: !!masque }); showToast(masque ? '👁 Document masqué aux consultants.' : '✅ Document de nouveau visible.'); }
+  catch (err) { alert('Erreur: ' + err.message); }
+};
+window.toggleCatMasque = async function (cat, masque) {
+  const list = (window._documentsCache || []).filter(d => d.categorie === cat);
+  if (!list.length) return;
+  if (!confirm((masque ? 'Masquer' : 'Afficher') + ' les ' + list.length + ' document(s) de « ' + cat + ' » ' + (masque ? 'aux consultants ?' : 'de nouveau ?'))) return;
+  try { await Promise.all(list.map(d => updateDoc(doc(db, 'documents', d.id), { masque: !!masque }))); showToast('✅ ' + list.length + ' document(s) mis à jour.'); }
+  catch (err) { alert('Erreur: ' + err.message); }
+};
 
 window.addDocumentFiche = async function () {
   const titreInput = document.getElementById('doc-new-titre');
@@ -10065,6 +10151,7 @@ const FAV_ITEMS = {
   'menu-msg-templates':        { label: '💬 Messages prospects',           panelId: 'panel-msg-templates' },
   'menu-menu-theme':           { label: '🎨 Couleurs & noms des menus',     panelId: 'panel-menu-theme' },
   'menu-fav-defaults':         { label: '❤️ Favoris par défaut',           panelId: 'panel-fav-defaults' },
+  'menu-smart-content':        { label: '👁 Contenu Smart SN',             panelId: 'panel-smart-content' },
   'menu-build-notes':          { label: '📝 Les builds de Phil-Mobile', panelId: 'panel-build-notes' },
   'menu-videos-hub':           { label: '🎬 Vidéos tutoriels',            panelId: 'panel-videos-hub' },
   'menu-faq':                  { label: '🤖 FAQ du bot',                   panelId: 'panel-faq' },

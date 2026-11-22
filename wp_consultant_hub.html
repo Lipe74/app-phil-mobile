@@ -222,7 +222,16 @@
 .pm-sr-chip.on{background:#f97316;border-color:#f97316;color:#fff;}
 .pm-sr-row{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;background:#fff;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;margin-bottom:5px;cursor:pointer;font-family:Arial,sans-serif;}
 .pm-sr-row:hover{background:#fff7ed;border-color:#fed7aa;}
+/* Build 14.128 : vente / essai / renouvellement / parrainage masqués (réactivables via ACCES_PUBLIC_ACTIF) */
+body.pm-ferme .pm-vente{display:none !important;}
+.pm-smart-hidden,.pm-fav-row.pm-smart-hidden{display:none !important;}
+body:not(.pm-ferme) .pm-ferme-only{display:none !important;}
 </style>
+<script>
+/* ===== INTERRUPTEUR : true = essai, achat, renouvellement et parrainage de l'app réactivés ===== */
+window.ACCES_PUBLIC_ACTIF = false;
+(function(){ var f=function(){ if(!window.ACCES_PUBLIC_ACTIF) document.body.classList.add('pm-ferme'); }; if(document.body) f(); else document.addEventListener('DOMContentLoaded',f); })();
+</script>
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
 
@@ -326,7 +335,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
     </button>
     <button onclick="lgShow('new')" style="display:block;width:100%;background:#fff;color:#f97316;border:2px solid #f97316;border-radius:14px;padding:16px 14px;cursor:pointer;font-family:Arial,sans-serif;">
       <span style="display:block;font-size:17px;font-weight:800;">✨ Je n'ai pas encore l'app</span>
-      <span style="display:block;font-size:12px;font-weight:600;color:#9a3412;margin-top:3px;">Découvrir, essayer 3 jours ou commander</span>
+      <span style="display:block;font-size:12px;font-weight:600;color:#9a3412;margin-top:3px;"><span class="pm-vente">Découvrir, essayer 3 jours ou commander</span><span class="pm-ferme-only">Découvrir l'application</span></span>
     </button>
   </div>
 
@@ -371,9 +380,12 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
       Mot de passe oublié ?
     </div>
 
-    <div onclick="renewOpen({kind:'renewal'})"
+    <div class="pm-vente" onclick="renewOpen({kind:'renewal'})"
          style="margin-top:12px;font-size:12px;color:#9a3412;cursor:pointer;">
       Mon accès a expiré ? <span style="color:#f97316;font-weight:700;text-decoration:underline;">Prolonger mon app</span>
+    </div>
+    <div class="pm-ferme-only" style="margin-top:12px;font-size:12px;color:#9a3412;">
+      Mon accès a expiré ? <strong>Contactez Philippe.</strong>
     </div>
 
     <div onclick="lgShow('choice')" style="margin-top:18px;font-size:12px;color:#888;cursor:pointer;">← Retour</div>
@@ -434,8 +446,14 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
     </div>
   </div>
 
+  <!-- Message : application réservée (quand l'accès public est fermé) -->
+  <div class="pm-ferme-only" style="background:#fff3e8;border:2px solid #f97316;border-radius:14px;padding:18px 16px;text-align:center;margin-bottom:18px;">
+    <div style="font-size:15px;font-weight:800;color:#f97316;">🔒 Application réservée aux consultants Phil-Mobile</div>
+    <div style="font-size:12px;color:#9a3412;margin-top:6px;">Elle n'est plus proposée à la vente. Si tu as déjà un accès, utilise « J'ai déjà un accès ».</div>
+  </div>
+
   <!-- Prix -->
-  <div style="background:#fff3e8;border:2px solid #f97316;border-radius:14px;padding:18px 16px;text-align:center;margin-bottom:18px;">
+  <div class="pm-vente" style="background:#fff3e8;border:2px solid #f97316;border-radius:14px;padding:18px 16px;text-align:center;margin-bottom:18px;">
 
     <!-- Ligne 1 : Achat + Renouvellement -->
     <div style="display:flex;justify-content:center;align-items:flex-start;gap:0;margin-bottom:14px;flex-wrap:wrap;">
@@ -474,14 +492,14 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
   </div>
 
   <!-- Bouton demande accès -->
-  <div style="text-align:center;margin-bottom:14px;display:none;">
+  <div class="pm-vente" style="text-align:center;margin-bottom:14px;display:none;">
     <button id="btn-access-request" onclick="toggleAccessForm()" style="background:#f97316;color:white;border:none;border-radius:12px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;">
       📝 Demander un accès
     </button>
   </div>
 
   <!-- Formulaire d'accès -->
-  <div id="accessForm" style="display:none;margin:10px 0;text-align:left;">
+  <div id="accessForm" class="pm-vente" style="display:none;margin:10px 0;text-align:left;">
 
   <h3 style="color:#f97316;">📝 Demande d'accès</h3>
 
@@ -622,12 +640,12 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
           </div>
 
 <!-- AGENDA, FORMATIONS & NEWS -->
-<button class="pm-sec-toggle" onclick="toggleSection('sec-agenda')"><span>📅 Agenda, Formations &amp; News</span><span class="pm-sec-arrow" id="arrow-sec-agenda">▸</span></button>
+<button class="pm-sec-toggle" onclick="toggleSection('sec-agenda')"><span>📰 Infos Phil-Mobile</span><span class="pm-sec-arrow" id="arrow-sec-agenda">▸</span></button>
 <div id="sec-agenda" class="pm-sec-body">
 <button onclick="showAgenda(this)" class="menu-item" id="menu-agenda">📅 Agenda</button>
 <button onclick="showScript('panel-formation')" class="menu-item" id="menu-formation">🎓 Formation</button>
 <button onclick="showScript('panel-videos')" class="menu-item" id="menu-videos">🎬 Vidéos tutoriels</button>
-<button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News, Blog Phil-Mobile, Blog Smart SN</button>
+<button onclick="toggleMenu('newsMenu')" class="menu-item group-toggle">📰 News &amp; Blogs</button>
 <div id="newsMenu" class="submenu">
   <button onclick="showNews(this)" class="menu-item" id="menu-news">📰 News</button>
   <button onclick="showBlogPhil(this)" class="menu-item" id="menu-blogphil">🗞️ Blog Phil-Mobile<span id="philblog-badge" style="display:none;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:6px;">●</span></button>
@@ -681,7 +699,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
   </button>
 </div>
 
-<button onclick="showCrmPanel('panel-recommander')" class="menu-item" id="btn-recommander">
+<button onclick="showCrmPanel('panel-recommander')" class="menu-item pm-vente" id="btn-recommander">
 🤝 Recommander l'application
 </button>
 
@@ -2153,6 +2171,11 @@ window.checkAndApplyExpiration = async function(consultantId) {
 
 function pmExpirationMsg(info) {
   const t = info.accountType || 'standard';
+  if (!window.ACCES_PUBLIC_ACTIF) {
+    if (info.expired) return "🔒 Votre accès a expiré. Contactez Philippe pour la suite.";
+    const j0 = info.daysLeft;
+    return `⚠️ Votre accès expire dans ${j0} jour(s)` + (info.expirationDate ? ` (le ${new Date(info.expirationDate).toLocaleDateString('fr-BE')})` : '') + '. Contactez Philippe pour la suite.';
+  }
   if (info.expired) {
     if (t === 'test2j')   return "⏱️ Votre période d'essai est terminée. Merci de procéder au paiement afin de prolonger votre utilisation.";
     if (t === 'newbc30')  return "⏱️ Votre période d'essai de 30 jours est terminée. Merci de procéder au paiement afin de prolonger votre utilisation.";
@@ -2197,8 +2220,10 @@ function showExpirationBanner(info) {
     b.onclick = () => window.payOpenFor(kind);
     banner.appendChild(b);
   };
-  if (!isPaid) mkBtn('🛒 Commander (' + payMoney(PAY.purchase.tvac) + ' TVAC)', 'upgrade');
-  else mkBtn('🔄 Renouveler (' + payMoney(PAY.renewal.tvac) + ' TVAC)', 'renewal');
+  if (window.ACCES_PUBLIC_ACTIF) {
+    if (!isPaid) mkBtn('🛒 Commander (' + payMoney(PAY.purchase.tvac) + ' TVAC)', 'upgrade');
+    else mkBtn('🔄 Renouveler (' + payMoney(PAY.renewal.tvac) + ' TVAC)', 'renewal');
+  }
 
   const newsBanner = document.getElementById('news-banner');
   if (newsBanner && newsBanner.parentNode) {
@@ -2275,8 +2300,50 @@ window.pmDocSearchRefresh = function () {
   if (pn && pn.style.display !== 'none') window.pmDocSearch((document.getElementById('docs-search-input') || {}).value || '');
 };
 
+// ===== CONTENU SMART SN : masqué pour tous sauf admin et exceptions (Build 14.128) =====
+// Réglages : Firestore settings/contenuSmart { menus: {agenda,formation,news,blogsmart: true = masqué}, allowed: [ids consultants] }
+window._pmSmart = { menus: { agenda: true, formation: true, news: true, blogsmart: true }, allowed: [] };
+var PM_SMART_MENUS = { agenda: 'menu-agenda', formation: 'menu-formation', news: 'menu-news', blogsmart: 'menu-blogsmart' };
+window.pmSmartSeesAll = function () {
+  var u = window.pmCurrentUser; if (!u) return false;
+  if (u.isAdmin === true) return true;
+  var id = String(u.id || '').toLowerCase();
+  return (window._pmSmart.allowed || []).some(function (a) { return String(a).toLowerCase() === id; });
+};
+window.pmSmartMenuHidden = function (key) { return !!(window._pmSmart.menus || {})[key] && !window.pmSmartSeesAll(); };
+window.pmSmartRows = function () {
+  Object.keys(PM_SMART_MENUS).forEach(function (k) {
+    var b = document.getElementById(PM_SMART_MENUS[k]); if (!b) return;
+    var row = b.closest('.pm-fav-row'); if (row) row.classList.toggle('pm-smart-hidden', window.pmSmartMenuHidden(k));
+  });
+};
+window.pmSmartApply = function () {
+  Object.keys(PM_SMART_MENUS).forEach(function (k) {
+    var b = document.getElementById(PM_SMART_MENUS[k]); if (!b) return;
+    var h = window.pmSmartMenuHidden(k);
+    b.classList.toggle('pm-smart-hidden', h);
+    var row = b.closest('.pm-fav-row'); if (row) row.classList.toggle('pm-smart-hidden', h);
+    if (h) { var pn = { agenda: 'panel-agenda', formation: 'panel-formation', news: 'panel-news', blogsmart: 'panel-blogsmart' }[k], e = document.getElementById(pn); if (e && e.style.display === 'block') e.style.display = 'none'; }
+  });
+  if (typeof pmRenderFavoritesList === 'function') { try { pmRenderFavoritesList(); } catch (e) {} }
+  if (window._pmRenderHubDocs) { try { window._pmRenderHubDocs(); } catch (e) {} }
+};
+window.pmSmartWatch = async function () {
+  var tries = 0;
+  while ((!window.db || !window.onSnapshot || !window.doc) && tries < 50) { await new Promise(function (r) { setTimeout(r, 100); }); tries++; }
+  if (!window.db || !window.onSnapshot || !window.doc) return;
+  if (window._pmSmartUnsub) { pmSmartApply(); return; }
+  window._pmSmartUnsub = window.onSnapshot(window.doc(window.db, 'settings', 'contenuSmart'), function (snap) {
+    var d = snap.exists() ? snap.data() : {};
+    window._pmSmart = { menus: Object.assign({ agenda: true, formation: true, news: true, blogsmart: true }, d.menus || {}), allowed: Array.isArray(d.allowed) ? d.allowed : [] };
+    pmSmartApply();
+  }, function () {});
+};
+document.addEventListener('DOMContentLoaded', function () { pmSmartApply(); });
+
 async function loadHubDocuments() {
   try {
+    pmSmartWatch();
     let tries = 0;
     while ((!window.db || !window.onSnapshot || !window.collection) && tries < 50) {
       await new Promise(r => setTimeout(r, 100));
@@ -2287,10 +2354,14 @@ async function loadHubDocuments() {
     // Cache partagé pour le rendu combiné catégories + documents
     let hubCats = [];
     let hubDocs = [];
+    let hubAll = [];
 
     function renderHubDocuments() {
       const container = document.getElementById('hub-docs-container');
       if (!container) return;
+      // Documents masqués (admin) : cachés sauf pour l'admin et les exceptions
+      const pmMaskedCats = {};
+      hubDocs = hubAll.filter(d => { if (d.masque === true && !(window.pmSmartSeesAll && window.pmSmartSeesAll())) { pmMaskedCats[d.categorie] = 1; return false; } return true; });
       // Catégories visibles (ordre Firestore), fallback sur les 5 catégories codées en dur
       const FALLBACK_CATS = [
         { label: 'Phil-Mobile', icone: '🟢' },
@@ -2302,7 +2373,7 @@ async function loadHubDocuments() {
       const cats = hubCats.length > 0 ? hubCats.filter(c => !c.hidden) : FALLBACK_CATS;
       window._pmDocCats = {};
       window._pmDocCatOrder = cats.map(c => c.label);
-      container.innerHTML = cats.map(cat => {
+      container.innerHTML = cats.filter(cat => !(pmMaskedCats[cat.label] && !hubDocs.some(d => d.categorie === cat.label))).map(cat => {
         const slug = 'docs-' + cat.label.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').toLowerCase();
         const docs = hubDocs.filter(d => d.categorie === cat.label && d.url).sort(pmDocCmp);
         const dInfo = { color: cat.color || '', color2: cat.color2 || '', logo: cat.logoUrl || '', icone: cat.icone || '📁' };
@@ -2323,6 +2394,8 @@ async function loadHubDocuments() {
       if (window.pmDocSearchRefresh) window.pmDocSearchRefresh();
     }
 
+    window._pmRenderHubDocs = renderHubDocuments;
+
     // Listener catégories
     if (window._hubCatsUnsub) { try { window._hubCatsUnsub(); } catch(e) {} }
     window._hubCatsUnsub = window.onSnapshot(window.collection(window.db, 'documentCategories'), (snap) => {
@@ -2335,8 +2408,8 @@ async function loadHubDocuments() {
     // Listener documents
     if (window._hubDocumentsUnsub) { try { window._hubDocumentsUnsub(); } catch (e) {} }
     window._hubDocumentsUnsub = window.onSnapshot(window.collection(window.db, 'documents'), (snap) => {
-      hubDocs = [];
-      snap.forEach(docSnap => { const d = docSnap.data(); if (d.url) hubDocs.push({ id: docSnap.id, ...d }); });
+      hubAll = [];
+      snap.forEach(docSnap => { const d = docSnap.data(); if (d.url) hubAll.push({ id: docSnap.id, ...d }); });
       renderHubDocuments();
     }, (err) => { console.log('loadHubDocuments error:', err.message); });
 
@@ -3008,7 +3081,7 @@ function pmRenderFavoritesList() {
     }
 
     var orig = pmFavMap[key];
-    if (!orig) return;
+    if (!orig || orig.classList.contains('pm-smart-hidden')) return;
 
     var pmFk = orig.dataset.famkey || '';
     if (pmFk && pmFk !== pmLastFam && orig.dataset.famlabel) list.appendChild(pmFavGroupHead(orig));
@@ -3089,6 +3162,7 @@ async function initFavorites() {
   buttons.forEach(function (btn) {
     if (btn.tagName !== 'BUTTON') return;
     if (btn.classList.contains('group-toggle')) return;
+    if (btn.classList.contains('pm-vente')) return; // Menus masqués (parrainage) : pas de favori.
     if (btn.closest('#pm-fixed-zone') || btn.id === 'menu-dashboard' || btn.id === 'menu-onboarding') return; // Écrans d'accueil : aucun intérêt à les mettre en favori.
     if (btn.closest('#pm-favoris-list')) return;
     if (btn.dataset.pmFavReady) return;
@@ -3114,6 +3188,7 @@ async function initFavorites() {
     };
     wrap.appendChild(heart);
   });
+  if (window.pmSmartRows) pmSmartRows();
   pmApplyMenuLabels();
   pmApplyMenuStyle();
   pmRenderFavoritesList();
@@ -3257,6 +3332,7 @@ function closeVideoHub() {
 }
 
 function showScript(id) {
+  if (id === 'panel-formation' && window.pmSmartMenuHidden && pmSmartMenuHidden('formation')) return;
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   event.currentTarget.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
@@ -4438,6 +4514,7 @@ function showContacts(btn) {
 }
 
 function showAgenda(btn) {
+  if (window.pmSmartMenuHidden && pmSmartMenuHidden('agenda')) return;
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   btn.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
@@ -4450,6 +4527,7 @@ function showAgenda(btn) {
 }
 
 function showNews(btn) {
+  if (window.pmSmartMenuHidden && pmSmartMenuHidden('news')) return;
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   btn.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
@@ -4462,6 +4540,7 @@ function showNews(btn) {
 }
 
 function showBlogSmart(btn) {
+  if (window.pmSmartMenuHidden && pmSmartMenuHidden('blogsmart')) return;
   document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active-item'));
   btn.classList.add('active-item');
   document.getElementById('welcome-panel').style.display = 'none';
@@ -7079,6 +7158,7 @@ function copyText(id, btn) {
   });
 }
   function toggleAccessForm(){
+  if (!window.ACCES_PUBLIC_ACTIF) return;
   const form = document.getElementById('accessForm');
   form.style.display = form.style.display !== 'none' ? 'none' : 'block';
 }
@@ -7105,6 +7185,7 @@ window.lgShow = function(which){
 })();
 
   window.openAccessFormWith = function(type) {
+  if (!window.ACCES_PUBLIC_ACTIF) return;
   const form = document.getElementById('accessForm');
   form.style.display = 'block';
   const radio = document.getElementById('req-access-' + type);
@@ -7113,6 +7194,7 @@ window.lgShow = function(which){
 };
 
 window.submitAccessRequest = async function(){
+  if (!window.ACCES_PUBLIC_ACTIF) return;
 
   // Validation des champs obligatoires
   const requiredFields = [
@@ -7302,6 +7384,7 @@ var _crmClData = [];
 var _crmCoData = [];
 
 window.showCrmPanel = function(panelId) {
+  if (panelId === 'panel-recommander' && !window.ACCES_PUBLIC_ACTIF) return; // parrainage désactivé (Build 14.128)
   document.querySelectorAll('.menu-item').forEach(function(b){ b.classList.remove('active-item'); });
   var btn = document.getElementById('btn-' + panelId.replace('panel-crm-','crm-'));
   if (!btn) btn = document.getElementById('btn-' + panelId.replace('panel-',''));
@@ -7886,6 +7969,7 @@ function payShowQr(o) {
 // ----- Formulaire de prolongation / achat (consultant existant) -----
 // opts : { kind: 'renewal' | 'upgrade', prefill: { smartId, fullName, email } }
 window.renewOpen = function (opts) {
+  if (!window.ACCES_PUBLIC_ACTIF) return;
   opts = opts || {};
   var kind = opts.kind === 'upgrade' ? 'upgrade' : 'renewal';
   var p = Object.assign({}, opts.prefill || {});
@@ -7950,7 +8034,7 @@ window.renewSubmit = async function (kind) {
 // ----- Choix achat / renouvellement selon le compte -----
 // Compte d'essai : achat seulement. Compte déjà payé : renouvellement seulement. Sinon : les deux.
 function payPrefillFrom(c) { return c ? { smartId: c.id || '', fullName: c.fullName || c.name || '', email: c.email || '' } : {}; }
-window.payOpenFor = function (kind) { renewOpen({ kind: kind, prefill: payPrefillFrom(window._payConsultant) }); };
+window.payOpenFor = function (kind) { if (!window.ACCES_PUBLIC_ACTIF) return; renewOpen({ kind: kind, prefill: payPrefillFrom(window._payConsultant) }); };
 
 // Mur de renouvellement : affiché sur l'écran de connexion quand l'accès est expiré (la session est fermée)
 window.pmShowRenewalWall = function (info) {
@@ -7963,6 +8047,7 @@ window.pmShowRenewalWall = function (info) {
   var isPaid = !!(c && c.isPaid);
   var b = 'display:block;width:100%;max-width:260px;margin:6px auto;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;';
   var html = '';
+  if (!window.ACCES_PUBLIC_ACTIF) { box.innerHTML = ''; return; }
   if (!isPaid) html += '<button style="' + b + 'background:#f97316;color:#fff;" onclick="payOpenFor(\'upgrade\')">🛒 Commander l\'application — ' + payMoney(PAY.purchase.tvac) + ' TVAC</button>';
   else html += '<button style="' + b + 'background:#f97316;color:#fff;" onclick="payOpenFor(\'renewal\')">🔄 Renouveler mon app — ' + payMoney(PAY.renewal.tvac) + ' TVAC / an</button>';
   box.innerHTML = html;

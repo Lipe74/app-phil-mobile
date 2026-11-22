@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.127 - Prospect créé d'office + fusion des doublons";
+  scope.APP_VERSION = "14.128 - App réservée, vente et contenu Smart coupés";
 })();
