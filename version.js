@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.128 - App réservée, vente et contenu Smart coupés";
+  scope.APP_VERSION = "14.129 - Écran de connexion simplifié + contenu Smart masqué";
 })();
