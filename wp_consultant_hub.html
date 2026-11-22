@@ -1119,7 +1119,8 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Ville ou adresse</div><input id="ctr-adresse" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Client Orange</div><input id="ctr-clientOrange" placeholder="1.9763217" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat Eneco</div><input id="ctr-contratEneco" placeholder="..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
-                <div style="grid-column:span 2;"><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° Contrat My Smart</div><input id="ctr-contratSmart" placeholder="0000282697" onblur="this.value=ctrSmartNorm(this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° du fichier PDF</div><input id="ctr-contratSmart" placeholder="0000144695" onblur="this.value=ctrSmartNorm(this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
+                <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">N° contrat partenaire (liste Smart)</div><input id="ctr-contratPartenaire" placeholder="0000311168" onblur="this.value=ctrSmartNorm(this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div><div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Date du contrat</div><input type="date" id="ctr-dateContrat" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;"></div>
                 <div>
                   <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">État du contrat</div>
@@ -1178,6 +1179,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
                   <input type="file" accept=".csv" id="csv-clients-input" onchange="importCrmCsv(this,'clients')" style="display:none;">
                 </label>
                 <button onclick="pcDupOpen('clients')" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔍 Doublons</button>
+                <button onclick="crmDateCheck()" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">📅 Contrôle des dates</button>
                 <button onclick="pcTelMigrateAll()" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔧 Normaliser numéros & noms</button>
                 <button onclick="pcCrmVcfList('clients')" style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;">📲 Exporter vers mon GSM</button>
                 <button onclick="openCrmModal('clients',null)" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">➕ Nouveau</button>
@@ -7873,7 +7875,7 @@ function crmRenderCard(item, col) {
   if (Array.isArray(item.factures) && item.factures.length) h += '<div style="font-size:12px;color:#555;">📄 ' + item.factures.length + ' facture(s)</div>';
   if (item.numOrange) h += '<div style="font-size:12px;color:#f97316;font-weight:700;">N° Orange: ' + crmEsc(item.numOrange) + '</div>';
   if (item.numEneco) h += '<div style="font-size:12px;color:#22c55e;font-weight:700;">N° Eneco: ' + crmEsc(item.numEneco) + '</div>';
-  if (col === 'clients') crmContrats(item).forEach(function (c) { h += '<div style="font-size:12px;color:#555;">📝 ' + crmEsc(crmContratLine(c)) + (c.date ? '' : ' <span style="background:#fff1e6;color:#c2410c;border:1px solid #fdba74;border-radius:99px;font-size:10.5px;font-weight:700;padding:1px 7px;">⚠️ date manquante</span>') + '</div>'; });
+  if (col === 'clients') crmContrats(item).forEach(function (c) { h += '<div style="font-size:12px;color:#555;">📝 ' + crmEsc(crmContratLine(c)) + crmCtrPills(c) + '</div>'; });
   if (col === 'clients') h += pmOffresHtml(item, 'clients', item._id);
   if (item.orange) h += '<div style="font-size:12px;color:#f97316;">Produits Orange: ' + crmEsc(item.orange) + '</div>';
   if (item.eneco) h += '<div style="font-size:12px;color:#22c55e;">Produits Eneco: ' + crmEsc(item.eneco) + '</div>';
@@ -8132,7 +8134,7 @@ window.saveCrmModal = function() {
   function g(f){ return (document.getElementById('crm-'+f)||{}).value||''.trim(); }
   var data = { consultantId:window.pmCurrentUser.id, prenom:pcNormName(g('prenom')), nom:pcNormName(g('nom')), tel:pcNormTel(g('tel')), email:g('email'), adresse:g('adresse'), cp:g('cp'), ville:g('ville'), societe:g('societe'), tva:pcNormTva(g('tva')), updatedAt:new Date().toISOString() };
   var fx = pcFixAdresse(data); if (fx) { data.adresse = fx.adresse; data.cp = fx.cp; data.ville = fx.ville; }
-  if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.titulaire=pcNormName(g('titulaire')); data.type=g('type'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
+  if (!isC) { data.reference=pcNormTel(g('reference')); data.referencePrenom=pcNormName(g('referencePrenom')); data.referenceNom=pcNormName(g('referenceNom')); data.titulaire=pcNormName(g('titulaire')); data.type=g('type'); data.orange=g('orange'); data.eneco=g('eneco'); data.numOrange=g('numOrange'); data.numEneco=g('numEneco'); data.contrats=crmContratsRead(); data.numSmart=(data.contrats.find(function(c){return c.smart;})||{}).smart||(data.contrats.find(function(c){return c.partner;})||{}).partner||''; data.dateContrat=data.contrats.map(function(c){return c.date;}).filter(Boolean).sort()[0]||''; data.operateurActuel=g('operateurActuel'); }
   if (isC) { data.asp = parseFloat(document.getElementById('crm-asp').value||'0')||0; data.statutPro = g('statutPro'); data.type = g('type'); data.idSmart = g('idSmart').trim(); data.dateEntree = g('dateEntree'); }
   if (!data.nom && !data.prenom) { alert('Merci de renseigner au moins un nom.'); return; }
   if (!isC) {
@@ -8828,6 +8830,37 @@ function ctrSmartNorm(v) {
   return d.length < 10 ? ('0000000000' + d).slice(-10) : d;
 }
 window.ctrSmartNorm = ctrSmartNorm;
+// Deux numéros par contrat : le n° du fichier PDF (≈ 0000132284 à 0000147106) et le n° de contrat partenaire créé par Smart (≈ 0000284972 et plus).
+// Les deux séries ne se chevauchent pas : à partir de ce seuil, un numéro est considéré comme un n° partenaire.
+var CTR_PARTNER_MIN = 250000;
+function ctrSmartIsPartner(v) { var n = ctrSmartNorm(v); return /^\d{10}$/.test(n) && parseInt(n, 10) >= CTR_PARTNER_MIN; }
+function ctrNumSet(a, b) { var out = []; [a, b].forEach(function (x) { var n = ctrSmartNorm(x); if (n && out.indexOf(n) < 0) out.push(n); }); return out; }
+function ctrNumsMatch(a, b) { return a.some(function (n) { return b.indexOf(n) >= 0; }); }
+function ctrSuppSet(f) { var t = String(f || '').toLowerCase(), r = []; if (/orange/.test(t)) r.push('orange'); if (/eneco/.test(t)) r.push('eneco'); return r; }
+// Même partenaire ? (inconnu = compatible). Un même n° partagé par Orange et Eneco ne confond pas les deux contrats.
+function ctrSuppCompat(a, b) { var x = ctrSuppSet(a), y = ctrSuppSet(b); if (!x.length || !y.length) return true; return x.some(function (k) { return y.indexOf(k) >= 0; }); }
+function ctrDocSupplier(c) {
+  var cats = {}, list = (typeof ctrProducts !== 'undefined') ? ctrProducts : [];
+  Object.keys(c.produitsDetail || {}).forEach(function (pid) {
+    var p = list.find(function (x) { return x.id === pid; });
+    if (p && p.cat === 'other') return;
+    cats[p && p.cat === 'energy' ? 'Eneco' : 'Orange'] = true;
+  });
+  var f = Object.keys(cats);
+  if (!f.length) f = (c.contratEneco && !c.clientOrange) ? ['Eneco'] : ['Orange'];
+  return f.join(' + ');
+}
+// Un contrat de « Mes Contrats » correspond-il à d ? (n° fichier ou n° partenaire identique, même partenaire)
+function ctrIsNumMatch(d, c) {
+  var a = ctrNumSet(d.contratSmart, d.contratPartenaire);
+  return !!a.length && ctrSuppCompat(ctrDocSupplier(d), ctrDocSupplier(c)) && ctrNumsMatch(a, ctrNumSet(c.contratSmart, c.contratPartenaire));
+}
+// Numéros d'une ligne de contrat de fiche : { file, partner } (un ancien numéro de la série partenaire est rangé côté partenaire)
+function crmLineNums(c) {
+  var f = ctrSmartNorm(c.smart), p = ctrSmartNorm(c.partner);
+  if (!p && f && ctrSmartIsPartner(f)) { p = f; f = ''; }
+  return { file: f, partner: p };
+}
 function pcNormTel(raw) {
   var s = String(raw == null ? '' : raw).trim();
   if (!s) return '';
@@ -10729,7 +10762,7 @@ window.ctrOpenNew = function (prefill) {
   window._ctrEditingId = null;
   window._ctrNameCtx = (prefill && prefill.contactNom) ? { contact: prefill.contactNom, titulaire: prefill.titulaire || '', clientId: prefill.clientId || '', mode: null } : null;
   window._ctrProspectId = (prefill && prefill.prospectId) || null;
-  var map = { nom: 'ctr-nom', tel: 'ctr-tel', email: 'ctr-email', societe: 'ctr-societe', tva: 'ctr-tva', adresse: 'ctr-adresse', clientOrange: 'ctr-clientOrange', contratEneco: 'ctr-contratEneco', contratSmart: 'ctr-contratSmart' };
+  var map = { nom: 'ctr-nom', tel: 'ctr-tel', email: 'ctr-email', societe: 'ctr-societe', tva: 'ctr-tva', adresse: 'ctr-adresse', clientOrange: 'ctr-clientOrange', contratEneco: 'ctr-contratEneco', contratSmart: 'ctr-contratSmart', contratPartenaire: 'ctr-contratPartenaire' };
   Object.keys(map).forEach(function (k) {
     var el = document.getElementById(map[k]);
     if (el) el.value = (prefill && prefill[k]) || '';
@@ -10780,6 +10813,7 @@ window.ctrSaveContract = async function () {
     clientOrange: document.getElementById('ctr-clientOrange').value.trim(),
     contratEneco: document.getElementById('ctr-contratEneco').value.trim(),
     contratSmart: ctrSmartNorm(document.getElementById('ctr-contratSmart').value),
+    contratPartenaire: ctrSmartNorm(document.getElementById('ctr-contratPartenaire').value),
     email: document.getElementById('ctr-email').value.trim(),
     adresse: document.getElementById('ctr-adresse').value.trim(),
     dateContrat: document.getElementById('ctr-dateContrat').value,
@@ -10796,7 +10830,7 @@ window.ctrSaveContract = async function () {
   if (!editingId) {
     try {
       var dupC = await ctrFindDuplicate(data);
-      if (dupC && data.contratSmart && ctrSmartNorm(dupC.contratSmart) === data.contratSmart) {
+      if (dupC && ctrIsNumMatch(data, dupC)) {
         // Même n° Smart = même contrat : on complète l'existant, jamais de 2e contrat ni de points en double
         await ctrCompleteExisting(dupC, data);
         return;
@@ -10837,7 +10871,7 @@ window.ctrSaveContract = async function () {
       if (banner) banner.style.display = 'none';
     }
 
-    ['ctr-nom', 'ctr-societe', 'ctr-tel', 'ctr-tva', 'ctr-clientOrange', 'ctr-contratEneco', 'ctr-contratSmart', 'ctr-email', 'ctr-adresse'].forEach(function (id) {
+    ['ctr-nom', 'ctr-societe', 'ctr-tel', 'ctr-tva', 'ctr-clientOrange', 'ctr-contratEneco', 'ctr-contratSmart', 'ctr-contratPartenaire', 'ctr-email', 'ctr-adresse'].forEach(function (id) {
       var el = document.getElementById(id); if (el) el.value = '';
     });
     document.getElementById('ctr-ancien').checked = false;
@@ -10873,7 +10907,10 @@ async function ctrCompleteExisting(old, nw) {
     if (!ov) { patch[f] = nv; did.push(x[1].toLowerCase()); }
     else if (norm(f, ov) !== norm(f, nv)) diffs.push({ f: f, label: x[1], ov: ov, nv: nv });
   });
-  if (old.contratSmart !== nw.contratSmart) patch.contratSmart = nw.contratSmart;
+  var oF = ctrSmartNorm(old.contratSmart), oP = ctrSmartNorm(old.contratPartenaire), nF = nw.contratSmart, nP = nw.contratPartenaire;
+  if (oF && !oP && ctrSmartIsPartner(oF)) { oP = oF; oF = ''; patch.contratPartenaire = oP; patch.contratSmart = ''; }   // ancien numéro de la série partenaire : rangé au bon endroit
+  if (nF) { if (!oF) patch.contratSmart = nF; else if (oF !== nF) diffs.push({ f: 'contratSmart', label: 'N° du fichier', ov: oF, nv: nF }); }
+  if (nP) { if (!oP) patch.contratPartenaire = nP; else if (oP !== nP) diffs.push({ f: 'contratPartenaire', label: 'N° contrat partenaire', ov: oP, nv: nP }); }
   // produits : on ajoute seulement ceux qui manquent (les points déjà comptés ne changent pas)
   var addedP = Object.keys(nw.produitsDetail || {}).filter(function (id) { return !(old.produitsDetail || {})[id]; });
   if (addedP.length) {
@@ -10892,7 +10929,7 @@ async function ctrCompleteExisting(old, nw) {
   // champs déjà remplis mais différents : on montre l'ancien et le nouveau
   if (diffs.length) {
     var txt = diffs.map(function (d) { return '• ' + d.label + ' : « ' + d.ov + ' » → « ' + d.nv + ' »'; }).join('\n');
-    if (confirm('Contrat déjà existant (Smart ' + nw.contratSmart + ', ' + (old.nom || '?') + ').\n\nDifférences avec le PDF :\n' + txt + '\n\nOK = remplacer par les nouvelles valeurs\nAnnuler = garder les valeurs actuelles (le reste est quand même complété)')) {
+    if (confirm('Contrat déjà existant (N° ' + (nw.contratPartenaire || nw.contratSmart) + ', ' + (old.nom || '?') + ').\n\nDifférences avec le PDF :\n' + txt + '\n\nOK = remplacer par les nouvelles valeurs\nAnnuler = garder les valeurs actuelles (le reste est quand même complété)')) {
       diffs.forEach(function (d) { patch[d.f] = d.nv; did.push(d.label.toLowerCase()); });
     }
   }
@@ -10901,7 +10938,7 @@ async function ctrCompleteExisting(old, nw) {
     await ctrSyncContractToClients(Object.assign({}, old, patch), old.docId);
   }
   pcToast(did.length ? '✅ Contrat déjà existant : complété (' + did.join(', ') + '). Points non recomptés.' : 'ℹ️ Contrat déjà existant : rien à compléter. Points non recomptés.');
-  ['ctr-nom', 'ctr-societe', 'ctr-tel', 'ctr-tva', 'ctr-clientOrange', 'ctr-contratEneco', 'ctr-contratSmart', 'ctr-email', 'ctr-adresse', 'ctr-dateContrat'].forEach(function (id) {
+  ['ctr-nom', 'ctr-societe', 'ctr-tel', 'ctr-tva', 'ctr-clientOrange', 'ctr-contratEneco', 'ctr-contratSmart', 'ctr-contratPartenaire', 'ctr-email', 'ctr-adresse', 'ctr-dateContrat'].forEach(function (id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('ctr-ancien').checked = false;
@@ -10927,6 +10964,7 @@ window.ctrEditContract = function (docId) {
   document.getElementById('ctr-clientOrange').value = c.clientOrange || '';
   document.getElementById('ctr-contratEneco').value = c.contratEneco || '';
   document.getElementById('ctr-contratSmart').value = c.contratSmart || '';
+  document.getElementById('ctr-contratPartenaire').value = c.contratPartenaire || '';
   document.getElementById('ctr-email').value = c.email || '';
   document.getElementById('ctr-adresse').value = c.adresse || '';
   document.getElementById('ctr-dateContrat').value = c.dateContrat || '';
@@ -11291,7 +11329,7 @@ window.ctrHandleImportPdf = async function (file) {
     var nbProduits = (data.produits || []).reduce(function (s, p) { return s + (p.quantite || 1); }, 0);
     var dTxt = /^\d{4}-\d{2}-\d{2}$/.test(String(data.dateContrat || '')) ? ' Signé le ' + pcFmtDate(data.dateContrat) + '.' : ' ⚠️ Date de signature introuvable : à encoder.';
     var exist = null;
-    try { var smN = ctrSmartNorm(data.client.contratSmart); if (smN) exist = (await ctrLoadContracts()).find(function (c) { return ctrSmartNorm(c.contratSmart) === smN; }) || null; } catch (e2) { exist = null; }
+    try { var probe = { contratSmart: data.client.contratSmart, contratPartenaire: '', contratEneco: data.client.contratEneco, clientOrange: data.client.clientOrange, produitsDetail: {} }; if (/eneco/i.test(data.fournisseur || '')) probe.contratEneco = probe.contratEneco || 'x'; if (ctrNumSet(probe.contratSmart).length) exist = (await ctrLoadContracts()).find(function (c) { return ctrNumsMatch(ctrNumSet(probe.contratSmart), ctrNumSet(c.contratSmart, c.contratPartenaire)) && ctrSuppCompat(data.fournisseur, ctrDocSupplier(c)); }) || null; } catch (e2) { exist = null; }
     ctrSetImportStatus('ok', '✅ Contrat ' + fournisseur + ' importé — ' + nbProduits + ' produit(s).' + dTxt + (exist ? ' ℹ️ N° Smart déjà enregistré (' + (exist.nom || '?') + ') : à l\'enregistrement, le contrat existant sera complété (pas de doublon, points non recomptés).' : ' Vérifie les champs avant d\'enregistrer.'));
   } catch (err) {
     console.error(err);
@@ -11313,7 +11351,13 @@ function crmContrats(item) {
   return (d || s) ? [{ fournisseur: '', date: d, smart: s, produits: [] }] : [];
 }
 function crmContratLine(c) {
-  return [c.fournisseur, c.date ? pcFmtDate(c.date) : '', c.smart ? 'Smart ' + c.smart : '', (c.produits || []).join(', ')].filter(Boolean).join(' · ');
+  var n = crmLineNums(c);
+  return [c.fournisseur, c.date ? pcFmtDate(c.date) : '', n.partner ? 'N° ' + n.partner : '', n.file ? 'Fichier ' + n.file : '', (c.produits || []).join(', ')].filter(Boolean).join(' · ');
+}
+// Pastilles « à compléter » d'une ligne de contrat
+function crmCtrPills(c) {
+  var st = 'background:#fff1e6;color:#c2410c;border:1px solid #fdba74;border-radius:99px;font-size:10.5px;font-weight:700;padding:1px 7px;margin-left:4px;';
+  return (c.date ? '' : ' <span style="' + st + '">⚠️ date manquante</span>') + (crmLineNums(c).partner ? '' : ' <span style="' + st + '">⚠️ n° partenaire manquant</span>');
 }
 function crmLinesSig(lines) {
   return (lines || []).map(function (l) { return [l.contractId || '', l.fournisseur || '', l.date || '', l.smart || '', (l.produits || []).join('|')].join('~'); }).join('#');
@@ -11330,7 +11374,7 @@ function ctrLineFromContract(c, id) {
   });
   var f = Object.keys(cats);
   if (!f.length) f = (c.contratEneco && !c.clientOrange) ? ['Eneco'] : ['Orange'];
-  return { contractId: id || c.docId || '', fournisseur: f.join(' + '), date: c.dateContrat || '', smart: c.contratSmart || '', produits: prods };
+  return { contractId: id || c.docId || '', fournisseur: f.join(' + '), date: c.dateContrat || '', smart: c.contratSmart || '', partner: ctrSmartNorm(c.contratPartenaire), produits: prods };
 }
 // Additionne deux listes de contrats (sans doublon). overwrite = true : les valeurs de b remplacent celles de a (contrat modifié)
 function crmMergeContrats(a, b, overwrite) {
@@ -11338,8 +11382,10 @@ function crmMergeContrats(a, b, overwrite) {
   (b || []).forEach(function (n) {
     var i = out.findIndex(function (o) {
       if (n.contractId && o.contractId === n.contractId) return true;
-      if (n.smart && o.smart && ctrSmartNorm(n.smart) === ctrSmartNorm(o.smart)) return true;
-      return !!(n.date && o.date === n.date && (!o.smart || !n.smart) && (!o.contractId || !n.contractId));
+      if (!ctrSuppCompat(n.fournisseur, o.fournisseur)) return false;   // Orange et Eneco partagent parfois le même numéro
+      var nn = crmLineNums(n), on = crmLineNums(o), ns = ctrNumSet(nn.file, nn.partner), os = ctrNumSet(on.file, on.partner);
+      if (ctrNumsMatch(ns, os)) return true;
+      return !!(n.date && o.date === n.date && (!os.length || !ns.length) && (!o.contractId || !n.contractId));
     });
     if (i < 0) { out.push(Object.assign({}, n)); return; }
     var o = out[i];
@@ -11411,16 +11457,24 @@ function crmContratRowHtml(c) {
     if (pr) qty[pr.id] = (qty[pr.id] || 0) + pr.q; else if (String(t).trim()) others.push(String(t).trim());
   });
   var pills = crmPillDefs().map(function (d) { return crmPillHtml(d, qty[d.id] || 0); }).join('');
-  var miss = !c.date;
+  var nums = crmLineNums(c), moved = !!(nums.partner && !ctrSmartNorm(c.partner));   // ancien numéro proposé comme n° partenaire
+  var miss = !c.date, missP = !nums.partner;
   return '<div class="crm-ctr-row" data-cid="' + crmEsc(c.contractId || '') + '" style="border-left-color:' + crmCtrColor(cur) + ';">'
     + '<div class="crm-ctr-top"><select class="crm-ctr-f" onchange="crmCtrFournChg(this)">' + fs.map(function (f) { return '<option value="' + crmEsc(f) + '"' + (f === cur ? ' selected' : '') + '>' + crmEsc(f) + '</option>'; }).join('') + '</select>'
-    + '<span class="crm-ctr-warn" style="' + (miss ? 'display:inline-block;' : '') + '">⚠️ date manquante</span>'
     + '<button type="button" class="crm-ctr-x" title="Retirer ce contrat" onclick="this.closest(\'.crm-ctr-row\').remove()">×</button></div>'
+    + '<div style="margin-bottom:6px;"><span class="crm-ctr-warn" style="' + (miss ? 'display:inline-block;' : '') + '">⚠️ date manquante</span> <span class="crm-ctr-warnp" style="' + (missP ? 'display:inline-block;' : '') + '">⚠️ n° partenaire manquant</span></div>'
     + '<div class="crm-ctr-g"><div><div class="crm-l">Date de signature</div><input class="crm-ctr-d' + (miss ? ' crm-miss' : '') + '" type="date" value="' + crmEsc(c.date || '') + '" onchange="crmCtrDateChk(this)" oninput="crmCtrDateChk(this)"></div>'
-    + '<div><div class="crm-l">N° Smart</div><input class="crm-ctr-s" inputmode="numeric" placeholder="0000123456" value="' + crmEsc(c.smart || '') + '" onblur="this.value=ctrSmartNorm(this.value)"></div></div>'
+    + '<div><div class="crm-l">N° contrat partenaire (liste Smart)</div><input class="crm-ctr-n' + (missP ? ' crm-miss' : '') + '" inputmode="numeric" placeholder="0000311168" value="' + crmEsc(nums.partner) + '" title="' + (moved ? 'Ancien numéro proposé comme n° partenaire : enregistre pour confirmer' : '') + '" style="' + (moved ? 'background:#fffbeb;border-color:#f59e0b;' : '') + '" oninput="crmCtrPartChk(this)" onblur="this.value=ctrSmartNorm(this.value);crmCtrPartChk(this)"></div>'
+    + '<div style="grid-column:span 2;"><div class="crm-l">N° du fichier PDF</div><input class="crm-ctr-s" inputmode="numeric" placeholder="0000144695" value="' + crmEsc(nums.file) + '" onblur="this.value=ctrSmartNorm(this.value)"></div></div>'
     + '<div class="crm-l">Produits</div><div class="crm-pills">' + pills + '</div>'
     + '<input class="crm-ctr-o" placeholder="Autre produit (séparés par des virgules)" value="' + crmEsc(others.join(', ')) + '"></div>';
 }
+window.crmCtrPartChk = function (inp) {
+  var row = inp.closest('.crm-ctr-row'), miss = !String(inp.value || '').trim();
+  inp.classList.toggle('crm-miss', miss);
+  var w = row && row.querySelector('.crm-ctr-warnp');
+  if (w) w.style.display = miss ? 'inline-block' : 'none';
+};
 window.crmContratAddRow = function (f) {
   var box = document.getElementById('crm-contrats-box');
   if (box) box.insertAdjacentHTML('beforeend', crmContratRowHtml({ fournisseur: f || 'Orange' }));
@@ -11439,9 +11493,9 @@ function crmContratsRead() {
       if (d) prods.push(n > 1 ? d.label + ' ×' + n : d.label);
     });
     q('.crm-ctr-o').split(',').forEach(function (t) { t = t.trim(); if (t) prods.push(t); });
-    var o = { fournisseur: q('.crm-ctr-f'), date: q('.crm-ctr-d'), smart: ctrSmartNorm(q('.crm-ctr-s')), produits: prods };
+    var o = { fournisseur: q('.crm-ctr-f'), date: q('.crm-ctr-d'), smart: ctrSmartNorm(q('.crm-ctr-s')), partner: ctrSmartNorm(q('.crm-ctr-n')), produits: prods };
     if (r.dataset.cid) o.contractId = r.dataset.cid;
-    if (o.date || o.smart || o.produits.length) out.push(o);
+    if (o.date || o.smart || o.partner || o.produits.length) out.push(o);
   });
   return crmMergeContrats([], out, false);
 }
@@ -11460,15 +11514,196 @@ window.crmSocInit = function (fromType) {
   crmSocToggle(!!has || t === 'Société' || t === 'Indépendant');
 };
 
+// ----- Coller depuis Smart : page d'un contrat ou lignes de la liste « My contracts » -----
+function smartDate(t) {
+  var m = String(t || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  return m ? m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2) : '';
+}
+function smartCap(t) { t = String(t || '').trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : ''; }
+function smartMapProduit(name) {
+  var t = String(name || '');
+  if (/elec|électr/i.test(t)) return 'eneco_elec';
+  if (/\bga[sz]\b/i.test(t)) return 'eneco_gaz';
+  if (/chaudi/i.test(t)) return 'chaudiere';
+  if (/internet/i.test(t)) return 'internet';
+  if (/\btv\b/i.test(t)) return 'tv';
+  if (/flybox/i.test(t)) return 'flybox';
+  var m = t.match(/mobile\s+(child|small|medium|large|unlimited)/i);
+  return m ? m[1].toLowerCase() : '';
+}
+function smartParsePaste(text) {
+  var raw = String(text || '').replace(/ /g, ' ');
+  var tokens = raw.split(/[\t\r\n]+| {2,}/).map(function (t) { return t.trim(); }).filter(Boolean);
+  var out = [];
+  if (/Num[ée]ro de contrat partenaire/i.test(raw)) {
+    var g = function (re) { var m = raw.match(re); return m ? m[1].trim() : ''; };
+    var e = { source: 'page', produits: [], numClient: '' };
+    e.numPartenaire = ctrSmartNorm(g(/Num[ée]ro de contrat partenaire[\t\r\n ]+(\d{6,10})/i));
+    e.partenaire = smartCap(g(/Partenaire[\t\r\n ]+(Orange|Eneco)/i));
+    var ci = tokens.indexOf('Client');
+    e.client = ci >= 0 ? (tokens[ci + 1] || '') : '';
+    e.date = smartDate(g(/Date de signature[\t\r\n ]+([0-9\/]+)/i));
+    var hi = tokens.findIndex(function (t) { return /^Partner client number$/i.test(t); });
+    if (hi >= 0) {
+      for (var i = hi + 1; i + 3 < tokens.length; i++) {
+        if (/^\d{10}$/.test(tokens[i]) && /^\d{6,10}[A-Z]?$/.test(tokens[i + 1])) {
+          e.produits.push({ ref: tokens[i + 1], nom: tokens[i + 2], id: smartMapProduit(tokens[i + 2]) });
+          if (!e.numClient && /^(\d\.\d{6,8}|\d{9,12})$/.test(tokens[i + 3])) e.numClient = tokens[i + 3];
+          i += 3;
+        }
+      }
+    }
+    if (e.numPartenaire || e.date) out.push(e);
+    return out;
+  }
+  for (var k = 0; k < tokens.length; k++) {
+    if (/^\d{10}$/.test(tokens[k]) && /^(Orange|Eneco)$/i.test(tokens[k + 1] || '')) {
+      var d = '';
+      for (var q = k + 2; q < Math.min(k + 9, tokens.length); q++) { if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tokens[q])) { d = smartDate(tokens[q]); break; } }
+      out.push({ source: 'liste', numPartenaire: tokens[k], partenaire: smartCap(tokens[k + 1]), client: tokens[k + 2] || '', date: d, produits: [], numClient: '' });
+    }
+  }
+  return out;
+}
+function crmSetPill(row, id, q) {
+  var el = row.querySelector('.crm-pill[data-pid="' + id + '"]'), d = crmPillDefs().find(function (x) { return x.id === id; });
+  if (!el || !d) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = crmPillHtml(d, q);
+  el.parentNode.replaceChild(tmp.firstChild, el);
+}
+function crmSmartNameTok(s) { return pcStripAcc(s).replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).sort().join(' '); }
+window.crmSmartPasteOpen = function () {
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:460px;width:100%;font-size:13px;">'
+    + '<div style="font-weight:700;color:#1b7f4a;font-size:14px;margin-bottom:6px;">📋 Coller depuis Smart</div>'
+    + '<div style="color:#555;margin-bottom:8px;">Colle la <b>page d\'un contrat</b> (Ctrl+A puis Ctrl+C) ou une ou plusieurs <b>lignes de la liste « My contracts »</b>. Rien n\'est enregistré avant ton clic sur Enregistrer dans la fiche.</div>'
+    + '<textarea id="crm-smart-paste" rows="8" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:12px;" placeholder="Colle ici…"></textarea>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;"><button type="button" data-m="x" style="padding:7px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">Annuler</button>'
+    + '<button type="button" data-m="ok" style="padding:7px 14px;border:none;border-radius:8px;background:#1b7f4a;color:#fff;font-weight:700;cursor:pointer;">Analyser</button></div></div>';
+  ov.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('button[data-m]') : null;
+    if (!b) return;
+    var txt = (document.getElementById('crm-smart-paste') || {}).value || '';
+    document.body.removeChild(ov);
+    if (b.getAttribute('data-m') === 'ok') crmSmartApply(smartParsePaste(txt));
+  });
+  document.body.appendChild(ov);
+};
+function crmSmartApply(entries) {
+  if (!entries.length) { alert('Je ne reconnais rien dans ce texte. Colle la page complète d\'un contrat Smart, ou des lignes de la liste « My contracts » (n° de contrat, partenaire, client, date).'); return; }
+  var g = function (id) { return ((document.getElementById(id) || {}).value || '').trim(); };
+  var names = [(g('crm-prenom') + ' ' + g('crm-nom')).trim(), g('crm-titulaire')].filter(Boolean);
+  var val = function (r, sel) { return ((r.querySelector(sel) || {}).value || '').trim(); };
+  var rows = [].slice.call(document.querySelectorAll('#crm-contrats-box .crm-ctr-row'));
+  var plans = [], skipped = 0;
+  for (var i = 0; i < entries.length; i++) {
+    var e = entries[i];
+    if (e.client && !names.some(function (n) { return crmSmartNameTok(n) === crmSmartNameTok(e.client); })) {
+      if (e.source === 'liste') { skipped++; continue; }
+      if (!confirm('Smart : « ' + e.client + ' » — fiche : « ' + (names[0] || '?') + ' ».\n\nLe nom est différent. Continuer quand même ?')) return;
+    }
+    var cands = rows.filter(function (r) { return ctrSuppCompat(val(r, '.crm-ctr-f'), e.partenaire); });
+    var row = cands.find(function (r) { return e.numPartenaire && val(r, '.crm-ctr-n') === e.numPartenaire; })
+      || (e.date ? cands.find(function (r) { return val(r, '.crm-ctr-d') === e.date; }) : null);
+    if (!row) { var free = cands.filter(function (r) { return !val(r, '.crm-ctr-n'); }); if (free.length === 1) row = free[0]; }
+    plans.push({ e: e, row: row });
+  }
+  if (!plans.length) { alert('Aucune ligne ne correspond à cette fiche (' + (names[0] || '?') + ').'); return; }
+  var steps = [], acts = [];
+  plans.forEach(function (p) {
+    var e = p.e, row = p.row, head = (e.partenaire || 'Contrat') + (e.date ? ' · ' + pcFmtDate(e.date) : '');
+    steps.push('▸ ' + head + (row ? ' → carte existante' : ' → nouvelle carte'));
+    acts.push(function () {
+      var r = row;
+      if (!r) { crmContratAddRow(e.partenaire || 'Orange'); var all = document.querySelectorAll('#crm-contrats-box .crm-ctr-row'); r = all[all.length - 1]; }
+      var n = r.querySelector('.crm-ctr-n'), d = r.querySelector('.crm-ctr-d');
+      if (e.numPartenaire && n) { n.value = e.numPartenaire; n.style.background = ''; n.style.borderColor = ''; crmCtrPartChk(n); }
+      if (e.date && d) { d.value = e.date; crmCtrDateChk(d); }
+      var cnt = {};
+      (e.produits || []).forEach(function (pr) { if (pr.id) cnt[pr.id] = (cnt[pr.id] || 0) + 1; });
+      Object.keys(cnt).forEach(function (id) {
+        var el = r.querySelector('.crm-pill[data-pid="' + id + '"]');
+        if ((parseInt(el && el.getAttribute('data-q'), 10) || 0) < cnt[id]) crmSetPill(r, id, cnt[id]);
+      });
+    });
+    if (e.numPartenaire) steps.push('   • N° contrat partenaire : ' + (row && val(row, '.crm-ctr-n') && val(row, '.crm-ctr-n') !== e.numPartenaire ? '« ' + val(row, '.crm-ctr-n') + ' » → ' : '') + e.numPartenaire);
+    if (e.date) steps.push('   • Date de signature : ' + (row && val(row, '.crm-ctr-d') && val(row, '.crm-ctr-d') !== e.date ? pcFmtDate(val(row, '.crm-ctr-d')) + ' → ' : '') + pcFmtDate(e.date));
+    if (e.produits && e.produits.length) steps.push('   • Produits : ' + e.produits.map(function (x) { return x.nom; }).join(', '));
+    if (e.numClient) {
+      var fid = /eneco/i.test(e.partenaire) ? 'crm-numEneco' : 'crm-numOrange', lab = /eneco/i.test(e.partenaire) ? 'N° client Eneco' : 'N° client Orange', oldc = g(fid);
+      if (oldc !== e.numClient) {
+        steps.push('   • ' + lab + ' : ' + (oldc ? '« ' + oldc + ' » → ' : '') + e.numClient);
+        acts.push(function () { var el = document.getElementById(fid); if (el) el.value = e.numClient; });
+      }
+    }
+  });
+  if (skipped) steps.push('(' + skipped + ' ligne(s) d\'un autre client ignorée(s))');
+  if (!confirm('Depuis Smart :\n\n' + steps.join('\n') + '\n\nOK = remplir la fiche (à enregistrer ensuite)\nAnnuler = ne rien changer')) return;
+  acts.forEach(function (f) { f(); });
+  pcToast('✅ Fiche complétée depuis Smart : vérifie puis clique sur Enregistrer.');
+}
+
+// ----- Contrôle des dates : les n° partenaire montent avec le temps, une date qui sort de l'ordre est suspecte -----
+window.crmDateCheck = function () {
+  var list = [], seen = {};
+  (typeof _crmClData !== 'undefined' ? _crmClData : []).forEach(function (x) {
+    crmContrats(x).forEach(function (c) {
+      var n = crmLineNums(c);
+      if (!n.partner || !c.date || seen[n.partner]) return;
+      seen[n.partner] = 1;
+      list.push({ id: x._id, nom: pcDupName(x), num: n.partner, date: c.date, t: new Date(c.date).getTime() });
+    });
+  });
+  list.sort(function (a, b) { return a.num < b.num ? -1 : 1; });
+  if (list.length < 3) { alert('Il faut au moins 3 contrats avec un n° partenaire et une date pour contrôler.'); return; }
+  var TOL = 7 * 86400000, best = [], prev = [], i, j;
+  for (i = 0; i < list.length; i++) {
+    best[i] = 1; prev[i] = -1;
+    for (j = 0; j < i; j++) if (list[i].t >= list[j].t - TOL && best[j] + 1 > best[i]) { best[i] = best[j] + 1; prev[i] = j; }
+  }
+  var end = best.indexOf(Math.max.apply(null, best)), keep = {};
+  for (var k = end; k >= 0; k = prev[k]) keep[k] = 1;
+  var bad = [];
+  list.forEach(function (it, idx) {
+    if (keep[idx]) return;
+    var before = null, after = null, a;
+    for (a = idx - 1; a >= 0; a--) if (keep[a]) { before = list[a]; break; }
+    for (a = idx + 1; a < list.length; a++) if (keep[a]) { after = list[a]; break; }
+    bad.push({ it: it, before: before, after: after });
+  });
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  var rowsH = bad.map(function (b) {
+    var rng = (b.before ? pcFmtDate(b.before.date) : '…') + ' et ' + (b.after ? pcFmtDate(b.after.date) : '…');
+    return '<div style="border:1px solid #fdba74;background:#fff7ed;border-radius:8px;padding:8px 10px;margin-bottom:6px;"><b>' + crmEsc(b.it.nom) + '</b> · N° ' + crmEsc(b.it.num) + ' · <b style="color:#c2410c;">' + pcFmtDate(b.it.date) + '</b>'
+      + '<div style="font-size:11.5px;color:#555;">Avec ce numéro, la date devrait être entre le ' + rng + '.</div>'
+      + '<button type="button" data-id="' + crmEsc(b.it.id) + '" style="margin-top:4px;border:1px solid #f97316;background:#fff;color:#f97316;border-radius:6px;padding:3px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">Ouvrir la fiche</button></div>';
+  }).join('');
+  ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;font-size:13px;">'
+    + '<div style="font-weight:700;color:#f97316;font-size:14px;margin-bottom:6px;">📅 Contrôle des dates</div>'
+    + '<div style="color:#555;margin-bottom:8px;">' + list.length + ' contrats avec n° partenaire et date contrôlés. ' + (bad.length ? '<b>' + bad.length + ' date(s) à vérifier</b> (marge de 7 jours) :' : '✅ Toutes les dates sont cohérentes avec l\'ordre des numéros.') + '</div>'
+    + rowsH + '<div style="text-align:right;margin-top:8px;"><button type="button" data-close="1" style="padding:7px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">Fermer</button></div></div>';
+  ov.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.getAttribute && t.getAttribute('data-close')) { document.body.removeChild(ov); return; }
+    var id = t.getAttribute && t.getAttribute('data-id');
+    if (id) { document.body.removeChild(ov); window.openCrmModal('clients', id); }
+  });
+  document.body.appendChild(ov);
+};
+
 // N° Smart d'une des lignes déjà présent sur une AUTRE fiche client ?
 function crmSmartElsewhere(lines, selfId) {
-  var mine = (lines || []).map(function (l) { return ctrSmartNorm(l.smart); }).filter(Boolean);
+  var numsOf = function (l) { var n = crmLineNums(l); return ctrNumSet(n.file, n.partner); };
+  var mine = []; (lines || []).forEach(function (l) { numsOf(l).forEach(function (n) { if (mine.indexOf(n) < 0) mine.push(n); }); });
   if (!mine.length) return null;
   var list = (typeof _crmClData !== 'undefined' && _crmClData) ? _crmClData : [];
   for (var i = 0; i < list.length; i++) {
     var x = list[i];
     if (x._id === selfId) continue;
-    var theirs = crmContrats(x).map(function (c) { return ctrSmartNorm(c.smart); });
+    var theirs = []; crmContrats(x).forEach(function (c) { theirs = theirs.concat(numsOf(c)); });
     var hit = mine.find(function (m) { return theirs.indexOf(m) >= 0; });
     if (hit) return { fiche: x, smart: hit };
   }
@@ -11483,7 +11718,8 @@ function pcDupKeys(r) {
   if (r.email && /@/.test(r.email)) add('mail', String(r.email).trim().toLowerCase());
   add('orange', crmDigits(r.numOrange));
   add('eneco', crmDigits(r.numEneco));
-  var smarts = (r.contrats || []).map(function (c) { return c.smart; }).concat([r.numSmart]);
+  var smarts = [r.numSmart];
+  (r.contrats || []).forEach(function (c) { smarts.push(c.smart, c.partner); });
   smarts.forEach(function (s) { add('smart', ctrSmartNorm(s)); });
   return k.filter(function (v, i) { return k.indexOf(v) === i; });
 }
@@ -11812,17 +12048,16 @@ async function ctrSyncContractToClients(contractData, contractId) {
 // Contrat déjà enregistré ? (même N° Smart, ou même client + même date + mêmes produits)
 // N° Smart déjà utilisé par un contrat d'une AUTRE personne ?
 async function ctrSmartConflict(d) {
-  var sm = ctrSmartNorm(d.contratSmart);
-  if (!sm) return null;
+  if (!ctrNumSet(d.contratSmart, d.contratPartenaire).length) return null;
   var list = await ctrLoadContracts();
-  return list.find(function (c) { return ctrSmartNorm(c.contratSmart) === sm && !pcSamePerson(c, d); }) || null;
+  return list.find(function (c) { return ctrIsNumMatch(d, c) && !pcSamePerson(c, d); }) || null;
 }
 function ctrSig(c) { return Object.keys(c.produitsDetail || {}).sort().map(function (k) { return k + 'x' + ((c.produitsDetail[k] || []).length); }).join(','); }
 async function ctrFindDuplicate(d) {
   var list = await ctrLoadContracts();
-  var t = pcNormTel(d.tel), m = (d.email || '').trim().toLowerCase(), sm = ctrSmartNorm(d.contratSmart);
+  var t = pcNormTel(d.tel), m = (d.email || '').trim().toLowerCase();
   return list.find(function (c) {
-    if (sm && ctrSmartNorm(c.contratSmart) === sm) return true;
+    if (ctrIsNumMatch(d, c)) return true;
     var sameP = (t && pcNormTel(c.tel) === t) || (m && (c.email || '').trim().toLowerCase() === m);
     return !!(sameP && d.dateContrat && c.dateContrat === d.dateContrat && ctrSig(c) === ctrSig(d));
   }) || null;
@@ -11836,7 +12071,7 @@ async function ctrDupGroups() {
     var grp = [c];
     list.forEach(function (o, j) {
       if (j <= i || used[o.docId]) return;
-      var sm = ctrSmartNorm(c.contratSmart), same = sm && sm === ctrSmartNorm(o.contratSmart);
+      var same = ctrIsNumMatch(c, o);
       var sameP = (pcNormTel(c.tel) && pcNormTel(c.tel) === pcNormTel(o.tel)) || (c.email && o.email && c.email.trim().toLowerCase() === o.email.trim().toLowerCase());
       if (same || (sameP && c.dateContrat && c.dateContrat === o.dateContrat && ctrSig(c) === ctrSig(o))) grp.push(o);
     });
@@ -12945,7 +13180,7 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
       #modal-crm .crm-ctr-top{display:flex;gap:6px;align-items:center;margin-bottom:7px}
       #modal-crm .crm-ctr-top select{flex:1;font-weight:700;padding:5px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff}
       #modal-crm .crm-ctr-x{border:1px solid #fca5a5;background:#fff;color:#b91c1c;border-radius:6px;width:28px;height:28px;font-size:14px;cursor:pointer;line-height:1}
-      #modal-crm .crm-ctr-warn{display:none;background:#fff1e6;color:#c2410c;border:1px solid #fdba74;border-radius:99px;font-size:10.5px;font-weight:700;padding:2px 8px;white-space:nowrap}
+      #modal-crm .crm-ctr-warn,#modal-crm .crm-ctr-warnp{display:none;background:#fff1e6;color:#c2410c;border:1px solid #fdba74;border-radius:99px;font-size:10.5px;font-weight:700;padding:2px 8px;white-space:nowrap;margin-right:4px}
       #modal-crm .crm-ctr-g{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}
       #modal-crm .crm-ctr-g input{padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;box-sizing:border-box;width:100%}
       #modal-crm .crm-ctr-g input.crm-miss{border-color:#f97316;background:#fff7ed}
@@ -13029,6 +13264,7 @@ document.querySelectorAll('[id^="app-version"]').forEach(el => {
           <button type="button" class="crm-addb" onclick="crmContratAddRow('Orange')" style="border-color:#e8590c;color:#e8590c;">+ Orange</button>
           <button type="button" class="crm-addb" onclick="crmContratAddRow('Eneco')" style="border-color:#1b7f4a;color:#1b7f4a;">+ Eneco</button>
           <button type="button" class="crm-addb" onclick="crmContratAddRow('Autre')" style="border-color:#6b7280;color:#6b7280;">+ Autre</button>
+          <button type="button" class="crm-addb" onclick="crmSmartPasteOpen()" style="border-color:#1f5fa8;color:#1f5fa8;">📋 Coller depuis Smart</button>
         </div>
       </div>
     </div>
