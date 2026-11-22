@@ -328,7 +328,7 @@ function changeQty(key, delta) {
 }
 
 function resetOld() {
-  counters = { inet: 0, mob: 0, tv: 0, dec: 0, opt: 0 };
+  counters = { phone: 0, inet: 0, mob: 0, tv: 0, dec: 0, opt: 0 };
   document.getElementById('amount-input').value = '';
   Object.keys(counters).forEach(k => document.getElementById('qty-' + k).textContent = '0');
   calcComparator();
@@ -359,7 +359,9 @@ function syncFromSimulator() {
   orange12m = parseFloat(m12);
   
   calcComparator();
-  alert('✅ Prix Orange récupérés :\n• Aujourd\'hui : ' + fmt(orangeToday) + '\n• Après 6 mois : ' + fmt(orange6m) + '\n• Après 12 mois : ' + fmt(orange12m));
+  const ts = parseInt(localStorage.getItem('orangeSimTime') || '0', 10);
+  const when = ts ? '\n(simulation du ' + new Date(ts).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ')' : '';
+  alert('✅ Prix Orange récupérés (TVAC) :\n• Aujourd\'hui : ' + fmt(orangeToday) + '\n• Après 6 mois : ' + fmt(orange6m) + '\n• Après 12 mois : ' + fmt(orange12m) + when);
 }
 
 function exportPDF() {
@@ -427,11 +429,43 @@ function shareWhatsApp() {
   window.open(`https://wa.me/?text=${encoded}`, '_blank');
 }
 
-function createOffer() {
+function pmLoadQrLib() {
+  return new Promise(function (res) {
+    if (window.QRCode) return res(true);
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    sc.onload = function () { res(true); };
+    sc.onerror = function () { res(false); };
+    document.head.appendChild(sc);
+    setTimeout(function () { res(!!window.QRCode); }, 6000);
+  });
+}
+async function pmQrDataUrl(url) {
+  try {
+    if (!(await pmLoadQrLib())) return '';
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(box);
+    new window.QRCode(box, { text: url, width: 240, height: 240, colorDark: '#1f2933', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+    const c = box.querySelector('canvas');
+    const out = c ? c.toDataURL('image/png') : '';
+    document.body.removeChild(box);
+    return out;
+  } catch (e) { return ''; }
+}
+
+async function createOffer() {
   if (orange12m === 0) {
     alert('⚠️ Récupérez d\'abord les prix Orange.');
     return;
   }
+  // Fenêtre ouverte tout de suite (évite le blocage des popups pendant la génération du QR)
+  const win = window.open('', '_blank');
+  let qrImg = '';
+  try {
+    const qu = window.pmQrUrlIfAllowed ? await window.pmQrUrlIfAllowed() : '';
+    if (qu) qrImg = await pmQrDataUrl(qu);
+  } catch (e) { qrImg = ''; }
   
   const op = document.getElementById('operator-select').value;
   const opName = operators[op];
@@ -452,58 +486,29 @@ function createOffer() {
   let offerDetailsHTML = '';
   try {
     const details = JSON.parse(localStorage.getItem('orangeOfferDetails') || '{}');
-    if (details.produits) {
+    if (details.v === 2) {
+      const D = (v) => fmt(isTVAC ? (+v || 0) : ((+v || 0) / TVA));
+      const row = (label, val, style, indent) => `<div class="price-row"${indent ? ' style="padding-left:20px;"' : ''}><span class="price-label">${label}</span><span class="price-value"${style ? ' style="' + style + '"' : ''}>${val}</span></div>`;
       offerDetailsHTML = `
         <div class="section">
           <div class="section-title">📦 Prix affichés (Orange)</div>
-          <div class="price-row">
-            <span class="price-label">Total produits</span>
-            <span class="price-value">${details.produits}</span>
-          </div>
-          <div class="price-row" style="padding-left:20px;">
-            <span class="price-label">📱 Total Mobiles</span>
-            <span class="price-value">${details.mobiles}</span>
-          </div>
-          <div class="price-row" style="padding-left:20px;">
-            <span class="price-label">🌐 Internet, TV & Acc.</span>
-            <span class="price-value">${details.internet}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">Options mensuelles</span>
-            <span class="price-value">${details.options}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">Frais uniques</span>
-            <span class="price-value">${details.fraisUniques}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">Remises Love (à vie)</span>
-            <span class="price-value" style="color:#2e7d32;">- ${details.remisesLove}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">🟡 Promos 6 mois</span>
-            <span class="price-value" style="color:#f97316;">- ${details.promos6mois}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">🔴 Promos 12 mois</span>
-            <span class="price-value" style="color:#e24b4a;">- ${details.promos12mois}</span>
-          </div>
+          ${row('Total produits', D(details.produits))}
+          ${row('📱 Total Mobiles', D(details.mobiles), '', true)}
+          ${row('🌐 Internet', D(details.internet), '', true)}
+          ${+details.tv ? row('📺 TV', D(details.tv), '', true) : ''}
+          ${row('Options mensuelles', D(details.options))}
+          ${row('Frais mensuels (Home)', D(details.fraisUniques))}
+          ${row('Remises Love (à vie)', '- ' + D(details.remisesLove), 'color:#2e7d32;')}
+          ${row('🟡 Promos 6 mois', '- ' + D(details.promos6mois), 'color:#f97316;')}
+          ${row('🔴 Promos 12 mois', '- ' + D(details.promos12mois), 'color:#e24b4a;')}
+          ${+details.promosUniques ? row('Promos uniques', '- ' + D(details.promosUniques), 'color:#2e7d32;') : ''}
         </div>
         <div class="section" style="background:#fff8f4;border:2px solid #ff5a14;">
           <div class="section-title">🏁 Tarifs après les promotions</div>
-          <div style="font-size:18px;font-weight:bold;color:#ff5a14;text-align:center;padding:12px 0;">${details.sousTotal}</div>
-          <div class="price-row">
-            <span class="price-label">🟢 Aujourd'hui</span>
-            <span class="price-value" style="color:#2e7d32;font-weight:bold;">${details.prixAujourdhui}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">🟡 Après 6 mois</span>
-            <span class="price-value" style="color:#f97316;font-weight:bold;">${details.prixApres6mois}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">🔴 Après 12 mois</span>
-            <span class="price-value" style="color:#e24b4a;font-weight:bold;">${details.prixApres12mois}</span>
-          </div>
+          <div style="font-size:18px;font-weight:bold;color:#ff5a14;text-align:center;padding:12px 0;">${D(details.sousTotal)}</div>
+          ${row("🟢 Aujourd'hui", D(details.prixAujourdhui), 'color:#2e7d32;font-weight:bold;')}
+          ${row('🟡 Après 6 mois', D(details.prixApres6mois), 'color:#f97316;font-weight:bold;')}
+          ${row('🔴 Après 12 mois', D(details.prixApres12mois), 'color:#e24b4a;font-weight:bold;')}
         </div>
       `;
     }
@@ -578,6 +583,12 @@ function createOffer() {
           </div>
         </div>
         
+        ${qrImg ? `<div class="section" style="text-align:center;">
+          <div class="section-title" style="justify-content:center;">📲 Un proche est intéressé ?</div>
+          <div style="font-size:13px;color:#555;margin-bottom:8px;">Faites scanner ce code : il arrive directement chez ${consultantName}.</div>
+          <img src="${qrImg}" alt="QR code" style="width:120px;height:120px;">
+        </div>` : ''}
+
         <div class="footer">
           <img src="${logoUrl}" class="logo" crossorigin="anonymous" alt="Logo consultant" onerror="this.onerror=null;this.removeAttribute('crossorigin');this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'"><br>
           <strong>${consultantName}</strong>
@@ -642,7 +653,7 @@ function createOffer() {
   
   const blob = new Blob([offre], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  if (win) win.location.href = url; else window.open(url, '_blank');
 }
 
 function calcComparator() {
@@ -793,6 +804,18 @@ calcComparator();
       pmUpdateConsultantDisplay();
     }
     
+    // QR de contact du consultant : mêmes règles que wp_orange.html / wp_contact.html (formulaire ouvert, profil actif)
+    window.pmQrUrlIfAllowed = async function () {
+      const cid = (window.consultantInfo || {}).id;
+      if (!cid) return '';
+      try {
+        const [qs, ps] = await Promise.all([getDoc(doc(db, 'settings', 'qrMode')), getDoc(doc(db, 'profilsPublics', cid))]);
+        const q = qs.exists() ? qs.data() : null, pr = ps.exists() ? ps.data() : null;
+        const ok = !!q && !!pr && pr.active === true && (pr.expiresAtMs == null || Date.now() < pr.expiresAtMs) && (q.mode === 'all' || (Array.isArray(q.pilotIds) && q.pilotIds.indexOf(cid) >= 0));
+        return ok ? 'https://app.phil-mobile.be/wp_contact.html?c=' + encodeURIComponent(cid) + '&type=client' : '';
+      } catch (e) { return ''; }
+    };
+
     // Créer les éléments de login
     const loginHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">

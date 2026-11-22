@@ -1095,6 +1095,7 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
               <button onclick="ctrShowTab('new')" style="background:#f97316;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📋 Nouveau</button>
               <button onclick="ctrShowTab('history')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📚 Historique</button>
               <button onclick="ctrShowTab('stats')" style="background:#fff3e8;color:#f97316;border:1px solid #f97316;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📊 Statistiques</button>
+              <button onclick="ctrAspRecalcOpen()" style="background:#fff7ed;color:#c2410c;border:1px solid #fdba74;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">🔧 Recalculer les ASP</button>
             </div>
 
             <div id="ctr-tab-new">
@@ -3421,7 +3422,7 @@ const ONB_PQS_TARGET = { mobile: 7, energy: 3, internet: 2 };
 const ONB_SERVICES = {
   child: { c: 'mobile', a: 0, s: 0 }, small: { c: 'mobile', a: 1, s: 0 }, medium: { c: 'mobile', a: 1, s: 0.5 },
   unlimited: { c: 'mobile', a: 1, s: 0.5 }, large: { c: 'mobile', a: 1, s: 0.5 },
-  internet: { c: 'internet', a: 1, s: 0.5 }, flybox: { c: 'internet', a: 1, s: 0.5 },
+  internet: { c: 'internet', a: 1, s: 0, p: 0.5 }, flybox: { c: 'internet', a: 1, s: 0 },
   eneco_elec: { c: 'energy', a: 0.5, s: 0.5 }, eneco_gaz: { c: 'energy', a: 0.5, s: 0.5 }   // Eneco : 0,50 ASP par EAN (particulier), 1 ASP (indépendant)
 };
 let onb = { d: null, pqs: null, recruited: false, steps: [], visible: false, done: 0, total: 0 };
@@ -3438,7 +3439,7 @@ function onbCalcPqs(contracts) {
     Object.keys(c.produitsDetail || {}).forEach(function (pid) {
       const sv = ONB_SERVICES[pid]; if (!sv) return;
       (c.produitsDetail[pid] || []).forEach(function (u) {
-        got[sv.c] += (sv.c === 'energy') ? (u && u.sohoIndep ? 1 : 0.5) : sv.a + (u && u.sohoIndep ? sv.s : 0);
+        got[sv.c] += (sv.c === 'energy') ? (u && u.sohoIndep ? 1 : 0.5) : sv.a + (u && u.sohoIndep ? sv.s : 0) + (u && u.portabilite ? (sv.p || 0) : 0);
       });
     });
   });
@@ -10536,8 +10537,8 @@ function pcRefreshModalSummary(kind) {
 // Réutilise l'authentification et le Firestore déjà initialisés par le hub (window.db, window.pmCurrentUser...) —
 // aucune connexion Firebase Auth séparée n'est nécessaire ici, contrairement à l'ancien wp_contrats.html.
 const CTR_DEFAULT_PRODUCTS = [
-  { id: "flybox",    label: "📡 Home Flybox",        cat: "fixe",   rates: [25,  30,   null, null, null], asp: 1, aspSoho: 0.5 },
-  { id: "internet",  label: "🌐 Internet",            cat: "fixe",   rates: [15,  20,   15,   12,   null], asp: 1, aspSoho: 0.5 },
+  { id: "flybox",    label: "📡 Home Flybox",        cat: "fixe",   rates: [25,  30,   null, null, null], asp: 1, aspSoho: 0 },
+  { id: "internet",  label: "🌐 Internet",            cat: "fixe",   rates: [15,  20,   15,   12,   null], asp: 1, aspSoho: 0, aspPorta: 0.5 },
   { id: "tv",        label: "📺 TV Orange",           cat: "fixe",   rates: [10,  10,   null, null, null], asp: 1, aspSoho: 0 },
   { id: "child",     label: "👶 Mobile Child",        cat: "mobile", rates: [1,   5,    null, null, null], asp: 0, aspSoho: 0 },
   { id: "small",     label: "📱 Mobile Small",        cat: "mobile", rates: [10,  15,   null, null, null], asp: 1, aspSoho: 0 },
@@ -10551,6 +10552,9 @@ const CTR_DEFAULT_PRODUCTS = [
   { id: "domicil",   label: "🏦 Domiciliation",        cat: "other",  rates: [5,   5,    null, null, null], asp: 0, aspSoho: 0 }
 ];
 var ctrProducts = CTR_DEFAULT_PRODUCTS;
+// Barème Orange : Internet et Flybox n'ont pas d'ASP SoHo (un indépendant = un résidentiel) ; l'ASP portabilité d'Internet est compté
+function ctrNoSoho(id) { return id === 'internet' || id === 'flybox'; }
+function ctrUnitAsp(p, unit) { return (p.asp || 0) + (unit && unit.sohoIndep ? (p.aspSoho || 0) : 0) + (unit && unit.portabilite ? (p.aspPorta || 0) : 0); }
 var ctrUnits = {};
 CTR_DEFAULT_PRODUCTS.forEach(function (p) { ctrUnits[p.id] = []; });
 var ctrConsultantDocId = null;
@@ -10642,7 +10646,7 @@ window.ctrUpdateContractPreview = function () {
   ctrProducts.forEach(function (p) {
     (ctrUnits[p.id] || []).forEach(function (unit) {
       totalEur += ctrCalcUnitEUR(p, unit);
-      totalAsp += p.asp + (unit.sohoIndep ? p.aspSoho : 0);
+      totalAsp += ctrUnitAsp(p, unit);
     });
   });
   ctrProducts.forEach(function (p) { ctrRenderProductBlock(p.id); });
@@ -10669,7 +10673,8 @@ async function ctrLoadCommissionsBareme() {
         label: (s && s.label) || def.label,
         rates: (s && Array.isArray(s.rates)) ? s.rates : def.rates,
         asp: (s && typeof s.asp === 'number') ? s.asp : def.asp,
-        aspSoho: (s && typeof s.aspSoho === 'number') ? s.aspSoho : def.aspSoho
+        aspSoho: ctrNoSoho(def.id) ? 0 : ((s && typeof s.aspSoho === 'number') ? s.aspSoho : def.aspSoho),
+        aspPorta: (s && typeof s.aspPorta === 'number') ? s.aspPorta : (def.aspPorta || 0)
       };
     });
     Object.keys(stored).filter(function (id) { return !defaultIds[id]; }).forEach(function (id) {
@@ -10713,6 +10718,54 @@ async function ctrLoadConsultantDoc() {
 }
 
 // Recalcule le total ASP (départ + somme des contrats actifs) et le réécrit sur le profil consultant.
+
+// ----- Recalculer les ASP des contrats existants avec le barème corrigé (aperçu, puis confirmation) -----
+window.ctrAspRecalcOpen = async function () {
+  if (!window.pmCurrentUser) return;
+  try {
+    var snap = await window.getDocs(window.query(window.collection(window.db, 'contrats'), window.where('consultantId', '==', window.pmCurrentUser.id)));
+    var list = [], delta = 0;
+    snap.forEach(function (d) {
+      var c = d.data(), pd = c.produitsDetail || {}, tot = 0, ok = true;
+      Object.keys(pd).forEach(function (pid) {
+        var p = ctrProducts.find(function (x) { return x.id === pid; });
+        if (!p) { ok = false; return; }
+        (pd[pid] || []).forEach(function (u) { tot += ctrUnitAsp(p, u); });
+      });
+      tot = Math.round(tot * 10) / 10;
+      var old = Math.round((c.aspTotal || 0) * 10) / 10;
+      if (ok && Object.keys(pd).length && Math.abs(tot - old) > 0.01) { list.push({ id: d.id, nom: c.nom || c.societe || '?', date: c.dateContrat || '', old: old, nw: tot, off: !!c.ancien || c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé' }); if (!list[list.length - 1].off) delta += tot - old; }
+    });
+    if (!list.length) { alert('✅ Tous les ASP des contrats sont déjà conformes au barème.'); return; }
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    var rowsH = list.map(function (r) {
+      return '<div style="padding:4px 0;border-bottom:1px solid #f3f4f6;"><b>' + crmEsc(r.nom) + '</b> ' + (r.date ? '· ' + pcFmtDate(r.date) : '') + ' : ' + r.old + ' → <b style="color:' + (r.nw < r.old ? '#c2410c' : '#16a34a') + ';">' + r.nw + ' ASP</b>' + (r.off ? ' <span style="color:#9ca3af;">(non compté dans le total)</span>' : '') + '</div>';
+    }).join('');
+    var dTxt = (delta > 0 ? '+' : '') + (Math.round(delta * 10) / 10);
+    ov.innerHTML = '<div style="background:#fff;border-radius:12px;padding:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;font-size:13px;">'
+      + '<div style="font-weight:700;color:#f97316;font-size:14px;margin-bottom:6px;">🔧 Recalculer les ASP</div>'
+      + '<div style="color:#555;margin-bottom:8px;">Barème : Internet et Flybox sans bonus SoHo ; Internet avec portabilité +0,5.<br><b>' + list.length + ' contrat(s)</b> modifié(s), total des ASP : <b>' + dTxt + '</b>.</div>'
+      + rowsH
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;"><button type="button" data-m="x" style="padding:7px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;">Annuler</button>'
+      + '<button type="button" data-m="ok" style="padding:7px 14px;border:none;border-radius:8px;background:#f97316;color:#fff;font-weight:700;cursor:pointer;">Corriger ' + list.length + ' contrat(s)</button></div></div>';
+    ov.addEventListener('click', async function (e) {
+      var b = e.target.closest ? e.target.closest('button[data-m]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-m') === 'ok') {
+        b.disabled = true; b.textContent = 'Correction…';
+        try {
+          await Promise.all(list.map(function (r) { return window.updateDoc(window.doc(window.db, 'contrats', r.id), { aspTotal: r.nw }); }));
+          await window.ctrRefreshAspTotal();
+          pcToast('✅ ' + list.length + ' contrat(s) recalculé(s).');
+        } catch (err) { alert('Erreur : ' + err.message); }
+      }
+      document.body.removeChild(ov);
+    });
+    document.body.appendChild(ov);
+  } catch (err) { alert('Erreur : ' + err.message); }
+};
+
 window.ctrRefreshAspTotal = async function () {
   if (!window.pmCurrentUser) return;
   try {
@@ -10804,7 +10857,7 @@ window.ctrSaveContract = async function () {
     produitsDetail[p.id] = ctrUnits[p.id].map(function (u) { return Object.assign({}, u); });
     ctrUnits[p.id].forEach(function (unit) {
       eurTotal += ctrCalcUnitEUR(p, unit);
-      aspTotal += p.asp + (unit.sohoIndep ? p.aspSoho : 0);
+      aspTotal += ctrUnitAsp(p, unit);
     });
   });
   if (Object.keys(produitsDetail).length === 0) { alert("Merci d'ajouter au moins un produit au contrat."); return; }

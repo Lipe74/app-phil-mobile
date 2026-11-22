@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.121 - Type client automatique + import contrat";
+  scope.APP_VERSION = "14.122 - Barème ASP corrigé + comparatif à jour";
 })();
