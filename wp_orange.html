@@ -324,6 +324,8 @@
       style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:16px;">
   </div>
 
+  <div id="pm-fact-mount"></div>
+
 </div>
 
 <div class="summary">
@@ -2674,3 +2676,21 @@ setTimeout(pmSyncOrangeStickyOffsets, 300);
 setTimeout(pmSyncOrangeStickyOffsets, 1200);
 </script>
 
+<script src="pm_facture.js"></script>
+<script>
+// Import de facture (Build 14.125) : remplit les champs client vides + la facture actuelle (TVAC)
+pmFactInit({
+  mount: 'pm-fact-mount', autoPrefill: false,
+  apply: function (v) {
+    var fill = function (id, val) { var e = pmEl(id); if (e && val && !String(e.value || '').trim()) { e.value = val; e.dispatchEvent(new Event('input', { bubbles: true })); } };
+    fill('client-name', v.titulaire); fill('client-company', v.societe); fill('client-tva', v.tva); fill('client-email', v.email);
+    var ad = [v.adresse, [v.cp, v.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    if (ad && !String(pmSites[0] || '').trim()) { pmSites[0] = ad; try { pmDraftSave(); pmRenderDossier(); } catch (e) {} }
+    if (v.montantTvac > 0) {
+      window.pmActuelAuto = v.montantTvac; pmShowActuel();
+      var cur = pmEl('client-current'); if (cur) cur.dispatchEvent(new Event('input', { bubbles: true }));
+      var note = pmEl('client-current-note'); if (note) { note.style.display = 'block'; note.textContent = '✔ Rempli d\'après la facture ' + (v.fournisseur || '') + ' (modifiable)'; }
+    }
+  }
+});
+</script>

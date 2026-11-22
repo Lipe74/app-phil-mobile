@@ -9490,12 +9490,79 @@ function pmOffresHtml(item, coll, docId) {
   }).join('');
   return pclSec('Offres de prix') + rows;
 }
+
+// ===== IMPORT DE FACTURE DEPUIS LE COMPARATIF / SIMULATEUR ORANGE (Build 14.125) =====
+// Les pages wp_comparatif.html et wp_orange.html (ouvertes dans le hub) appellent window.parent.pmFactApi (même origine).
+window.pmFactApi = {
+  async read(file) {
+    if (!file) throw new Error('Aucun fichier.');
+    var isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+    var isImg = /^image\/(jpeg|png|webp)$/.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+    if (!isPdf && !isImg) throw new Error('Formats acceptés : PDF ou photo (JPG, PNG).');
+    if (file.size > 10 * 1024 * 1024) throw new Error('Fichier trop lourd (10 Mo maximum).');
+    if (!window.geminiImportModel) throw new Error("Le service de lecture n'est pas encore prêt, réessaie dans un instant.");
+    var mime = isPdf ? 'application/pdf' : (file.type || (/\.png$/i.test(file.name) ? 'image/png' : 'image/jpeg'));
+    var prompt = crmFactBuildPrompt()
+      .replace('"smartphone": false }', '"smartphone": false, "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0 }')
+      .replace("- N'ajoute AUCUN champ", "- nbFixe / nbInternet / nbMobile / nbTv / nbDecodeur = nombre de lignes fixes, connexions internet, abonnements mobiles, abonnements TV et décodeurs supplémentaires, UNIQUEMENT si la facture les détaille clairement ; sinon 0 (ne devine jamais).\n- Le document peut être une photo : lis-la attentivement.\n- N'ajoute AUCUN champ");
+    var base64 = await ctrFileToBase64(file);
+    var result = await window.geminiImportModel.generateContent([{ inlineData: { mimeType: mime, data: base64 } }, { text: prompt }]);
+    var raw = result.response.text(), m = raw.match(/\{[\s\S]*\}/);
+    var data = JSON.parse(m ? m[0] : raw);
+    var meta = crmFactCleanMeta(data, file);
+    var n = function (k) { var x = parseInt(data[k], 10); return isFinite(x) && x > 0 && x < 50 ? x : 0; };
+    return { meta: meta, counts: { phone: n('nbFixe'), inet: n('nbInternet'), mob: n('nbMobile'), tv: n('nbTv'), dec: n('nbDecodeur') } };
+  },
+  async ficheInfo(coll, id) {
+    if (coll !== 'prospectsClients' && coll !== 'clients') return null;
+    var snap = await window.getDoc(window.doc(window.db, coll, id));
+    if (!snap.exists()) return null;
+    var d = snap.data();
+    return { nom: d.nom || ((d.prenom || '') + ' ' + (d.nomFamille || '')).trim(), factures: Array.isArray(d.factures) ? d.factures : [] };
+  },
+  async attach(coll, id, file, meta) {
+    if (coll !== 'prospectsClients') throw new Error('Les factures ne sont gardées que dans les fiches prospects.');
+    var path = await crmFactUpload(id, file);
+    var m = Object.assign({}, meta, { path: path });
+    var ref = window.doc(window.db, coll, id);
+    var snap = await window.getDoc(ref), list = snap.exists() && Array.isArray(snap.data().factures) ? snap.data().factures.slice() : [];
+    list.push(m);
+    await window.updateDoc(ref, { factures: list, updatedAt: new Date().toISOString() });
+    return { coll: coll, id: id };
+  },
+  async createProspect(file, meta) {
+    var u = window.pmCurrentUser; if (!u) throw new Error('Session expirée.');
+    var lu = meta.lu || {}, now = new Date().toISOString();
+    var full = pcNormName(meta.titulaire || '') || pcNormName(lu.societe || '') || 'Client à compléter';
+    var parts = full.split(' '), prenom = parts.shift() || '', fam = parts.join(' ');
+    var svc = meta.service || '', mob = /Mobile/.test(svc), net = /Internet/.test(svc);
+    var opm = '', opi = '';
+    try { if (mob) opm = pclOptMatch('pcl-op-mobile', meta.fournisseur) || ''; if (net) opi = pclOptMatch('pcl-op-internet', meta.fournisseur) || ''; } catch (e) {}
+    var data = {
+      consultantId: u.id, nom: full, prenom: prenom, nomFamille: fam, tel: '', email: lu.email || '',
+      type: lu.typeClient || 'Particulier', societe: lu.societe || '', tva: lu.tva || '', ville: lu.ville || '', cp: lu.cp || '', adresse: lu.adresse || '',
+      smartphone: !!meta.smartphone, smartphoneOk: false, opMobile: opm, numMobile: (mob && meta.numeroClient) || '', opInternet: opi, numInternet: (net && meta.numeroClient) || '',
+      easySwitch: '', dateFinContrat: '', sources: ['Télécom'], source: 'Télécom', provenance: '', titulaire: meta.titulaire || '',
+      referencePrenom: '', referenceNom: '', referenceTel: '', commentaire: 'Créé depuis le comparatif (facture ' + (meta.fournisseur || '') + ')',
+      statut: 'Nouveau', origine: 'comparatif', dateCreation: now, dateMaj: now
+    };
+    var ref = await window.addDoc(window.collection(window.db, 'prospectsClients'), data);
+    try { await this.attach('prospectsClients', ref.id, file, meta); } catch (e) { return { coll: 'prospectsClients', id: ref.id, nom: full, factureErr: e.message }; }
+    return { coll: 'prospectsClients', id: ref.id, nom: full };
+  }
+};
+window.pmNewComparatif = function (coll, docId) {
+  openSimulator('https://app.phil-mobile.be/wp_comparatif.html?fiche=' + encodeURIComponent(coll + '|' + docId), document.getElementById('menu-sim-comparatif'));
+};
+// ===== FIN IMPORT FACTURE COMPARATIF =====
+
 // Ouvre le simulateur Orange pour une fiche : l'offre générée est rangée directement dans cette fiche
 window.pmNewOffer = function (coll, docId) {
   openSimulator('https://app.phil-mobile.be/wp_orange.html?fiche=' + encodeURIComponent(coll + '|' + docId), document.getElementById('menu-sim-orange'));
 };
 function pmNewOfferBtn(coll, docId) {
-  return '<button type="button" onclick="pmNewOffer(\'' + coll + '\',\'' + docId + '\')" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#eef2ff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">➕ Ajouter une offre</button>';
+  return '<button type="button" onclick="pmNewOffer(\'' + coll + '\',\'' + docId + '\')" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#eef2ff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">➕ Ajouter une offre</button>'
+    + (coll === 'prospectsClients' ? '<button type="button" onclick="pmNewComparatif(\'' + coll + '\',\'' + docId + '\')" title="Comparer avec la facture actuelle du prospect" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#fff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📊 Comparer</button>' : '');
 }
 window.pmOffreStatut = async function (coll, docId, offreId, statut) {
   try {
@@ -12913,7 +12980,7 @@ async function crmFactUpload(clientId, file) {
   if (!window.storage) throw new Error('Firebase Storage non disponible');
   var safe = String(file.name || 'facture.pdf').replace(/[^\w.\-]+/g, '_').slice(-80);
   var path = 'facturesClients/' + window.pmCurrentUser.id + '/' + clientId + '/' + Date.now() + '_' + safe;
-  await window.uploadBytes(window.storageRef(window.storage, path), file, { contentType: 'application/pdf' });
+  await window.uploadBytes(window.storageRef(window.storage, path), file, { contentType: file.type || 'application/pdf' });
   return path;
 }
 function crmFactPersist() {

@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.124 - Recherche globale + menu fixe + en-tête";
+  scope.APP_VERSION = "14.125 - Import de facture dans comparatif et simulateur";
 })();
