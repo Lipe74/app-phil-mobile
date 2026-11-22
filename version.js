@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.125 - Import de facture dans comparatif et simulateur";
+  scope.APP_VERSION = "14.126 - Correctif : facture rangée dans le prospect";
 })();

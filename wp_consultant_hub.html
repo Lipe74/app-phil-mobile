@@ -9523,7 +9523,8 @@ window.pmFactApi = {
   async attach(coll, id, file, meta) {
     if (coll !== 'prospectsClients') throw new Error('Les factures ne sont gardées que dans les fiches prospects.');
     var path = await crmFactUpload(id, file);
-    var m = Object.assign({}, meta, { path: path });
+    var m = JSON.parse(JSON.stringify(meta));   // objet venant de l'iframe : copie « propre » (Firestore refuse les objets d'une autre fenêtre)
+    m.path = path;
     var ref = window.doc(window.db, coll, id);
     var snap = await window.getDoc(ref), list = snap.exists() && Array.isArray(snap.data().factures) ? snap.data().factures.slice() : [];
     list.push(m);
