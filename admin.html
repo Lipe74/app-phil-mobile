@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.123 - Démarrage : prospects + suivi sponsor</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.124 - Recherche globale + menu fixe + en-tête</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -256,6 +256,12 @@
 
       <!-- MENU (style hub) -->
       <div class="admin-menu">
+
+        <!-- RECHERCHE DE MENU (Build 14.124) -->
+        <div style="position:relative;margin-bottom:8px;">
+          <input id="adm-menu-search" type="search" placeholder="🔍 Rechercher un menu…" autocomplete="off" oninput="admMenuSearch(this.value)" onkeydown="admMenuSearchKey(event)" style="width:100%;box-sizing:border-box;border:1px solid #f97316;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:600;font-family:Arial,sans-serif;">
+          <div id="adm-menu-search-res" style="display:none;margin-top:4px;background:#fff;border:1px solid #f3d3b5;border-radius:8px;max-height:320px;overflow-y:auto;"></div>
+        </div>
 
         <!-- FAVORIS -->
         <div id="fav-section"></div>
@@ -2491,7 +2497,8 @@ const BN_PENDING = [
   { build: '14.121', title: "Type client automatique + import contrat", description: "- Fiche client : le type est défini d'après la TVA et la société (sans TVA = Particulier, TVA + société = Société, TVA seule = Indépendant), champ en lecture seule, recalculé à l'enregistrement.\n- Gestion Clients : bouton « Corriger les types » pour mettre à jour les fiches existantes (aperçu avant confirmation).\n- Fiche client : suppression de l'import de factures (inutile pour un client, les prospects le gardent).\n- Fiche client : bouton « Importer un contrat (PDF) » dans la section Contrats. Le PDF complète la fiche (n° du fichier, date de signature, produits, n° client, coordonnées manquantes) avec aperçu ; rien n'est enregistré avant Enregistrer." },
 ,
   { build: '14.122', title: "Barème ASP corrigé + comparatif à jour", description: "- Barème ASP : Internet et Home Flybox n'ont plus de bonus SoHo (un indépendant compte comme un résidentiel) ; Internet avec portabilité compte +0,5 ASP. Appliqué à l'encodage des contrats, au tableau de bord de démarrage et à l'admin (valeurs enregistrées ignorées pour ces deux produits).\n- Mes contrats : bouton « Recalculer les ASP » qui corrige les contrats existants, avec aperçu et confirmation avant écriture.\n- Simulateur Orange : les prix envoyés au comparatif sont toujours en TVAC (corrige un mélange HTVA / TVAC), avec l'heure de la simulation et des montants numériques.\n- Comparatif Orange : HTVA / TVAC corrigé, détails de l'offre complétés (TV, promos uniques), bouton « Réinit » corrigé (poste fixe), heure de la simulation affichée, et QR code de contact du consultant dans l'offre (mêmes règles que le simulateur)." },,
-  { build: '14.123', title: "Démarrage : prospects + suivi sponsor", description: "- Mon démarrage : bloc « Mes 5 prospects consultants à appeler » (conseillé, pas une étape) et bloc « Ma liste de prospects clients » (avec lien de connaissance). Les fiches vont directement dans tes CRM Prospects Consultants / Clients.\n- Nouvel onglet « Suivi de mes consultants » pour le sponsor : progression des nouveaux de son équipe directe (formations My Smart, formation Success, PQS) et nombre de prospects encodés / appelés. Jamais les noms ni coordonnées des prospects." }
+  { build: '14.123', title: "Démarrage : prospects + suivi sponsor", description: "- Mon démarrage : bloc « Mes 5 prospects consultants à appeler » (conseillé, pas une étape) et bloc « Ma liste de prospects clients » (avec lien de connaissance). Les fiches vont directement dans tes CRM Prospects Consultants / Clients.\n- Nouvel onglet « Suivi de mes consultants » pour le sponsor : progression des nouveaux de son équipe directe (formations My Smart, formation Success, PQS) et nombre de prospects encodés / appelés. Jamais les noms ni coordonnées des prospects." },
+  { build: '14.124', title: "Recherche globale + menu fixe + en-tête", description: "- Nouveau champ « Rechercher » toujours visible en haut du menu : tape un nom, un téléphone, un email, un n° de contrat, un menu ou un document. Les résultats s'affichent à droite, groupés (Menus, Clients, Prospects, Contrats, Documents) avec des filtres, et un clic ouvre directement la fiche.\n- Zone fixe en haut du menu (non masquable, même taille) : Tableau de bord, Recherche, puis Mon démarrage ou Suivi de mes consultants.\n- Les bandeaux « Infos Smart SN » et « Dernière build » sont remontés dans l'en-tête (cliquer sur le bandeau d'infos pour voir le texte complet).\n- Admin : champ de recherche de menu en haut du menu de l'admin." }
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -9978,6 +9985,43 @@ window.saveOrangeBanners = async function () {
 };
 
 // ===== SECTION PHIL-MOBILE (WEB) COLLAPSIBLE =====
+
+// ===== Recherche de menu (Build 14.124) =====
+window.admMenuNorm = function (x) { return String(x == null ? '' : x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+window.admMenuSearch = function (q) {
+  const box = document.getElementById('adm-menu-search-res'); if (!box) return;
+  const terms = admMenuNorm(q).split(/\s+/).filter(Boolean);
+  window._admSrList = [];
+  if (!terms.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const seen = {};
+  document.querySelectorAll('.admin-menu button.menu-item').forEach(function (b) {
+    if (b.classList.contains('group-toggle') || b.closest('#fav-section') || b.closest('#adm-menu-search-res')) return;
+    const label = b.textContent.replace(/\s+/g, ' ').replace(/\s*\d+$/, '').trim();
+    if (!label || seen[label]) return;
+    const h = admMenuNorm(label);
+    if (terms.every(function (t) { return h.indexOf(t) !== -1; })) { seen[label] = 1; window._admSrList.push({ btn: b, label: label }); }
+  });
+  box.style.display = 'block';
+  box.innerHTML = window._admSrList.length ? window._admSrList.slice(0, 40).map(function (m, i) {
+    return '<button type="button" onclick="admMenuGo(' + i + ')" style="display:block;width:100%;text-align:left;border:none;border-bottom:1px solid #f5f5f5;background:#fff;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;">' + m.label.replace(/[<>&]/g, '') + '</button>';
+  }).join('') : '<div style="padding:8px 12px;font-size:12px;color:#9ca3af;">Aucun menu trouvé.</div>';
+};
+window.admMenuSearchKey = function (e) {
+  if (e.key === 'Escape') { e.target.value = ''; admMenuSearch(''); }
+  if (e.key === 'Enter' && window._admSrList && window._admSrList[0]) admMenuGo(0);
+};
+window.admMenuGo = function (i) {
+  const m = (window._admSrList || [])[i]; if (!m) return;
+  for (let a = m.btn.parentElement; a && !a.classList.contains('admin-menu'); a = a.parentElement) {
+    if (a.classList.contains('submenu') && !a.classList.contains('open')) a.classList.add('open');
+    if (a.classList.contains('section-collapsible') && a.classList.contains('collapsed')) window.toggleWebSection();
+  }
+  m.btn.click();
+  try { m.btn.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+  const inp = document.getElementById('adm-menu-search'); if (inp) inp.value = '';
+  admMenuSearch('');
+};
+
 window.toggleWebSection = function () {
   const content = document.getElementById('web-section-content');
   const arrow   = document.getElementById('web-section-arrow');

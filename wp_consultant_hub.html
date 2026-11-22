@@ -207,6 +207,21 @@
 .rte-editor:focus{outline:2px solid #f97316;outline-offset:-1px;}
 .rte-editor:empty:before{content:attr(data-placeholder);color:#999;}
 .rte-editor ul, .rte-editor ol{margin-left:18px;}
+
+/* Build 14.124 : bandeaux dans l'en-tête, zone fixe du menu, recherche */
+#hdr-banners{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;margin:0 14px;}
+#hdr-banners #news-banner,#hdr-banners #build-line{width:auto;box-sizing:border-box;padding:3px 12px;font-size:11px;line-height:1.5;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:8px;cursor:pointer;}
+#hdr-banners #build-line{border:1px solid #fed7aa;}
+#hdr-banners .pm-hb-open{white-space:normal !important;}
+@media(max-width:768px){#top-header{flex-wrap:wrap;}#hdr-banners{order:5;flex-basis:100%;margin:6px 0 0;}}
+#pm-fixed-zone{display:flex;flex-direction:column;gap:6px;margin-bottom:4px;}
+#pm-fixed-zone .menu-item{box-sizing:border-box;}
+.pm-search-box{display:flex;align-items:center;gap:6px;box-sizing:border-box;width:100%;padding:0 12px;background:#fff;border:1px solid var(--pm-accent,#f97316);border-radius:8px;}
+.pm-search-box input{flex:1;min-width:0;border:none;outline:none;background:transparent;padding:9px 0;font-size:12px;font-weight:600;font-family:Arial,sans-serif;color:#1a1a1a;}
+.pm-sr-chip{border:1px solid #e5e7eb;background:#fff;color:#374151;border-radius:99px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:Arial,sans-serif;}
+.pm-sr-chip.on{background:#f97316;border-color:#f97316;color:#fff;}
+.pm-sr-row{display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;background:#fff;border:1px solid #f0f0f0;border-radius:8px;padding:8px 10px;margin-bottom:5px;cursor:pointer;font-family:Arial,sans-serif;}
+.pm-sr-row:hover{background:#fff7ed;border-color:#fed7aa;}
 </style>
 </head>
 <body style="margin:0;padding:0;font-family:Arial,sans-serif;background:#f8f8f8;color:#1a1a1a;">
@@ -240,6 +255,10 @@
 L'outil pour les consultants Smart SN (développé par Phil-Mobile)
      </span>
     </div>
+    </div>
+    <div id="hdr-banners">
+      <div id="news-banner" onclick="this.classList.toggle('pm-hb-open')" title="Cliquer pour voir le texte complet" style="display:none;font-weight:700;"></div>
+      <div id="build-line" onclick="showCrmPanel('panel-maj')" title="Voir les nouveautés" style="display:none;background:#fff7ed;color:#9a3412;"></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
 
@@ -277,20 +296,6 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
 
   <button id="mobile-close-btn" onclick="closeMobilePanel()" title="Fermer" style="position:fixed;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:#1a1a1a;color:#fff;border:none;font-size:18px;cursor:pointer;z-index:600;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.25);font-family:Arial,sans-serif;line-height:1;">✕</button>
 
-<div id="news-banner"
-     style="
-       display:none;
-       width:100%;
-       box-sizing:border-box;
-       padding:8px 16px;
-       font-size:12px;
-       font-weight:700;
-       text-align:center;
-       white-space:normal;
-       word-wrap:break-word;
-       line-height:1.4;">
-</div>
-<div id="build-line" onclick="showCrmPanel('panel-maj')" title="Voir les nouveautés" style="display:none;cursor:pointer;width:100%;box-sizing:border-box;padding:7px 16px;font-size:12px;text-align:center;line-height:1.4;background:#fff7ed;color:#9a3412;border-bottom:1px solid #fed7aa;"></div>
 
 <!-- TABLEAU DE BORD -->
 
@@ -577,11 +582,15 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
         <!-- COLONNE GAUCHE : menu -->
         <div id="pm-left-menu" style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;">
 
-          <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
-          <div id="sec-accueil" class="pm-sec-body">
+          <div id="pm-fixed-zone">
+          <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
+            <div class="pm-search-box" id="menu-search"><span>🔍</span><input id="pm-search-input" type="search" placeholder="Rechercher (menu, client, contrat…)" autocomplete="off" oninput="pmSearchType(this.value)" onfocus="pmSearchFocus()" onkeydown="pmSearchKey(event)"></div>
           <button onclick="showOnboarding(this)" class="menu-item" id="menu-onboarding" style="display:none;border-color:#f97316;background:#fff7ed;">🚀 Mon démarrage <span id="onb-badge" style="float:right;background:#f97316;color:#fff;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;"></span></button>
           <button onclick="showSuiviConso(this)" class="menu-item" id="menu-suivi-conso" style="display:none;border-color:#f97316;background:#fff7ed;">👥 Suivi de mes consultants <span id="suivi-conso-badge" style="float:right;background:#f97316;color:#fff;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;"></span></button>
-          <button onclick="showDashboard(this)" class="menu-item active-item" id="menu-dashboard">📊 Tableau de bord</button>
+          </div>
+
+          <button class="pm-sec-toggle" onclick="toggleSection('sec-accueil')"><span>🏠 Accueil</span><span class="pm-sec-arrow" id="arrow-sec-accueil">▾</span></button>
+          <div id="sec-accueil" class="pm-sec-body">
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px;padding-left:4px;">
             <span style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;">❤️ Favoris</span>
@@ -818,6 +827,15 @@ L'outil pour les consultants Smart SN (développé par Phil-Mobile)
             </div>
 
             <div id="partners-body"></div>
+          </div>
+
+          <!-- Panel Recherche (Build 14.124) -->
+          <div id="panel-search" class="script-panel" style="display:none;border:1px solid #f97316;border-radius:12px;padding:20px;background:#fff;overflow-y:auto;max-height:92vh;">
+            <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">🔍 Recherche</div>
+            <input id="pm-search-input2" type="search" placeholder="Nom, téléphone, email, n° de contrat, menu, document…" autocomplete="off" oninput="pmSearchType(this.value)" onkeydown="pmSearchKey(event)" style="width:100%;box-sizing:border-box;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;font-size:14px;font-family:Arial,sans-serif;margin-bottom:10px;">
+            <div id="pm-sr-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+            <div id="pm-sr-count" style="font-size:11px;color:#9ca3af;margin:0 2px 10px;"></div>
+            <div id="pm-sr-body"></div>
           </div>
 
           <!-- Panel Suivi de mes consultants (sponsor) -->
@@ -2601,7 +2619,7 @@ function pmApplyMenuStyle() {
   var c = document.getElementById('pm-left-menu');
   if (!c) return;
   c.querySelectorAll('button.menu-item').forEach(function (btn) {
-    if (btn.closest('#pm-favoris-list') || btn.id === 'menu-dashboard') return;
+    if (btn.closest('#pm-favoris-list') || btn.closest('#pm-fixed-zone') || btn.id === 'menu-dashboard') return;
     var fk = pmFamilyOf(btn), info = fk ? pmFamInfo(fk) : null;
     if (!info || !info.color) { btn.removeAttribute('data-bar'); btn.style.removeProperty('--bar'); btn.dataset.famkey = fk || ''; return; }
     btn.dataset.famkey = fk; btn.dataset.famlabel = info.label; btn.dataset.famcolor = info.color; btn.dataset.famlogo = info.logo || '';
@@ -3071,7 +3089,7 @@ async function initFavorites() {
   buttons.forEach(function (btn) {
     if (btn.tagName !== 'BUTTON') return;
     if (btn.classList.contains('group-toggle')) return;
-    if (btn.id === 'menu-dashboard' || btn.id === 'menu-onboarding') return; // Écrans d'accueil : aucun intérêt à les mettre en favori.
+    if (btn.closest('#pm-fixed-zone') || btn.id === 'menu-dashboard' || btn.id === 'menu-onboarding') return; // Écrans d'accueil : aucun intérêt à les mettre en favori.
     if (btn.closest('#pm-favoris-list')) return;
     if (btn.dataset.pmFavReady) return;
     if (!btn.getAttribute('onclick') && !btn.id) return;
@@ -3419,6 +3437,165 @@ document.addEventListener('click', function (e) {
 }, true);
 document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') usgFlush(); });
 // ===== FIN STATS D'UTILISATION =====
+
+
+// ===== RECHERCHE GLOBALE (Build 14.124) — menus, clients, prospects, contrats, documents =====
+var PM_SR = { q: '', f: 'all', data: null, loadedAt: 0, loading: null, res: {} };
+var PM_SR_CATS = [['all', 'Tout'], ['menus', 'Menus'], ['clients', 'Clients'], ['prospects', 'Prospects'], ['contrats', 'Contrats'], ['docs', 'Documents']];
+function pmSrNorm(x) { return String(x == null ? '' : x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+function pmSrDigits(x) { return String(x == null ? '' : x).replace(/\D/g, ''); }
+function pmSrMatch(rec, terms, fields) {
+  const hay = pmSrNorm(fields.map(function (f) { return rec[f]; }).join(' '));
+  const dig = pmSrDigits(fields.map(function (f) { return /tel|gsm|num|contrat|client|tva/i.test(f) ? rec[f] : ''; }).join(' '));
+  return terms.every(function (t) {
+    if (hay.indexOf(t) !== -1) return true;
+    const td = pmSrDigits(t);
+    return td.length >= 3 && td === t.replace(/[\s.\-\/+]/g, '') && dig.indexOf(td.replace(/^(0032|32|0)/, '')) !== -1;
+  });
+}
+async function pmSrLoad() {
+  const u = pmCurrentUser; if (!u || !window.getDocs) return PM_SR.data || {};
+  if (PM_SR.data && Date.now() - PM_SR.loadedAt < 120000) return PM_SR.data;
+  if (PM_SR.loading) return PM_SR.loading;
+  PM_SR.loading = (async function () {
+    const out = {};
+    const defs = [['clients', 'clients'], ['pcl', 'prospectsClients'], ['pco', 'prospectsConsultants'], ['ctr', 'contrats']];
+    await Promise.all(defs.map(async function (d) {
+      out[d[0]] = [];
+      try {
+        const snap = await window.getDocs(window.query(window.collection(window.db, d[1]), window.where('consultantId', '==', u.id)));
+        snap.forEach(function (x) { const r = x.data(); r._id = x.id; out[d[0]].push(r); });
+      } catch (e) { console.log('Recherche : ' + d[1] + ' illisible:', e.message); }
+    }));
+    PM_SR.data = out; PM_SR.loadedAt = Date.now(); PM_SR.loading = null;
+    return out;
+  })();
+  return PM_SR.loading;
+}
+function pmSrMenus() {
+  const root = document.getElementById('pm-left-menu'); if (!root) return [];
+  const seen = {}, out = [];
+  root.querySelectorAll('button.menu-item').forEach(function (b) {
+    if (b.classList.contains('group-toggle') || b.closest('#pm-favoris-list') || b.id === 'menu-search') return;
+    if (b.style.display === 'none' || getComputedStyle(b).display === 'none') return;
+    for (let a = b.parentElement; a && a !== root; a = a.parentElement) {
+      if (a.classList.contains('pm-sec-body') || a.classList.contains('submenu')) continue;
+      if (getComputedStyle(a).display === 'none') return;
+    }
+    const label = b.textContent.replace(/\s+/g, ' ').replace(/\s*\d+$/, '').trim();
+    if (!label || seen[label]) return;
+    seen[label] = 1; out.push({ btn: b, label: label });
+  });
+  return out;
+}
+function pmSrShowPanel() {
+  const pn = document.getElementById('panel-search'); if (!pn) return;
+  if (pn.style.display === 'block') return;
+  document.querySelectorAll('.menu-item').forEach(function (b) { b.classList.remove('active-item'); });
+  document.getElementById('welcome-panel').style.display = 'none';
+  document.getElementById('iframe-panel').style.display = 'none';
+  document.getElementById('suivi-panel').style.display = 'none';
+  document.querySelectorAll('.script-panel').forEach(function (p) { p.style.display = 'none'; });
+  pn.style.display = 'block';
+  document.body.classList.add('mobile-panel-open');
+}
+function pmSearchFocus() { if (PM_SR.q) pmSrShowPanel(); pmSrLoad(); }
+function pmSearchType(v) {
+  PM_SR.q = String(v || '');
+  ['pm-search-input', 'pm-search-input2'].forEach(function (id) { const e = document.getElementById(id); if (e && e.value !== PM_SR.q) e.value = PM_SR.q; });
+  pmSrShowPanel();
+  pmSrRender();
+  pmSrLoad().then(pmSrRender);
+}
+function pmSearchKey(e) {
+  if (e.key === 'Escape') { pmSearchType(''); return; }
+  if (e.key === 'Enter') { const first = PM_SR.flat && PM_SR.flat[0]; if (first) pmSrGo(first.k, first.i); }
+}
+function pmSrSetFilter(f) { PM_SR.f = f; pmSrRender(); }
+function pmSrRender() {
+  const body = document.getElementById('pm-sr-body'); if (!body) return;
+  const chips = document.getElementById('pm-sr-chips');
+  const terms = pmSrNorm(PM_SR.q).split(/\s+/).filter(Boolean);
+  const d = PM_SR.data || {};
+  const res = { menus: [], clients: [], pcl: [], pco: [], contrats: [], docs: [] };
+  if (terms.length || PM_SR.f !== 'all') {
+    res.menus = pmSrMenus().filter(function (m) { const h = pmSrNorm(m.label); return terms.every(function (t) { return h.indexOf(t) !== -1; }); });
+    res.clients = (d.clients || []).filter(function (r) { return pmSrMatch(r, terms, ['nom', 'prenom', 'societe', 'tel', 'email', 'tva', 'ville', 'numOrange', 'numEneco', 'numSmart']); });
+    res.pcl = (d.pcl || []).filter(function (r) { return pmSrMatch(r, terms, ['nom', 'prenom', 'nomFamille', 'societe', 'tel', 'email', 'tva', 'ville']); });
+    res.pco = (d.pco || []).filter(function (r) { return pmSrMatch(r, terms, ['nom', 'prenom', 'nomFamille', 'tel', 'email', 'tva']); });
+    res.contrats = (d.ctr || []).filter(function (r) { return pmSrMatch(r, terms, ['nom', 'societe', 'tel', 'email', 'tva', 'contratSmart', 'contratPartenaire', 'clientOrange', 'contratEneco', 'fournisseur', 'etatContrat']); });
+    res.docs = (window._pmHubDocs || []).filter(function (x) { return x.url; }).filter(function (x) { const h = pmSrNorm([x.titre, x.categorie, x.fileName, x.motsCles].join(' ')); return terms.every(function (t) { return h.indexOf(t) !== -1; }); });
+  }
+  PM_SR.res = res;
+  const cnt = { menus: res.menus.length, clients: res.clients.length, prospects: res.pcl.length + res.pco.length, contrats: res.contrats.length, docs: res.docs.length };
+  if (chips) chips.innerHTML = PM_SR_CATS.map(function (c) {
+    const n = c[0] === 'all' ? '' : ' (' + cnt[c[0]] + ')';
+    return '<button type="button" class="pm-sr-chip' + (PM_SR.f === c[0] ? ' on' : '') + '" onclick="pmSrSetFilter(\'' + c[0] + '\')">' + c[1] + (terms.length ? n : '') + '</button>';
+  }).join('');
+  const esc = escapeHtmlDocs, lim = PM_SR.f === 'all' ? 6 : 60;
+  const flat = [];
+  const dim = function (t) { return '<span style="color:#9ca3af;font-weight:400;">' + esc(t) + '</span>'; };
+  const row = function (k, i, ico, main, sub) {
+    flat.push({ k: k, i: i });
+    return '<button type="button" class="pm-sr-row" onclick="pmSrGo(\'' + k + '\',' + i + ')"><span style="font-size:16px;">' + ico + '</span><span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;font-weight:700;color:#1a1a1a;">' + main + '</span>' + (sub ? '<span style="display:block;font-size:11px;color:#6b7280;margin-top:1px;">' + sub + '</span>' : '') + '</span></button>';
+  };
+  const sec = function (cat, title, arr, mk) {
+    if (!arr.length || (PM_SR.f !== 'all' && PM_SR.f !== cat)) return '';
+    const more = arr.length > lim ? '<button type="button" onclick="pmSrSetFilter(\'' + cat + '\')" style="background:none;border:none;color:#f97316;font-size:12px;font-weight:700;cursor:pointer;padding:4px 2px;font-family:Arial,sans-serif;">Voir les ' + arr.length + ' ›</button>' : '';
+    return '<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">' + title + ' (' + arr.length + ')</div>' + arr.slice(0, lim).map(mk).join('') + more + '</div>';
+  };
+  const nm = function (r) { return esc([r.prenom, r.nomFamille || r.nom].filter(Boolean).join(' ') || r.nom || r.societe || '?'); };
+  const sub = function (r, extra) { return esc([r.tel, r.email, r.societe].filter(Boolean).join(' · ')) + (extra ? ' ' + extra : ''); };
+  let html = '';
+  html += sec('menus', 'Menus', res.menus, function (m) { return row('menus', res.menus.indexOf(m), '📂', esc(m.label), ''); });
+  html += sec('clients', 'Clients', res.clients, function (r) { return row('clients', res.clients.indexOf(r), '🧑', nm(r), sub(r) + (r.type ? ' ' + dim('· ' + r.type) : '')); });
+  html += sec('prospects', 'Prospects clients', res.pcl, function (r) { return row('pcl', res.pcl.indexOf(r), '🎯', nm(r), sub(r) + ' ' + dim('· ' + (r.statut || 'Nouveau') + (r.archive ? ' · archivé' : ''))); });
+  html += sec('prospects', 'Prospects consultants', res.pco, function (r) { return row('pco', res.pco.indexOf(r), '🚀', nm(r), sub(r) + ' ' + dim('· ' + (r.statut || 'Nouveau') + (r.archive ? ' · archivé' : ''))); });
+  html += sec('contrats', 'Contrats', res.contrats, function (r) { return row('contrats', res.contrats.indexOf(r), '📋', esc([r.fournisseur, r.contratSmart || r.contratPartenaire].filter(Boolean).join(' · ') || 'Contrat') + ' ' + dim('· ' + (r.nom || r.societe || '')), esc([r.etatContrat, r.dateContrat].filter(Boolean).join(' · '))); });
+  html += sec('docs', 'Documents', res.docs, function (r) { return row('docs', res.docs.indexOf(r), '📄', esc(r.titre || ''), esc(r.categorie || '')); });
+  const total = cnt.menus + cnt.clients + cnt.prospects + cnt.contrats + cnt.docs;
+  PM_SR.flat = flat;
+  const c = document.getElementById('pm-sr-count');
+  if (c) c.textContent = terms.length ? total + ' résultat' + (total > 1 ? 's' : '') + (PM_SR.loading ? ' — chargement des fiches…' : '') : (PM_SR.f === 'all' ? '' : total + ' élément(s)');
+  body.innerHTML = html || (terms.length || PM_SR.f !== 'all' ? '<div style="font-size:13px;color:#9ca3af;">Aucun résultat.</div>'
+    : '<div style="font-size:13px;color:#6b7280;line-height:1.6;">Tape un nom, un téléphone, un email, un n° de contrat, le nom d\'un menu ou d\'un document.<br>Utilise les filtres ci-dessus pour limiter à une catégorie.</div>');
+}
+function pmSrWait(test, fn) {
+  let n = 0;
+  (function tick() { if (test()) return fn(); if (++n < 40) setTimeout(tick, 150); })();
+}
+function pmSrGo(k, i) {
+  const r = PM_SR.res || {};
+  try {
+    if (k === 'menus') {
+      const m = r.menus[i]; if (!m) return;
+      for (let a = m.btn.parentElement; a; a = a.parentElement) {
+        if (a.id === 'pm-left-menu') break;
+        if (a.classList.contains('pm-sec-body') && !a.classList.contains('open') && a.id) window.toggleSection(a.id);
+        else if (a.classList.contains('submenu') && !a.classList.contains('open') && a.id) toggleMenu(a.id);
+      }
+      m.btn.click();
+    } else if (k === 'docs') {
+      const x = r.docs[i]; if (x) loadFrame(x.url + '#toolbar=0&navpanes=0&view=FitH', document.createElement('button'));
+    } else if (k === 'clients') {
+      const x = r.clients[i]; if (!x) return;
+      window.showCrmPanel('panel-crm-clients');
+      pmSrWait(function () { return (window._crmClData || _crmClData || []).some(function (y) { return y._id === x._id; }); }, function () { window.openCrmModal('clients', x._id); });
+    } else if (k === 'pcl' || k === 'pco') {
+      const x = r[k][i]; if (!x) return;
+      window.showProspPanel(k === 'pcl' ? 'clients' : 'consultants');
+      const arr = function () { return (k === 'pcl' ? window._pclData : window._pcoData) || []; };
+      pmSrWait(function () { return arr().some(function (y) { return y.docId === x._id; }); }, function () { (k === 'pcl' ? window.pclEditProspect : window.pcoEditProspect)(x._id); });
+    } else if (k === 'contrats') {
+      const x = r.contrats[i]; if (!x) return;
+      window.showCrmPanel('panel-contrats');
+      pmSrWait(function () { return (window._ctrAllContracts || []).some(function (y) { return y.docId === x._id; }); }, function () { window.ctrEditContract(x._id); });
+    }
+  } catch (e) { console.log('Recherche : ouverture impossible:', e.message); }
+  pmSrReset();
+}
+function pmSrReset() { PM_SR.q = ''; ['pm-search-input', 'pm-search-input2'].forEach(function (id) { const e = document.getElementById(id); if (e) e.value = ''; }); }
+// ===== FIN RECHERCHE GLOBALE =====
 
 // ===== MON DÉMARRAGE (Build 14.98) — checklist des nouveaux consultants =====
 // Étapes : formations My Smart (manuel) → formation Success (manuel) → PQS (12 ASP actifs, comptés depuis les contrats)
