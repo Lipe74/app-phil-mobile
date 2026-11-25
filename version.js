@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.132 - Retour à la version stable du comparateur (14.130)";
+  scope.APP_VERSION = "14.133 - Facture : détail, lignes et Easy Switch";
 })();

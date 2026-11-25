@@ -48,6 +48,11 @@ body { background: #f5f5f5; }
 
 .counter-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #666; }
 .counter-row:last-child { border-bottom: none; }
+.ln-row { display:flex; gap:6px; margin-bottom:6px; }
+.ln-row input { padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; min-width:0; }
+.ln-row .ln-l { flex:1; }
+.ln-row .ln-m { width:90px; text-align:right; }
+.ln-row button { width:30px; border:1px solid #ddd; background:#fff; border-radius:6px; cursor:pointer; color:#c0392b; }
 .qty-ctrl { display: flex; align-items: center; gap: 5px; }
 .qty-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #ddd; background: white; color: #222; font-size: 14px; cursor: pointer; }
 .qty-btn:active { transform: scale(0.93); }
@@ -206,6 +211,17 @@ body { background: #f5f5f5; }
         </div>
       </div>
 
+      <!-- Détail de la facture actuelle (lignes lues sur la facture, modifiables) -->
+      <div class="section">
+        <div class="section-title">🧾 Détail de votre facture (par mois, TVAC)</div>
+        <div id="pm-lines"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">
+          <button type="button" class="btn" style="flex:0 0 auto;padding:8px 12px;" onclick="addLine()">➕ Ajouter une ligne</button>
+          <span id="pm-lines-total" style="font-size:13px;color:#666;"></span>
+          <button type="button" id="pm-lines-use" class="btn" style="flex:0 0 auto;padding:8px 12px;display:none;" onclick="useLinesTotal()">Utiliser ce total</button>
+        </div>
+      </div>
+
       <!-- Amount Input -->
       <div class="section">
         <div class="amount-section">
@@ -329,7 +345,49 @@ function changeQty(key, delta) {
   document.getElementById('qty-' + key).textContent = counters[key];
 }
 
+// Lignes de la facture actuelle (informatives : le montant mensuel reste celui du champ ci-dessous)
+let invoiceLines = [];
+function renderLines() {
+  const box = document.getElementById('pm-lines');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!invoiceLines.length) {
+    const e = document.createElement('div');
+    e.style.cssText = 'font-size:13px;color:#888;';
+    e.textContent = 'Aucune ligne. Importe une facture ou ajoute les lignes à la main.';
+    box.appendChild(e);
+  }
+  invoiceLines.forEach((l, i) => {
+    const row = document.createElement('div');
+    row.className = 'ln-row';
+    const a = document.createElement('input'); a.className = 'ln-l'; a.value = l.libelle || ''; a.placeholder = 'Ex : Mobile Large';
+    a.oninput = () => { invoiceLines[i].libelle = a.value; };
+    const m = document.createElement('input'); m.className = 'ln-m'; m.inputMode = 'decimal'; m.placeholder = '0,00';
+    m.value = l.montantTvac ? String(l.montantTvac).replace('.', ',') : '';
+    m.oninput = () => { const x = parseFloat(m.value.replace(/\s/g, '').replace(',', '.')); invoiceLines[i].montantTvac = isFinite(x) && x > 0 ? x : 0; updateLinesTotal(); };
+    const d = document.createElement('button'); d.type = 'button'; d.textContent = '×'; d.title = 'Retirer la ligne';
+    d.onclick = () => { invoiceLines.splice(i, 1); renderLines(); };
+    row.appendChild(a); row.appendChild(m); row.appendChild(d);
+    box.appendChild(row);
+  });
+  updateLinesTotal();
+}
+function linesTotal() { return invoiceLines.reduce((t, l) => t + (Number(l.montantTvac) || 0), 0); }
+function updateLinesTotal() {
+  const t = linesTotal(), el = document.getElementById('pm-lines-total'), btn = document.getElementById('pm-lines-use');
+  if (el) el.textContent = t > 0 ? 'Total des lignes : ' + fmt(t) + ' TVAC' : '';
+  const cur = parseFloat(document.getElementById('amount-input').value || 0);
+  if (btn) btn.style.display = (t > 0 && Math.abs(t - cur) > 0.005) ? 'inline-block' : 'none';
+}
+function addLine() { invoiceLines.push({ libelle: '', montantTvac: 0 }); renderLines(); }
+function useLinesTotal() {
+  const t = linesTotal();
+  if (t > 0) { document.getElementById('amount-input').value = t.toFixed(2); calcComparator(); }
+}
+
 function resetOld() {
+  invoiceLines = [];
+  renderLines();
   counters = { phone: 0, inet: 0, mob: 0, tv: 0, dec: 0, opt: 0 };
   document.getElementById('amount-input').value = '';
   Object.keys(counters).forEach(k => document.getElementById('qty-' + k).textContent = '0');
@@ -463,7 +521,8 @@ function createOffer() {
       op: document.getElementById('operator-select').value,
       amount: document.getElementById('amount-input').value,
       tvac: isTVAC,
-      counters: counters
+      counters: counters,
+      lignes: invoiceLines
     }));
   } catch (e) {}
 
@@ -476,6 +535,7 @@ function createOffer() {
 
 function calcComparator() {
   oldAmount = parseFloat(document.getElementById('amount-input').value || 0);
+  if (typeof updateLinesTotal === 'function') updateLinesTotal();
 
   // Display HTVA
   const oldHTVA = oldAmount / TVA;
@@ -522,6 +582,7 @@ document.getElementById('app-version').textContent = (window.APP_VERSION || '?')
 })();
 
 // Initial
+renderLines();
 calcComparator();
 
 // Retour depuis l'offre (même fiche) : on retrouve l'opérateur, le montant et les compteurs saisis
@@ -537,6 +598,7 @@ calcComparator();
       counters[k] = Math.max(0, parseInt(st.counters[k], 10) || 0);
       document.getElementById('qty-' + k).textContent = counters[k];
     });
+    if (Array.isArray(st.lignes)) { invoiceLines = st.lignes; renderLines(); }
     updateOperatorName();
     setTVAC(st.tvac !== false);
   } catch (e) {}
@@ -751,6 +813,10 @@ pmFactInit({
     if (v.counts) Object.keys(v.counts).forEach(function (k) {
       if (v.counts[k] > 0 && Object.prototype.hasOwnProperty.call(counters, k)) { counters[k] = v.counts[k]; document.getElementById('qty-' + k).textContent = counters[k]; }
     });
+    if (Array.isArray(v.lignes) && v.lignes.length) {
+      invoiceLines = v.lignes.map(function (l) { return { libelle: String(l.libelle || ''), montantTvac: Number(l.montantTvac) || 0 }; });
+      renderLines();
+    }
     calcComparator();
   }
 });

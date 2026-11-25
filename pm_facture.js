@@ -14,8 +14,18 @@
     list.forEach(function (x) { if (!best[x.service] || key(x) > key(best[x.service])) best[x.service] = x; });
     var combo = best['Mobile + Internet'], sep = [best['Mobile'], best['Internet']].filter(Boolean);
     var sepNewest = sep.reduce(function (m, x) { return key(x) > m ? key(x) : m; }, '');
-    if (combo && (!sep.length || key(combo) >= sepNewest)) return { tvac: Number(combo.montantTvac), fournisseur: combo.fournisseur || '', note: "d'après la facture " + (combo.fournisseur || '') };
-    if (sep.length) return { tvac: sep.reduce(function (t, x) { return t + Number(x.montantTvac); }, 0), fournisseur: sep[0].fournisseur || '', note: sep.length > 1 ? "d'après les dernières factures mobile + internet" : "d'après la facture " + (sep[0].fournisseur || '') };
+    // Détail (compteurs + lignes) gardé avec les factures retenues (Build 14.131)
+    var detail = function (arr) {
+      var counts = {}, lignes = [];
+      arr.forEach(function (x) {
+        var c = x.counts || {};
+        ['phone', 'inet', 'mob', 'tv', 'dec'].forEach(function (k) { if (Number(c[k]) > 0) counts[k] = (counts[k] || 0) + Number(c[k]); });
+        (Array.isArray(x.lignes) ? x.lignes : []).forEach(function (l) { if (l && l.libelle && Number(l.montantTvac) > 0) lignes.push({ libelle: String(l.libelle), montantTvac: Number(l.montantTvac) }); });
+      });
+      return { counts: counts, lignes: lignes };
+    };
+    if (combo && (!sep.length || key(combo) >= sepNewest)) { var d1 = detail([combo]); return { tvac: Number(combo.montantTvac), fournisseur: combo.fournisseur || '', note: "d'après la facture " + (combo.fournisseur || ''), counts: d1.counts, lignes: d1.lignes }; }
+    if (sep.length) { var d2 = detail(sep); return { tvac: sep.reduce(function (t, x) { return t + Number(x.montantTvac); }, 0), fournisseur: sep[0].fournisseur || '', note: sep.length > 1 ? "d'après les dernières factures mobile + internet" : "d'après la facture " + (sep[0].fournisseur || ''), counts: d2.counts, lignes: d2.lignes }; }
     return null;
   };
 
@@ -73,6 +83,7 @@
       row('fournisseur', 'Fournisseur actuel', m.fournisseur);
       row('montant', 'Montant mensuel TVAC (€)', m.montantTvac ? String(m.montantTvac).replace('.', ',') : '', 'num');
       row('service', 'Type de facture', m.service, 'select');
+      row('easyswitch', 'Easy Switch id', m.easySwitch, 'num');
       card.appendChild(el('div', 'font-size:12px;font-weight:700;color:#f97316;margin:12px 0 6px;', 'Client'));
       row('titulaire', 'Nom du client', m.titulaire);
       row('societe', 'Société', lu.societe); row('tva', 'N° TVA', lu.tva);
@@ -82,6 +93,17 @@
       if (anyCount) {
         card.appendChild(el('div', 'font-size:12px;font-weight:700;color:#f97316;margin:12px 0 6px;', 'Détail trouvé sur la facture (informatif)'));
         Object.keys(labels).forEach(function (k) { if (c[k] > 0) row('n_' + k, labels[k], String(c[k]), 'num'); });
+      }
+      var L = Array.isArray(r.lignes) ? r.lignes : [];
+      if (L.length) {
+        card.appendChild(el('div', 'font-size:12px;font-weight:700;color:#f97316;margin:12px 0 6px;', 'Lignes de la facture (mensuel, TVAC)'));
+        L.forEach(function (l, i) {
+          var w = el('div', 'display:flex;gap:6px;margin-bottom:6px;');
+          var a = el('input', INP + 'flex:1;'); a.value = l.libelle || '';
+          var b = el('input', INP + 'width:90px;flex:none;text-align:right;'); b.value = String(l.montantTvac || '').replace('.', ','); b.inputMode = 'decimal';
+          fields['l_a' + i] = a; fields['l_b' + i] = b; w.appendChild(a); w.appendChild(b); card.appendChild(w);
+        });
+        card.appendChild(el('div', 'font-size:11px;color:#6b7280;margin-bottom:4px;', 'Vide le montant d\'une ligne pour la retirer.'));
       }
       if (FICHE && FICHE.coll === 'clients') card.appendChild(el('div', 'font-size:12px;color:#6b7280;margin-top:10px;', "Fiche client : la facture n'est pas gardée (seulement pour les prospects)."));
       else card.appendChild(el('div', 'font-size:12px;color:#6b7280;margin-top:10px;', FICHE ? 'La facture sera rangée dans la fiche du prospect.' : 'Un prospect sera créé avec ces informations (ou complété s\'il existe déjà), avec la facture.'));
@@ -97,10 +119,13 @@
         var v = {
           fournisseur: g('fournisseur'), montantTvac: num('montant'), service: g('service'), titulaire: g('titulaire'), societe: g('societe'), tva: g('tva'),
           adresse: g('adresse'), cp: g('cp'), ville: g('ville'), email: g('email'),
-          counts: { phone: num('n_phone'), inet: num('n_inet'), mob: num('n_mob'), tv: num('n_tv'), dec: num('n_dec') }
+          easySwitch: g('easyswitch').replace(/\D/g, '').slice(0, 20),
+          counts: { phone: num('n_phone'), inet: num('n_inet'), mob: num('n_mob'), tv: num('n_tv'), dec: num('n_dec') },
+          lignes: L.map(function (l, i) { return { libelle: g('l_a' + i), montantTvac: num('l_b' + i) }; }).filter(function (l) { return l.libelle && l.montantTvac > 0; })
         };
         // Les corrections de l'écran de vérification sont aussi enregistrées avec la facture
         var meta = Object.assign({}, m, { fournisseur: v.fournisseur, montantTvac: v.montantTvac, service: v.service, titulaire: v.titulaire,
+          counts: v.counts, lignes: v.lignes, easySwitch: v.easySwitch,
           lu: Object.assign({}, lu, { societe: v.societe, tva: v.tva, adresse: v.adresse, cp: v.cp, ville: v.ville, email: v.email }) });
         var save = !(FICHE && FICHE.coll === 'clients');
         ov.remove();
@@ -129,7 +154,7 @@
         try {
           var info = await A.ficheInfo(FICHE.coll, FICHE.id);
           var act = info && window.pmFactActuel(info.factures);
-          if (act) { cfg.apply({ fournisseur: act.fournisseur, montantTvac: act.tvac, counts: {}, prefill: true }); say('ok', '✔ Pré-rempli ' + act.note + ' (fiche de ' + info.nom + '), modifiable.'); }
+          if (act) { cfg.apply({ fournisseur: act.fournisseur, montantTvac: act.tvac, counts: act.counts || {}, lignes: act.lignes || [], prefill: true }); say('ok', '✔ Pré-rempli ' + act.note + ' (fiche de ' + info.nom + '), modifiable.'); }
           else if (info) say('ok', 'Fiche de ' + info.nom + ' : importe sa facture pour remplir le comparatif.');
         } catch (e) { console.log('Fiche non lue:', e.message); }
       })();

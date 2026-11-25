@@ -9554,6 +9554,25 @@ window.pclFactReread = function (docId, i) {
   window.pclEditProspect(docId);
   window.crmFactReread(i);
 };
+// Supprime une facture de la fiche d'un prospect (PDF effacé + ligne retirée), sans ouvrir la fiche en modification
+window.pclFactDelete = async function (docId, i) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  var f = p && Array.isArray(p.factures) ? p.factures[i] : null;
+  if (!f) return;
+  if (!confirm('Supprimer la facture « ' + (f.name || 'facture.pdf') + ' » ?\n\nLe PDF sera effacé définitivement.')) return;
+  try {
+    var ref = window.doc(window.db, 'prospectsClients', docId);
+    var snap = await window.getDoc(ref);
+    var list = snap.exists() && Array.isArray(snap.data().factures) ? snap.data().factures.slice() : [];
+    var k = list.findIndex(function (x) { return x && x.path === f.path && x.uploadedAt === f.uploadedAt; });
+    if (k < 0) k = list.findIndex(function (x) { return x && x.path === f.path; });
+    if (k < 0) { alert('Facture introuvable (déjà supprimée ?).'); return; }
+    if (f.path && window.deleteObject) { try { await window.deleteObject(window.storageRef(window.storage, f.path)); } catch (e) { if (!/object-not-found/.test(String(e.code || e.message))) throw e; } }
+    list.splice(k, 1);
+    await window.updateDoc(ref, { factures: list, updatedAt: new Date().toISOString() });
+    pcToast('🗑️ Facture supprimée.');
+  } catch (e) { alert('Suppression impossible : ' + e.message); }
+};
 // ===== Offres de prix liées à une fiche (créées depuis le simulateur Orange, champ « offres » de la fiche) =====
 var PM_OFFRE_STATUTS = ['Envoyée', 'Acceptée', 'Refusée'];
 function pmOffresHtml(item, coll, docId) {
@@ -9589,15 +9608,20 @@ window.pmFactApi = {
     if (!window.geminiImportModel) throw new Error("Le service de lecture n'est pas encore prêt, réessaie dans un instant.");
     var mime = isPdf ? 'application/pdf' : (file.type || (/\.png$/i.test(file.name) ? 'image/png' : 'image/jpeg'));
     var prompt = crmFactBuildPrompt()
-      .replace('"smartphone": false }', '"smartphone": false, "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0 }')
-      .replace("- N'ajoute AUCUN champ", "- nbFixe / nbInternet / nbMobile / nbTv / nbDecodeur = nombre de lignes fixes, connexions internet, abonnements mobiles, abonnements TV et décodeurs supplémentaires, UNIQUEMENT si la facture les détaille clairement ; sinon 0 (ne devine jamais).\n- Le document peut être une photo : lis-la attentivement.\n- N'ajoute AUCUN champ");
+      .replace('"smartphone": false }', '"smartphone": false, "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0, "easySwitch": "", "lignes": [ { "libelle": "", "montantTvac": 0 } ] }')
+      .replace("- N'ajoute AUCUN champ", "- nbFixe / nbInternet / nbMobile / nbTv / nbDecodeur = nombre de lignes fixes, connexions internet, abonnements mobiles, abonnements TV et décodeurs supplémentaires, UNIQUEMENT si la facture les détaille clairement ; sinon 0 (ne devine jamais).\n- easySwitch = l'Easy Switch id (nombre d'environ 14 chiffres, repéré par le libellé « Easy Switch id », en général en première page à côté du numéro de client). Chaîne vide si absent. Ne le confonds jamais avec le numéro de client ou le numéro de document.\n- «lignes» = le détail MENSUEL de la facture, une entrée par abonnement ou option récurrente (ex : « Mobile Large 29,00 », « Internet 49,00 », « Option WiFi 10,00 »). «libelle» court (80 caractères maximum), «montantTvac» = montant mensuel TVA comprise (si la facture affiche des lignes HTVA, multiplie par 1,21). Ignore les remises globales, les frais uniques, la consommation hors forfait, les totaux et sous-totaux. Tableau vide [] si la facture ne détaille pas clairement ses lignes (ne devine jamais).\n- Le document peut être une photo : lis-la attentivement.\n- N'ajoute AUCUN champ");
     var base64 = await ctrFileToBase64(file);
     var result = await window.geminiImportModel.generateContent([{ inlineData: { mimeType: mime, data: base64 } }, { text: prompt }]);
     var raw = result.response.text(), m = raw.match(/\{[\s\S]*\}/);
     var data = JSON.parse(m ? m[0] : raw);
     var meta = crmFactCleanMeta(data, file);
+    meta.easySwitch = String(data.easySwitch || '').replace(/\D/g, '').slice(0, 20);
     var n = function (k) { var x = parseInt(data[k], 10); return isFinite(x) && x > 0 && x < 50 ? x : 0; };
-    return { meta: meta, counts: { phone: n('nbFixe'), inet: n('nbInternet'), mob: n('nbMobile'), tv: n('nbTv'), dec: n('nbDecodeur') } };
+    var lignes = (Array.isArray(data.lignes) ? data.lignes : []).map(function (l) {
+      var mt = parseFloat(String(l && l.montantTvac).replace(',', '.'));
+      return { libelle: String((l && l.libelle) || '').replace(/\s+/g, ' ').trim().slice(0, 80), montantTvac: (isFinite(mt) && mt > 0 && mt < 5000) ? Math.round(mt * 100) / 100 : 0 };
+    }).filter(function (l) { return l.libelle && l.montantTvac > 0; }).slice(0, 15);
+    return { meta: meta, counts: { phone: n('nbFixe'), inet: n('nbInternet'), mob: n('nbMobile'), tv: n('nbTv'), dec: n('nbDecodeur') }, lignes: lignes };
   },
   async ficheInfo(coll, id) {
     if (coll !== 'prospectsClients' && coll !== 'clients') return null;
@@ -9614,7 +9638,10 @@ window.pmFactApi = {
     var ref = window.doc(window.db, coll, id);
     var snap = await window.getDoc(ref), list = snap.exists() && Array.isArray(snap.data().factures) ? snap.data().factures.slice() : [];
     list.push(m);
-    await window.updateDoc(ref, { factures: list, updatedAt: new Date().toISOString() });
+    var updF = { factures: list, updatedAt: new Date().toISOString() };
+    var esw = String(m.easySwitch || '').replace(/\D/g, '').slice(0, 20), curF = snap.exists() ? snap.data() : {};
+    if (esw && !String(curF.easySwitch || '').trim()) updF.easySwitch = esw;   // jamais d'écrasement d'une valeur déjà saisie
+    await window.updateDoc(ref, updF);
     return { coll: coll, id: id };
   },
   // Cherche une fiche existante (même nom, même TVA ou même email) parmi les prospects puis les clients du consultant
@@ -9651,7 +9678,7 @@ window.pmFactApi = {
       consultantId: u.id, nom: full, prenom: prenom, nomFamille: fam, tel: '', email: lu.email || '',
       type: lu.typeClient || 'Particulier', societe: lu.societe || '', tva: lu.tva || '', ville: lu.ville || '', cp: lu.cp || '', adresse: lu.adresse || '',
       smartphone: !!meta.smartphone, smartphoneOk: false, opMobile: opm, numMobile: (mob && meta.numeroClient) || '', opInternet: opi, numInternet: (net && meta.numeroClient) || '',
-      easySwitch: '', dateFinContrat: '', sources: ['Télécom'], source: 'Télécom', provenance: '', titulaire: meta.titulaire || '',
+      easySwitch: String(meta.easySwitch || '').replace(/\D/g, '').slice(0, 20), dateFinContrat: '', sources: ['Télécom'], source: 'Télécom', provenance: '', titulaire: meta.titulaire || '',
       referencePrenom: '', referenceNom: '', referenceTel: '', commentaire: 'Créé depuis le comparatif (facture ' + (meta.fournisseur || '') + ')',
       statut: 'Nouveau', origine: 'comparatif', dateCreation: now, dateMaj: now
     };
@@ -9661,7 +9688,7 @@ window.pmFactApi = {
     if (ex && ex.coll === 'clients') return { existingClient: true, nom: ex.rec.nom || full, coll: ex.coll, id: ex.id };
     if (ex) {
       var upd = { dateMaj: now }, r = ex.rec;
-      ['email', 'societe', 'tva', 'ville', 'cp', 'adresse', 'titulaire', 'opMobile', 'numMobile', 'opInternet', 'numInternet'].forEach(function (k) { if (!String(r[k] || '').trim() && String(data[k] || '').trim()) upd[k] = data[k]; });
+      ['email', 'societe', 'tva', 'ville', 'cp', 'adresse', 'titulaire', 'opMobile', 'numMobile', 'opInternet', 'numInternet', 'easySwitch'].forEach(function (k) { if (!String(r[k] || '').trim() && String(data[k] || '').trim()) upd[k] = data[k]; });
       if (!String(r.type || '').trim() && data.type) upd.type = data.type;
       await window.updateDoc(window.doc(window.db, ex.coll, ex.id), upd);
       var nomEx = r.nom || ((r.prenom || '') + ' ' + (r.nomFamille || '')).trim() || full;
@@ -9738,7 +9765,8 @@ function pclRenderList(list) {
     (Array.isArray(p.factures) ? p.factures : []).forEach(function (f, i) {
       sit += '<div style="font-size:12px;color:#444;margin:2px 0;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">📄 <a href="javascript:void(0)" onclick="pclFactOpen(\'' + p.docId + '\',' + i + ')" style="color:#1d4ed8;text-decoration:underline;">' + pcEsc(f.name || 'facture.pdf') + '</a>'
         + (f.service ? '<span style="background:#f3f4f6;color:#4b5563;border-radius:99px;padding:0 7px;font-size:10px;font-weight:700;">' + pcEsc(f.service) + '</span>' : '')
-        + '<button type="button" onclick="pclFactReread(\'' + p.docId + '\',' + i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;">🔄 Relire</button></div>';
+        + '<button type="button" onclick="pclFactReread(\'' + p.docId + '\',' + i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;">🔄 Relire</button>'
+        + '<button type="button" title="Supprimer la facture" onclick="pclFactDelete(\'' + p.docId + '\',' + i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;">🗑️</button></div>';
     });
     sit += pclQrExtras(p);
     // Suivi
@@ -13102,7 +13130,13 @@ async function crmFactUpload(clientId, file) {
   if (!window.storage) throw new Error('Firebase Storage non disponible');
   var safe = String(file.name || 'facture.pdf').replace(/[^\w.\-]+/g, '_').slice(-80);
   var path = 'facturesClients/' + window.pmCurrentUser.id + '/' + clientId + '/' + Date.now() + '_' + safe;
-  await window.uploadBytes(window.storageRef(window.storage, path), file, { contentType: file.type || 'application/pdf' });
+  // Un fichier choisi dans une page ouverte dans le hub (comparatif, simulateur) vient d'une autre fenêtre : Firebase ne le reconnaît
+  // pas comme un Blob et enverrait un fichier VIDE. On le recopie donc dans un Blob de cette fenêtre avant l'envoi.
+  var ctype = file.type || 'application/pdf', body = file;
+  if (!(file instanceof Blob)) body = new Blob([new Uint8Array(await file.arrayBuffer())], { type: ctype });
+  if (!body.size) throw new Error('fichier vide');
+  var up = await window.uploadBytes(window.storageRef(window.storage, path), body, { contentType: ctype });
+  if (up && up.metadata && Number(up.metadata.size) === 0) throw new Error('fichier envoyé vide');
   return path;
 }
 function crmFactPersist() {
