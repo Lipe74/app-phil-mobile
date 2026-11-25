@@ -265,6 +265,18 @@
   </div>
 
   
+<div class="section" id="section-extras">
+  <div class="section-title">➕ Options en plus (proposées sur l'offre)</div>
+  <div style="margin-bottom:12px;background:#f3e5f5;border:1px solid #8e24aa;border-radius:10px;padding:10px 14px;font-size:13px;color:#8e24aa;font-weight:600;">
+    Ces options s'affichent sur l'offre à titre de proposition. Elles ne changent pas le tarif (prix catalogue, sans remise).
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+    <select id="pm-extra-select" style="flex:1;min-width:200px;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:15px;"></select>
+    <button type="button" onclick="pmExtraAdd()" style="padding:12px 16px;border:none;border-radius:10px;background:#062B68;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">➕ Ajouter</button>
+  </div>
+  <div id="pm-extra-list"></div>
+</div>
+
 <div class="section">
   <div class="section-title">👤 Informations client</div>
   <div id="pm-fiche-banner" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;"></div>
@@ -642,7 +654,7 @@ async function loadPromosFromFirestore() {
     // Conserve l'état (activé/désactivé) des promos déjà présentes lors d'une mise à jour live,
     // pour ne pas perdre la sélection en cours du consultant si l'admin modifie autre chose entre-temps.
     [...window.promos, ...window.promosPermanent].forEach(p => {
-      window.togMap[p.id] = prevTogMap.hasOwnProperty(p.id) ? prevTogMap[p.id] : false;
+      window.togMap[p.id] = prevTogMap.hasOwnProperty(p.id) ? prevTogMap[p.id] : !!(window.pmBootTog && window.pmBootTog[p.id]);
     });
 
     document.getElementById('promos-rows').innerHTML = '';
@@ -720,7 +732,7 @@ async function loadProductsFromFirestore() {
       }
       // Initialise la quantité seulement à la toute première apparition du produit — ne jamais
       // écraser une quantité déjà choisie par le consultant lors d'une mise à jour live suivante.
-      if (window.qtyMap[id] === undefined) window.qtyMap[id] = 0;
+      if (window.qtyMap[id] === undefined) window.qtyMap[id] = Math.max(0, parseInt((window.pmBootQty && window.pmBootQty[id]) || 0, 10) || 0);
       // Si le maximum a été baissé depuis l'admin, on ramène une quantité déjà choisie à ce maximum
       if (target.max && window.qtyMap[id] > target.max) window.qtyMap[id] = target.max;
     });
@@ -942,6 +954,21 @@ onAuthStateChanged(auth, () => {
 
 <script>
 
+// ===== Build 14.130 : arrivée depuis le comparateur (?from=comparatif&op=...&actuel=...) =====
+// Les produits et promos simulés sont lus AVANT le premier calcul de la page (qui réécrit le stockage local).
+var PM_QS = new URLSearchParams(location.search);
+window.pmCompare = null;
+window.pmBootQty = null;
+window.pmBootTog = null;
+if (PM_QS.get('from') === 'comparatif') {
+  try {
+    var _bd = JSON.parse(localStorage.getItem('orangeOfferDetails') || 'null');
+    if (_bd && _bd.qtyMap) window.pmBootQty = JSON.parse(_bd.qtyMap);
+    if (_bd && _bd.togMap) window.pmBootTog = JSON.parse(_bd.togMap);
+  } catch (e) {}
+  window.pmCompare = { operateur: String(PM_QS.get('op') || '').slice(0, 40), actuel: parseFloat(PM_QS.get('actuel')) || 0 };
+}
+
 async function resetCache() {
   if (!confirm("Vider le cache de l'application ?")) return;
 
@@ -1059,6 +1086,66 @@ try {
     pmSiteSel = Math.min(_pmD.sel || 0, pmSites.length);
   }
 } catch (e) {}
+// ===== Build 14.130 : options en plus (proposées sur l'offre, hors tarif) =====
+var pmExtras = {};   // id -> quantité (jamais comptées dans le tarif)
+function pmShort(t) {
+  t = String(t || '').trim();
+  var m = t.match(/^(.{20,}?[.!?])\s/);
+  if (m && m[1].length <= 120) return m[1];
+  if (t.length <= 110) return t;
+  var c = t.slice(0, 110), i = c.lastIndexOf(' ');
+  return (i > 60 ? c.slice(0, i) : c) + '…';
+}
+function pmExtraCatalog() {
+  var seen = {}, list = [];
+  var add = function (p) { if (!p || seen[p.id] || p.hidden || p.oneshot) return; seen[p.id] = 1; list.push(p); };
+  Object.keys(productList).forEach(function (cat) { (productList[cat] || []).forEach(add); });
+  options.forEach(add);
+  return list;
+}
+function pmExtraAttr(v) { return pmEsc(v).replace(/"/g, '&quot;'); }
+function pmRenderExtras() {
+  var sel = pmEl('pm-extra-select'), box = pmEl('pm-extra-list');
+  if (!sel || !box) return;
+  var cat = pmExtraCatalog(), byId = {};
+  cat.forEach(function (p) { byId[p.id] = p; });
+  Object.keys(pmExtras).forEach(function (id) { if (!byId[id]) delete pmExtras[id]; });
+  var prev = sel.value;
+  sel.innerHTML = '<option value="">Choisir une option à proposer…</option>' + cat.map(function (p) {
+    return '<option value="' + pmExtraAttr(p.id) + '">' + pmEsc(pmPlain(p.name)) + ' · ' + priceFmt(p.price) + ' / mois</option>';
+  }).join('');
+  if (prev && byId[prev]) sel.value = prev;
+  var ids = Object.keys(pmExtras);
+  if (!ids.length) { box.innerHTML = '<div style="font-size:14px;color:#777;">Aucune option proposée pour cette offre.</div>'; return; }
+  var bs = 'width:34px;height:34px;border-radius:10px;border:1px solid #ddd;background:#fff;font-size:18px;cursor:pointer;';
+  box.innerHTML = ids.map(function (id) {
+    var p = byId[id], q = pmExtras[id];
+    return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid #f0f0f0;">'
+      + '<div style="flex:1;min-width:160px;font-size:15px;color:#222;">' + pmEsc(pmPlain(p.name)) + '<div style="font-size:13px;color:#777;">' + priceFmt(p.price * q) + ' / mois' + (q > 1 ? ' (× ' + q + ')' : '') + '</div></div>'
+      + '<button type="button" data-id="' + pmExtraAttr(id) + '" onclick="pmExtraChange(this.getAttribute(\'data-id\'),-1)" style="' + bs + '" aria-label="Moins">−</button>'
+      + '<span style="min-width:20px;text-align:center;font-weight:700;">' + q + '</span>'
+      + '<button type="button" data-id="' + pmExtraAttr(id) + '" onclick="pmExtraChange(this.getAttribute(\'data-id\'),1)" style="' + bs + '" aria-label="Plus">+</button>'
+      + '</div>';
+  }).join('');
+}
+function pmExtraMax(id) {
+  var p = pmExtraCatalog().filter(function (x) { return x.id === id; })[0];
+  return p ? (p.max || 1) : 1;
+}
+function pmExtraAdd() {
+  var sel = pmEl('pm-extra-select');
+  var id = sel ? sel.value : '';
+  if (!id) { alert('Choisis d\'abord une option dans la liste.'); return; }
+  pmExtras[id] = Math.min(pmExtraMax(id), (pmExtras[id] || 0) + 1);
+  sel.value = '';
+  pmRenderExtras();
+}
+function pmExtraChange(id, delta) {
+  var q = Math.max(0, Math.min(pmExtraMax(id), (pmExtras[id] || 0) + delta));
+  if (q > 0) pmExtras[id] = q; else delete pmExtras[id];
+  pmRenderExtras();
+}
+
 function pmDraftSave() { try { sessionStorage.setItem(PM_DRAFT_KEY, JSON.stringify({ sims: pmSims, sites: pmSites, sel: pmSiteSel })); } catch (e) {} }
 function pmEl(id) { return document.getElementById(id); }
 function pmEsc(s) { var d = document.createElement('div'); d.textContent = (s == null ? '' : String(s)); return d.innerHTML; }
@@ -1125,7 +1212,13 @@ function pmSnapshot() {
   var qty = {}, tog = {};
   Object.keys(qtyMap).forEach(function (k) { if (qtyMap[k] > 0) qty[k] = qtyMap[k]; });
   Object.keys(togMap).forEach(function (k) { if (togMap[k]) tog[k] = true; });
+  var extraQty = {};
+  var extras = pmExtraCatalog().filter(function (p) { return (pmExtras[p.id] || 0) > 0; }).map(function (p) {
+    extraQty[p.id] = pmExtras[p.id];
+    return { nom: pmPlain(p.name), q: pmExtras[p.id], unit: p.price, total: p.price * pmExtras[p.id], sub: pmShort(pmPlain(p.sub)) };
+  });
   return {
+    extras: extras, extraQty: extraQty,
     lignes: lignes, promos: pl, love: { lignes: ll, total: love },
     catalogue: prod + opts + homeFee, today: today, m6: m6, m12: m12,
     frais: Math.max(0, frais - promUnique), fraisBrut: frais, promUnique: promUnique, eco: prom,
@@ -1133,7 +1226,7 @@ function pmSnapshot() {
     qty: qty, tog: tog
   };
 }
-function pmSig(s) { return JSON.stringify([s.qty, s.tog]); }
+function pmSig(s) { return JSON.stringify([s.qty, s.tog, s.extraQty || {}]); }
 
 // ----- Dossier : sites (3 max) et offres (2 par site) -----
 function pmSimsOfSite(k) { return pmSims.filter(function (x) { return (x.site || 0) === k; }); }
@@ -1168,6 +1261,8 @@ function pmLoadState(s) {
   Object.keys(qtyMap).forEach(function (k) { qtyMap[k] = (s.qty && s.qty[k]) || 0; });
   Object.keys(togMap).forEach(function (k) { togMap[k] = !!(s.tog && s.tog[k]); togMapManualOverride.add(k); });
   document.querySelectorAll('.qty-val').forEach(function (el) { var id = el.id.replace('qty-', ''); el.textContent = qtyMap[id] || 0; });
+  pmExtras = JSON.parse(JSON.stringify(s.extraQty || {}));
+  pmRenderExtras();
   render();
 }
 function pmEditSim(i) { if (!pmSims[i]) return; pmEditIdx = i; pmSiteSel = pmSims[i].site || 0; pmLoadState(pmSims[i]); pmRenderDossier(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -1428,6 +1523,7 @@ function pmBuildDossier(sims, rec, nom, telRaw) {
     },
     consultant: { id: ci.id || '', name: ci.name || 'Phil-Mobile', phone: ci.phone || '', email: ci.email || '', logoUrl: ci.logoUrl || '', accent: ci.accent || '' },
     rec: (function () { var ri = null; sims.forEach(function (x, i) { if (ri === null && x.rec) ri = i; }); return sims.length > 1 ? ri : null; })(),
+    compare: window.pmCompare ? { operateur: String(window.pmCompare.operateur || '') } : null,
     sites: pmSites.map(function (a) { return { adr: String(a || '').trim() }; }),
     sims: sims
   };
@@ -1634,6 +1730,11 @@ async function pmRenderOffer(w, d) {
   var name = ci.name || 'Phil-Mobile';
   var inits = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function (x) { return x.charAt(0).toUpperCase(); }).join('') || 'PM';
   var contact = [ci.phone, ci.email].filter(Boolean).map(e).join(' · ');
+  // Offre venue du comparateur : opérateur actuel + cadre comparatif (seulement si la facture actuelle est connue)
+  var cmp = (d.compare && cl.actuel > 0) ? d.compare : null;
+  var opKnown = !!(cmp && cmp.operateur && cmp.operateur !== 'Autre opérateur');
+  var opName = opKnown ? cmp.operateur : '';
+  var curLabel = opKnown ? 'Votre facture actuelle chez ' + e(opName) : 'Votre facture actuelle';
   var fileName = 'Offre-' + String(cl.nom || 'client').replace(/[^a-zA-Z0-9]/g, '_') + '-' + d.ref + '.pdf';
 
   var hd = '<div class="hd"><div class="av">' + e(inits)
@@ -1649,7 +1750,7 @@ async function pmRenderOffer(w, d) {
   var kv = function (k, v) { return v ? '<div class="k">' + k + '</div><div class="v">' + v + '</div>' : ''; };
   blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multiSite ? 'Notre proposition pour vos ' + siteIdx.length + ' sites' : (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous')) + '</div>'
     + '<div class="kv">' + kv('Client', '<b>' + e(cl.nom) + '</b>') + kv('Société', e(cl.societe)) + kv('Téléphone', e(cl.tel)) + kv('E-mail', e(cl.email)) + kv('N° TVA', e(cl.tva)) + kv("Adresse d'installation", multiSite ? '' : e(adrOf(siteIdx[0])))
-    + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Tarifs Orange', 'en vigueur au ' + dateTxt)
+    + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Opérateur actuel', opKnown ? e(opName) : '') + kv('Tarifs Orange', 'en vigueur au ' + dateTxt)
     + kv('Prix affichés', mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA') + '</div></div>');
 
   var monthEco = function (s) { return cl.actuel > 0 ? Math.max(0, cl.actuel - s.today) : 0; };
@@ -1706,6 +1807,21 @@ async function pmRenderOffer(w, d) {
       blocks.push('<div class="blk">' + head + '<h2>Votre choix</h2><div class="cmp c' + Math.min(S.length, 3) + '">' + cards + '</div><div class="note">Prix par mois, ' + modeTxt + '. Le détail de chaque offre se trouve dans les pages suivantes.</div></div>');
     }
 
+    if (withActuel && cmp) {
+      var nC = S.length;
+      var acS = '<span style="color:#52606d;font-weight:400">' + f(cl.actuel) + '</span>';
+      var offHd = S.map(function (x, j) { return (mlt ? nm(j) : 'Orange') + (isRec(j) ? '<small class="rcm">Recommandée</small>' : ''); });
+      var cr = grid(nC + 1, '', [opKnown ? e(opName) + ' (actuel)' : 'Actuel'].concat(offHd), 'chd')
+        + grid(nC + 1, 'Aujourd\'hui', [acS].concat(S.map(function (x) { return f(x.today); })), 'today', 'hl')
+        + grid(nC + 1, 'Après 6 mois', [acS].concat(S.map(function (x) { return f(x.m6); })))
+        + grid(nC + 1, 'Après 12 mois', [acS].concat(S.map(function (x) { return f(x.m12); })));
+      if (S.some(function (x) { return monthEco(x) > 0; })) {
+        cr += grid(nC + 1, 'Votre économie par mois', ['–'].concat(S.map(function (x) { return monthEco(x) > 0 ? f(monthEco(x)) : '–'; })), 'ecor')
+          + grid(nC + 1, 'Sur la 1re année', ['–'].concat(S.map(function (x) { return monthEco(x) > 0 ? f(yearEco(x)) : '–'; })), 'ecor');
+      }
+      blocks.push(fr(acc, opKnown ? 'Comparatif ' + e(opName) + ' et Orange' : 'Comparatif avec votre facture actuelle', cr, 'Prix par mois, ' + modeTxt, true));
+    }
+
     S.forEach(function (x, j) {
       var pre = sp + (mlt ? nm(j) + ' · ' : '');
       var mens = x.lignes.filter(function (l) { return !l.unique; }), uniq = x.lignes.filter(function (l) { return l.unique; });
@@ -1741,7 +1857,7 @@ async function pmRenderOffer(w, d) {
         + rw('Après 6 mois', fin(q0.fin6), f(q0.m6) + ' / mois')
         + rw('Après 12 mois', fin(q0.fin12), f(q0.m12) + ' / mois');
       if (anyFrais) rec0 += rw('Frais uniques (une seule fois)', q0.promUnique > 0 ? f(q0.fraisBrut) + ' moins ' + f(q0.promUnique) + ' de remise' : '', f(q0.frais));
-      if (withActuel && cl.actuel > 0) rec0 += rw('Votre facture actuelle', '', f(cl.actuel) + ' / mois');
+      if (withActuel && cl.actuel > 0) rec0 += rw(curLabel, '', f(cl.actuel) + ' / mois');
       if (withActuel && monthEco(q0) > 0) rec0 += '<div class="eco2">Vous économisez <b>' + f(monthEco(q0)) + ' par mois</b> · <b>' + f(yearEco(q0)) + ' sur la 1re année</b></div>';
       blocks.push(fr(acc, ttl, rec0 + note, 'Prix ' + modeTxt, true));
     } else {
@@ -1752,13 +1868,23 @@ async function pmRenderOffer(w, d) {
         + grid(n, 'Après 6 mois', S.map(function (x) { return f(x.m6); }))
         + grid(n, 'Après 12 mois', S.map(function (x) { return f(x.m12); }));
       if (anyFrais) rc += grid(n, 'Frais uniques', S.map(function (x) { return f(x.frais); }));
-      if (withActuel && cl.actuel > 0) rc += grid(n, 'Votre facture actuelle', S.map(function () { return f(cl.actuel); }));
+      if (withActuel && cl.actuel > 0) rc += grid(n, curLabel, S.map(function () { return f(cl.actuel); }));
       if (withActuel && S.some(function (x) { return monthEco(x) > 0; })) {
         rc += grid(n, 'Économie par mois', S.map(function (x) { return monthEco(x) > 0 ? f(monthEco(x)) : '–'; }), 'ecor')
           + grid(n, 'Économie la 1re année', S.map(function (x) { return monthEco(x) > 0 ? f(yearEco(x)) : '–'; }), 'ecor');
       }
       blocks.push(fr(acc, ttl, rc + note, 'Prix par mois, ' + modeTxt, true));
     }
+
+    // Options en plus (hors tarif) : proposées au client, prix catalogue
+    S.forEach(function (x, j) {
+      if (!x.extras || !x.extras.length) return;
+      var xr = x.extras.map(function (l) {
+        return rw(e(l.nom) + (l.q > 1 ? ' ×' + l.q : ''), l.sub ? e(l.sub) : '', '+ ' + f(l.total) + ' / mois');
+      }).join('');
+      xr += '<div class="fn">Ces options ne sont pas comprises dans votre tarif' + (mlt ? ' (' + nm(j) + ')' : '') + ' de ' + f(x.today) + ' par mois. Prix catalogue, sans remise. Elles peuvent être ajoutées à tout moment, à votre demande.</div>';
+      blocks.push(fr('#5f3dc4', sp + (mlt ? nm(j) + ' · ' : '') + 'Options en plus, si vous le souhaitez', xr, 'Prix catalogue, ' + modeTxt));
+    });
   };
 
   var groups0 = siteIdx.map(function (k) { return { k: k, list: sims.filter(function (x) { return (x.site || 0) === k; }) }; });
@@ -1801,7 +1927,7 @@ async function pmRenderOffer(w, d) {
     if (cl.actuel > 0) {
       var eM = totToday.map(function (v) { return Math.max(0, cl.actuel - v); });
       var eY = totToday.map(function (v, j) { return Math.max(0, 12 * cl.actuel - (6 * v + 6 * totM6[j])); });
-      tr += grid(K, 'Votre facture actuelle', cols.map(function () { return f(cl.actuel); }));
+      tr += grid(K, curLabel, cols.map(function () { return f(cl.actuel); }));
       if (eM.some(function (v) { return v > 0; })) {
         tr += grid(K, 'Économie par mois', eM.map(function (v) { return v > 0 ? f(v) : '–'; }), 'ecor')
           + grid(K, 'Économie la 1re année', eY.map(function (v, j) { return eM[j] > 0 ? f(v) : '–'; }), 'ecor');
@@ -2267,6 +2393,8 @@ function resetAll() {
   Object.keys(qtyMap).forEach(k => qtyMap[k] = 0);
   Object.keys(togMap).forEach(k => togMap[k] = false);
   togMapManualOverride.clear();
+  pmExtras = {};
+  pmRenderExtras();
   document.querySelectorAll('.qty-val').forEach(el => el.textContent = '0');
   render();
 }
@@ -2345,6 +2473,10 @@ function renderProductSections() {
   // par le consultant, plus aucun ajout automatique.
   const elUnique = document.getElementById('options-unique-rows');
   if (elUnique) { elUnique.innerHTML = ''; buildQtyRows('options-unique-rows', options.filter(o => o.oneshot)); }
+
+  // Build 14.130 : quantités affichées = quantités réelles (aussi après une mise à jour Firestore) + liste des options en plus
+  document.querySelectorAll('.qty-val').forEach(function (el) { if (el.id.indexOf('qty-') === 0) el.textContent = qtyMap[el.id.slice(4)] || 0; });
+  if (typeof pmRenderExtras === 'function') pmRenderExtras();
 }
 
 function buildToggleRows(containerId, items) {
@@ -2411,6 +2543,23 @@ renderProductSections();
 buildToggleRows('promos-permanent-rows', promosPermanent);
 buildGroupedPromoRows('promos-rows', promos);
 render();
+
+// Build 14.130 : arrivée depuis le comparateur → mêmes produits et promos que la simulation, facture actuelle reprise
+(function pmApplyFromComparatif() {
+  if (!window.pmCompare) return;
+  var q = window.pmBootQty || {}, t = window.pmBootTog || {};
+  Object.keys(q).forEach(function (k) { if (qtyMap[k] !== undefined) qtyMap[k] = Math.max(0, parseInt(q[k], 10) || 0); });
+  Object.keys(togMap).forEach(function (k) { togMap[k] = !!t[k]; togMapManualOverride.add(k); });
+  document.querySelectorAll('.qty-val').forEach(function (el) { if (el.id.indexOf('qty-') === 0) el.textContent = qtyMap[el.id.slice(4)] || 0; });
+  render();
+  if (window.pmCompare.actuel > 0) {
+    window.pmActuelAuto = window.pmCompare.actuel;
+    pmShowActuel();
+    var cur = pmEl('client-current'), nt = pmEl('client-current-note');
+    if (nt) { nt.style.display = 'block'; nt.textContent = '✔ Repris du comparatif' + (window.pmCompare.operateur ? ' (' + window.pmCompare.operateur + ')' : '') + ' (modifiable)'; }
+    if (cur) cur.addEventListener('input', function () { window.pmActuelAuto = null; if (nt) nt.style.display = 'none'; });
+  }
+})();
 
 // Exposés globalement pour permettre le rafraîchissement dynamique des promos ET produits depuis Firestore (voir module plus haut)
 window.promos = promos;

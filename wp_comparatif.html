@@ -240,7 +240,7 @@ body { background: #f5f5f5; }
         <div class="info-box">
           ✅ Configurez votre offre dans le simulateur Orange. Une fois le simulateur fermé, cliquez sur "Récupérer les prix Orange" ci-dessous pour importer automatiquement le montant.
         </div>
-        <a href="wp_orange.html" target="_blank" class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-top:12px;">
+        <a href="wp_orange.html" id="sim-link" target="_blank" class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-top:12px;">
           ➜ Ouvrir le Simulateur Orange
         </a>
       </div>
@@ -267,7 +267,7 @@ body { background: #f5f5f5; }
         <div class="button-group">
           <button class="btn" onclick="exportPDF()" title="Télécharger la comparaison en PDF">📄 PDF</button>
           <button class="btn" onclick="shareWhatsApp()" title="Envoyer par WhatsApp">💬 WhatsApp</button>
-          <button class="btn" onclick="createOffer()" title="Créer une offre avec logo">🎁 Offre</button>
+          <button class="btn" onclick="createOffer()" title="Créer l'offre A4 (même modèle que le simulateur) avec le comparatif de votre opérateur actuel">🎁 Offre</button>
         </div>
       </div>
 
@@ -279,6 +279,7 @@ body { background: #f5f5f5; }
 
 <script>
 const TVA = 1.21;
+const PM_QS = new URLSearchParams(location.search);
 let isTVAC = true;
 
 const priceFmt = (v) => {
@@ -430,231 +431,47 @@ function shareWhatsApp() {
   window.open(`https://wa.me/?text=${encoded}`, '_blank');
 }
 
-function pmLoadQrLib() {
-  return new Promise(function (res) {
-    if (window.QRCode) return res(true);
-    const sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    sc.onload = function () { res(true); };
-    sc.onerror = function () { res(false); };
-    document.head.appendChild(sc);
-    setTimeout(function () { res(!!window.QRCode); }, 6000);
-  });
-}
-async function pmQrDataUrl(url) {
-  try {
-    if (!(await pmLoadQrLib())) return '';
-    const box = document.createElement('div');
-    box.style.cssText = 'position:fixed;left:-9999px;top:0;';
-    document.body.appendChild(box);
-    new window.QRCode(box, { text: url, width: 240, height: 240, colorDark: '#1f2933', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
-    const c = box.querySelector('canvas');
-    const out = c ? c.toDataURL('image/png') : '';
-    document.body.removeChild(box);
-    return out;
-  } catch (e) { return ''; }
+// Build 14.130 : l'offre est générée par le moteur du simulateur (A4, mêmes cadres, enregistrée dans la fiche).
+// Le comparateur transmet : la fiche d'origine, l'opérateur actuel et le montant actuel ; les produits et promos
+// de la simulation sont repris par le simulateur depuis le stockage local.
+function pmFwdParams() {
+  const p = new URLSearchParams();
+  ['consultantId', 'consultantName', 'consultantEmail', 'fiche'].forEach(k => { const v = PM_QS.get(k); if (v) p.set(k, v); });
+  return p;
 }
 
-async function createOffer() {
+function createOffer() {
   if (orange12m === 0) {
     alert('⚠️ Récupérez d\'abord les prix Orange.');
     return;
   }
-  // Fenêtre ouverte tout de suite (évite le blocage des popups pendant la génération du QR)
-  const win = window.open('', '_blank');
-  let qrImg = '';
+  let hasSim = false;
   try {
-    const qu = window.pmQrUrlIfAllowed ? await window.pmQrUrlIfAllowed() : '';
-    if (qu) qrImg = await pmQrDataUrl(qu);
-  } catch (e) { qrImg = ''; }
-  
-  const op = document.getElementById('operator-select').value;
-  const opName = operators[op];
-  const oldDisplay = isTVAC ? oldAmount : (oldAmount / TVA);
-  const orangeDisplay12 = isTVAC ? orange12m : (orange12m / TVA);
-  const orangeDisplay6 = isTVAC ? orange6m : (orange6m / TVA);
-  const orangeDisplayToday = isTVAC ? orangeToday : (orangeToday / TVA);
-  const savings = Math.max(0, oldDisplay - orangeDisplay12);
-  
-  // Infos du consultant (identiques à wp_orange.html) : priorité au consultant identifié via l'URL/Firestore
-  const ci = window.consultantInfo || { name: 'Phil-Mobile', phone: '0475 24 02 05', email: 'infos@phil-mobile.be', logoUrl: window.pmDefaultLogoUrl || 'https://app.phil-mobile.be/images/logo.png' };
-  const consultantName = ci.name;
-  const consultantPhone = ci.phone;
-  const consultantEmail = ci.email;
-  const logoUrl = ci.logoUrl;
-  
-  // Construire HTML détails de l'offre Orange
-  let offerDetailsHTML = '';
-  try {
-    const details = JSON.parse(localStorage.getItem('orangeOfferDetails') || '{}');
-    if (details.v === 2) {
-      const D = (v) => fmt(isTVAC ? (+v || 0) : ((+v || 0) / TVA));
-      const row = (label, val, style, indent) => `<div class="price-row"${indent ? ' style="padding-left:20px;"' : ''}><span class="price-label">${label}</span><span class="price-value"${style ? ' style="' + style + '"' : ''}>${val}</span></div>`;
-      offerDetailsHTML = `
-        <div class="section">
-          <div class="section-title">📦 Prix affichés (Orange)</div>
-          ${row('Total produits', D(details.produits))}
-          ${row('📱 Total Mobiles', D(details.mobiles), '', true)}
-          ${row('🌐 Internet', D(details.internet), '', true)}
-          ${+details.tv ? row('📺 TV', D(details.tv), '', true) : ''}
-          ${row('Options mensuelles', D(details.options))}
-          ${row('Frais mensuels (Home)', D(details.fraisUniques))}
-          ${row('Remises Love (à vie)', '- ' + D(details.remisesLove), 'color:#2e7d32;')}
-          ${row('🟡 Promos 6 mois', '- ' + D(details.promos6mois), 'color:#f97316;')}
-          ${row('🔴 Promos 12 mois', '- ' + D(details.promos12mois), 'color:#e24b4a;')}
-          ${+details.promosUniques ? row('Promos uniques', '- ' + D(details.promosUniques), 'color:#2e7d32;') : ''}
-        </div>
-        <div class="section" style="background:#fff8f4;border:2px solid #ff5a14;">
-          <div class="section-title">🏁 Tarifs après les promotions</div>
-          <div style="font-size:18px;font-weight:bold;color:#ff5a14;text-align:center;padding:12px 0;">${D(details.sousTotal)}</div>
-          ${row("🟢 Aujourd'hui", D(details.prixAujourdhui), 'color:#2e7d32;font-weight:bold;')}
-          ${row('🟡 Après 6 mois', D(details.prixApres6mois), 'color:#f97316;font-weight:bold;')}
-          ${row('🔴 Après 12 mois', D(details.prixApres12mois), 'color:#e24b4a;font-weight:bold;')}
-        </div>
-      `;
-    }
-  } catch(e) {
-    console.error('Erreur détails offre:', e);
+    const det = JSON.parse(localStorage.getItem('orangeOfferDetails') || '{}');
+    const qm = det.qtyMap ? JSON.parse(det.qtyMap) : {};
+    hasSim = Object.keys(qm).some(k => qm[k] > 0);
+  } catch (e) {}
+  if (!hasSim) {
+    alert('⚠️ Configurez d\'abord l\'offre dans le simulateur Orange, puis cliquez sur "Récupérer les prix Orange".');
+    return;
   }
-  
-  // Ouvrir un popup ou page avec l'offre générée
-  const offre = `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-      <meta charset="UTF-8">
-      <title>Offre Orange - Comparatif</title>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .card { background: white; border-radius: 14px; padding: 30px; max-width: 550px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .header { background: #ff5a14; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; page-break-inside: avoid; break-inside: avoid; }
-        .logo { height: 70px; margin-bottom: 10px; }
-        .header-title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
-        .header-sub { font-size: 14px; opacity: 0.95; }
-        .section { border: 1px solid #ffb680; border-radius: 10px; padding: 16px; margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid; }
-        .section-title { font-size: 16px; font-weight: bold; color: #222; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .savings { background: #e8f5e9; border: 2px solid #66bb6a; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 16px; page-break-inside: avoid; break-inside: avoid; }
-        .savings-value { font-size: 36px; font-weight: bold; color: #2e7d32; }
-        .savings-sub { font-size: 14px; color: #2e7d32; margin-top: 8px; }
-        .price-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-        .price-row:last-child { border-bottom: none; }
-        .price-label { font-size: 14px; color: #333; }
-        .price-value { font-size: 14px; font-weight: bold; color: #ff5a14; }
-        .btn { background: #ff5a14; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; margin-top: 10px; width: 100%; }
-        .btn:hover { background: #e64a04; }
-        .footer { border-top: 1px solid #ddd; margin-top: 20px; padding-top: 15px; font-size: 12px; color: #666; text-align: center; page-break-inside: avoid; break-inside: avoid; }
-        .contact-info { font-size: 11px; line-height: 1.6; margin-top: 10px; }
-      </style>
-    </head>
-    <body>
-      <div class="card" id="pdf-content">
-        <div class="header">
-          <div class="header-title">Offre Orange</div>
-          <div class="header-sub">Passez de ${opName} à Orange</div>
-        </div>
-        
-        <div class="savings">
-          <div class="savings-value">${fmt(savings)}/mois</div>
-          <div class="savings-sub">Économies garanties</div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">Votre situation actuelle</div>
-          <div style="font-size: 15px; color: #333;"><strong>${opName}</strong></div>
-          <div style="font-size: 18px; font-weight: bold; color: #ff5a14; margin-top: 8px;">${fmt(oldDisplay)}/mois</div>
-        </div>
-        
-        ${offerDetailsHTML}
-        
-        <div class="section">
-          <div class="section-title">💰 Tarification Orange</div>
-          <div class="price-row">
-            <span class="price-label">🟢 Aujourd'hui</span>
-            <span class="price-value">${fmt(orangeDisplayToday)}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">🟡 Après 6 mois</span>
-            <span class="price-value">${fmt(orangeDisplay6)}</span>
-          </div>
-          <div class="price-row">
-            <span class="price-label">🔴 Après 12 mois</span>
-            <span class="price-value" style="color: #2e7d32;">${fmt(orangeDisplay12)}</span>
-          </div>
-        </div>
-        
-        ${qrImg ? `<div class="section" style="text-align:center;">
-          <div class="section-title" style="justify-content:center;">📲 Un proche est intéressé ?</div>
-          <div style="font-size:13px;color:#555;margin-bottom:8px;">Faites scanner ce code : il arrive directement chez ${consultantName}.</div>
-          <img src="${qrImg}" alt="QR code" style="width:120px;height:120px;">
-        </div>` : ''}
 
-        <div class="footer">
-          <img src="${logoUrl}" class="logo" crossorigin="anonymous" alt="Logo consultant" onerror="this.onerror=null;this.removeAttribute('crossorigin');this.src='${(window.pmDefaultLogoUrl||'https://app.phil-mobile.be/images/logo.png').replace(/'/g,"\\'")}'"><br>
-          <strong>${consultantName}</strong>
-          <div class="contact-info">
-            📞 ${consultantPhone}<br>
-            📧 ${consultantEmail}
-          </div>
-        </div>
-      </div>
+  // Garde l'état du comparateur pour le retrouver si on revient en arrière
+  try {
+    sessionStorage.setItem('pmCompState', JSON.stringify({
+      fiche: PM_QS.get('fiche') || '',
+      op: document.getElementById('operator-select').value,
+      amount: document.getElementById('amount-input').value,
+      tvac: isTVAC,
+      counters: counters
+    }));
+  } catch (e) {}
 
-      <div style="max-width:550px;margin:16px auto 0;">
-        <button class="btn" onclick="downloadOffrePDF()" id="pdf-download-btn">📄 Télécharger le PDF</button>
-      </div>
-      <script>
-      // Génère un PDF à UNE seule page, dont la hauteur s'ajuste exactement au contenu
-      // (identique à wp_orange.html — évite les coupures entre pages A4).
-      async function downloadOffrePDF(){
-        const btn=document.getElementById('pdf-download-btn');
-        btn.disabled=true;
-        btn.textContent='⏳ Génération en cours...';
-        const el=document.getElementById('pdf-content');
-
-        const genereAndSave=async()=>{
-          try{
-            const scale=2;
-            const canvas=await html2canvas(el,{scale:scale,useCORS:true});
-            const imgData=canvas.toDataURL('image/jpeg',0.98);
-            const mmPerPx=25.4/(96*scale);
-            const marginMm=10;
-            const pdfWidth=canvas.width*mmPerPx+marginMm*2;
-            const pdfHeight=canvas.height*mmPerPx+marginMm*2;
-            const { jsPDF }=window.jspdf;
-            const pdf=new jsPDF({unit:'mm',format:[pdfWidth,pdfHeight],orientation:'portrait'});
-            pdf.addImage(imgData,'JPEG',marginMm,marginMm,canvas.width*mmPerPx,canvas.height*mmPerPx);
-            pdf.save('Offre-Orange-${Date.now()}.pdf');
-          } finally {
-            btn.disabled=false;
-            btn.textContent='📄 Télécharger le PDF';
-          }
-        };
-
-        // Attend que le logo soit VRAIMENT chargé (avec ses vraies dimensions) avant de générer le PDF.
-        const logoImg=document.querySelector('#pdf-content img');
-        if(logoImg){
-          const attendreLogo=()=>new Promise(resolve=>{
-            const debut=Date.now();
-            const verifier=()=>{
-              if((logoImg.complete && logoImg.naturalWidth>0) || Date.now()-debut>4000) resolve();
-              else setTimeout(verifier,50);
-            };
-            verifier();
-          });
-          attendreLogo().then(genereAndSave);
-        } else {
-          genereAndSave();
-        }
-      }
-      <\/script>
-    </body>
-    </html>
-  `;
-  
-  const blob = new Blob([offre], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  if (win) win.location.href = url; else window.open(url, '_blank');
+  const p = pmFwdParams();
+  p.set('from', 'comparatif');
+  p.set('op', operators[document.getElementById('operator-select').value] || '');
+  if (oldAmount > 0) p.set('actuel', oldAmount.toFixed(2));
+  location.href = 'wp_orange.html?' + p.toString();
 }
 
 function calcComparator() {
@@ -697,8 +514,33 @@ window.storeOrangeTotal = function(total) {
 // Version — les pages consultant n'affichent que le numéro de build, pas le descriptif interne
 document.getElementById('app-version').textContent = (window.APP_VERSION || '?').split(' - ')[0];
 
+// Lien « Ouvrir le Simulateur Orange » : une offre créée là-bas s'attache aussi à la fiche d'origine
+(function () {
+  const a = document.getElementById('sim-link');
+  const p = pmFwdParams();
+  if (a && String(p)) a.href = 'wp_orange.html?' + p.toString();
+})();
+
 // Initial
 calcComparator();
+
+// Retour depuis l'offre (même fiche) : on retrouve l'opérateur, le montant et les compteurs saisis
+(function () {
+  try {
+    const st = JSON.parse(sessionStorage.getItem('pmCompState') || 'null');
+    sessionStorage.removeItem('pmCompState');
+    if (!st || st.fiche !== (PM_QS.get('fiche') || '')) return;
+    const sel = document.getElementById('operator-select');
+    if (st.op && sel) sel.value = st.op;
+    if (st.amount) document.getElementById('amount-input').value = st.amount;
+    if (st.counters) Object.keys(counters).forEach(k => {
+      counters[k] = Math.max(0, parseInt(st.counters[k], 10) || 0);
+      document.getElementById('qty-' + k).textContent = counters[k];
+    });
+    updateOperatorName();
+    setTVAC(st.tvac !== false);
+  } catch (e) {}
+})();
 </script>
 
 <!-- FIREBASE AUTH - LOGIN SCREEN -->
@@ -805,18 +647,6 @@ calcComparator();
       pmUpdateConsultantDisplay();
     }
     
-    // QR de contact du consultant : mêmes règles que wp_orange.html / wp_contact.html (formulaire ouvert, profil actif)
-    window.pmQrUrlIfAllowed = async function () {
-      const cid = (window.consultantInfo || {}).id;
-      if (!cid) return '';
-      try {
-        const [qs, ps] = await Promise.all([getDoc(doc(db, 'settings', 'qrMode')), getDoc(doc(db, 'profilsPublics', cid))]);
-        const q = qs.exists() ? qs.data() : null, pr = ps.exists() ? ps.data() : null;
-        const ok = !!q && !!pr && pr.active === true && (pr.expiresAtMs == null || Date.now() < pr.expiresAtMs) && (q.mode === 'all' || (Array.isArray(q.pilotIds) && q.pilotIds.indexOf(cid) >= 0));
-        return ok ? 'https://app.phil-mobile.be/wp_contact.html?c=' + encodeURIComponent(cid) + '&type=client' : '';
-      } catch (e) { return ''; }
-    };
-
     // Créer les éléments de login
     const loginHTML = `
       <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f5f5f5;font-family:Arial;padding:20px;">
