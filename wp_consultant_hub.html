@@ -9589,19 +9589,15 @@ window.pmFactApi = {
     if (!window.geminiImportModel) throw new Error("Le service de lecture n'est pas encore prêt, réessaie dans un instant.");
     var mime = isPdf ? 'application/pdf' : (file.type || (/\.png$/i.test(file.name) ? 'image/png' : 'image/jpeg'));
     var prompt = crmFactBuildPrompt()
-      .replace('"smartphone": false }', '"smartphone": false, "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0, "lignes": [ { "libelle": "", "montantTvac": 0 } ] }')
-      .replace("- N'ajoute AUCUN champ", "- nbFixe / nbInternet / nbMobile / nbTv / nbDecodeur = nombre de lignes fixes, connexions internet, abonnements mobiles, abonnements TV et décodeurs supplémentaires, UNIQUEMENT si la facture les détaille clairement ; sinon 0 (ne devine jamais).\n- "lignes" = le détail MENSUEL de la facture, une entrée par abonnement ou option récurrente (ex: « Mobile Large 29,00 », « Internet 49,00 », « Option WiFi 10,00 »). "libelle" court (80 caractères max), "montantTvac" = montant mensuel TVA comprise (si la facture affiche les lignes HTVA, multiplie par 1,21). Ignore les remises globales, les frais uniques, les consommations hors forfait, les totaux et sous-totaux. Tableau vide [] si la facture ne détaille pas clairement ses lignes (ne devine jamais).\n- Le document peut être une photo : lis-la attentivement.\n- N'ajoute AUCUN champ");
+      .replace('"smartphone": false }', '"smartphone": false, "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0 }')
+      .replace("- N'ajoute AUCUN champ", "- nbFixe / nbInternet / nbMobile / nbTv / nbDecodeur = nombre de lignes fixes, connexions internet, abonnements mobiles, abonnements TV et décodeurs supplémentaires, UNIQUEMENT si la facture les détaille clairement ; sinon 0 (ne devine jamais).\n- Le document peut être une photo : lis-la attentivement.\n- N'ajoute AUCUN champ");
     var base64 = await ctrFileToBase64(file);
     var result = await window.geminiImportModel.generateContent([{ inlineData: { mimeType: mime, data: base64 } }, { text: prompt }]);
     var raw = result.response.text(), m = raw.match(/\{[\s\S]*\}/);
     var data = JSON.parse(m ? m[0] : raw);
     var meta = crmFactCleanMeta(data, file);
     var n = function (k) { var x = parseInt(data[k], 10); return isFinite(x) && x > 0 && x < 50 ? x : 0; };
-    var lignes = (Array.isArray(data.lignes) ? data.lignes : []).map(function (l) {
-      var mt = parseFloat(String(l && l.montantTvac).replace(',', '.'));
-      return { libelle: String((l && l.libelle) || '').replace(/\s+/g, ' ').trim().slice(0, 80), montantTvac: (isFinite(mt) && mt > 0 && mt < 5000) ? Math.round(mt * 100) / 100 : 0 };
-    }).filter(function (l) { return l.libelle && l.montantTvac > 0; }).slice(0, 15);
-    return { meta: meta, counts: { phone: n('nbFixe'), inet: n('nbInternet'), mob: n('nbMobile'), tv: n('nbTv'), dec: n('nbDecodeur') }, lignes: lignes };
+    return { meta: meta, counts: { phone: n('nbFixe'), inet: n('nbInternet'), mob: n('nbMobile'), tv: n('nbTv'), dec: n('nbDecodeur') } };
   },
   async ficheInfo(coll, id) {
     if (coll !== 'prospectsClients' && coll !== 'clients') return null;

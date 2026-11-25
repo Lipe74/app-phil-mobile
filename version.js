@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.131 - Comparateur : compteurs et lignes de la facture conservés";
+  scope.APP_VERSION = "14.132 - Retour à la version stable du comparateur (14.130)";
 })();
