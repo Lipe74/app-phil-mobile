@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.130 - Comparateur : offre A4 avec comparatif opérateur + options en plus";
+  scope.APP_VERSION = "14.131 - Comparateur : compteurs et lignes de la facture conservés";
 })();
