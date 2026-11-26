@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.133 - Facture : détail, lignes et Easy Switch";
+  scope.APP_VERSION = "14.135 - Formulaire de contact, factures et offres";
 })();

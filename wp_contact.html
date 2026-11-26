@@ -143,6 +143,37 @@
     @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
     [hidden] { display: none !important; }
     @media (max-width: 380px) { .grid { grid-template-columns: 1fr; } }
+
+    /* ===== Blocs encadrés (Build 14.135) ===== */
+    .blk { border: 1.5px solid var(--line); border-radius: 14px; background: #fff; margin: 0 0 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(6, 43, 104, .05); }
+    .blk-h { display: flex; align-items: center; gap: 10px; padding: 11px 14px; color: #fff; font-weight: 800; font-size: 15px; list-style: none; cursor: default; }
+    .blk-h small { font-weight: 600; opacity: .85; font-size: 12px; }
+    .blk-i { font-size: 18px; line-height: 1; }
+    details.blk > summary.blk-h { cursor: pointer; }
+    details.blk > summary.blk-h::-webkit-details-marker { display: none; }
+    details.blk > summary.blk-h::after { content: '▾'; margin-left: auto; transition: transform .15s; }
+    details.blk[open] > summary.blk-h::after { transform: rotate(180deg); }
+    .blk-b { padding: 14px; }
+    .blk-b.grid { display: grid; }
+    .c-orange .blk-h { background: var(--orange); }
+    .c-blue .blk-h { background: var(--blue); }
+    .c-green .blk-h { background: var(--green); }
+    .c-navy .blk-h { background: var(--navy); }
+    details.blk { padding: 0; }
+    details.blk[open] > summary.blk-h { border-bottom: 0; margin-bottom: 0; }
+    .blk .choice label { background: #fff; }
+    .note { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
+    .upz { border: 1.5px dashed var(--line); border-radius: 12px; padding: 10px 12px; background: #f8fafc; }
+    .upbtn { display: inline-block; padding: 9px 14px; border-radius: 10px; border: 1.5px solid var(--blue); color: var(--blue); background: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+    .upin { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+    .upin:focus-visible + .upname, .upz:focus-within .upbtn { outline: 3px solid rgba(249, 115, 22, .55); }
+    .upname { margin-top: 6px; font-size: 13px; color: var(--ink); word-break: break-all; }
+    .upname button { border: 0; background: transparent; color: var(--danger); font-weight: 800; cursor: pointer; font-size: 14px; margin-left: 6px; }
+    .prog { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0 0 14px; }
+    .prog-seg { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+    .prog-seg i { display: block; height: 100%; width: 0; background: var(--orange); transition: width .25s; }
+    .prog-txt { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--muted); text-align: right; }
+    .blk .grid { gap: 12px; }
   </style>
 </head>
 <body>
@@ -185,80 +216,95 @@
         <form id="form" novalidate autocomplete="on">
           <div class="hp" aria-hidden="true"><label>Ne pas remplir <input type="text" name="website" id="hp" tabindex="-1" autocomplete="off"></label></div>
 
-          <div class="grid">
-            <div>
-              <label class="f" for="prenom">Prénom</label>
-              <input type="text" id="prenom" name="given-name" autocomplete="given-name" maxlength="50" required>
-              <div class="err" data-err="prenom"></div>
-            </div>
-            <div>
-              <label class="f" for="nom">Nom</label>
-              <input type="text" id="nom" name="family-name" autocomplete="family-name" maxlength="50" required>
-              <div class="err" data-err="nom"></div>
-            </div>
-            <div class="full">
-              <label class="f" for="tel">Téléphone</label>
-              <input type="tel" id="tel" name="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="0470 12 34 56" required>
-              <div class="err" data-err="tel"></div>
-            </div>
-            <div class="full">
-              <label class="f" for="email">E-mail</label>
-              <input type="email" id="email" name="email" autocomplete="email" inputmode="email" maxlength="100" required>
-              <div class="err" data-err="email"></div>
-            </div>
-            <div class="full">
-              <label class="f">Vous venez de la part de quelqu'un ? <small>(facultatif)</small></label>
-            </div>
-            <div>
-              <label class="f" for="refPrenom">Prénom du référent</label>
-              <input type="text" id="refPrenom" maxlength="60" autocomplete="off">
-            </div>
-            <div>
-              <label class="f" for="refNom">Nom du référent</label>
-              <input type="text" id="refNom" maxlength="60" autocomplete="off">
-            </div>
-            <div class="full">
-              <label class="f" for="refTel">GSM du référent</label>
-              <input type="tel" id="refTel" maxlength="24" inputmode="tel" placeholder="0470 12 34 56" autocomplete="off">
-              <div class="err" data-err="refTel"></div>
-            </div>
+          <div class="prog" id="prog" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="1" aria-label="Avancement du formulaire">
+            <div class="prog-seg"><i></i></div><div class="prog-seg"><i></i></div><div class="prog-seg"><i></i></div><div class="prog-seg"><i></i></div>
+            <div class="prog-txt" id="prog-txt">Étape 1 sur 4</div>
           </div>
+
+          <!-- ===== COORDONNÉES ===== -->
+          <section class="blk c-orange" id="b-coord">
+            <div class="blk-h"><span class="blk-i">👤</span><span>Vos coordonnées</span></div>
+            <div class="blk-b grid">
+              <div>
+                <label class="f" for="prenom">Prénom</label>
+                <input type="text" id="prenom" name="given-name" autocomplete="given-name" maxlength="50" required>
+                <div class="err" data-err="prenom"></div>
+              </div>
+              <div>
+                <label class="f" for="nom">Nom</label>
+                <input type="text" id="nom" name="family-name" autocomplete="family-name" maxlength="50" required>
+                <div class="err" data-err="nom"></div>
+              </div>
+              <div class="full">
+                <label class="f" for="tel">Téléphone</label>
+                <input type="tel" id="tel" name="tel" autocomplete="tel" inputmode="tel" maxlength="24" placeholder="0470 12 34 56" required>
+                <div class="err" data-err="tel"></div>
+              </div>
+              <div class="full">
+                <label class="f" for="email">E-mail</label>
+                <input type="email" id="email" name="email" autocomplete="email" inputmode="email" maxlength="100" required>
+                <div class="err" data-err="email"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ===== RÉFÉRENT (repliable) ===== -->
+          <details class="blk c-navy" id="b-ref">
+            <summary class="blk-h"><span class="blk-i">👥</span><span>Vous venez de la part de quelqu'un ? <small>(facultatif)</small></span></summary>
+            <div class="blk-b grid">
+              <div>
+                <label class="f" for="refPrenom">Prénom du référent</label>
+                <input type="text" id="refPrenom" maxlength="60" autocomplete="off">
+              </div>
+              <div>
+                <label class="f" for="refNom">Nom du référent</label>
+                <input type="text" id="refNom" maxlength="60" autocomplete="off">
+              </div>
+              <div class="full">
+                <label class="f" for="refTel">GSM du référent</label>
+                <input type="tel" id="refTel" maxlength="24" inputmode="tel" placeholder="0470 12 34 56" autocomplete="off">
+                <div class="err" data-err="refTel"></div>
+              </div>
+            </div>
+          </details>
 
           <!-- ===== CLIENT ===== -->
           <div id="part-client">
-            <hr class="sep">
-            <div class="grid">
-              <div class="full">
-                <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Vous êtes</span>
-                <div class="choice">
-                  <label><input type="radio" name="typeClient" value="Particulier" checked><span>Client privé</span></label>
-                  <label><input type="radio" name="typeClient" value="Société"><span>Indépendant / société</span></label>
+            <section class="blk c-blue" id="b-profil">
+              <div class="blk-h"><span class="blk-i">🏠</span><span>Votre profil</span></div>
+              <div class="blk-b grid">
+                <div class="full">
+                  <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Vous êtes</span>
+                  <div class="choice">
+                    <label><input type="radio" name="typeClient" value="Particulier" checked><span>Client privé</span></label>
+                    <label><input type="radio" name="typeClient" value="Société"><span>Indépendant / société</span></label>
+                  </div>
+                </div>
+                <div class="full grid" id="soc-row" hidden style="padding:0;">
+                  <div>
+                    <label class="f" for="societe">Nom de la société <small>(facultatif)</small></label>
+                    <input type="text" id="societe" maxlength="100" autocomplete="organization">
+                  </div>
+                  <div>
+                    <label class="f" for="tvaClient">N° de TVA <small>(facultatif)</small></label>
+                    <input type="text" id="tvaClient" maxlength="20" placeholder="BE0123456789">
+                    <div class="err" data-err="tvaClient"></div>
+                  </div>
+                </div>
+                <div class="full">
+                  <label class="f" for="interet">Ça m'intéresse</label>
+                  <select id="interet">
+                    <option value="Orange">Mobile, internet, TV</option>
+                    <option value="Eneco">Énergie (électricité, gaz)</option>
+                    <option value="Orange + Eneco">Les deux</option>
+                  </select>
                 </div>
               </div>
-              <div class="full grid" id="soc-row" hidden style="padding:0;">
-                <div>
-                  <label class="f" for="societe">Nom de la société <small>(facultatif)</small></label>
-                  <input type="text" id="societe" maxlength="100" autocomplete="organization">
-                </div>
-                <div>
-                  <label class="f" for="tvaClient">N° de TVA <small>(facultatif)</small></label>
-                  <input type="text" id="tvaClient" maxlength="20" placeholder="BE0123456789">
-                  <div class="err" data-err="tvaClient"></div>
-                </div>
-              </div>
-              <div class="full">
-                <label class="f" for="interet">Ça m'intéresse</label>
-                <select id="interet">
-                  <option value="Orange">Mobile, internet, TV</option>
-                  <option value="Eneco">Énergie (électricité, gaz)</option>
-                  <option value="Orange + Eneco">Les deux</option>
-                </select>
-              </div>
-            </div>
+            </section>
 
-            <details>
-              <summary>Mes abonnements actuels (facultatif)</summary>
-              <div class="grid">
+            <details class="blk c-green" id="b-abos">
+              <summary class="blk-h"><span class="blk-i">📡</span><span>Mes abonnements actuels <small>(facultatif · factures PDF)</small></span></summary>
+              <div class="blk-b grid">
                 <div>
                   <label class="f" for="opMobile">Opérateur mobile</label>
                   <select id="opMobile">
@@ -277,6 +323,20 @@
                   <label class="f" for="numMobile">N° client chez mon opérateur mobile</label>
                   <input type="text" id="numMobile" maxlength="40">
                 </div>
+                <div class="full upz" data-kind="mobile">
+                  <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">📱 Ma facture mobile <small>(PDF, facultatif)</small></span>
+                  <label class="upbtn" for="fMobile">📎 Ajouter ma facture</label>
+                  <input type="file" id="fMobile" class="upin" accept="application/pdf,.pdf">
+                  <div class="upname" id="nMobile" hidden></div>
+                  <div class="err" data-err="fMobile"></div>
+                </div>
+
+                <div class="full">
+                  <label class="consent" style="margin:2px 0 0;color:var(--ink);font-weight:600;">
+                    <input type="checkbox" id="sepInternet">
+                    <span>Mon internet est chez un autre opérateur ou sur une autre facture</span>
+                  </label>
+                </div>
                 <div>
                   <label class="f" for="opInternet">Opérateur internet</label>
                   <select id="opInternet">
@@ -294,6 +354,14 @@
                   <label class="f" for="numInternet">N° client chez mon opérateur internet</label>
                   <input type="text" id="numInternet" maxlength="40">
                 </div>
+                <div class="full upz" data-kind="internet" id="z-internet" hidden>
+                  <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">🌐 Ma facture internet <small>(PDF, facultatif)</small></span>
+                  <label class="upbtn" for="fInternet">📎 Ajouter ma facture</label>
+                  <input type="file" id="fInternet" class="upin" accept="application/pdf,.pdf">
+                  <div class="upname" id="nInternet" hidden></div>
+                  <div class="err" data-err="fInternet"></div>
+                </div>
+
                 <div class="full">
                   <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Ligne fixe (téléphone)</span>
                   <div class="choice">
@@ -314,63 +382,78 @@
                     <option>Mega</option><option>Autre</option><option>Je ne sais pas</option>
                   </select>
                 </div>
+                <div class="full upz" data-kind="energie">
+                  <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">⚡ Ma facture d'énergie <small>(PDF, facultatif)</small></span>
+                  <label class="upbtn" for="fEnergie">📎 Ajouter ma facture</label>
+                  <input type="file" id="fEnergie" class="upin" accept="application/pdf,.pdf">
+                  <div class="upname" id="nEnergie" hidden></div>
+                  <div class="err" data-err="fEnergie"></div>
+                </div>
+                <p class="notice full" style="margin:0;">Vos factures servent uniquement à établir votre offre. PDF, 10 Mo maximum chacune.</p>
               </div>
             </details>
 
-            <div style="margin-top:12px;">
-              <label class="f" for="msgClient">Un message ? <small>(facultatif)</small></label>
-              <textarea id="msgClient" maxlength="800"></textarea>
-            </div>
+            <section class="blk c-orange" id="b-msg">
+              <div class="blk-h"><span class="blk-i">💬</span><span>Un message ? <small>(facultatif)</small></span></div>
+              <div class="blk-b">
+                <textarea id="msgClient" maxlength="800" aria-label="Votre message"></textarea>
+              </div>
+            </section>
           </div>
 
           <!-- ===== FUTUR CONSULTANT ===== -->
           <div id="part-consultant" hidden>
-            <hr class="sep">
-            <div class="grid">
-              <div class="full">
-                <label class="f" for="statutPro">Ma situation actuelle</label>
-                <select id="statutPro">
-                  <option value="">Choisir</option>
-                  <option>Salarié</option><option>Indépendant</option><option>Chômage</option>
-                  <option>Autres revenus</option><option>Sans revenus</option>
-                </select>
-                <div class="err" data-err="statutPro"></div>
-              </div>
-              <div class="full" id="tva-row" hidden>
-                <label class="f" for="tvaConsultant">N° de TVA <small>(facultatif)</small></label>
-                <input type="text" id="tvaConsultant" maxlength="20" placeholder="BE0123456789">
-                <div class="err" data-err="tvaConsultant"></div>
-              </div>
-              <div class="full">
-                <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Avez-vous déjà un numéro d'entreprise ?</span>
-                <div class="choice">
-                  <label><input type="radio" name="aEntreprise" value="Oui"><span>Oui</span></label>
-                  <label><input type="radio" name="aEntreprise" value="Non"><span>Non</span></label>
+            <section class="blk c-blue" id="b-situation">
+              <div class="blk-h"><span class="blk-i">💼</span><span>Votre situation</span></div>
+              <div class="blk-b grid">
+                <div class="full">
+                  <label class="f" for="statutPro">Ma situation actuelle</label>
+                  <select id="statutPro">
+                    <option value="">Choisir</option>
+                    <option>Salarié</option><option>Indépendant</option><option>Chômage</option>
+                    <option>Autres revenus</option><option>Sans revenus</option>
+                  </select>
+                  <div class="err" data-err="statutPro"></div>
                 </div>
-                <div class="err" data-err="aEntreprise"></div>
+                <div class="full note" id="onem-note" role="note" hidden>
+                  <b>⚠️ Bon à savoir</b> : si vous percevez des allocations (chômage, CPAS…) ou n'avez pas de revenus, démarrer une activité d'indépendant peut avoir un impact sur vos droits. Renseignez-vous avant de vous lancer auprès de l'ONEM (via votre syndicat ou la CAPAC), de votre CPAS ou du Forem.
+                </div>
+                <div class="full" id="tva-row" hidden>
+                  <label class="f" for="tvaConsultant">N° de TVA <small>(facultatif)</small></label>
+                  <input type="text" id="tvaConsultant" maxlength="20" placeholder="BE0123456789">
+                  <div class="err" data-err="tvaConsultant"></div>
+                </div>
+                <div class="full">
+                  <span class="f" style="display:block;font-size:13px;font-weight:700;margin-bottom:4px;">Avez-vous déjà un numéro d'entreprise ?</span>
+                  <div class="choice">
+                    <label><input type="radio" name="aEntreprise" value="Oui"><span>Oui</span></label>
+                    <label><input type="radio" name="aEntreprise" value="Non"><span>Non</span></label>
+                  </div>
+                  <div class="err" data-err="aEntreprise"></div>
+                </div>
+                <div>
+                  <label class="f" for="province">Province</label>
+                  <select id="province">
+                    <option value="">Choisir</option>
+                    <option>Anvers</option><option>Brabant flamand</option><option>Brabant wallon</option>
+                    <option>Bruxelles-Capitale</option><option>Flandre occidentale</option><option>Flandre orientale</option>
+                    <option>Hainaut</option><option>Liège</option><option>Limbourg</option><option>Luxembourg</option><option>Namur</option>
+                  </select>
+                  <div class="err" data-err="province"></div>
+                </div>
+                <div>
+                  <label class="f" for="dispo">Disponibilité <small>(facultatif)</small></label>
+                  <select id="dispo">
+                    <option value="">Choisir</option>
+                    <option>Immédiatement</option><option>Dans le mois</option><option>Dans 3 mois</option><option>Plus tard</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label class="f" for="province">Province</label>
-                <select id="province">
-                  <option value="">Choisir</option>
-                  <option>Anvers</option><option>Brabant flamand</option><option>Brabant wallon</option>
-                  <option>Bruxelles-Capitale</option><option>Flandre occidentale</option><option>Flandre orientale</option>
-                  <option>Hainaut</option><option>Liège</option><option>Limbourg</option><option>Luxembourg</option><option>Namur</option>
-                </select>
-                <div class="err" data-err="province"></div>
-              </div>
-              <div>
-                <label class="f" for="dispo">Disponibilité <small>(facultatif)</small></label>
-                <select id="dispo">
-                  <option value="">Choisir</option>
-                  <option>Immédiatement</option><option>Dans le mois</option><option>Dans 3 mois</option><option>Plus tard</option>
-                </select>
-              </div>
-              <div class="full">
-                <label class="f" for="msgConsultant">Message / motivation <small>(facultatif)</small></label>
-                <textarea id="msgConsultant" maxlength="800"></textarea>
-              </div>
-              <div class="full">
+            </section>
+
+            <section class="blk c-green" id="b-frais">
+              <div class="blk-h"><span class="blk-i">💶</span><span>Frais de démarrage</span></div>
+              <div class="blk-b">
                 <div class="fees" role="note" aria-label="Frais de démarrage">
                   <span class="fees-title">Frais de démarrage (uniques)</span>
                   <ul>
@@ -386,17 +469,30 @@
                   <div class="err" data-err="feesAck"></div>
                 </div>
               </div>
-            </div>
+            </section>
+
+            <section class="blk c-orange" id="b-msgc">
+              <div class="blk-h"><span class="blk-i">💬</span><span>Message / motivation <small>(facultatif)</small></span></div>
+              <div class="blk-b">
+                <textarea id="msgConsultant" maxlength="800" aria-label="Message ou motivation"></textarea>
+              </div>
+            </section>
           </div>
 
-          <label class="consent">
-            <input type="checkbox" id="consent">
-            <span>J'accepte que mes données soient utilisées par Phil-Mobile pour me recontacter au sujet de ma demande. Je peux demander leur suppression à tout moment (infos@phil-mobile.be).</span>
-          </label>
-          <div class="err" data-err="consent"></div>
-
-          <button type="submit" class="submit" id="submit">Envoyer</button>
-          <div class="err" id="form-error" role="alert" style="text-align:center;margin-top:8px;"></div>
+          <!-- ===== ENVOI ===== -->
+          <section class="blk c-navy" id="b-send">
+            <div class="blk-h"><span class="blk-i">✅</span><span>Envoi</span></div>
+            <div class="blk-b">
+              <label class="consent" style="margin-top:0;">
+                <input type="checkbox" id="consent">
+                <span>J'accepte que mes données soient utilisées par Phil-Mobile pour me recontacter au sujet de ma demande. Je peux demander leur suppression à tout moment (infos@phil-mobile.be).</span>
+              </label>
+              <div class="err" data-err="consent"></div>
+              <p class="notice" id="consent-fact-row" hidden>Les factures jointes sont utilisées uniquement pour établir votre offre.</p>
+              <button type="submit" class="submit" id="submit">Envoyer</button>
+              <div class="err" id="form-error" role="alert" style="text-align:center;margin-top:8px;"></div>
+            </div>
+          </section>
         </form>
       </section>
     </div>
@@ -418,6 +514,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getFirestore, doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app-check.js";
+import { getStorage, ref as sRef, uploadBytes } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDagghvP8ujE0fdUcYsOfmLaXps2ZSUexo",
@@ -433,6 +530,7 @@ try {
   initializeAppCheck(app, { provider: new ReCaptchaV3Provider("6LfMXVYtAAAAAJgXbh8X_e9Bgfx5ZBTkdA9gT0Rx"), isTokenAutoRefreshEnabled: true });
 } catch (e) { console.warn('App Check indisponible:', e.message); }
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -444,7 +542,9 @@ function prefillRef() {
   const rp = cut(params.get('rp'), 60), rn = cut(params.get('rn'), 60), rt = cut(params.get('rt'), 24);
   if (rp) $('refPrenom').value = rp;
   if (rn) $('refNom').value = rn;
-  if (rt && /^\+?[\d\s.\-]{8,24}$/.test(rt)) $('refTel').value = rt;
+  if (rt && /^\+?[\d\s.\-]{8,24}$/.test(rt)) $('refTel').value = telFmt(rt);
+  if (rp || rn || rt) $('b-ref').open = true;   // référent pré-rempli par le QR : le bloc s'ouvre
+  updateProgress();
 }
 let profil = null;
 const openedAt = Date.now();
@@ -553,6 +653,7 @@ function applyType() {
   $('part-client').hidden = currentType !== 'client';
   $('part-consultant').hidden = currentType !== 'consultant';
   clearErrors();
+  updateProgress();
 }
 $('seg-client').onclick = () => { currentType = 'client'; applyType(); };
 $('seg-consultant').onclick = () => { currentType = 'consultant'; applyType(); };
@@ -560,7 +661,76 @@ document.querySelectorAll('input[name=typeClient]').forEach(r => r.addEventListe
   $('soc-row').hidden = document.querySelector('input[name=typeClient]:checked').value !== 'Société';
 }));
 $('tel').addEventListener('blur', () => { const v = $('tel').value.trim(); if (v) $('tel').value = telFmt(v); });
-$('statutPro').addEventListener('change', () => { $('tva-row').hidden = $('statutPro').value !== 'Indépendant'; });
+$('refTel').addEventListener('blur', () => { const v = $('refTel').value.trim(); if (v) $('refTel').value = telFmt(v); });
+const ONEM_STATUTS = ['Chômage', 'Autres revenus', 'Sans revenus'];
+const onemShown = () => currentType === 'consultant' && ONEM_STATUTS.indexOf($('statutPro').value) >= 0;
+$('statutPro').addEventListener('change', () => {
+  $('tva-row').hidden = $('statutPro').value !== 'Indépendant';
+  $('onem-note').hidden = ONEM_STATUTS.indexOf($('statutPro').value) < 0;
+});
+$('sepInternet').addEventListener('change', () => {
+  $('z-internet').hidden = !$('sepInternet').checked;
+  if (!$('sepInternet').checked) clearFile('internet');
+});
+
+/* ---------- Factures PDF (mobile / internet / énergie) ---------- */
+const MAX_PDF = 10 * 1024 * 1024;
+const PDF_IDS = { mobile: ['fMobile', 'nMobile'], internet: ['fInternet', 'nInternet'], energie: ['fEnergie', 'nEnergie'] };
+const pdfFiles = { mobile: null, internet: null, energie: null };
+async function isRealPdf(file) {
+  try { const b = new Uint8Array(await file.slice(0, 5).arrayBuffer()); return String.fromCharCode.apply(null, b).indexOf('%PDF') === 0; }
+  catch (e) { return false; }
+}
+function clearFile(kind) {
+  pdfFiles[kind] = null;
+  const [inId, nameId] = PDF_IDS[kind];
+  $(inId).value = ''; $(nameId).hidden = true; $(nameId).textContent = '';
+  $('consent-fact-row').hidden = !Object.values(pdfFiles).some(Boolean);
+}
+Object.keys(PDF_IDS).forEach(kind => {
+  const [inId, nameId] = PDF_IDS[kind];
+  $(inId).addEventListener('change', async () => {
+    setErr(inId, '');
+    const f = $(inId).files && $(inId).files[0];
+    if (!f) { clearFile(kind); return; }
+    if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') { clearFile(kind); setErr(inId, 'Seuls les fichiers PDF sont acceptés.'); return; }
+    if (f.size > MAX_PDF) { clearFile(kind); setErr(inId, 'Fichier trop lourd (10 Mo maximum).'); return; }
+    if (f.size < 100 || !(await isRealPdf(f))) { clearFile(kind); setErr(inId, 'Ce fichier ne semble pas être un PDF valide.'); return; }
+    pdfFiles[kind] = f;
+    const box = $(nameId);
+    box.textContent = '✅ ' + f.name + ' ';
+    const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Retirer la facture');
+    x.onclick = () => clearFile(kind);
+    box.appendChild(x); box.hidden = false;
+    $('consent-fact-row').hidden = false;
+  });
+});
+async function uploadFacture(kind, file) {
+  const safe = (file.name || 'facture.pdf').replace(/[^\w.\-]+/g, '_').slice(-60);
+  const rnd = Math.random().toString(36).slice(2, 10);
+  const path = 'qrFactures/' + cid + '/' + Date.now() + '_' + kind + '_' + rnd + '.pdf';
+  await uploadBytes(sRef(storage, path), file, { contentType: 'application/pdf' });
+  return { path, name: (file.name || 'facture.pdf').slice(0, 80), kind, size: file.size, uploadedAt: new Date().toISOString() };
+}
+
+/* ---------- Barre de progression (4 étapes) ---------- */
+function updateProgress() {
+  const req = [
+    !!$('prenom').value.trim(), !!$('nom').value.trim(), telOk($('tel').value),
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($('email').value.trim()), $('consent').checked
+  ];
+  if (currentType === 'consultant') {
+    req.push(!!$('statutPro').value, !!$('province').value, !!document.querySelector('input[name=aEntreprise]:checked'), $('feesAck').checked);
+  }
+  const pct = req.filter(Boolean).length / req.length;
+  const filled = Math.floor(pct * 4 + 1e-9);
+  document.querySelectorAll('#prog .prog-seg i').forEach((el, i) => { el.style.width = Math.max(0, Math.min(1, pct * 4 - i)) * 100 + '%'; });
+  const step = Math.min(4, filled + 1);
+  $('prog-txt').textContent = filled >= 4 ? 'Étape 4 sur 4 · prêt à envoyer ✅' : 'Étape ' + step + ' sur 4';
+  $('prog').setAttribute('aria-valuenow', String(step));
+}
+$('form').addEventListener('input', updateProgress);
+$('form').addEventListener('change', updateProgress);
 
 /* ---------- Frais de démarrage (montants TVAC) ---------- */
 const FEES = { starter: 96.99, bce: 134.92 };
@@ -705,6 +875,7 @@ function buildPayload() {
     statutPro: stat,
     tva: stat === 'Indépendant' && $('tvaConsultant').value.trim() ? normalizeTva($('tvaConsultant').value) : '',
     province: $('province').value,
+    ...(onemShown() ? { onemAvertissement: true, onemAvertissementDate: now } : {}),
     aNumeroEntreprise: document.querySelector('input[name=aEntreprise]:checked').value,
     fraisAcceptes: true,
     fraisMontantTVAC: feesTotal(),
@@ -723,8 +894,29 @@ $('form').addEventListener('submit', async (ev) => {
   btn.disabled = true; btn.textContent = 'Envoi…';
   try {
     const [col, data] = buildPayload();
-    await addDoc(collection(db, col), data);
-    $('done-text').textContent = (profil.name || 'Votre conseiller') + ' vous recontacte très vite. Vous pouvez enregistrer son contact dans votre téléphone.';
+    // Factures PDF : déposées d'abord ; si l'une échoue, la demande part quand même (sans cette facture)
+    const factures = [], failed = [];
+    if (currentType === 'client') {
+      for (const kind of Object.keys(pdfFiles)) {
+        if (!pdfFiles[kind]) continue;
+        if (kind === 'internet' && !$('sepInternet').checked) continue;
+        try { factures.push(await uploadFacture(kind, pdfFiles[kind])); }
+        catch (e) { console.warn('Facture ' + kind + ' non envoyée:', e.message); failed.push(kind); }
+      }
+      if (factures.length) data.facturesQR = factures;
+    }
+    try {
+      await addDoc(collection(db, col), data);
+    } catch (e1) {
+      // Règles Firestore plus strictes sur les champs : on renvoie la demande sans les champs ajoutés
+      if (e1 && e1.code === 'permission-denied' && (data.facturesQR || data.onemAvertissement)) {
+        delete data.facturesQR; delete data.onemAvertissement; delete data.onemAvertissementDate;
+        await addDoc(collection(db, col), data);
+        if (factures.length) failed.push('rattachement');
+      } else throw e1;
+    }
+    $('done-text').textContent = (profil.name || 'Votre conseiller') + ' vous recontacte très vite. Vous pouvez enregistrer son contact dans votre téléphone.'
+      + (failed.length ? ' Votre demande est bien reçue, mais votre facture n\'a pas pu être jointe : vous pourrez la remettre à votre conseiller.' : '');
     show('view-done');
     window.scrollTo(0, 0);
   } catch (e) {

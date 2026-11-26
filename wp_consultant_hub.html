@@ -8827,6 +8827,10 @@ function pcoQrExtras(p) {
   // Frais de démarrage (wp_contact.html, Build 14.52) : n° d'entreprise + frais acceptés
   if (p.aNumeroEntreprise === 'Oui') out += '<div style="font-size:12px;color:#555;">🪪 N° d\'entreprise : Oui</div>';
   else if (p.aNumeroEntreprise === 'Non') out += '<div style="font-size:12px;color:#c2410c;font-weight:700;">🪪 N° d\'entreprise : Non (à prévoir)</div>';
+  if (p.onemAvertissement === true) {
+    var od = p.onemAvertissementDate ? new Date(p.onemAvertissementDate) : null;
+    out += '<div style="font-size:12px;color:#92400e;font-weight:700;">⚠️ A vu l\'avertissement droits / allocations (ONEM)' + (od && !isNaN(od) ? ' · ' + pcEsc(od.toLocaleDateString('fr-BE')) : '') + '</div>';
+  }
   if (p.fraisAcceptes === true) {
     var fr = (p.fraisMontantTVAC === null || p.fraisMontantTVAC === undefined || isNaN(Number(p.fraisMontantTVAC))) ? ''
       : ' · ' + Number(p.fraisMontantTVAC).toLocaleString('fr-BE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' € TVAC';
@@ -9550,6 +9554,74 @@ window.pclUseFactAddr = async function (docId) {
   try { await window.updateDoc(window.doc(window.db, 'prospectsClients', docId), patch); pcToast('📍 Adresse reprise depuis la facture.'); }
   catch (e) { alert('Erreur: ' + e.message); }
 };
+// Bouton « 🧾 Ajouter une facture opérateur » de la fiche : choix du PDF, puis même lecture / contrôle que « Joindre une facture » de la fenêtre d'édition
+window.pclFactAddFromCard = function (docId) {
+  var inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/pdf,.pdf'; inp.style.display = 'none';
+  inp.onchange = async function () {
+    var f = inp.files && inp.files[0];
+    inp.remove();
+    if (!f) return;
+    try {
+      window.pclEditProspect(docId);
+      await window.crmFactureAdd(f);
+    } catch (e) { alert('Ajout impossible : ' + (e.message || e)); }
+  };
+  document.body.appendChild(inp);
+  inp.click();
+};
+// Factures PDF déposées par le client dans le formulaire de contact (champ « facturesQR ») : lecture et rattachement à la fiche
+function pclQrFactBlock(p) {
+  var l = Array.isArray(p && p.facturesQR) ? p.facturesQR : [];
+  if (!l.length) return '';
+  var KI = { mobile: '📱 Mobile', internet: '🌐 Internet', energie: '⚡ Énergie' };
+  return '<div style="margin:6px 0;padding:7px 9px;border:1px dashed #1d4ed8;border-radius:8px;background:#f5f9ff;">'
+    + '<div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:3px;">📎 Factures reçues du formulaire (' + l.length + ')</div>'
+    + l.map(function (f, i) {
+      return '<div style="font-size:12px;margin:2px 0;">' + (KI[f.kind] || '📄') + ' · <a href="javascript:void(0)" onclick="pclQrFactOpen(\'' + p.docId + '\',' + i + ')" style="color:#1d4ed8;text-decoration:underline;">' + pcEsc(f.name || 'facture.pdf') + '</a></div>';
+    }).join('')
+    + '<button type="button" onclick="pclQrFactImport(\'' + p.docId + '\')" style="margin-top:4px;border:none;background:#1d4ed8;color:#fff;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;">📥 Lire et joindre à la fiche</button></div>';
+}
+window.pclQrFactOpen = async function (docId, i) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  var f = p && Array.isArray(p.facturesQR) ? p.facturesQR[i] : null;
+  if (!f || !f.path) return;
+  var w = window.open('', '_blank');
+  try {
+    var url = await window.getDownloadURL(window.storageRef(window.storage, f.path));
+    if (w) w.location = url; else window.location = url;
+  } catch (e) { if (w) w.close(); alert('Téléchargement impossible : ' + e.message); }
+};
+window.pclQrFactImport = async function (docId) {
+  var p = (window._pclData || []).find(function (x) { return x.docId === docId; });
+  var items = p && Array.isArray(p.facturesQR) ? p.facturesQR.slice() : [];
+  if (!items.length) return;
+  pcToast('🤖 Lecture des factures reçues…');
+  window.pclEditProspect(docId);
+  var done = [], failed = 0;
+  for (var i = 0; i < items.length; i++) {
+    var it = items[i];
+    try {
+      var url = await window.getDownloadURL(window.storageRef(window.storage, it.path));
+      var blob = await (await fetch(url)).blob();
+      var file = new File([blob], it.name || 'facture.pdf', { type: 'application/pdf' });
+      var before = crmFact.list.length;
+      await window.crmFactureAdd(file);
+      if (crmFact.list.length > before) done.push(it); else failed++;
+    } catch (e) { console.error(e); failed++; }
+  }
+  if (done.length) {
+    try {
+      var ref = window.doc(window.db, 'prospectsClients', docId);
+      var snap = await window.getDoc(ref);
+      var cur = snap.exists() && Array.isArray(snap.data().facturesQR) ? snap.data().facturesQR : [];
+      var paths = done.map(function (x) { return x.path; });
+      await window.updateDoc(ref, { facturesQR: cur.filter(function (x) { return paths.indexOf(x.path) < 0; }) });
+      for (var k = 0; k < done.length; k++) { try { await window.deleteObject(window.storageRef(window.storage, done[k].path)); } catch (e) { /* déjà copiée dans la fiche */ } }
+    } catch (e) { console.error(e); }
+  }
+  pcToast(done.length ? ('✅ ' + done.length + ' facture(s) jointe(s)' + (failed ? ', ' + failed + ' en échec' : '') + '.') : '❌ Lecture impossible : réessaie ou joins le PDF à la main.');
+};
 window.pclFactReread = function (docId, i) {
   window.pclEditProspect(docId);
   window.crmFactReread(i);
@@ -9591,7 +9663,8 @@ function pmOffresHtml(item, coll, docId) {
       + (sims.length ? ' · dès ' + fm(min * r) + '/mois' : '')
       + ' <select onchange="pmOffreStatut(\'' + coll + '\',\'' + docId + '\',\'' + pcEsc(o.id) + '\',this.value)" style="width:auto;padding:1px 5px;font-size:11px;border:1px solid #ddd;border-radius:6px;' + col + '">'
       + PM_OFFRE_STATUTS.map(function (st) { return '<option value="' + st + '"' + (o.statut === st ? ' selected' : '') + '>' + st + '</option>'; }).join('')
-      + '</select> <a href="https://app.phil-mobile.be/wp_orange.html?viewOffre=' + coll + '%7C' + docId + '%7C' + encodeURIComponent(o.id) + '" target="_blank" rel="noopener" style="color:#1d4ed8;text-decoration:underline;">Voir l\'offre</a></div>';
+      + '</select> <a href="https://app.phil-mobile.be/wp_orange.html?viewOffre=' + coll + '%7C' + docId + '%7C' + encodeURIComponent(o.id) + '" target="_blank" rel="noopener" style="color:#1d4ed8;text-decoration:underline;">Voir l\'offre</a>'
+      + '<button type="button" title="Supprimer l\'offre" onclick="pmOffreDelete(\'' + coll + '\',\'' + docId + '\',\'' + pcEsc(o.id) + '\')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;">🗑️</button></div>';
   }).join('');
   return pclSec('Offres de prix') + rows;
 }
@@ -9608,7 +9681,7 @@ window.pmFactApi = {
     if (!window.geminiImportModel) throw new Error("Le service de lecture n'est pas encore prêt, réessaie dans un instant.");
     var mime = isPdf ? 'application/pdf' : (file.type || (/\.png$/i.test(file.name) ? 'image/png' : 'image/jpeg'));
     var prompt = crmFactBuildPrompt()
-      .replace('"smartphone": false }', '"smartphone": false, "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0, "easySwitch": "", "lignes": [ { "libelle": "", "montantTvac": 0 } ] }')
+      .replace('"smartphone": false, "easySwitch": "" }', '"smartphone": false, "easySwitch": "", "nbFixe": 0, "nbInternet": 0, "nbMobile": 0, "nbTv": 0, "nbDecodeur": 0, "lignes": [ { "libelle": "", "montantTvac": 0 } ] }')
       .replace("- N'ajoute AUCUN champ", "- nbFixe / nbInternet / nbMobile / nbTv / nbDecodeur = nombre de lignes fixes, connexions internet, abonnements mobiles, abonnements TV et décodeurs supplémentaires, UNIQUEMENT si la facture les détaille clairement ; sinon 0 (ne devine jamais).\n- easySwitch = l'Easy Switch id (nombre d'environ 14 chiffres, repéré par le libellé « Easy Switch id », en général en première page à côté du numéro de client). Chaîne vide si absent. Ne le confonds jamais avec le numéro de client ou le numéro de document.\n- «lignes» = le détail MENSUEL de la facture, une entrée par abonnement ou option récurrente (ex : « Mobile Large 29,00 », « Internet 49,00 », « Option WiFi 10,00 »). «libelle» court (80 caractères maximum), «montantTvac» = montant mensuel TVA comprise (si la facture affiche des lignes HTVA, multiplie par 1,21). Ignore les remises globales, les frais uniques, la consommation hors forfait, les totaux et sous-totaux. Tableau vide [] si la facture ne détaille pas clairement ses lignes (ne devine jamais).\n- Le document peut être une photo : lis-la attentivement.\n- N'ajoute AUCUN champ");
     var base64 = await ctrFileToBase64(file);
     var result = await window.geminiImportModel.generateContent([{ inlineData: { mimeType: mime, data: base64 } }, { text: prompt }]);
@@ -9711,7 +9784,7 @@ window.pmNewOffer = function (coll, docId) {
 };
 function pmNewOfferBtn(coll, docId) {
   return '<button type="button" onclick="pmNewOffer(\'' + coll + '\',\'' + docId + '\')" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#eef2ff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">➕ Ajouter une offre</button>'
-    + (coll === 'prospectsClients' ? '<button type="button" onclick="pmNewComparatif(\'' + coll + '\',\'' + docId + '\')" title="Comparer avec la facture actuelle du prospect" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#fff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📊 Comparer</button>' : '');
+    + (coll === 'prospectsClients' ? '<button type="button" onclick="pclFactAddFromCard(\'' + docId + '\')" title="Joindre une facture d\'opérateur (PDF) : lue automatiquement" style="padding:4px 9px;border:1px solid #1d4ed8;border-radius:6px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🧾 Ajouter une facture opérateur</button><button type="button" onclick="pmNewComparatif(\'' + coll + '\',\'' + docId + '\')" title="Comparer avec la facture actuelle du prospect" style="padding:4px 9px;border:1px solid #062B68;border-radius:6px;background:#fff;color:#062B68;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">📊 Comparer</button>' : '');
 }
 window.pmOffreStatut = async function (coll, docId, offreId, statut) {
   try {
@@ -9724,6 +9797,22 @@ window.pmOffreStatut = async function (coll, docId, offreId, statut) {
     await window.updateDoc(ref, { offres: arr });
     pcToast('✅ Offre : ' + statut);
   } catch (e) { pcToast('Statut non enregistré : ' + e.message); }
+};
+
+// Supprime une offre de prix d'une fiche (confirmation, puis retrait de la liste « offres »)
+window.pmOffreDelete = async function (coll, docId, offreId) {
+  if (coll !== 'prospectsClients' && coll !== 'prospectsConsultants' && coll !== 'clients') return;
+  if (!confirm('Supprimer cette offre de prix ?\n\nElle sera effacée définitivement de la fiche (le lien « Voir l\'offre » ne fonctionnera plus).')) return;
+  try {
+    var ref = window.doc(window.db, coll, docId);
+    var snap = await window.getDoc(ref);
+    var arr = snap.exists() && Array.isArray(snap.data().offres) ? snap.data().offres.slice() : [];
+    var i = arr.findIndex(function (o) { return o && o.id === offreId; });
+    if (i < 0) { pcToast('Offre introuvable (déjà supprimée ?).'); return; }
+    arr.splice(i, 1);
+    await window.updateDoc(ref, { offres: arr });
+    pcToast('🗑️ Offre supprimée.');
+  } catch (e) { alert('Suppression impossible : ' + e.message); }
 };
 
 function pclRenderList(list) {
@@ -9769,6 +9858,7 @@ function pclRenderList(list) {
         + '<button type="button" title="Supprimer la facture" onclick="pclFactDelete(\'' + p.docId + '\',' + i + ')" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 7px;font-size:11px;cursor:pointer;">🗑️</button></div>';
     });
     sit += pclQrExtras(p);
+    sit += pclQrFactBlock(p);
     // Suivi
     var src = pclSourcesHtml(p);
     var suivi = (p.venteLaisseeA ? line('🤝', '<b>Vente laissée à ' + pcEsc(p.venteLaisseeA) + '</b> (devenu consultant)') : '')
@@ -13043,6 +13133,7 @@ var CRMFACT_CTX = {
       if (net && opi) c.push({ id: 'op-internet', label: 'Opérateur internet', v: opi });
       if (net && meta.numeroClient) c.push({ id: 'num-internet', label: 'N° client internet', v: meta.numeroClient });
       if (mob && meta.smartphone) c.push({ id: 'smartphone', label: 'Smartphone dans l\'abonnement (client lié)', v: '1' });
+      if (meta.easySwitch) c.push({ id: 'easyswitch', label: 'N° EasySwitch', v: meta.easySwitch });
       return c;
     }
   }
@@ -13095,7 +13186,7 @@ function crmFactBuildPrompt() {
 
 Le PDF joint est une facture. Réponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans texte autour, respectant EXACTEMENT ce schéma :
 
-{ "fournisseur": "", "titulaire": "", "typeClient": "", "societe": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0, "service": "", "smartphone": false }
+{ "fournisseur": "", "titulaire": "", "typeClient": "", "societe": "", "adresse": "", "cp": "", "ville": "", "tva": "", "email": "", "numeroClient": "", "numeroFacture": "", "dateFacture": "", "montantTvac": 0, "service": "", "smartphone": false, "easySwitch": "" }
 
 Règles :
 - Chaîne vide "" si une info n'est pas trouvée (jamais null, jamais d'invention). "montantTvac" = 0 si absent.
@@ -13111,6 +13202,7 @@ Règles :
 - "numeroClient" = numéro de client chez le fournisseur. "numeroFacture" = numéro de la facture.
 - "dateFacture" au format AAAA-MM-JJ.
 - "montantTvac" = montant total TVA comprise à payer, nombre avec point décimal.
+- "easySwitch" = l'Easy Switch id (nombre d'environ 14 chiffres, repéré par le libellé « Easy Switch id », en général en première page à côté du numéro de client). Chaîne vide si absent. Ne le confonds jamais avec le numéro de client ou le numéro de facture.
 - N'ajoute AUCUN champ en dehors de ce schéma.`;
 }
 async function crmFactExtract(file) {
@@ -13165,6 +13257,7 @@ function crmFactCleanMeta(d, file) {
     typeClient: typ,
     service: ['Mobile', 'Internet', 'Mobile + Internet', 'Énergie'].indexOf(d.service) >= 0 ? d.service : '',
     smartphone: d.smartphone === true,
+    easySwitch: String(d.easySwitch || '').replace(/\D/g, '').slice(0, 20),
     lu: { typeClient: typ, societe: String(d.societe || '').trim(), adresse: String(d.adresse || '').trim(), cp: String(d.cp || '').trim(), ville: String(d.ville || '').trim(), tva: pcNormTva(d.tva || ''), email: String(d.email || '').trim() }
   };
 }
@@ -13243,7 +13336,7 @@ window.crmFactName = function (mode) {
 window.crmFactReread = async function (i) {
   var f = crmFact.list[i]; if (!f) return;
   try {
-    if (!f.lu || f.service === undefined) {
+    if (!f.lu || f.service === undefined || f.easySwitch === undefined) {
       crmFactStatus('wait', '🤖 Relecture de la facture…');
       var url = await window.getDownloadURL(window.storageRef(window.storage, f.path));
       var blob = await (await fetch(url)).blob();
