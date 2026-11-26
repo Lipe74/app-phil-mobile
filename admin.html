@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.135 - Formulaire de contact, factures et offres</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.136 - Simulateur : adresses, remises et promos</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -738,6 +738,11 @@
               <label>⚡ ...ET au moins UN parmi ces produits (optionnel)</label>
               <div style="font-size:11px;color:#888;margin-bottom:4px;">À utiliser quand la promo dépend d'un choix parmi plusieurs options — ex: Internet Giga <strong>+ au moins un</strong> forfait Mobile Medium/Large/Unlimited. Laisser vide si non applicable.</div>
               <select id="promo-auto-products-any" multiple size="6" style="width:100%;padding:6px;font-size:13px;"></select>
+            </div>
+            <div class="form-row">
+              <label>⚡ ...ET au moins UN parmi ces produits (2e groupe, optionnel)</label>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;">Second choix à combiner en « ET » avec le groupe précédent — ex: <strong>(Livebox Up ou Giga) ET (Mobile Small, Medium, Large ou Unlimited)</strong> pour reconnaître un client Love. Laisser vide si non applicable.</div>
+              <select id="promo-auto-products-any2" multiple size="6" style="width:100%;padding:6px;font-size:13px;"></select>
             </div>
             <div class="form-row" id="promo-dates-permanente-row" style="display:none;gap:10px;flex-wrap:wrap;">
               <div style="flex:1;min-width:140px;">
@@ -2530,7 +2535,8 @@ const BN_PENDING = [
   { build: '14.132', title: "Correctif : retour à la version stable du comparateur", description: "- Retour à la version stable du comparateur et de l'import de facture (celle de la build 14.130) suite à un problème d'affichage.\n- Rien ne change pour l'offre A4 et les options en plus." },
   { build: '14.135', title: "Formulaire de contact, factures et offres", description: "- Formulaire de contact (QR) refait : blocs encadrés et colorés (coordonnées, référent repliable, profil, abonnements actuels repliables, message, envoi) et barre de progression « Étape X sur 4 ».\n- Le GSM du référent s'affiche maintenant en +32… (aussi quand il est pré-rempli par le QR d'un client).\n- Le client peut joindre ses factures PDF directement dans le formulaire : mobile, internet (zone visible si internet est sur une autre facture) et énergie. Dans la fiche prospect, un bloc « Factures reçues du formulaire » apparaît : le bouton « Lire et joindre à la fiche » lit les PDF par l'IA et les range avec les autres factures (opérateur, n° client, Easy Switch, montants).\n- Recrutement : bandeau « Bon à savoir » (ONEM, CPAS, Forem) pour Chômage, Autres revenus et Sans revenus ; la fiche du prospect consultant garde la trace que l'avertissement a été vu.\n- Fiche prospect client : bouton « 🧾 Ajouter une facture opérateur » (toujours visible) et 🗑️ pour supprimer une offre de prix.\n- À faire une fois dans Firebase : publier les nouvelles règles Storage (fichier storage.rules du zip), sinon l'envoi des factures depuis le formulaire est refusé." },
   { build: '14.134', title: "Easy Switch dans la fiche prospect", description: "- Correction : le numéro Easy Switch est maintenant lu aussi quand tu joins ou relis une facture depuis la fenêtre d'édition de la fiche prospect (proposé dans « Infos lues sur la facture », bouton « Compléter la fiche », jamais écrasé s'il est déjà rempli).\n- Sur une facture déjà jointe, le bouton 🔄 relit le PDF une fois pour retrouver l'Easy Switch." },
-  { build: '14.133', title: "Facture : détail, lignes et Easy Switch", description: "- Import de facture : le numéro Easy Switch est lu sur la facture (modifiable avant de valider) et rangé dans la fiche du prospect avec le n° de client. Une valeur déjà saisie n'est jamais remplacée.\n- Le détail de la facture (postes fixes, internet, mobiles, TV, décodeurs) est gardé avec la facture : en ouvrant « Comparer » depuis la fiche, ces nombres sont repris tout de suite.\n- Comparateur : nouveau bloc « Détail de votre facture » avec les lignes lues (ex. Mobile Large 29 €), modifiables, leur total et un bouton pour le reprendre comme montant actuel.\n- Pour une facture déjà rangée avant cette build, réimporte-la une fois pour récupérer son détail.\n- Fiche prospect : bouton 🗑️ à côté de chaque facture pour la supprimer (PDF effacé), afin de ne pas accumuler les factures.\n- Correctif : les factures importées depuis le comparateur ou le simulateur s'enregistraient vides (« Échec de chargement du document PDF »). Elles sont maintenant enregistrées correctement ; pour une ancienne facture vide, supprime-la (🗑️) et réimporte-la." }
+  { build: '14.133', title: "Facture : détail, lignes et Easy Switch", description: "- Import de facture : le numéro Easy Switch est lu sur la facture (modifiable avant de valider) et rangé dans la fiche du prospect avec le n° de client. Une valeur déjà saisie n'est jamais remplacée.\n- Le détail de la facture (postes fixes, internet, mobiles, TV, décodeurs) est gardé avec la facture : en ouvrant « Comparer » depuis la fiche, ces nombres sont repris tout de suite.\n- Comparateur : nouveau bloc « Détail de votre facture » avec les lignes lues (ex. Mobile Large 29 €), modifiables, leur total et un bouton pour le reprendre comme montant actuel.\n- Pour une facture déjà rangée avant cette build, réimporte-la une fois pour récupérer son détail.\n- Fiche prospect : bouton 🗑️ à côté de chaque facture pour la supprimer (PDF effacé), afin de ne pas accumuler les factures.\n- Correctif : les factures importées depuis le comparateur ou le simulateur s'enregistraient vides (« Échec de chargement du document PDF »). Elles sont maintenant enregistrées correctement ; pour une ancienne facture vide, supprime-la (🗑️) et réimporte-la." },
+  { build: '14.136', title: "Simulateur : adresses, remises et promos", description: "- Dans le simulateur Orange, « Site » devient « Adresse d'installation » (jusqu'à 3 adresses).\n- La remise « 2ème internet » suit les adresses : 10 € par adresse 2 et 3, seulement si l'offre a un internet et si l'adresse 1 en a aussi. Un seul internet par simulation.\n- Les frais d'activation (39 €) se mettent tout seuls dès qu'un internet est choisi, et la promo d'activation gratuite s'applique selon ses produits liés.\n- Les promos se trient de A à Z, n'apparaissent que si le produit est choisi (lien « Voir toutes les promos »), et ont des pastilles de couleur avec un « Promo » rouge.\n- My Comfort Service pro (TVA encodée) remplace le −5 € la première année, sans cumul.\n- Admin : 2e groupe « au moins un » sur les promos (ex. internet Up/Giga ET un mobile pour reconnaître un client Love)." }
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -5764,6 +5770,8 @@ window.editPromo = function (docId) {
   Array.from(document.getElementById('promo-auto-products').options).forEach(o => o.selected = autoIds.has(o.value));
   const autoIdsAny = new Set(p.autoProductsAny || []);
   Array.from(document.getElementById('promo-auto-products-any').options).forEach(o => o.selected = autoIdsAny.has(o.value));
+  const autoIdsAny2 = new Set(p.autoProductsAny2 || []);
+  Array.from(document.getElementById('promo-auto-products-any2').options).forEach(o => o.selected = autoIdsAny2.has(o.value));
   document.getElementById('promo-date-debut').value = p.dateDebut || '';
   document.getElementById('promo-date-fin').value = p.dateFin || '';
   onPromoCategoryChange();
@@ -5784,6 +5792,7 @@ window.cancelPromoEdit = function () {
   document.getElementById('promo-condition').value = '';
   Array.from(document.getElementById('promo-auto-products').options).forEach(o => o.selected = false);
   Array.from(document.getElementById('promo-auto-products-any').options).forEach(o => o.selected = false);
+  Array.from(document.getElementById('promo-auto-products-any2').options).forEach(o => o.selected = false);
   document.getElementById('promo-date-debut').value = '';
   document.getElementById('promo-date-fin').value = '';
   document.getElementById('promo-product-mobile').selectedIndex = 0;
@@ -5809,6 +5818,7 @@ window.addOrUpdatePromo = async function () {
   const condition = type !== 'unique' ? document.getElementById('promo-condition').value.trim() : '';
   const autoProducts = Array.from(document.getElementById('promo-auto-products').selectedOptions).map(o => o.value);
   const autoProductsAny = Array.from(document.getElementById('promo-auto-products-any').selectedOptions).map(o => o.value);
+  const autoProductsAny2 = Array.from(document.getElementById('promo-auto-products-any2').selectedOptions).map(o => o.value);
   const productFamily = document.getElementById('promo-family').value;
   const dateDebut = category === 'temporaire' ? (window._promoGlobalDate?.dateDebut || null) : (document.getElementById('promo-date-debut').value || null);
   const dateFin = category === 'temporaire' ? (window._promoGlobalDate?.dateFin || null) : (document.getElementById('promo-date-fin').value || null);
@@ -5826,7 +5836,7 @@ window.addOrUpdatePromo = async function () {
     const data = {
       category, type, name, sub, price, duration,
       mobileId: existing?.mobileId || null,
-      condition, autoProducts, autoProductsAny, dateDebut, dateFin,
+      condition, autoProducts, autoProductsAny, autoProductsAny2, dateDebut, dateFin,
       productFamily,
       perAbo: type === 'mobile',
       isUnique: type === 'unique'
@@ -5849,7 +5859,7 @@ window.addOrUpdatePromo = async function () {
     try {
       await addDoc(collection(db, 'promosOrange'), {
         category, type, name, sub, price, duration: null,
-        mobileId: null, productFamily, condition: '', autoProducts, autoProductsAny, dateDebut, dateFin,
+        mobileId: null, productFamily, condition: '', autoProducts, autoProductsAny, autoProductsAny2, dateDebut, dateFin,
         order: promosCache.filter(x => (x.productFamily || derivePromoFamily(x)) === productFamily).length,
         perAbo: false, isUnique: true, active: true, createdAt: new Date().toISOString()
       });
@@ -5880,7 +5890,7 @@ window.addOrUpdatePromo = async function () {
   const data = {
     category, type, name: label, sub, price, duration,
     mobileId: type === 'mobile' ? productId : null,
-    condition, autoProducts, autoProductsAny, dateDebut, dateFin,
+    condition, autoProducts, autoProductsAny, autoProductsAny2, dateDebut, dateFin,
     productFamily,
     order: promosCache.filter(x => (x.productFamily || derivePromoFamily(x)) === productFamily).length,
     perAbo: type === 'mobile',
@@ -7750,6 +7760,8 @@ function populatePromoAutoProductsSelect() {
   const sel = document.getElementById('promo-auto-products');
   if (sel) { const prev = new Set(Array.from(sel.selectedOptions).map(o => o.value)); sel.innerHTML = optionsHtml; Array.from(sel.options).forEach(o => o.selected = prev.has(o.value)); }
   const selAny = document.getElementById('promo-auto-products-any');
+  const selAny2 = document.getElementById('promo-auto-products-any2');
+  if (selAny2) { const prevAny2 = new Set(Array.from(selAny2.selectedOptions).map(o => o.value)); selAny2.innerHTML = optionsHtml; Array.from(selAny2.options).forEach(o => o.selected = prevAny2.has(o.value)); }
   if (selAny) { const prevAny = new Set(Array.from(selAny.selectedOptions).map(o => o.value)); selAny.innerHTML = optionsHtml; Array.from(selAny.options).forEach(o => o.selected = prevAny.has(o.value)); }
 }
 populatePromoAutoProductsSelect();
@@ -8130,6 +8142,7 @@ window.exportProduitsEtPromosSecours = async function () {
       if (p.isUnique) item.isUnique = true;
       if (Array.isArray(p.autoProducts) && p.autoProducts.length) item.autoProducts = p.autoProducts;
       if (Array.isArray(p.autoProductsAny) && p.autoProductsAny.length) item.autoProductsAny = p.autoProductsAny;
+      if (Array.isArray(p.autoProductsAny2) && p.autoProductsAny2.length) item.autoProductsAny2 = p.autoProductsAny2;
       if (p.category === 'permanente') {
         permanentList.push(item);
       } else {
@@ -8147,6 +8160,7 @@ window.exportProduitsEtPromosSecours = async function () {
       if (it.family) parts.push(`family:${JSON.stringify(it.family)}`);
       if (it.autoProducts) parts.push(`autoProducts:${JSON.stringify(it.autoProducts)}`);
       if (it.autoProductsAny) parts.push(`autoProductsAny:${JSON.stringify(it.autoProductsAny)}`);
+      if (it.autoProductsAny2) parts.push(`autoProductsAny2:${JSON.stringify(it.autoProductsAny2)}`);
       return `  { ${parts.join(', ')} }`;
     };
     const promosCode = `const promosPermanent = [\n${permanentList.map(fmtPromo).join(',\n')}\n];\n\nconst promos = [\n${tempList.map(fmtPromo).join(',\n')}\n];`;

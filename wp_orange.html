@@ -258,6 +258,7 @@
 </div>
 
     <div id="promos-rows"></div>
+    <div style="text-align:center;margin-top:10px;"><a id="pm-allpromos-link" href="javascript:void(0)" onclick="pmToggleAllPromos()" style="display:none;font-size:13px;font-weight:700;color:#062B68;text-decoration:underline;"></a></div>
 
     <div id="promo-banner-attention" style="margin-top:12px;background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:10px 14px;font-size:13px;color:#856404;font-weight:600;display:flex;align-items:flex-start;gap:7px;">
       <span id="promo-banner-attention-icon" style="flex-shrink:0;line-height:1.4;">⚠️</span> <span id="promo-banner-attention-text" style="line-height:1.4;">Attention : Les promotions ne sont accordées que si vous faites une <strong>Domiciliation Bancaire</strong>.</span>
@@ -389,7 +390,7 @@
   </div>
 
   <button class="reset-btn" onclick="shareWhatsApp()" style="margin-bottom:10px;background:#25D366;color:white;">📲 Envoyer sur WhatsApp</button><button class="reset-btn" onclick="copyResume()" style="margin-bottom:10px;background:#0d6efd;color:white;">📋 Copier le résumé</button><div style="background:#fff;border:1px solid #eee;border-radius:14px;padding:12px;margin:4px 0 12px;text-align:left;">
-    <div style="font-weight:800;font-size:16px;margin-bottom:6px;">📄 Dossier d'offre (jusqu'à 3 sites, 2 offres par site)</div>
+    <div style="font-weight:800;font-size:16px;margin-bottom:6px;">📄 Dossier d'offre (jusqu'à 3 adresses d'installation, 2 offres par adresse)</div>
     <div id="pm-dossier-list" style="margin-bottom:8px;"></div>
     <div id="pm-edit-hint" style="display:none;font-size:13px;margin-bottom:8px;"></div>
     <button type="button" id="pm-add-btn" class="reset-btn" onclick="pmAddSim()" style="margin-bottom:0;background:#062B68;color:white;">➕ Ajouter cette simulation à l'offre</button>
@@ -636,7 +637,8 @@ async function loadPromosFromFirestore() {
         })(),
         order: p.order !== undefined ? Number(p.order) : undefined,
         autoProducts: Array.isArray(p.autoProducts) ? p.autoProducts : undefined,
-        autoProductsAny: Array.isArray(p.autoProductsAny) ? p.autoProductsAny : undefined
+        autoProductsAny: Array.isArray(p.autoProductsAny) ? p.autoProductsAny : undefined,
+        autoProductsAny2: Array.isArray(p.autoProductsAny2) ? p.autoProductsAny2 : undefined
       };
       if (p.category === 'permanente') fetchedPermanent.push(item);
       else fetchedTemp.push(item);
@@ -1064,7 +1066,7 @@ ${ci.email}`;
 
 
 // ===== Build 14.114 : dossier d'offre (1 à 3 simulations) + offre PDF A4 neutre, liée à la fiche du client =====
-var PM_MAX_SIMS = 6, PM_MAX_SITES = 3, PM_MAX_PER_SITE = 2;   // 3 sites max, 2 offres par site (une moins chère, une plus chère)
+var PM_MAX_SIMS = 6, PM_MAX_SITES = 3, PM_MAX_PER_SITE = 2;   // 3 adresses d'installation max, 2 offres par adresse (une moins chère, une plus chère)
 // Fiche d'origine (?fiche=clients|id ou prospectsClients|id) : offre créée depuis une fiche du hub
 window.pmFiche = null;
 var _pmFp = (new URLSearchParams(location.search).get('fiche') || '').split('|');
@@ -1086,6 +1088,97 @@ try {
     pmSiteSel = Math.min(_pmD.sel || 0, pmSites.length);
   }
 } catch (e) {}
+// ===== Build 14.136 : remise internet par adresse, frais d'activation auto, promos filtrées, pastilles =====
+var pmActLast = false;        // y avait-il un internet au dernier calcul (pour les frais d'activation automatiques)
+var pmShowAllPromos = false;  // lien « Voir toutes les promos »
+function pmPlainTxt(h) { return String(h || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim(); }
+function pmCurSite() { return (pmEditIdx !== null && pmSims[pmEditIdx]) ? (pmSims[pmEditIdx].site || 0) : pmSiteSel; }
+function pmIsCountedInternet(id) { return (productList.internet || []).some(function (x) { return x.id === id && x.countsAsInternet !== false; }); }
+function pmSimHasInternet(s) { var q = (s && s.qty) || {}; return (productList.internet || []).some(function (x) { return x.countsAsInternet !== false && q[x.id] > 0; }); }
+function pmSite1HasInternet() { return pmSims.some(function (x) { return (x.site || 0) === 0 && pmSimHasInternet(x); }); }
+// Remise « 2ème internet » : 1 par adresse d'installation 2 et 3, si l'offre a un internet ET si l'adresse 1 a un internet
+function pmSecondInternetOk() { return pmCurSite() >= 1 && pmInternetCount() >= 1 && pmSite1HasInternet(); }
+function pmIsPro() { var el = document.getElementById('client-tva'); return !!(el && String(el.value || '').trim()); }
+function pmIsProPromo(p) { return /soho|pro\s+uniquement|pour\s+les\s+pros?\b/i.test(pmPlainTxt(p.name) + ' ' + pmPlainTxt(p.sub)); }
+function pmIsComfortPro(p) { return /my comfort/i.test(pmPlainTxt(p.name)) && pmIsProPromo(p); }
+// Pas de cumul : la promo pro « My Comfort Service » de 12 mois remplace le −5 € à vie la 1re année
+function pmComfortCut(p) {
+  if (!pmIsComfortPro(p)) return 0;
+  return [...promos, ...promosPermanent].filter(function (q) { return q !== p && /my comfort/i.test(pmPlainTxt(q.name)) && !pmIsProPromo(q) && togMap[q.id] && !q.isUnique && !q.duration; })
+    .reduce(function (t, q) { return t + q.price; }, 0);
+}
+function pmPromoById(id) { return [...promos, ...promosPermanent].filter(function (p) { return p.id === id; })[0]; }
+function pmActProduct() { return (typeof options !== 'undefined' ? options : []).filter(function (o) { return o.oneshot && /activation/i.test(pmPlainTxt(o.name)); })[0]; }
+// Une promo est « concernée » quand son produit principal est dans la simulation (sans lien produit : toujours visible)
+function pmPromoRelevant(p) {
+  if (pmIsSecondInternet(p)) return pmSecondInternetOk();
+  if (pmIsProPromo(p) && !pmIsPro()) return false;
+  var all = p.autoProducts || [], any = p.autoProductsAny || [];
+  if (all.length) return all.every(function (id) { return (qtyMap[id] || 0) >= 1; });
+  if (any.length) return any.some(function (id) { return (qtyMap[id] || 0) >= 1; });
+  return true;
+}
+function pmApplyPromoVisibility() {
+  var hidden = 0;
+  ['promos-rows', 'promos-permanent-rows'].forEach(function (cid) {
+    var c = document.getElementById(cid); if (!c) return;
+    var grp = null, groups = [];
+    Array.prototype.slice.call(c.children).forEach(function (el) {
+      if (el.classList.contains('pm-grp-sep')) { grp = { sep: el, head: null, rows: [] }; groups.push(grp); return; }
+      if (el.classList.contains('pm-grp-hd')) { if (!grp || grp.head) { grp = { sep: null, head: el, rows: [] }; groups.push(grp); } else grp.head = el; return; }
+      if (el.classList.contains('toggle-row')) {
+        var p = pmPromoById(el.dataset.id);
+        var show = !p || pmShowAllPromos || togMap[p.id] || pmPromoRelevant(p);
+        el.style.display = show ? '' : 'none';
+        if (!show) hidden++;
+        if (grp) grp.rows.push(show);
+      }
+    });
+    groups.forEach(function (g) {
+      var any = g.rows.some(function (v) { return v; });
+      if (g.head) g.head.style.display = any ? '' : 'none';
+      if (g.sep) g.sep.style.display = any ? '' : 'none';
+    });
+  });
+  var lk = document.getElementById('pm-allpromos-link');
+  if (lk) { lk.style.display = (hidden > 0 || pmShowAllPromos) ? '' : 'none'; lk.textContent = pmShowAllPromos ? 'Masquer les promos non concernées' : 'Voir toutes les promos (' + hidden + ' masquée' + (hidden > 1 ? 's' : '') + ')'; }
+}
+function pmToggleAllPromos() { pmShowAllPromos = !pmShowAllPromos; pmApplyPromoVisibility(); }
+function pmSyncAuto() {
+  var ok = pmSecondInternetOk();
+  [...promos, ...promosPermanent].forEach(function (p) {
+    if (pmIsSecondInternet(p)) togMap[p.id] = ok;
+    else if (pmIsProPromo(p) && !pmIsPro() && togMap[p.id] && !togMapManualOverride.has(p.id)) togMap[p.id] = false;
+  });
+  var cur = pmInternetCount() >= 1;
+  if (cur !== pmActLast) {   // frais d'activation : 1 dès qu'un internet est choisi, 0 quand il est retiré (modifiable ensuite à la main)
+    pmActLast = cur;
+    var act = pmActProduct();
+    if (act) { qtyMap[act.id] = cur ? 1 : 0; var el = document.getElementById('qty-' + act.id); if (el) el.textContent = qtyMap[act.id]; }
+  }
+  document.querySelectorAll('.toggle-row').forEach(function (row) {
+    var n = row.querySelector('.pm-nocumul'); if (!n) return;
+    var p = pmPromoById(row.dataset.id), cut = p ? pmComfortCut(p) : 0;
+    n.style.display = cut > 0 ? '' : 'none';
+    n.textContent = cut > 0 ? 'ℹ️ Remplace le −' + cut + ' € la 1re année (pas de cumul)' : '';
+  });
+  pmApplyPromoVisibility();
+}
+var PM_CHIPS = { internet: ['Internet', '#E6F1FB', '#0C447C'], mobile: ['Mobile', '#EAF3DE', '#27500A'], tv: ['TV', '#FAEEDA', '#633806'], films: ['Streaming', '#EEEDFE', '#3C3489'], options: ['Option', '#F1EFE8', '#444441'], promo: ['Promo', '#E24B4A', '#ffffff'] };
+function pmChip(k) { var c = PM_CHIPS[k]; return c ? '<span class="pm-chip" style="display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:8px;margin-left:6px;vertical-align:middle;white-space:nowrap;background:' + c[1] + ';color:' + c[2] + ';">' + c[0] + '</span>' : ''; }
+function pmCatOfProduct(p) {
+  var L = typeof productList !== 'undefined' ? productList : {};
+  var has = function (a) { return (a || []).indexOf(p) >= 0; };
+  if (has(L.internet)) return 'internet';
+  if (has(L.tv)) return 'tv';
+  if (has(L.mobile)) return 'mobile';
+  if (has(L.netflix) || has(L.disney)) return 'films';
+  return 'options';
+}
+function pmPromoChips(p) { var f = String(p.family || 'options'); return pmChip(PM_CHIPS[f] ? f : 'options') + pmChip('promo'); }
+function pmPromoSortName(p) { return pmPlainTxt(p.name).replace(/^promotion\s*:?\s*/i, '').toLowerCase(); }
+function pmSortPromosAZ(arr) { return arr.slice().sort(function (a, b) { return pmPromoSortName(a).localeCompare(pmPromoSortName(b), 'fr', { numeric: true, sensitivity: 'base' }); }); }
+function pmPromoNoteHtml(p) { return pmIsComfortPro(p) ? '<br><span class="pm-nocumul product-sub" style="display:none;color:#0369a1;font-weight:700;"></span>' : ''; }
 // ===== Build 14.130 : options en plus (proposées sur l'offre, hors tarif) =====
 var pmExtras = {};   // id -> quantité (jamais comptées dans le tarif)
 function pmShort(t) {
@@ -1159,9 +1252,10 @@ function pmHasProducts() {
   return Object.values(productList).flat().concat(options).some(function (p) { return (qtyMap[p.id] || 0) > 0; });
 }
 // Montant d'une carte de promo : même logique que calcPromos() (à garder synchronisé si celle-ci évolue)
-function pmPromoMontant(p) {
+function pmPromoMontant(p) { var m = pmPromoMontantRaw(p); return m > 0 ? Math.max(0, m - pmComfortCut(p)) : m; }
+function pmPromoMontantRaw(p) {
   if (p.isUnique) return p.price;
-  if (pmIsSecondInternet(p)) return p.price * Math.max(0, pmInternetCount() - 1);
+  if (pmIsSecondInternet(p)) return pmSecondInternetOk() ? p.price : 0;
   var inetCount = (qtyMap['inet_start'] || 0) + (qtyMap['inet_zen'] || 0);
   if (p.mobileId === '_internet') return p.price * inetCount;
   if (p.perAbo && p.mobileId) return p.price * (qtyMap[p.mobileId] || 0);
@@ -1239,10 +1333,10 @@ function pmCanPlace() {
 function pmPlaceSim(snap) {
   var k = pmSiteSel;
   if (k >= pmSites.length) {
-    if (pmSites.length >= PM_MAX_SITES) { alert('Un dossier contient au maximum ' + PM_MAX_SITES + ' sites.'); return false; }
+    if (pmSites.length >= PM_MAX_SITES) { alert('Un dossier contient au maximum ' + PM_MAX_SITES + ' adresses d\'installation.'); return false; }
     k = pmSites.length;
   } else if (pmSimsOfSite(k).length >= PM_MAX_PER_SITE) {
-    alert('Un site contient au maximum ' + PM_MAX_PER_SITE + ' offres (une moins chère, une plus chère). Choisis un autre site ou crées-en un nouveau.'); return false;
+    alert('Une adresse d\'installation contient au maximum ' + PM_MAX_PER_SITE + ' offres (une moins chère, une plus chère). Choisis une autre adresse ou crées-en une nouvelle.'); return false;
   }
   if (pmSims.length >= PM_MAX_SIMS) { alert('Un dossier contient au maximum ' + PM_MAX_SIMS + ' offres.'); return false; }
   if (k >= pmSites.length) pmSites.push('');
@@ -1262,6 +1356,7 @@ function pmLoadState(s) {
   Object.keys(togMap).forEach(function (k) { togMap[k] = !!(s.tog && s.tog[k]); togMapManualOverride.add(k); });
   document.querySelectorAll('.qty-val').forEach(function (el) { var id = el.id.replace('qty-', ''); el.textContent = qtyMap[id] || 0; });
   pmExtras = JSON.parse(JSON.stringify(s.extraQty || {}));
+  pmActLast = pmInternetCount() >= 1;
   pmRenderExtras();
   render();
 }
@@ -1295,22 +1390,23 @@ function pmSetRec(i) {
 function pmSetAdr(k, v) { pmSites[k] = String(v || ''); pmDraftSave(); }
 function pmSetSite(v) { pmSiteSel = Math.max(0, parseInt(v, 10) || 0); pmDraftSave(); pmRenderDossier(); }
 function pmClearDossier() {
-  if (!confirm('Vider le dossier (tous les sites et toutes les offres ajoutées) ?')) return;
+  if (!confirm('Vider le dossier (toutes les adresses d\'installation et toutes les offres ajoutées) ?')) return;
   pmSims = []; pmSites = ['']; pmSiteSel = 0; pmEditIdx = null; pmDraftSave(); pmRenderDossier();
 }
 function pmRenderDossier() {
+  if (window.__pmReady) { try { render(); } catch (e) {} }
   var box = pmEl('pm-dossier-list');
   if (!box) return;
   var btn = pmEl('pm-add-btn'), hint = pmEl('pm-edit-hint'), gen = pmEl('pm-gen-btn');
   var r = isTVAC ? 1 : 1 / TVA;
   var multiSite = pmSites.length > 1;
   var editSite = pmEditIdx !== null && pmSims[pmEditIdx] ? (pmSims[pmEditIdx].site || 0) : 0;
-  if (btn) btn.textContent = pmEditIdx !== null ? "💾 Mettre à jour l'offre" + (multiSite ? ' du site ' + (editSite + 1) : '') : "➕ Ajouter cette simulation à l'offre";
+  if (btn) btn.textContent = pmEditIdx !== null ? "💾 Mettre à jour l'offre" + (multiSite ? ' de l\'adresse d\'installation ' + (editSite + 1) : '') : "➕ Ajouter cette simulation à l'offre";
   if (hint) {
     hint.style.display = pmEditIdx !== null ? 'block' : 'none';
-    hint.innerHTML = pmEditIdx !== null ? "✏️ Tu modifies une offre" + (multiSite ? ' du site ' + (editSite + 1) : '') + '. <a href="javascript:void(0)" onclick="pmCancelEdit()" style="color:#062B68;font-weight:700;text-decoration:underline;">Annuler</a>' : '';
+    hint.innerHTML = pmEditIdx !== null ? "✏️ Tu modifies une offre" + (multiSite ? ' de l\'adresse d\'installation ' + (editSite + 1) : '') + '. <a href="javascript:void(0)" onclick="pmCancelEdit()" style="color:#062B68;font-weight:700;text-decoration:underline;">Annuler</a>' : '';
   }
-  if (gen) gen.textContent = pmSims.length > 1 ? "📄 Générer l'offre (" + (multiSite ? pmSites.length + ' sites, ' : '') + pmSims.length + ' offres)' : "📄 Générer l'offre";
+  if (gen) gen.textContent = pmSims.length > 1 ? "📄 Générer l'offre (" + (multiSite ? pmSites.length + ' adresses, ' : '') + pmSims.length + ' offres)' : "📄 Générer l'offre";
   var attr = function (v) { return pmEsc(v).replace(/"/g, '&quot;'); };
   var btnS = 'padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;';
   var html = pmSites.map(function (adr, k) {
@@ -1330,15 +1426,15 @@ function pmRenderDossier() {
         + '</div></div>';
     }).join('');
     return '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fafbfc;">'
-      + '<div style="font-weight:800;font-size:14px;margin-bottom:6px;">' + (multiSite || pmSims.length ? '🏠 Site ' + (k + 1) : '🏠 Adresse d\'installation') + '</div>'
+      + '<div style="font-weight:800;font-size:14px;margin-bottom:6px;">' + (multiSite || pmSims.length ? '🏠 Adresse d\'installation ' + (k + 1) : '🏠 Adresse d\'installation') + '</div>'
       + '<input type="text" value="' + attr(adr) + '" oninput="pmSetAdr(' + k + ',this.value)" placeholder="Adresse d\'installation (facultatif) : rue, n°, code postal, ville" style="width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;">'
       + cards + '</div>';
   }).join('');
   if (!pmSims.length) html += '<div style="font-size:14px;color:#777;line-height:1.5;">Le dossier est vide : « Générer l\'offre » utilisera la simulation en cours (offre unique).</div>';
   if (pmSims.length && pmEditIdx === null) {
     var opts = pmSites.map(function (a, k) {
-      return '<option value="' + k + '"' + (pmSiteSel === k ? ' selected' : '') + '>Site ' + (k + 1) + (a ? ' · ' + pmEsc(a.length > 28 ? a.slice(0, 28) + '…' : a) : '') + '</option>';
-    }).join('') + (pmSites.length < PM_MAX_SITES ? '<option value="' + pmSites.length + '"' + (pmSiteSel >= pmSites.length ? ' selected' : '') + '>➕ Nouveau site</option>' : '');
+      return '<option value="' + k + '"' + (pmSiteSel === k ? ' selected' : '') + '>Adresse d\'installation ' + (k + 1) + (a ? ' · ' + pmEsc(a.length > 28 ? a.slice(0, 28) + '…' : a) : '') + '</option>';
+    }).join('') + (pmSites.length < PM_MAX_SITES ? '<option value="' + pmSites.length + '"' + (pmSiteSel >= pmSites.length ? ' selected' : '') + '>➕ Nouvelle adresse d\'installation</option>' : '');
     html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0 10px;font-size:13px;"><span style="font-weight:700;">Ajouter la prochaine simulation à :</span>'
       + '<select onchange="pmSetSite(this.value)" style="padding:7px 8px;border:1px solid #ddd;border-radius:8px;font-size:13px;">' + opts + '</select></div>';
   }
@@ -1748,7 +1844,7 @@ async function pmRenderOffer(w, d) {
 
   // 1. Titre + client
   var kv = function (k, v) { return v ? '<div class="k">' + k + '</div><div class="v">' + v + '</div>' : ''; };
-  blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multiSite ? 'Notre proposition pour vos ' + siteIdx.length + ' sites' : (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous')) + '</div>'
+  blocks.push('<div class="blk"><h1>Offre de prix</h1><div class="sub">' + (multiSite ? 'Notre proposition pour vos ' + siteIdx.length + ' adresses d\'installation' : (multi ? 'Notre sélection de ' + sims.length + ' offres pour vous' : 'Notre proposition pour vous')) + '</div>'
     + '<div class="kv">' + kv('Client', '<b>' + e(cl.nom) + '</b>') + kv('Société', e(cl.societe)) + kv('Téléphone', e(cl.tel)) + kv('E-mail', e(cl.email)) + kv('N° TVA', e(cl.tva)) + kv("Adresse d'installation", multiSite ? '' : e(adrOf(siteIdx[0])))
     + kv('Date', dateTxt) + kv('Référence', e(d.ref)) + kv('Opérateur actuel', opKnown ? e(opName) : '') + kv('Tarifs Orange', 'en vigueur au ' + dateTxt)
     + kv('Prix affichés', mode === 'TVAC' ? 'TVAC (21 %)' : 'HTVA') + '</div></div>');
@@ -1776,12 +1872,12 @@ async function pmRenderOffer(w, d) {
   // Un site : bandeau ou comparatif des offres, cadres produits / remises / Love, récapitulatif
   var sitePart = function (items, k, withActuel, withNote) {
     var mlt = items.length > 1;
-    var sp = multiSite ? 'Site ' + (k + 1) + ' · ' : '';
+    var sp = multiSite ? 'Adresse ' + (k + 1) + ' · ' : '';
     var nm = function (j) { return 'Offre ' + (j + 1); };
     var S = items.map(function (x) { return x.s; });
     var isRec = function (j) { return items[j].s.rec === true || (d.rec !== null && d.rec !== undefined && d.rec === items[j].i); };
     if (multiSite) blocks.push('<div class="pgbrk"></div>');
-    var head = multiSite ? '<div class="sitehd"><div class="sh1">Site ' + (k + 1) + '</div>' + (adrOf(k) ? '<div class="sh2">' + e(adrOf(k)) + '</div>' : '') + '</div>' : '';
+    var head = multiSite ? '<div class="sitehd"><div class="sh1">Adresse d\'installation ' + (k + 1) + '</div>' + (adrOf(k) ? '<div class="sh2">' + e(adrOf(k)) + '</div>' : '') + '</div>' : '';
     if (!mlt) {
       var s0 = S[0];
       blocks.push('<div class="blk">' + head + '<div class="tot"><div><div class="tl">Votre tarif par mois</div><div class="big">' + f(s0.today) + '</div><div class="tl">' + f2(s0.today) + ' ' + m2 + '</div></div>'
@@ -1848,7 +1944,7 @@ async function pmRenderOffer(w, d) {
 
     // Récapitulatif du site
     var anyFrais = S.some(function (x) { return x.frais > 0 || x.fraisBrut > 0; });
-    var ttl = multiSite ? 'Site ' + (k + 1) + ' · Récapitulatif' : (mlt ? 'Récapitulatif de vos offres' : 'Récapitulatif de votre tarif');
+    var ttl = multiSite ? 'Adresse ' + (k + 1) + ' · Récapitulatif' : (mlt ? 'Récapitulatif de vos offres' : 'Récapitulatif de votre tarif');
     var note = withNote ? recNote : '';
     if (!mlt) {
       var q0 = S[0];
@@ -1892,9 +1988,9 @@ async function pmRenderOffer(w, d) {
     // Page de garde : liste des sites (adresse, nombre d'offres, tarif dès)
     var ov = groups0.map(function (g) {
       var low = Math.min.apply(null, g.list.map(function (x) { return x.today; }));
-      return rw('Site ' + (g.k + 1), adrOf(g.k) ? e(adrOf(g.k)) : '', g.list.length + (g.list.length > 1 ? ' offres' : ' offre') + ' · dès ' + f(low) + ' / mois');
+      return rw('Adresse ' + (g.k + 1), adrOf(g.k) ? e(adrOf(g.k)) : '', g.list.length + (g.list.length > 1 ? ' offres' : ' offre') + ' · dès ' + f(low) + ' / mois');
     }).join('');
-    blocks.push(fr(acc, 'Vos ' + siteIdx.length + ' sites', ov, 'Prix par mois, ' + modeTxt, true));
+    blocks.push(fr(acc, 'Vos ' + siteIdx.length + ' adresses d\'installation', ov, 'Prix par mois, ' + modeTxt, true));
   }
   var groups = siteIdx.map(function (k) {
     var items = sims.map(function (x, i) { return { s: x, i: i }; }).filter(function (x) { return (x.s.site || 0) === k; });
@@ -1911,7 +2007,7 @@ async function pmRenderOffer(w, d) {
     var sum = function (c2, fn) { return groups.reduce(function (t, g) { return t + fn(pick(g, c2).s); }, 0); };
     var tr = grid(K, '', cols.map(function (c2) { return 'Offre ' + (c2 + 1); }), 'chd');
     groups.forEach(function (g) {
-      tr += grid(K, 'Site ' + (g.k + 1) + (adrOf(g.k) ? '<small>' + e(adrOf(g.k)) + '</small>' : ''), cols.map(function (c2) {
+      tr += grid(K, 'Adresse ' + (g.k + 1) + (adrOf(g.k) ? '<small>' + e(adrOf(g.k)) + '</small>' : ''), cols.map(function (c2) {
         var x = pick(g, c2), rcm = x.s.rec === true || (d.rec !== null && d.rec !== undefined && d.rec === x.i);
         return rcm ? '<span class="orc">' + f(x.s.today) + ' ★</span>' : f(x.s.today);
       }));
@@ -1934,7 +2030,7 @@ async function pmRenderOffer(w, d) {
       }
     }
     blocks.push('<div class="pgbrk"></div>');
-    blocks.push(fr(acc, 'Résumé total de vos ' + groups.length + ' sites', tr + recNote, 'Prix par mois, ' + modeTxt, true));
+    blocks.push(fr(acc, 'Résumé total de vos ' + groups.length + ' adresses', tr + recNote, 'Prix par mois, ' + modeTxt, true));
   }
 
   // Parrainage : réduction de 5 % par abonnement mobile pris par un proche (+ QR personnel du client)
@@ -2125,14 +2221,16 @@ const togMapManualOverride = new Set();
 function autoApplyPromos() {
   if (window._promoAutoActivationEnabled === false) return; // interrupteur général désactivé depuis l'admin
   [...promos, ...promosPermanent].forEach(p => {
-    if (pmIsSecondInternet(p)) { if (!togMapManualOverride.has(p.id)) togMap[p.id] = pmInternetCount() >= 2; return; }
+    if (pmIsSecondInternet(p)) { togMap[p.id] = pmSecondInternetOk(); return; }
     const hasAllGroup = p.autoProducts && p.autoProducts.length;
     const hasAnyGroup = p.autoProductsAny && p.autoProductsAny.length;
-    if (!hasAllGroup && !hasAnyGroup) return; // pas d'activation automatique configurée pour cette promo
+    const hasAny2Group = p.autoProductsAny2 && p.autoProductsAny2.length;
+    if (!hasAllGroup && !hasAnyGroup && !hasAny2Group) return; // pas d'activation automatique configurée pour cette promo
     if (togMapManualOverride.has(p.id)) return;
     const allOk = !hasAllGroup || p.autoProducts.every(pid => (qtyMap[pid] || 0) >= 1);
     const anyOk = !hasAnyGroup || p.autoProductsAny.some(pid => (qtyMap[pid] || 0) >= 1);
-    togMap[p.id] = allOk && anyOk;
+    const any2Ok = !hasAny2Group || p.autoProductsAny2.some(pid => (qtyMap[pid] || 0) >= 1);
+    togMap[p.id] = allOk && anyOk && any2Ok;
   });
 }
 
@@ -2222,13 +2320,14 @@ function calcPromos() {
     if(p.isUnique){ unique += p.price; return; }
 
     let montant=0;
-    if(pmIsSecondInternet(p)) montant = p.price * Math.max(0, pmInternetCount() - 1);
+    if(pmIsSecondInternet(p)) montant = pmSecondInternetOk() ? p.price : 0;
     else if(p.mobileId === '_internet') montant = p.price * inetCount;
     // Note 7.8.3 : l'ancienne condition "requiresChild" (Mobile Child obligatoire) est neutralisée.
     // Les conditions particulières sont désormais purement informatives (champ "condition" géré dans l'admin).
     else if(p.perAbo && p.mobileId){
       montant = p.price * (qtyMap[p.mobileId] || 0);
     } else montant = p.price;
+    montant = Math.max(0, montant - pmComfortCut(p));
 
     mensuel += montant;
 
@@ -2276,6 +2375,7 @@ function calcInternet() {
 }
 
 function render() {
+  pmSyncAuto();
   const prod = calcProducts(), opts = calcOptionsBase(), frais = calcFraisUniques(), love = calcLove(), promosCalc = calcPromos(); const prom = promosCalc.mensuel;
   const prom6 = promosCalc.promo6 || 0;
   const prom12 = promosCalc.promo12 || 0; const promUnique = promosCalc.unique;
@@ -2291,7 +2391,7 @@ function render() {
   [...promos, ...promosPermanent].forEach(p => {
     if (!pmIsSecondInternet(p)) return;
     const el = document.querySelector('.toggle-row[data-id="' + p.id + '"] .toggle-price');
-    if (el) el.textContent = '- ' + priceFmt(p.price * Math.max(1, pmInternetCount() - 1));
+    if (el) el.textContent = '- ' + priceFmt(p.price);
   });
   document.getElementById('s-products').textContent = fmt(prod*r);
   document.getElementById('s-mobiles').textContent = fmt(mob*r);
@@ -2342,7 +2442,7 @@ function render() {
     const el = document.querySelector('[data-id="'+p.id+'"] .toggle-name');
     if (el) {
       const calc = togMap[p.id] && qty > 0 ? ' = - ' + fmt(p.price * qty) : '';
-      el.innerHTML = p.name + (qty > 1 ? ' ×'+qty : '') + calc + '<br><span class="product-sub">'+p.sub+'</span>';
+      el.innerHTML = p.name + pmPromoChips(p) + (qty > 1 ? ' ×'+qty : '') + calc + '<br><span class="product-sub">'+p.sub+'</span>';
     }
   });
   document.querySelectorAll('.product-row').forEach(row => {
@@ -2383,17 +2483,25 @@ function render() {
 }
 
 function change(id, delta, max) {
+  if (delta > 0 && pmIsCountedInternet(id) && pmInternetCount() >= 1) {
+    alert("Un seul internet par simulation. Retire d'abord l'autre internet, ou crée une autre adresse d'installation pour un 2ème internet.");
+    return;
+  }
   qtyMap[id] = Math.max(0, Math.min(max || 9, (qtyMap[id]||0) + delta));
   document.getElementById('qty-' + id).textContent = qtyMap[id];
   autoApplyPromos();
   render();
 }
-function togglePromo(id) { togMapManualOverride.add(id); togMap[id] = !togMap[id]; render(); }
+function togglePromo(id) {
+  var _p = pmPromoById(id);
+  if (_p && pmIsSecondInternet(_p)) { alert("Remise automatique : adresse d'installation 2 ou 3 avec un internet, quand l'adresse 1 a aussi un internet."); return; }
+  togMapManualOverride.add(id); togMap[id] = !togMap[id]; render(); }
 function resetAll() {
   Object.keys(qtyMap).forEach(k => qtyMap[k] = 0);
   Object.keys(togMap).forEach(k => togMap[k] = false);
   togMapManualOverride.clear();
   pmExtras = {};
+  pmActLast = false;
   pmRenderExtras();
   document.querySelectorAll('.qty-val').forEach(el => el.textContent = '0');
   render();
@@ -2405,7 +2513,7 @@ function buildProductRow(p) {
   row.className = 'product-row';
   row.dataset.id = p.id;
   row.innerHTML = `
-    <div class="product-name">${p.name}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}${p.condition ? '<br><span style="font-size:13px;color:#cc4400;font-weight:700;">📌 '+p.condition+'</span>' : ''}</div>
+    <div class="product-name">${p.name}${pmChip(pmCatOfProduct(p))}${p.sub ? '<br><span class="product-sub">'+p.sub+'</span>' : ''}${p.oneshot ? ' <span style="font-size:10px;color:#cc4400">(unique)</span>' : ''}${p.condition ? '<br><span style="font-size:13px;color:#cc4400;font-weight:700;">📌 '+p.condition+'</span>' : ''}</div>
     <div class="product-price" style="${p.price<0?'color:#cc4400':''}">${p.price<0?'- ':''} ${priceFmt(p.price)}</div>
     <div class="qty-ctrl">
       <button class="qty-btn" onclick="change('${p.id}',-1,${max})" aria-label="Moins">−</button>
@@ -2481,13 +2589,14 @@ function renderProductSections() {
 
 function buildToggleRows(containerId, items) {
   const c = document.getElementById(containerId);
-  items.forEach(p => {
+  pmSortPromosAZ(items).forEach(p => {
     const row = document.createElement('div');
     row.className = 'toggle-row';
     row.dataset.id = p.id;
+    row.style.borderLeft = '3px solid #E24B4A';
     row.onclick = () => togglePromo(p.id);
     row.innerHTML = `
-      <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+      <div class="toggle-name">${p.name}${pmPromoChips(p)}<br><span class="product-sub">${p.sub}</span>${pmPromoNoteHtml(p)}</div>
       <div class="toggle-price">- ${priceFmt(p.price)}</div>
       <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
     c.appendChild(row);
@@ -2513,25 +2622,28 @@ function buildGroupedPromoRows(containerId, items) {
     const groupItems = items
       .map((p, i) => ({ p, fallback: i }))
       .filter(x => (x.p.family || 'options') === group.key)
-      .sort((a, b) => (a.p.order !== undefined ? a.p.order : a.fallback) - (b.p.order !== undefined ? b.p.order : b.fallback))
       .map(x => x.p);
+    groupItems.splice(0, groupItems.length, ...pmSortPromosAZ(groupItems));
     if (groupItems.length === 0) return;
     if (idx > 0 && c.children.length > 0) {
       const sep = document.createElement('div');
       sep.style.cssText = 'border-top:2px solid #f0f0f0;margin:14px 0 10px;';
+      sep.className = 'pm-grp-sep';
       c.appendChild(sep);
     }
     const header = document.createElement('div');
     header.style.cssText = 'font-size:12px;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;';
     header.textContent = group.label;
+    header.className = 'pm-grp-hd';
     c.appendChild(header);
     groupItems.forEach(p => {
       const row = document.createElement('div');
       row.className = 'toggle-row';
       row.dataset.id = p.id;
+      row.style.borderLeft = '3px solid #E24B4A';
       row.onclick = () => togglePromo(p.id);
       row.innerHTML = `
-        <div class="toggle-name">${p.name}<br><span class="product-sub">${p.sub}</span></div>
+        <div class="toggle-name">${p.name}${pmPromoChips(p)}<br><span class="product-sub">${p.sub}</span>${pmPromoNoteHtml(p)}</div>
         <div class="toggle-price">- ${priceFmt(p.price)}</div>
         <button class="toggle-btn off" aria-label="Activer"><div class="toggle-knob"></div></button>`;
       c.appendChild(row);
@@ -2543,6 +2655,7 @@ renderProductSections();
 buildToggleRows('promos-permanent-rows', promosPermanent);
 buildGroupedPromoRows('promos-rows', promos);
 render();
+window.__pmReady = true;
 
 // Build 14.130 : arrivée depuis le comparateur → mêmes produits et promos que la simulation, facture actuelle reprise
 (function pmApplyFromComparatif() {
