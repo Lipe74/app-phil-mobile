@@ -10302,6 +10302,10 @@ window.pcoSaveProspect = async function (afterAction) {
     var newRef = null;
     if (pcoEditId) await window.updateDoc(window.doc(window.db, 'prospectsConsultants', pcoEditId), data);
     else { if (!(await pcDupWarnNew('prospectsConsultants', data))) return; newRef = await window.addDoc(window.collection(window.db, 'prospectsConsultants'), data); }
+    if (pcoCvPending) {
+      try { var cvNew = await pcoCvUploadPending(pcoEditId || newRef.id); if (cvNew) { data.cv = cvNew; var pOld = pcFind('co', pcoEditId || newRef.id); if (pOld) pOld.cv = cvNew; } }
+      catch (eCv) { console.error(eCv); alert('Fiche enregistrée, mais le CV n\'a pas pu être joint : ' + (eCv.message || eCv) + '\nTu peux le rajouter depuis la fiche.'); }
+    }
     pcToast('✅ Prospect enregistré.');
     if (afterAction === 'contact' || afterAction === 'rdv' || afterAction === 'bom') { pcContinueAfterSave('co', pcoEditId || newRef.id, data, afterAction); return; }
     pcoEditId = null;
@@ -10907,7 +10911,7 @@ window.pcConvertSave = async function (kind, docId) {
 // ===== CV DU PROSPECT CONSULTANT (Build 14.137) =====
 // PDF ou photo dans Storage : cvConsultants/{consultantId}/{fichier}. Fiche : cv = { path, name, size, mime, uploadedAt } ; après suppression : cvSupprimeLe.
 // Lecture IA = même principe que les factures : rien n'est enregistré sans validation (« Compléter la fiche » remplit le formulaire, puis 💾 Enregistrer).
-var PCO_CV_MAX = 10 * 1024 * 1024, PCO_CV_RAPPEL_JOURS = 180, pcoCvReview = null;
+var PCO_CV_MAX = 10 * 1024 * 1024, PCO_CV_RAPPEL_JOURS = 180, pcoCvReview = null, pcoCvPending = null;
 function pcoCvStatus(type, msg) {
   var el = document.getElementById('pco-cv-status');
   if (!el) return;
@@ -10918,14 +10922,27 @@ function pcoCvStatus(type, msg) {
   el.textContent = msg || '';
 }
 function pcoCvOld(cv) { var d = cv && new Date(cv.uploadedAt); return !!(d && !isNaN(d) && (Date.now() - d.getTime()) > PCO_CV_RAPPEL_JOURS * 86400000); }
-function pcoCvInit(p) { pcoCvReview = null; pcoCvStatus(null); var rv = document.getElementById('pco-cv-review'); if (rv) rv.innerHTML = ''; pcoCvRender(p); }
+function pcoCvInit(p) { pcoCvReview = null; pcoCvPending = null; pcoCvStatus(null); var rv = document.getElementById('pco-cv-review'); if (rv) rv.innerHTML = ''; pcoCvRender(p); }
 function pcoCvCur() { return pcoEditId ? (window._pcoData || []).find(function (x) { return x.docId === pcoEditId; }) : null; }
 function pcoCvRender(p) {
   var box = document.getElementById('pco-cv-box');
   if (!box) return;
   if (p === undefined) p = pcoCvCur();
   var btn = 'border:1px solid #ddd;background:#fff;border-radius:6px;padding:3px 9px;cursor:pointer;font-size:12px;';
-  if (!p) { box.innerHTML = '<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">Enregistre d\'abord la fiche pour pouvoir y joindre un CV.</div>'; return; }
+  if (!p) {
+    if (pcoCvPending) {
+      box.innerHTML = '<div style="border:1px solid #e9d5ff;background:#faf5ff;border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:12px;">'
+        + '<div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📎 ' + pcEsc(pcoCvPending.file.name || 'CV') + '</div>'
+        + '<div style="color:#6b7280;">Sera joint à la fiche quand tu cliqueras sur « 💾 Enregistrer ».</div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">'
+        + '<button type="button" onclick="pcoCvRead()" style="' + btn + 'border-color:#7c3aed;color:#6d28d9;font-weight:700;">🤖 Relire le CV</button>'
+        + '<button type="button" onclick="pcoCvDrop()" style="' + btn + 'color:#c0392b;">✕ Retirer</button></div></div>';
+    } else {
+      box.innerHTML = '<label style="display:inline-block;border:1px dashed #7c3aed;background:#faf5ff;color:#6d28d9;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">📎 Ajouter un CV (PDF ou photo) : la fiche se remplit toute seule'
+        + '<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp" style="display:none;" onchange="pcoCvAdd(this.files[0]); this.value=\'\';"></label>';
+    }
+    return;
+  }
   var cv = p.cv && p.cv.path ? p.cv : null, html = '';
   if (cv) {
     html += '<div style="border:1px solid #e9d5ff;background:#faf5ff;border-radius:8px;padding:7px 9px;margin-bottom:6px;font-size:12px;">'
@@ -10951,30 +10968,48 @@ function pcoCvMime(file) {
   if (/\.jpe?g$/i.test(file.name)) return 'image/jpeg';
   return '';
 }
+async function pcoCvStore(docId, file, mime) {
+  var tries = 0;
+  while ((!window.storage || !window.storageRef || !window.uploadBytes) && tries < 30) { await new Promise(function (r) { setTimeout(r, 200); }); tries++; }
+  if (!window.storage) throw new Error('Firebase Storage non disponible');
+  var safe = String(file.name || 'cv').replace(/[^\w.\-]+/g, '_').slice(-60);
+  var path = 'cvConsultants/' + window.pmCurrentUser.id + '/' + docId + '_' + Date.now() + '_' + safe;
+  var body = file;
+  if (!(file instanceof Blob)) body = new Blob([new Uint8Array(await file.arrayBuffer())], { type: mime });
+  if (!body.size) throw new Error('fichier vide');
+  await window.uploadBytes(window.storageRef(window.storage, path), body, { contentType: mime });
+  return { path: path, name: String(file.name || 'cv').slice(0, 80), size: file.size, mime: mime, uploadedAt: new Date().toISOString() };
+}
 window.pcoCvAdd = async function (file) {
   if (!file) return;
-  if (!pcoEditId) { pcoCvStatus('err', '❌ Enregistre d\'abord la fiche.'); return; }
   var mime = pcoCvMime(file);
   if (!mime) { pcoCvStatus('err', '❌ Formats acceptés : PDF ou photo (JPG, PNG).'); return; }
   if (file.size > PCO_CV_MAX) { pcoCvStatus('err', '❌ Fichier trop lourd (10 Mo maximum).'); return; }
+  if (!pcoEditId) {   // fiche pas encore enregistrée : le CV attend, il est lu tout de suite et envoyé à l'enregistrement
+    pcoCvPending = { file: file, mime: mime };
+    pcoCvRender(null);
+    await pcoCvReadBlob(file, mime);
+    return;
+  }
   pcoCvStatus('wait', '⏳ Envoi du CV…');
   try {
-    var tries = 0;
-    while ((!window.storage || !window.storageRef || !window.uploadBytes) && tries < 30) { await new Promise(function (r) { setTimeout(r, 200); }); tries++; }
-    if (!window.storage) throw new Error('Firebase Storage non disponible');
-    var safe = String(file.name || 'cv').replace(/[^\w.\-]+/g, '_').slice(-60);
-    var path = 'cvConsultants/' + window.pmCurrentUser.id + '/' + pcoEditId + '_' + Date.now() + '_' + safe;
-    var body = file;
-    if (!(file instanceof Blob)) body = new Blob([new Uint8Array(await file.arrayBuffer())], { type: mime });
-    if (!body.size) throw new Error('fichier vide');
-    await window.uploadBytes(window.storageRef(window.storage, path), body, { contentType: mime });
-    var cv = { path: path, name: String(file.name || 'cv').slice(0, 80), size: file.size, mime: mime, uploadedAt: new Date().toISOString() };
+    var cv = await pcoCvStore(pcoEditId, file, mime);
     await window.updateDoc(pcRef('co', pcoEditId), { cv: cv, cvSupprimeLe: null, dateMaj: new Date().toISOString() });
     var p = pcoCvCur(); if (p) { p.cv = cv; p.cvSupprimeLe = null; }
-    pcoCvStatus('ok', '✅ CV joint. Clique sur « Lire le CV » pour en reprendre les infos.');
     pcoCvRender();
+    await pcoCvReadBlob(file, mime);
   } catch (e) { console.error(e); pcoCvStatus('err', '❌ Envoi impossible : ' + (e.message || e)); }
 };
+window.pcoCvDrop = function () { pcoCvPending = null; pcoCvReview = null; pcoCvStatus(null); var rv = document.getElementById('pco-cv-review'); if (rv) rv.innerHTML = ''; pcoCvRender(null); };
+// Envoie le CV en attente (fiche créée à l'instant) et le rattache à la fiche
+async function pcoCvUploadPending(docId) {
+  if (!pcoCvPending) return null;
+  var pend = pcoCvPending;
+  var cv = await pcoCvStore(docId, pend.file, pend.mime);
+  await window.updateDoc(pcRef('co', docId), { cv: cv, cvSupprimeLe: null });
+  pcoCvPending = null;
+  return cv;
+}
 window.pcoCvOpen = async function () {
   var p = pcoCvCur();
   if (!p || !p.cv || !p.cv.path) return;
@@ -11015,21 +11050,26 @@ Règles :
 - "resume" = résumé du profil en 2 phrases maximum, 300 caractères maximum, sans données sensibles (pas d'état de santé, pas de situation familiale, pas de date de naissance).
 - N'ajoute AUCUN champ en dehors de ce schéma.`;
 }
-window.pcoCvRead = async function () {
-  var p = pcoCvCur();
-  if (!p || !p.cv || !p.cv.path) return;
+async function pcoCvReadBlob(blob, mime) {
   var rv = document.getElementById('pco-cv-review'); if (rv) rv.innerHTML = '';
   pcoCvStatus('wait', '🤖 Lecture du CV en cours…');
   try {
     if (!window.geminiImportModel) throw new Error("Le service de lecture n'est pas encore prêt, réessaie dans un instant.");
-    var url = await window.getDownloadURL(window.storageRef(window.storage, p.cv.path));
-    var blob = await (await fetch(url)).blob();
     var base64 = await ctrFileToBase64(blob);
-    var result = await window.geminiImportModel.generateContent([{ inlineData: { mimeType: p.cv.mime || 'application/pdf', data: base64 } }, { text: pcoCvPrompt() }]);
+    var result = await window.geminiImportModel.generateContent([{ inlineData: { mimeType: mime || 'application/pdf', data: base64 } }, { text: pcoCvPrompt() }]);
     var raw = result.response.text(), m = raw.match(/\{[\s\S]*\}/);
     var d = JSON.parse(m ? m[0] : raw);
     pcoCvStatus(null);
     pcoCvShowReview(d);
+  } catch (e) { console.error(e); pcoCvStatus('err', '❌ Lecture impossible : ' + (e.message || e)); }
+}
+window.pcoCvRead = async function () {
+  if (!pcoEditId && pcoCvPending) { await pcoCvReadBlob(pcoCvPending.file, pcoCvPending.mime); return; }
+  var p = pcoCvCur();
+  if (!p || !p.cv || !p.cv.path) return;
+  try {
+    var url = await window.getDownloadURL(window.storageRef(window.storage, p.cv.path));
+    await pcoCvReadBlob(await (await fetch(url)).blob(), p.cv.mime);
   } catch (e) { console.error(e); pcoCvStatus('err', '❌ Lecture impossible : ' + (e.message || e)); }
 };
 function pcoCvShowReview(d) {
@@ -11039,6 +11079,8 @@ function pcoCvShowReview(d) {
   var adr = [t('adresse', 100), ville].filter(Boolean).join(', ');
   var tel = t('tel', 30); tel = tel ? pcNormTel(tel) : '';
   var cand = [
+    { id: 'pco-prenom', label: 'Prénom', v: pcNormName(t('prenom', 50)), onlyEmpty: true },
+    { id: 'pco-nom', label: 'Nom', v: pcNormName(t('nom', 50)), onlyEmpty: true },
     { id: 'pco-tel', label: 'Téléphone', v: tel },
     { id: 'pco-email', label: 'E-mail', v: t('email', 100) },
     { id: 'pco-adresse', label: 'Adresse', v: adr },
@@ -11053,7 +11095,7 @@ function pcoCvShowReview(d) {
     if (!c.v) return;
     var el = document.getElementById(c.id), cur = el ? el.value.trim() : '';
     if (!cur) { html += '<label style="display:block;font-size:12px;margin:2px 0;"><input type="checkbox" class="pco-cv-chk" data-field="' + c.id + '" checked> ' + pcEsc(c.label) + ' : <b>' + pcEsc(c.v) + '</b></label>'; n++; }
-    else if (cur.toLowerCase() !== c.v.toLowerCase()) html += '<div style="font-size:12px;color:#6b7280;margin:2px 0;">' + pcEsc(c.label) + ' : CV « ' + pcEsc(c.v) + ' », fiche « ' + pcEsc(cur) + ' » (non modifié)</div>';
+    else if (!c.onlyEmpty && cur.toLowerCase() !== c.v.toLowerCase()) html += '<div style="font-size:12px;color:#6b7280;margin:2px 0;">' + pcEsc(c.label) + ' : CV « ' + pcEsc(c.v) + ' », fiche « ' + pcEsc(cur) + ' » (non modifié)</div>';
   });
   var nomCv = [t('prenom', 50), t('nom', 50)].filter(Boolean).join(' '), nomFiche = (document.getElementById('pco-prenom').value + ' ' + document.getElementById('pco-nom').value).trim();
   if (nomCv && nomFiche && nomCv.toLowerCase() !== nomFiche.toLowerCase()) html = '<div style="font-size:12px;color:#b45309;background:#fffbeb;border-radius:6px;padding:5px 8px;margin-bottom:5px;">⚠️ CV au nom de <b>' + pcEsc(nomCv) + '</b>, fiche au nom de <b>' + pcEsc(nomFiche) + '</b> (le nom n\'est jamais modifié).</div>' + html;
