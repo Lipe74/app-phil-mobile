@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.136 - Simulateur : adresses, remises et promos";
+  scope.APP_VERSION = "14.137 - CV du prospect consultant";
 })();
