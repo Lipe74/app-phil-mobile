@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.139 - Icônes et nom de l'application";
+  scope.APP_VERSION = "14.140 - Build à gauche et import de prospect";
 })();

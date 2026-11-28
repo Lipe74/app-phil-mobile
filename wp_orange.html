@@ -280,6 +280,7 @@
 
 <div class="section">
   <div class="section-title">👤 Informations client</div>
+  <div id="pm-import-box" style="display:none;margin-bottom:12px;"><button type="button" onclick="pmImportOpen()" style="width:100%;padding:11px 14px;border:2px dashed #f97316;background:#fff7ed;color:#c2410c;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;">📥 Importer un prospect</button></div>
   <div id="pm-fiche-banner" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;"></div>
 
   <div style="margin-bottom:12px;">
@@ -1564,6 +1565,89 @@ window.pmInitFiche = async function () {
     if (b) { b.style.display = 'block'; b.innerHTML = '📌 Offre pour la fiche <b>' + pmEsc(nom) + '</b> (' + (q[0] === 'clients' ? 'client' : 'prospect') + '). Elle sera ajoutée directement à cette fiche.'; }
   } catch (e) { console.log('Fiche non chargée:', e.message); }
 };
+// ===== Build 14.140 : importer un prospect (offre sans fiche d'origine) =====
+// Choix d'un Prospect Client du consultant : remplit les champs client et lie le simulateur à sa fiche (l'offre y est enregistrée).
+function pmImportShow() {
+  var el = pmEl('pm-import-box');
+  if (el) el.style.display = (window.pmFiche || PM_FICHE_KEY) ? 'none' : 'block';
+}
+window.pmImportOpen = async function () {
+  var cid = window.consultantInfo && window.consultantInfo.id;
+  if (!cid || !window.getDocs) { alert('Connexion en cours, réessaie dans un instant.'); return; }
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;max-height:85vh;display:flex;flex-direction:column;padding:16px;font-family:Arial,sans-serif;">'
+    + '<div style="font-weight:800;font-size:17px;margin-bottom:8px;">📥 Importer un prospect</div>'
+    + '<input id="pm-imp-q" type="search" placeholder="Rechercher (nom, téléphone, e-mail)" style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:8px;">'
+    + '<div id="pm-imp-list" style="overflow-y:auto;flex:1;min-height:80px;font-size:14px;color:#666;">Chargement…</div>'
+    + '<button type="button" id="pm-imp-close" style="margin-top:10px;padding:10px;border-radius:10px;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer;color:#777;">Annuler</button></div>';
+  document.body.appendChild(ov);
+  var close = function () { if (ov.parentNode) ov.parentNode.removeChild(ov); };
+  ov.querySelector('#pm-imp-close').onclick = close;
+  var list = [], box = ov.querySelector('#pm-imp-list'), inp = ov.querySelector('#pm-imp-q');
+  var nameOf = function (d) { return d.nom || ((d.prenom || '') + ' ' + (d.nomFamille || '')).trim() || 'Sans nom'; };
+  var render = function () {
+    var t = pmNameTokens(inp.value).join(' '), digits = inp.value.replace(/\D/g, '');
+    var shown = list.filter(function (x) {
+      if (!inp.value.trim()) return true;
+      var d = x.d, hay = pmNameTokens(nameOf(d) + ' ' + (d.societe || '') + ' ' + (d.email || '')).join(' ');
+      return (t && hay.indexOf(t) >= 0) || (digits.length >= 3 && String(d.tel || '').replace(/\D/g, '').indexOf(digits) >= 0) || (inp.value.indexOf('@') >= 0 && String(d.email || '').toLowerCase().indexOf(inp.value.trim().toLowerCase()) >= 0);
+    }).slice(0, 60);
+    if (!shown.length) { box.innerHTML = '<div style="padding:10px 2px;">Aucun prospect trouvé.</div>'; return; }
+    box.innerHTML = '';
+    shown.forEach(function (x) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.style.cssText = 'display:block;width:100%;text-align:left;padding:9px 10px;margin-bottom:6px;border:1px solid #eee;border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;';
+      b.innerHTML = '<div style="font-weight:700;color:#222;">' + pmEsc(nameOf(x.d)) + '</div><div style="font-size:12px;color:#666;">' + pmEsc([x.d.societe, x.d.tel, x.d.email].filter(Boolean).join(' · ')) + '</div>';
+      b.onclick = function () { close(); pmImportApply(x.id, x.d); };
+      box.appendChild(b);
+    });
+  };
+  inp.addEventListener('input', render);
+  try {
+    var snap = await window.getDocs(window.query(window.collection(window.db, 'prospectsClients'), window.where('consultantId', '==', cid)));
+    snap.forEach(function (d) { var v = d.data(); if (v.archive !== true) list.push({ id: d.id, d: v }); });
+    list.sort(function (a, b) { return nameOf(a.d).localeCompare(nameOf(b.d), 'fr'); });
+    render(); inp.focus();
+  } catch (e) { console.error(e); box.textContent = 'Lecture des prospects impossible : ' + (e.message || e); }
+};
+function pmImportApply(id, d) {
+  var nom = d.nom || ((d.prenom || '') + ' ' + (d.nomFamille || '')).trim();
+  var fields = [['client-name', nom, 'nom'], ['client-company', d.societe, 'société'], ['client-phone', d.tel, 'téléphone'], ['client-email', d.email, 'e-mail'], ['client-tva', d.tva, 'TVA']];
+  var conflicts = fields.filter(function (f) { var el = pmEl(f[0]), cur = el ? el.value.trim() : ''; return f[1] && cur && cur.toLowerCase() !== String(f[1]).toLowerCase(); });
+  var overwrite = conflicts.length ? confirm('Des champs client sont déjà remplis (' + conflicts.map(function (f) { return f[2]; }).join(', ') + ').\n\nOK = les remplacer par ceux du prospect « ' + nom + ' ».\nAnnuler = ne compléter que les champs vides.') : false;
+  fields.forEach(function (f) {
+    var el = pmEl(f[0]);
+    if (!el || !f[1]) return;
+    if (!el.value.trim() || overwrite) { el.value = f[1]; el.dispatchEvent(new Event('input', { bubbles: true })); }
+  });
+  window.pmFiche = { coll: 'prospectsClients', id: id, nom: nom };
+  if (!String(pmSites[0] || '').trim()) {
+    var ad = [d.adresse, [d.cp, d.ville].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    if (ad) { pmSites[0] = ad; pmDraftSave(); pmRenderDossier(); }
+  }
+  var act = pmActuelFromFiche(d), curEl = pmEl('client-current'), noteEl = pmEl('client-current-note');
+  if (act && curEl && !curEl.value) {
+    window.pmActuelAuto = act.tvac; pmShowActuel();
+    if (noteEl) { noteEl.style.display = 'block'; noteEl.textContent = '✔ Pré-rempli ' + act.note + ' (modifiable)'; }
+    curEl.addEventListener('input', function () { window.pmActuelAuto = null; if (noteEl) noteEl.style.display = 'none'; });
+  }
+  var b = pmEl('pm-fiche-banner');
+  if (b) {
+    b.style.display = 'block';
+    b.innerHTML = '📌 Offre pour la fiche <b>' + pmEsc(nom) + '</b> (prospect). Elle sera ajoutée directement à cette fiche. <a href="javascript:void(0)" onclick="pmImportUnlink()" style="color:#c2410c;text-decoration:underline;white-space:nowrap;">Retirer le lien</a>';
+  }
+  pmImportShow();
+  if (typeof render === 'function') { try { render(); } catch (e) {} }
+}
+window.pmImportUnlink = function () {
+  window.pmFiche = null;
+  var b = pmEl('pm-fiche-banner'); if (b) { b.style.display = 'none'; b.innerHTML = ''; }
+  pmImportShow();
+};
+setTimeout(pmImportShow, 0);
+setTimeout(pmImportShow, 1500);
+
 async function pmSaveOfferToCrm(d) {
   var cid = window.consultantInfo && window.consultantInfo.id;
   if (!cid) throw new Error('consultant non identifié');

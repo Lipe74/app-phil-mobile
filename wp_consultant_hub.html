@@ -210,8 +210,9 @@
 
 /* Build 14.124 : bandeaux dans l'en-tête, zone fixe du menu, recherche */
 #hdr-banners{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;margin:0 14px;}
-#hdr-banners #news-banner,#hdr-banners #build-line{width:auto;box-sizing:border-box;padding:3px 12px;font-size:11px;line-height:1.5;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:8px;cursor:pointer;}
-#hdr-banners #build-line{border:1px solid #fed7aa;}
+#hdr-banners #news-banner{width:auto;box-sizing:border-box;padding:3px 12px;font-size:11px;line-height:1.5;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:8px;cursor:pointer;}
+/* Build 14.140 : « Dernière build » sous le titre, à gauche (le centre est libéré pour les bandeaux d'infos) */
+#build-line{margin-top:3px;max-width:270px;box-sizing:border-box;padding:2px 9px;font-size:10px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:8px;cursor:pointer;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;font-weight:400;}
 #hdr-banners .pm-hb-open{white-space:normal !important;}
 @media(max-width:768px){#top-header{flex-wrap:wrap;}#hdr-banners{order:5;flex-basis:100%;margin:6px 0 0;}}
 #pm-fixed-zone{display:flex;flex-direction:column;gap:6px;margin-bottom:4px;}
@@ -263,11 +264,11 @@ window.ACCES_PUBLIC_ACTIF = false;
       <span style="font-size:9px;color:#999;font-weight:600;">
 Outil pour les consultants Phil-Mobile
      </span>
+      <div id="build-line" onclick="showCrmPanel('panel-maj')" title="Voir les nouveautés" style="display:none;"></div>
     </div>
     </div>
     <div id="hdr-banners">
       <div id="news-banner" onclick="this.classList.toggle('pm-hb-open')" title="Cliquer pour voir le texte complet" style="display:none;font-weight:700;"></div>
-      <div id="build-line" onclick="showCrmPanel('panel-maj')" title="Voir les nouveautés" style="display:none;background:#fff7ed;color:#9a3412;"></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
 
@@ -13269,8 +13270,8 @@ function majBuildLine() {
   if (!n || !n.build) { el.style.display = 'none'; return; }
   var isNew = (n.createdAt || 0) > majLastSeen();
   var num = String(n.build).replace(/^\s*build\s*/i, '');
-  el.innerHTML = '📝 <b>Dernière build ' + majEsc(num) + '</b>' + (n.title ? ' : ' + majEsc(n.title) : '')
-    + (isNew ? ' <span style="background:#ef4444;color:#fff;border-radius:9px;padding:1px 7px;font-size:10px;font-weight:700;">nouveau</span>' : '');
+  el.innerHTML = '📝 <b>Build ' + majEsc(num) + '</b>' + (n.title ? ' : ' + majEsc(n.title) : '')
+    + (isNew ? ' <span style="background:#ef4444;color:#fff;border-radius:9px;padding:0 6px;font-size:9px;font-weight:700;">nouveau</span>' : '');
   el.style.display = 'block';
 }
 function majUpdateBadge() {
