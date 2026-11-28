@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.138 - CV : fiche remplie automatiquement";
+  scope.APP_VERSION = "14.139 - Icônes et nom de l'application";
 })();
