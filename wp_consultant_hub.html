@@ -133,6 +133,10 @@
 .pm-fav-grouphead i{ display:inline-block;width:8px;height:8px;border-radius:50%; }
 .pm-doc-logo{ width:18px;height:18px;object-fit:contain;vertical-align:middle;flex-shrink:0; }
 .pm-doc-pin{ margin-left:4px;font-size:11px;flex-shrink:0; }
+/* Menu de gauche collant sur ordinateur : il reste visible pendant qu'on fait défiler un outil (Build 14.144) */
+@media(min-width:601px){
+  #pm-left-menu{ position:sticky;top:var(--pm-hdr,78px);align-self:flex-start;max-height:calc(100vh - var(--pm-hdr,78px) - 12px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-right:2px; }
+}
 @media(max-width:600px){
   #outils-unlocked > div { flex-direction:column !important; }
   #outils-unlocked > div > div:first-child { width:100% !important; }
@@ -13447,6 +13451,23 @@ function majKey(n) {
 }
 function majEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 // Ligne « Dernière build » (haut du hub) : numéro + titre du dernier build publié dans « Les builds de Phil-Mobile »
+// ===== MENU COLLANT : hauteur de l'en-tête (Build 14.144) =====
+(function () {
+  function setHdr() {
+    var h = document.getElementById('top-header');
+    var v = (h && h.offsetHeight) ? h.offsetHeight + 10 : 78;
+    document.documentElement.style.setProperty('--pm-hdr', v + 'px');
+  }
+  function init() {
+    setHdr();
+    window.addEventListener('resize', setHdr);
+    var h = document.getElementById('top-header');
+    if (h && window.ResizeObserver) { try { new ResizeObserver(setHdr).observe(h); } catch (e) {} }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+// ===== FIN MENU COLLANT =====
+
 // ===== RETOUR EN HAUT À L'OUVERTURE D'UN OUTIL (Build 14.142) =====
 // Dès qu'un panneau passe de masqué à affiché (menu, recherche, bandeaux…), la page et le panneau remontent en haut.
 (function () {

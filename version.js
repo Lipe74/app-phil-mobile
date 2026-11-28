@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.143 - Un seul ascenseur dans les outils";
+  scope.APP_VERSION = "14.144 - Menu de gauche collant";
 })();
