@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.144 - Menu de gauche collant";
+  scope.APP_VERSION = "14.145 - Mes points et Mon équipe";
 })();

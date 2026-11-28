@@ -1990,6 +1990,10 @@ STATUT: independant
               <div class="pm-niv-bar" id="pm-accueil-niv-bar"></div>
               <div id="pm-accueil-niv-info" style="font-size:11px;color:#6b7280;text-align:center;margin-top:6px;"></div>
             </div>
+            <!-- Mes points (Build 14.145) -->
+            <div id="pm-points-card" style="display:none;border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;"></div>
+            <!-- Mon équipe : points des consultants parrainés (sponsors) -->
+            <div id="pm-team-card" style="display:none;border:1px solid #f0f0f0;border-radius:12px;background:#fff;padding:16px;margin-bottom:10px;"></div>
             <!-- Métriques -->
             <div id="pm-accueil-metrics" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
             <!-- Carte Stats Smart (perso) — visible uniquement pour delta835 -->
@@ -6657,6 +6661,7 @@ function renderDashboard() {
       nivInfo.innerHTML = `<strong style="color:#f97316;">🏆 Niveau maximum · ${Math.round(aspTotal*10)/10} ASP</strong>`;
     }
   }
+  try { ptsRefresh(); } catch (e) {}
 
   // Métriques (Contrats ce mois / Orange / Eneco / ASP ce mois) — lues depuis Firestore (wp_contrats.html)
   refreshAccueilMetrics(u);
@@ -6672,6 +6677,239 @@ function renderDashboard() {
     }
   }
 }
+
+// ===== MES POINTS + MON ÉQUIPE (Build 14.145) =====
+// Trimestre : 10 ASP = qualification, 75 ASP = cadeau trimestriel. Voyage : 450 (1 pers.) / 850 (2 pers.) du 1er novembre au 31 août.
+// PQS : +50 points si le PQS est réussi dans les 40 jours après le démarrage. Trimestres calendaires.
+var PTS = { QUALIF: 10, CADEAU: 75, VOY1: 450, VOY2: 850, PQS_BONUS: 50, PQS_DAYS: 40 };
+var PTS_MOIS = ['Janv.', 'Févr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
+var _pts = { contracts: null, at: 0, last: null, teamAt: 0, team: null, sync: '' };
+
+function ptsDate(c) {
+  var d = new Date(c.dateContrat || c.date);
+  return isNaN(d) ? null : d;
+}
+function ptsQuarter(d) {
+  var y = d.getFullYear(), q = Math.floor(d.getMonth() / 3);
+  return { key: y + '-T' + (q + 1), label: 'T' + (q + 1) + ' ' + y, mois: PTS_MOIS[q * 3].replace('.', '') + '–' + PTS_MOIS[q * 3 + 2].replace('.', ''),
+    start: new Date(y, q * 3, 1), end: new Date(y, q * 3 + 3, 0, 23, 59, 59) };
+}
+// Période « voyage » : 1er novembre → 31 août. Entre septembre et octobre : la période qui vient de se terminer.
+function ptsVoyage(d) {
+  var y = d.getFullYear(), m = d.getMonth(), startY = m >= 10 ? y : y - 1;
+  return { start: new Date(startY, 10, 1), end: new Date(startY + 1, 7, 31, 23, 59, 59), closed: (m === 8 || m === 9),
+    label: '1 nov. ' + startY + ' → 31 août ' + (startY + 1) };
+}
+function ptsDaysLeft(end) { return Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86400000)); }
+function ptsSum(items, a, b) {
+  var t = 0; items.forEach(function (x) { if (x.d >= a && x.d <= b) t += x.asp; });
+  return Math.round(t * 10) / 10;
+}
+function ptsFmt(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+
+function ptsCompute(contracts, startFR) {
+  var now = new Date(), items = [];
+  contracts.forEach(function (c) {
+    if (c.etatContrat === 'Annulé' || c.etatContrat === 'Refusé' || c.ancien) return;
+    var d = ptsDate(c); if (!d) return;
+    items.push({ d: d, asp: Number(c.aspTotal) || 0, c: c });
+  });
+  // PQS : +50 si les 12 ASP sont réunis (contrats activés) dans les 40 jours après le démarrage
+  var pqs = null, st = (typeof onbParseFR === 'function') ? onbParseFR(startFR) : null;
+  if (st) {
+    var dl = new Date(st.getTime() + PTS.PQS_DAYS * 86400000), daysLeft = Math.ceil((dl.getTime() - now.getTime()) / 86400000);
+    var early = contracts.filter(function (c) { var d = ptsDate(c); return d && d <= dl && !c.ancien; });
+    var done = onbCalcPqs(early).complete;
+    pqs = { deadline: dl, daysLeft: daysLeft, done: done, visible: daysLeft > 0 };
+    if (done) items.push({ d: new Date(Math.min(now.getTime(), dl.getTime())), asp: PTS.PQS_BONUS, bonus: true });
+  }
+  var q = ptsQuarter(now), v = ptsVoyage(now);
+  var qAsp = ptsSum(items, q.start, q.end), vAsp = ptsSum(items, v.start, v.end);
+  var qMonths = [0, 1, 2].map(function (i) {
+    var a = new Date(q.start.getFullYear(), q.start.getMonth() + i, 1), b = new Date(a.getFullYear(), a.getMonth() + 1, 0, 23, 59, 59);
+    return { label: PTS_MOIS[a.getMonth()], asp: ptsSum(items, a, b) };
+  });
+  var vMonths = [];
+  for (var i = 0; i < 10; i++) {
+    var a2 = new Date(v.start.getFullYear(), v.start.getMonth() + i, 1), b2 = new Date(a2.getFullYear(), a2.getMonth() + 1, 0, 23, 59, 59);
+    vMonths.push({ label: PTS_MOIS[a2.getMonth()], asp: ptsSum(items, a2, b2) });
+  }
+  var hist = [];
+  for (var k = 0; k < 4; k++) {
+    var ref = new Date(now.getFullYear(), now.getMonth() - 3 * k, 15), hq = ptsQuarter(ref);
+    hist.push({ q: hq, asp: ptsSum(items, hq.start, hq.end) });
+  }
+  var qList = items.filter(function (x) { return x.d >= q.start && x.d <= q.end; }).sort(function (a, b) { return b.d - a.d; });
+  return { q: q, qAsp: qAsp, qMonths: qMonths, qList: qList, v: v, vAsp: vAsp, vMonths: vMonths, hist: hist, pqs: pqs };
+}
+
+// Barre de progression avec repères (ex. 10 et 75)
+function ptsBar(val, max, marks) {
+  var pct = Math.min(100, Math.max(0, val / max * 100)), top = marks[marks.length - 1].v, done = val >= top;
+  var tick = marks.map(function (m) {
+    var p = m.v / max * 100, ok = val >= m.v;
+    return '<span style="position:absolute;left:' + p + '%;top:-3px;height:16px;width:2px;background:' + (ok ? '#16a34a' : '#9ca3af') + ';"></span>'
+      + '<span style="position:absolute;left:' + p + '%;top:15px;font-size:10px;font-weight:700;white-space:nowrap;color:' + (ok ? '#16a34a' : '#6b7280') + ';transform:translateX(' + (p >= 92 ? '-100%' : '-50%') + ');">' + m.label + '</span>';
+  }).join('');
+  return '<div style="position:relative;height:10px;background:#f3f4f6;border-radius:99px;margin:8px 0 30px;border:1px solid #f0f0f0;">'
+    + '<div style="height:100%;width:' + pct + '%;background:' + (done ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,#f97316,#ffb347)') + ';border-radius:99px;"></div>' + tick + '</div>';
+}
+
+function ptsRenderMine(r) {
+  var el = document.getElementById('pm-points-card'); if (!el) return;
+  var q = r.q, v = r.v, dq = ptsDaysLeft(q.end), dv = ptsDaysLeft(v.end);
+  var wk = function (rest, days) { return days > 0 ? ptsFmt(rest / Math.max(1, days / 7)) : '—'; };
+  var lbl = 'font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;';
+  // --- Trimestre
+  var qTxt = [];
+  if (r.qAsp >= PTS.QUALIF) qTxt.push('<span style="color:#16a34a;font-weight:700;">✅ Qualifié (' + PTS.QUALIF + ' ASP)</span>');
+  else qTxt.push('<span style="color:' + (dq <= 30 ? '#dc2626' : '#b45309') + ';font-weight:700;">Qualification : encore ' + ptsFmt(PTS.QUALIF - r.qAsp) + ' ASP</span>');
+  if (r.qAsp >= PTS.CADEAU) qTxt.push('<span style="color:#16a34a;font-weight:700;">🎁 Cadeau atteint !</span>');
+  else qTxt.push('🎁 Cadeau : encore <b>' + ptsFmt(PTS.CADEAU - r.qAsp) + '</b> ASP' + (dq > 0 ? ' · ≈ ' + wk(PTS.CADEAU - r.qAsp, dq) + ' / semaine' : ''));
+  var h = '<div style="' + lbl + 'margin-bottom:10px;">🎯 MES POINTS</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;">Trimestre ' + q.label + ' <span style="font-weight:400;color:#9ca3af;font-size:11px;">(' + q.mois + ')</span></div>'
+    + '<div style="font-size:12px;color:#6b7280;"><b style="font-size:16px;color:#f97316;">' + ptsFmt(r.qAsp) + '</b> ASP · ' + dq + ' j restants</div></div>'
+    + ptsBar(r.qAsp, PTS.CADEAU, [{ v: PTS.QUALIF, label: PTS.QUALIF }, { v: PTS.CADEAU, label: PTS.CADEAU + ' 🎁' }])
+    + '<div style="font-size:12px;color:#374151;display:flex;flex-direction:column;gap:2px;">' + qTxt.map(function (t) { return '<div>' + t + '</div>'; }).join('') + '</div>';
+  // --- Voyage
+  var next = r.vAsp < PTS.VOY1 ? PTS.VOY1 : PTS.VOY2;
+  var vTxt;
+  if (r.vAsp >= PTS.VOY2) vTxt = '<span style="color:#16a34a;font-weight:700;">✈️ Voyage pour 2 personnes atteint !</span>';
+  else if (r.vAsp >= PTS.VOY1) vTxt = '<span style="color:#16a34a;font-weight:700;">✈️ Voyage pour 1 personne atteint</span> · encore <b>' + ptsFmt(PTS.VOY2 - r.vAsp) + '</b> pour deux' + (!v.closed && dv > 0 ? ' · ≈ ' + wk(PTS.VOY2 - r.vAsp, dv) + ' / semaine' : '');
+  else vTxt = '✈️ Encore <b>' + ptsFmt(PTS.VOY1 - r.vAsp) + '</b> ASP pour 1 personne' + (!v.closed && dv > 0 ? ' · ≈ ' + wk(next - r.vAsp, dv) + ' / semaine' : '');
+  h += '<div style="border-top:1px solid #f3f4f6;margin-top:14px;padding-top:12px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;">Voyage <span style="font-weight:400;color:#9ca3af;font-size:11px;">(' + v.label + ')</span></div>'
+    + '<div style="font-size:12px;color:#6b7280;"><b style="font-size:16px;color:#f97316;">' + ptsFmt(r.vAsp) + '</b> ASP · ' + (v.closed ? 'période terminée' : dv + ' j restants') + '</div></div>'
+    + ptsBar(r.vAsp, PTS.VOY2, [{ v: PTS.VOY1, label: PTS.VOY1 + ' (1 pers.)' }, { v: PTS.VOY2, label: PTS.VOY2 + ' (2 pers.) ✈️' }])
+    + '<div style="font-size:12px;color:#374151;">' + vTxt + (v.closed ? '<div style="color:#9ca3af;margin-top:2px;">Prochaine période : 1er novembre.</div>' : '') + '</div></div>';
+  // --- Démarrage (PQS)
+  if (r.pqs && r.pqs.visible) {
+    h += '<div style="border-top:1px solid #f3f4f6;margin-top:14px;padding-top:12px;font-size:12px;color:#374151;">'
+      + '<div style="font-size:13px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">Démarrage</div>'
+      + (r.pqs.done
+        ? '<span style="color:#16a34a;font-weight:700;">✅ PQS réussi à temps : +' + PTS.PQS_BONUS + ' points comptés</span>'
+        : '⏱ PQS : <b>' + r.pqs.daysLeft + ' j restants</b> pour gagner <b>+' + PTS.PQS_BONUS + ' points</b> (PQS réussi dans les ' + PTS.PQS_DAYS + ' jours)')
+      + '</div>';
+  }
+  // --- Détails
+  var rows = r.qList.map(function (x) {
+    var nom = x.bonus ? '🎁 Bonus PQS' : (x.c.nom || x.c.clientNom || x.c.client || 'Contrat');
+    return '<div style="display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed #f0f0f0;padding:3px 0;"><span>' + pcEsc(x.d.toLocaleDateString('fr-BE')) + ' · ' + pcEsc(nom) + '</span><b>' + ptsFmt(x.asp) + '</b></div>';
+  }).join('') || '<div style="color:#9ca3af;">Aucun contrat ce trimestre.</div>';
+  var mon = function (arr, cls) { return '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px;">' + arr.map(function (m) { return '<span style="font-size:11px;background:#f9fafb;border:1px solid #eee;border-radius:6px;padding:2px 7px;">' + m.label + ' <b>' + ptsFmt(m.asp) + '</b></span>'; }).join('') + '</div>'; };
+  var hist = r.hist.map(function (x) {
+    return '<div style="display:flex;justify-content:space-between;border-bottom:1px dashed #f0f0f0;padding:3px 0;"><span>' + x.q.label + ' <span style="color:#9ca3af;">(' + x.q.mois + ')</span></span><span><b>' + ptsFmt(x.asp) + '</b> ASP · ' + (x.asp >= PTS.QUALIF ? '✅' : '⬜') + ' qualif. · ' + (x.asp >= PTS.CADEAU ? '🎁' : '⬜') + ' cadeau</span></div>';
+  }).join('');
+  h += '<details style="margin-top:12px;"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:#f97316;">Détails ▾</summary>'
+    + '<div style="font-size:12px;color:#374151;margin-top:8px;"><b>Trimestre par mois</b>' + mon(r.qMonths)
+    + '<b>Contrats du trimestre</b><div style="margin:4px 0 10px;">' + rows + '</div>'
+    + '<b>Voyage par mois</b>' + mon(r.vMonths)
+    + '<b>Derniers trimestres</b><div style="margin-top:4px;">' + hist + '</div></div></details>';
+  el.innerHTML = h;
+  el.style.display = 'block';
+}
+
+// Résumé « totaux seulement » lu par le sponsor (aucun contrat, aucun client)
+async function ptsSyncSummary(r) {
+  var u = window.pmCurrentUser; if (!u || !window.setDoc || !window.doc) return;
+  var data = {
+    consultantId: u.id, uplineId: u.uplineId || '',
+    nom: ((u.name || '') + ' ' + (u.lastName || '')).trim() || u.id,
+    qKey: r.q.key, qLabel: r.q.label, qAsp: r.qAsp, qEnd: r.q.end.toISOString(),
+    vAsp: r.vAsp, vEnd: r.v.end.toISOString(), vClosed: !!r.v.closed,
+    pqsActive: !!(r.pqs && r.pqs.visible && !r.pqs.done), pqsDone: !!(r.pqs && r.pqs.visible && r.pqs.done),
+    pqsDeadline: (r.pqs && r.pqs.visible) ? r.pqs.deadline.toISOString() : ''
+  };
+  var sig = JSON.stringify(data) + '|' + new Date().toISOString().slice(0, 10);
+  if (_pts.sync === sig) return;
+  _pts.sync = sig;
+  data.majLe = new Date().toISOString();
+  try { await window.setDoc(window.doc(window.db, 'pointsSuivi', u.id), data, { merge: true }); } catch (e) { console.log('Résumé des points non enregistré:', e.message); }
+}
+
+async function ptsLoadContracts(u, force) {
+  if (!force && _pts.contracts && Date.now() - _pts.at < 60000) return _pts.contracts;
+  var snap = await window.getDocs(window.query(window.collection(window.db, 'contrats'), window.where('consultantId', '==', u.id)));
+  var list = []; snap.forEach(function (d) { list.push(d.data()); });
+  _pts.contracts = list; _pts.at = Date.now();
+  return list;
+}
+
+// ----- Mon équipe (sponsor) -----
+function ptsTeamRender(members, byId) {
+  var el = document.getElementById('pm-team-card'); if (!el) return;
+  if (!members.length) { el.style.display = 'none'; return; }
+  var now = new Date(), cq = ptsQuarter(now), dq = ptsDaysLeft(cq.end);
+  var lbl = 'font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;';
+  var rows = members.map(function (m) {
+    var r = byId[m.id], flags = [], q = 0, v = 0, stale = false, pq = null;
+    if (r) {
+      stale = r.qKey !== cq.key; q = stale ? 0 : (r.qAsp || 0);
+      var vEnd = r.vEnd ? new Date(r.vEnd) : null;
+      v = (vEnd && Date.now() <= vEnd.getTime() + 61 * 86400000) ? (r.vAsp || 0) : 0;   // la période terminée reste affichée jusqu'à fin octobre
+      if (r.pqsActive && r.pqsDeadline) { var dl = Math.ceil((new Date(r.pqsDeadline).getTime() - Date.now()) / 86400000); if (dl > 0) pq = dl; }
+      if (q < PTS.QUALIF && dq <= 30) flags.push('Qualification en danger (' + ptsFmt(q) + '/' + PTS.QUALIF + ', ' + dq + ' j)');
+      if (pq !== null && pq <= 10) flags.push('PQS : ' + pq + ' j restants');
+    } else flags.push('Pas encore de données');
+    return { m: m, r: r, q: q, v: v, pq: pq, flags: flags, stale: stale };
+  });
+  var todo = rows.filter(function (x) { return x.flags.length; });
+  var h = '<div style="' + lbl + 'margin-bottom:10px;">👥 MON ÉQUIPE</div>';
+  if (todo.length) {
+    h += '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:12px;"><div style="font-weight:700;color:#b91c1c;margin-bottom:3px;">📞 À relancer</div>'
+      + todo.map(function (x) { return '<div>• <b>' + pcEsc(x.m.name || x.m.fullName || x.m.id) + '</b> — ' + pcEsc(x.flags.join(' · ')) + '</div>'; }).join('') + '</div>';
+  }
+  h += rows.map(function (x) {
+    var m = x.m, tel = String(m.phone || '').replace(/[^\d+]/g, ''), wa = tel.replace(/^\+/, '').replace(/^0/, '32');
+    var qCol = x.q >= PTS.CADEAU ? '#16a34a' : (x.q >= PTS.QUALIF ? '#16a34a' : (dq <= 30 ? '#dc2626' : '#f97316'));
+    var mini = function (val, max, marks, col) {
+      return '<div style="position:relative;height:7px;background:#f3f4f6;border-radius:99px;border:1px solid #f0f0f0;margin:3px 0 0;"><div style="height:100%;width:' + Math.min(100, val / max * 100) + '%;background:' + col + ';border-radius:99px;"></div>'
+        + marks.map(function (k) { return '<span style="position:absolute;left:' + (k / max * 100) + '%;top:-2px;height:10px;width:2px;background:#9ca3af;"></span>'; }).join('') + '</div>';
+    };
+    var upd = x.r && x.r.majLe ? new Date(x.r.majLe).toLocaleDateString('fr-BE') : '';
+    return '<div style="border:1px solid #f0f0f0;border-radius:10px;padding:8px 10px;margin-bottom:6px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;"><div style="font-size:13px;font-weight:700;color:#1a1a1a;">' + pcEsc(m.name || m.fullName || m.id)
+      + (x.pq !== null ? ' <span style="font-size:10px;background:#fff3e0;color:#b45309;border-radius:99px;padding:1px 7px;margin-left:4px;">⏱ PQS ' + x.pq + ' j</span>' : '') + '</div>'
+      + '<div style="display:flex;gap:5px;">' + (tel ? '<a href="https://wa.me/' + wa + '" target="_blank" rel="noopener" style="background:#25d366;color:#fff;border-radius:99px;padding:3px 9px;font-size:11px;text-decoration:none;">💬</a><a href="tel:' + tel + '" style="background:#1a1a2e;color:#fff;border-radius:99px;padding:3px 9px;font-size:11px;text-decoration:none;">📞</a>' : '') + '</div></div>'
+      + (x.r
+        ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;font-size:11px;color:#6b7280;">'
+          + '<div>Trimestre : <b style="color:' + qCol + ';">' + ptsFmt(x.q) + '</b> / ' + PTS.CADEAU + ' <span style="color:#9ca3af;">(qualif. ' + PTS.QUALIF + ')</span>' + mini(x.q, PTS.CADEAU, [PTS.QUALIF], qCol) + '</div>'
+          + '<div>Voyage : <b style="color:#f97316;">' + ptsFmt(x.v) + '</b> / ' + PTS.VOY2 + ' <span style="color:#9ca3af;">(450 · 850)</span>' + mini(x.v, PTS.VOY2, [PTS.VOY1], '#f97316') + '</div></div>'
+          + '<div style="font-size:10px;color:#9ca3af;margin-top:4px;">' + (x.stale ? 'Données du ' + pcEsc(x.r.qLabel || 'trimestre précédent') + ' — pas ouvert l\'app ce trimestre · ' : '') + (upd ? 'mis à jour le ' + upd : '') + '</div>'
+        : '<div style="font-size:11px;color:#9ca3af;margin-top:4px;">Pas encore de données : il apparaîtra dès qu\'il aura ouvert l\'app.</div>')
+      + '</div>';
+  }).join('');
+  el.innerHTML = h; el.style.display = 'block';
+}
+async function ptsLoadTeam(u) {
+  var members = Object.keys(PM_USERS || {}).map(function (k) { return PM_USERS[k]; }).filter(function (x) { return x.uplineId === u.id && x.id !== u.id; });
+  if (!members.length) { ptsTeamRender([], {}); return; }
+  var byId = {};
+  try {
+    var snap = await window.getDocs(window.query(window.collection(window.db, 'pointsSuivi'), window.where('uplineId', '==', u.id)));
+    snap.forEach(function (d) { var r = d.data(); if (r.consultantId) byId[r.consultantId] = r; });
+  } catch (e) { console.log('Points de l\'équipe illisibles:', e.message); }
+  ptsTeamRender(members, byId);
+}
+
+// Point d'entrée : appelé par le tableau de bord (mise en cache 60 s pour éviter les relectures)
+async function ptsRefresh(force) {
+  var u = window.pmCurrentUser; if (!u || !u.id) return;
+  try {
+    var tries = 0;
+    while ((!window.db || !window.getDocs) && tries < 30) { await new Promise(function (r) { setTimeout(r, 100); }); tries++; }
+    if (!window.db || !window.getDocs) return;
+    var p = (typeof PM_AGENT_PROFILES !== 'undefined' && PM_AGENT_PROFILES[u.agent]) || {};
+    var startFR = (p.startDate && p.startDate !== '—') ? p.startDate : ((typeof onb !== 'undefined' && onb.d && onb.d.startDate) || '');
+    var list = await ptsLoadContracts(u, force);
+    var r = ptsCompute(list, startFR);
+    _pts.last = r;
+    ptsRenderMine(r);
+    ptsSyncSummary(r);
+    if (Date.now() - _pts.teamAt > 60000 || force) { _pts.teamAt = Date.now(); ptsLoadTeam(u); }
+  } catch (e) { console.log('Mes points indisponibles:', e.message); }
+}
+// ===== FIN MES POINTS + MON ÉQUIPE =====
 
 async function refreshAccueilMetrics(u) {
   const metricsEl = document.getElementById('pm-accueil-metrics');
