@@ -1373,23 +1373,24 @@ STATUT: independant
 <div id="modal-pcl-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
               <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
                 <h3 id="pcl-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
+                <div id="pcl-dup-live" style="display:none;background:#fff7ed;border:1px solid #fdba74;border-radius:9px;padding:8px 10px;margin:-6px 0 12px;font-size:12px;color:#444;"></div>
                 <div>
                   <div class="crm-sec"><div class="crm-sh" style="background:#1f5fa8;">📇 Coordonnées</div><div class="crm-sb">
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
-                    <input id="pcl-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pcl-prenom" oninput="pcDupLiveSchedule('cl')" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
-                    <input id="pcl-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pcl-nom" oninput="pcDupLiveSchedule('cl')" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Téléphone</div>
-                    <input id="pcl-tel" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pcl-tel" oninput="pcDupLiveSchedule('cl')" placeholder="0470..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
-                    <input id="pcl-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pcl-email" oninput="pcDupLiveSchedule('cl')" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Adresse (rue et numéro)</div>
@@ -1511,6 +1512,7 @@ STATUT: independant
             </div>
 
             <div id="pcl-tab-liste">
+              <div id="pcl-legend" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
                 <select id="pcl-filter-statut" onchange="pclFilterList()" style="width:auto;padding:7px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                   <option value="">Tous les statuts</option>
@@ -1521,6 +1523,7 @@ STATUT: independant
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
                   <option value="Test">🧪 Test</option>
+                  <option value="__late">⚠️ En retard</option>
                   <option value="__archives">📦 Archivés</option>
                 </select>
                 <input id="pcl-search" type="text" placeholder="🔍 Rechercher..." oninput="pclFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
@@ -1635,15 +1638,16 @@ OPERATEUR: Proximus
             <div id="modal-pco-edit" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;align-items:center;justify-content:center;overflow-y:auto;">
               <div style="background:#fff;border-radius:16px;padding:22px;max-width:480px;width:92%;max-height:88vh;overflow-y:auto;margin:20px 0;">
                 <h3 id="pco-modal-title" style="color:#f97316;margin:0 0 16px;font-size:15px;">🆕 Nouveau prospect</h3>
+                <div id="pco-dup-live" style="display:none;background:#fff7ed;border:1px solid #fdba74;border-radius:9px;padding:8px 10px;margin:-6px 0 12px;font-size:12px;color:#444;"></div>
                 <div>
                   <div class="crm-sec"><div class="crm-sh" style="background:#1f5fa8;">📇 Coordonnées</div><div class="crm-sb">
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Prénom</div>
-                    <input id="pco-prenom" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pco-prenom" oninput="pcDupLiveSchedule('co')" placeholder="Prénom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Nom</div>
-                    <input id="pco-nom" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pco-nom" oninput="pcDupLiveSchedule('co')" placeholder="Nom" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
@@ -1651,7 +1655,7 @@ OPERATEUR: Proximus
                       <a href="javascript:void(0)" onclick="pcoCheckOperator()" title="Copie le numéro et ouvre 1399.be" style="font-size:10px;font-weight:700;color:#f97316;text-decoration:underline;cursor:pointer;">🔎 Vérifier l'opérateur</a>
                     </div>
                     <div style="display:flex;gap:5px;">
-                      <input id="pco-tel" placeholder="0470..." style="flex:1;min-width:0;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                      <input id="pco-tel" oninput="pcDupLiveSchedule('co')" placeholder="0470..." style="flex:1;min-width:0;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                       <select id="pco-operateur" title="Opérateur actuel" style="width:38%;min-width:0;padding:8px 4px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:12px;">
                         <option value="">Opérateur</option>
                         <option>Orange</option><option>Proximus</option><option>Base</option>
@@ -1663,7 +1667,7 @@ OPERATEUR: Proximus
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">Email</div>
-                    <input id="pco-email" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
+                    <input id="pco-email" oninput="pcDupLiveSchedule('co')" placeholder="email@..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:7px;box-sizing:border-box;font-size:13px;">
                   </div>
                   <div style="grid-column:span 2;">
                     <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:3px;">TVA</div>
@@ -1728,6 +1732,7 @@ OPERATEUR: Proximus
             </div>
 
             <div id="pco-tab-liste">
+              <div id="pco-legend" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
                 <select id="pco-filter-statut" onchange="pcoFilterList()" style="width:auto;padding:7px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
                   <option value="">Tous les statuts</option>
@@ -1738,6 +1743,7 @@ OPERATEUR: Proximus
                   <option value="Converti">✅ Converti</option>
                   <option value="Perdu">❌ Perdu</option>
                   <option value="Test">🧪 Test</option>
+                  <option value="__late">⚠️ En retard</option>
                   <option value="__archives">📦 Archivés</option>
                 </select>
                 <input id="pco-search" type="text" placeholder="🔍 Rechercher..." oninput="pcoFilterList()" style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:12px;">
@@ -8278,7 +8284,12 @@ function crmRenderCard(item, col) {
       ? '<span style="background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px;">SC+ ' + aspVal + '</span>'
       : '<span style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px;">BC ' + aspVal + '</span>';
   }
-  var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
+  var typeBar = '';
+  if (col === 'clients' && !inactive) {
+    var tcol = { 'Particulier': '#3b82f6', 'Indépendant': '#14b8a6', 'Société': '#7c3aed', 'Entreprise': '#7c3aed' }[item.type || 'Particulier'];
+    if (tcol) typeBar = 'border-left:6px solid ' + tcol + ';';
+  }
+  var h = '<div style="background:' + bg + ';border:1px solid ' + br + ';' + typeBar + 'border-radius:10px;padding:11px 13px;margin-bottom:8px;opacity:' + op + ';">';
   h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;flex-wrap:wrap;">';
   h += '<b style="font-size:13px;">' + crmEsc(nm) + '</b>' + badge;
   var offerBtn = (col === 'consultantsCrm' && !inactive && !isAuth && canOffer) ? '<button type="button" title="Envoyer à l\'admin la demande d\'accès (app offerte)" onclick="crmOfferAccess(&#39;' + item._id + '&#39;)" style="padding:3px 10px;border:1px solid #7dd3fc;border-radius:6px;background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🎁 Préparer son accès</button>' : '';
@@ -8709,6 +8720,134 @@ function pcToast(msg) {
   window._prospToastTimer = setTimeout(function () { t.style.display = 'none'; }, 3000);
 }
 
+// ===== COULEURS PAR STATUT + LÉGENDE + ALERTE DOUBLON EN DIRECT (Build 14.141) =====
+var PC_STAT_COL = {
+  'Nouveau':    { bar: '#3b82f6', bg: '#f5f9ff', br: '#bfdbfe', ico: '🆕' },
+  'Contacté':   { bar: '#f97316', bg: '#fff7ed', br: '#fdba74', ico: '📞' },
+  'Rdv':        { bar: '#7c3aed', bg: '#f8f5ff', br: '#ddd6fe', ico: '📅' },
+  'En attente': { bar: '#eab308', bg: '#fefce8', br: '#fde68a', ico: '⏳' },
+  'Converti':   { bar: '#22c55e', bg: '#f3fbf5', br: '#bbf7d0', ico: '✅' },
+  'Perdu':      { bar: '#9ca3af', bg: '#f6f6f6', br: '#e5e7eb', ico: '❌' },
+  'Test':       { bar: '#a855f7', bg: '#faf5ff', br: '#e9d5ff', ico: '🧪' }
+};
+// Rdv ou BOM dépassé sur une fiche encore active (ni convertie, ni perdue, ni test)
+function pcIsLate(p) {
+  if (!p || ['Converti', 'Perdu', 'Test'].indexOf(p.statut) >= 0) return false;
+  var now = new Date();
+  if (p.statut === 'Rdv' && p.rdv && p.rdv.date && pcRdvState(p.rdv.date) === 'late') return true;
+  if (p.bom && p.bom.date) { var d = new Date(p.bom.date); if (!isNaN(d) && d < now) return true; }
+  return false;
+}
+// Style de la carte d'un prospect : bande colorée à gauche + fond teinté (rouge si en retard)
+function pcCardStyle(p) {
+  var c = PC_STAT_COL[p.statut] || PC_STAT_COL['Nouveau'], late = pcIsLate(p);
+  var bar = late ? '#dc2626' : c.bar, bg = late ? '#fef2f2' : c.bg, br = late ? '#fca5a5' : c.br;
+  return 'background:' + bg + ';border:1px solid ' + br + ';border-left:6px solid ' + bar + ';border-radius:10px;padding:11px 13px;margin-bottom:8px;' + (p.statut === 'Perdu' ? 'opacity:.8;' : '');
+}
+function pcLateBadge(p) {
+  return pcIsLate(p) ? '<span style="background:#fde2e1;color:#c0392b;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700;margin-left:6px;">⚠️ En retard</span>' : '';
+}
+// Légende cliquable avec compteurs : un clic filtre la liste par statut (re-clic = tous)
+var _pcLegendCounts = { pcl: {}, pco: {} };
+function pcLegendRender(prefix, list) {
+  var el = document.getElementById(prefix + '-legend');
+  if (!el) return;
+  var counts = {}, late = 0, arch = 0;
+  PC_STATUTS.forEach(function (st) { counts[st] = 0; });
+  (list || []).forEach(function (p) {
+    if (counts[p.statut] !== undefined) counts[p.statut]++;
+    if (p.archive === true) arch++;
+    if (pcIsLate(p) && p.archive !== true) late++;
+  });
+  _pcLegendCounts[prefix] = counts;
+  var chip = function (val, label, bar, bg, n) {
+    return '<button type="button" data-val="' + val + '" onclick="pcLegendClick(\'' + prefix + '\',\'' + val + '\')" style="display:inline-flex;align-items:center;gap:5px;border:1px solid ' + bar + ';background:' + bg + ';color:#333;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">'
+      + '<span style="width:9px;height:9px;border-radius:50%;background:' + bar + ';display:inline-block;"></span>' + label + ' <span style="opacity:.7;">' + n + '</span></button>';
+  };
+  el.innerHTML = PC_STATUTS.map(function (st) { var c = PC_STAT_COL[st]; return chip(st, st, c.bar, c.bg, counts[st]); }).join('')
+    + chip('__late', '⚠️ En retard', '#dc2626', '#fef2f2', late)
+    + chip('__archives', '📦 Archivés', '#9ca3af', '#f6f6f6', arch);
+  pcLegendMark(prefix);
+}
+// Met en évidence la pastille du filtre actif
+function pcLegendMark(prefix) {
+  var el = document.getElementById(prefix + '-legend'), sel = document.getElementById(prefix + '-filter-statut');
+  if (!el || !sel) return;
+  var cur = sel.value;
+  Array.prototype.forEach.call(el.querySelectorAll('button'), function (b) {
+    var on = b.getAttribute('data-val') === cur;
+    b.style.boxShadow = on ? '0 0 0 2px #1f2937' : 'none';
+    b.style.transform = on ? 'scale(1.04)' : 'none';
+  });
+}
+window.pcLegendClick = function (prefix, val) {
+  var sel = document.getElementById(prefix + '-filter-statut');
+  if (!sel) return;
+  sel.value = (sel.value === val) ? '' : val;
+  if (prefix === 'pcl') window.pclFilterList(); else window.pcoFilterList();
+};
+
+// Alerte en direct dans le formulaire « Nouveau prospect » : fiche déjà présente (prospects et, pour les clients, Gestion Clients)
+var _pcDupLive = { cl: { t: null, cache: null }, co: { t: null, cache: null } };
+function pcDupLiveReset(kind) {
+  _pcDupLive[kind].cache = null;
+  var b = document.getElementById('p' + (kind === 'cl' ? 'cl' : 'co') + '-dup-live');
+  if (b) { b.style.display = 'none'; b.innerHTML = ''; }
+}
+window.pcDupLiveSchedule = function (kind) {
+  var st = _pcDupLive[kind];
+  clearTimeout(st.t);
+  st.t = setTimeout(function () { pcDupLiveRun(kind); }, 450);
+};
+async function pcDupLiveRun(kind) {
+  var pre = kind === 'cl' ? 'pcl' : 'pco', box = document.getElementById(pre + '-dup-live');
+  if (!box) return;
+  var editId = kind === 'cl' ? pclEditId : pcoEditId;
+  if (editId) { box.style.display = 'none'; return; }   // seulement à la création
+  var val = function (id) { var e = document.getElementById(pre + '-' + id); return e ? e.value.trim() : ''; };
+  var rec = { prenom: val('prenom'), nom: val('nom'), tel: val('tel'), email: val('email') };
+  if (!rec.tel && !rec.email && pcNameTokens(rec).split(' ').filter(Boolean).length < 2) { box.style.display = 'none'; return; }
+  try {
+    var st = _pcDupLive[kind];
+    if (!st.cache) {
+      var colls = kind === 'cl' ? ['prospectsClients', 'clients'] : ['prospectsConsultants'];
+      var res = await Promise.all(colls.map(function (c) { return pcDupLoad(c, true).then(function (l) { return { coll: c, list: l }; }); }));
+      st.cache = res;
+    }
+    var keys = pcDupKeys(rec).filter(function (k) { return k.indexOf('tel:') === 0 || k.indexOf('mail:') === 0; });
+    var nt = pcNameTokens(rec), ntOk = nt.split(' ').filter(Boolean).length >= 2;
+    var hits = [];
+    st.cache.forEach(function (g) {
+      g.list.forEach(function (x) {
+        var why = [], xk = pcDupKeys(x);
+        keys.forEach(function (k) { if (xk.indexOf(k) >= 0) why.push(PC_DUP_LABELS[k.split(':')[0]]); });
+        if (ntOk && pcNameTokens(x) === nt) why.push('même nom');
+        if (why.length) hits.push({ coll: g.coll, x: x, why: why });
+      });
+    });
+    if (!hits.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    var LBL = { prospectsClients: 'Prospect client', clients: 'Client', prospectsConsultants: 'Prospect consultant' };
+    box.innerHTML = '<div style="font-weight:700;color:#9a3412;margin-bottom:4px;">⚠️ Cette personne existe peut-être déjà</div>'
+      + hits.slice(0, 3).map(function (h) {
+        var open = h.coll === 'clients' ? 'pcDupLiveOpen(\'clients\',\'' + h.x.docId + '\')' : 'pcDupLiveOpen(\'' + h.coll + '\',\'' + h.x.docId + '\')';
+        return '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:3px 0;"><span><b>' + pcEsc(pcDupName(h.x)) + '</b> · ' + LBL[h.coll] + (h.x.statut ? ' (' + pcEsc(h.x.statut) + ')' : '') + (h.x.archive === true ? ' · archivé' : '') + ' <span style="color:#6b7280;">— ' + pcEsc(h.why.join(', ')) + '</span></span>'
+          + '<button type="button" onclick="' + open + '" style="border:1px solid #f97316;background:#f97316;color:#fff;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700;cursor:pointer;">Ouvrir la fiche</button></div>';
+      }).join('')
+      + (hits.length > 3 ? '<div style="color:#6b7280;">… et ' + (hits.length - 3) + ' autre(s)</div>' : '')
+      + '<div style="color:#6b7280;margin-top:4px;">Tu peux quand même créer une nouvelle fiche (deux personnes d\'un même foyer peuvent partager un numéro).</div>';
+    box.style.display = 'block';
+  } catch (e) { box.style.display = 'none'; }
+}
+// Ouvre la fiche trouvée : ferme le formulaire de création puis ouvre la fiche existante
+window.pcDupLiveOpen = function (coll, id) {
+  try {
+    if (coll === 'prospectsClients') { if (window.pclCloseModal) window.pclCloseModal(); window.pclEditProspect(id); }
+    else if (coll === 'prospectsConsultants') { if (window.pcoCloseModal) window.pcoCloseModal(); window.pcoEditProspect(id); }
+    else { if (window.pclCloseModal) window.pclCloseModal(); window.openCrmModal('clients', id); }
+  } catch (e) { alert('Impossible d\'ouvrir la fiche : ' + e.message); }
+};
+// ===== FIN COULEURS / LÉGENDE / DOUBLON EN DIRECT =====
+
 function pclStatusStyle(s) {
   var map = {
     'Nouveau': 'background:#e8f0fe;color:#1a73e8;',
@@ -8738,6 +8877,7 @@ function pcStatusPatch(newStatus) {
 // Fiche visible selon le filtre : "Tous" = fiches actives ; "__archives" = archivées ; un statut précis = toutes les fiches de ce statut (archivées comprises)
 function pcVisible(p, statutFilter) {
   if (statutFilter === '__archives') return p.archive === true;
+  if (statutFilter === '__late') return p.archive !== true && pcIsLate(p);
   if (!statutFilter) return p.archive !== true;
   return p.statut === statutFilter;
 }
@@ -9123,7 +9263,7 @@ function pclResetForm() {
   window.pclToggleReference();
 }
 
-window.pclStartNew = function () { pclEditId = null; pcRefreshModalSummary('cl'); pclResetForm(); crmFactInit('pcl', null, []); window.pclOpenModal('🆕 Nouveau prospect'); };
+window.pclStartNew = function () { pclEditId = null; pcDupLiveReset('cl'); pcRefreshModalSummary('cl'); pclResetForm(); crmFactInit('pcl', null, []); window.pclOpenModal('🆕 Nouveau prospect'); };
 
 window.pclEditProspect = function (id) {
   var p = (window._pclData || []).find(function (x) { return x.docId === id; });
@@ -9227,7 +9367,7 @@ window.pclSaveProspect = async function (afterAction) {
 // Rappels de pclLoadList() (après une action) : simple réaffichage depuis les données déjà à jour.
 function pclLoadList() { pcLiveList('cl'); }
 
-function pclUpdateStats(list) { pcFillStats('pcl', list); }
+function pclUpdateStats(list) { pcFillStats('pcl', list); pcLegendRender('pcl', list); }
 
 // ===== Numéros de téléphone : un seul format stocké (+32475123456), affiché à la belge (0475 12 34 56) =====
 // Reconnaît +32 475…, 0032 475…, 0475…, 04 75…, 475…, +32 (0)475… ; les fixes belges (8 chiffres) ; les numéros étrangers (+33…).
@@ -9876,9 +10016,9 @@ function pclRenderList(list) {
       + (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '')
       + pcContactInfo(p) + pcRdvInfo(p, 'cl')
       + pclContactSummary(p);
-    return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
+    return '<div style="' + pcCardStyle(p) + '">'
       + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><b style="font-size:14px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
-      + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p) + pclRefLine(p) + '</div>'
+      + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcLateBadge(p) + pcQrBadge(p) + pclRefLine(p) + '</div>'
       + pclSec('Coordonnées') + coord
       + (sit ? pclSec('Situation actuelle') + sit : '')
       + (p.titulaire ? pclSec('Titulaire du contrat') + line('👤', pcEsc(p.titulaire)) : '')
@@ -9899,7 +10039,7 @@ function pclRenderList(list) {
   }).join('');
 }
 
-window.pclFilterList = function () { pclRenderList(window._pclData || []); };
+window.pclFilterList = function () { pclRenderList(window._pclData || []); pcLegendMark('pcl'); };
 window.pclArchive = function (docId, flag) { return pcArchive('prospectsClients', docId, flag, pclLoadList); };
 
 async function pclMigrateOne(docId) {
@@ -10238,7 +10378,7 @@ function pcoResetForm() {
   window.pcoToggleTva();
 }
 
-window.pcoStartNew = function () { pcoEditId = null; pcRefreshModalSummary('co'); pcoResetForm(); pcoCvInit(null); window.pcoOpenModal('🆕 Nouveau prospect'); };
+window.pcoStartNew = function () { pcoEditId = null; pcDupLiveReset('co'); pcRefreshModalSummary('co'); pcoResetForm(); pcoCvInit(null); window.pcoOpenModal('🆕 Nouveau prospect'); };
 
 window.pcoEditProspect = function (id) {
   var p = (window._pcoData || []).find(function (x) { return x.docId === id; });
@@ -10318,7 +10458,7 @@ window.pcoSaveProspect = async function (afterAction) {
 
 function pcoLoadList() { pcLiveList('co'); }
 
-function pcoUpdateStats(list) { pcFillStats('pco', list); }
+function pcoUpdateStats(list) { pcFillStats('pco', list); pcLegendRender('pco', list); }
 
 function pcoCvLine(p) {
   var cv = p && p.cv && p.cv.path ? p.cv : null;
@@ -10351,9 +10491,9 @@ function pcoRenderList(list) {
       + pcoCvLine(p)
       + pcoQrExtras(p);
     var suivi = (p.commentaire ? line('📝', pcEsc(p.commentaire)) : '') + pcContactInfo(p) + pcRdvInfo(p, 'co') + pcBomInfo(p);
-    return '<div style="background:#fffaf7;border:1px solid #fdba74;border-radius:10px;padding:11px 13px;margin-bottom:8px;">'
+    return '<div style="' + pcCardStyle(p) + '">'
       + '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;"><b style="font-size:14px;">' + pcEsc(p.nom || 'Sans nom') + '</b>'
-      + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcQrBadge(p) + pclRefLine(p) + '</div>'
+      + '<span style="' + pclStatusStyle(p.statut) + 'display:inline-block;border-radius:99px;padding:2px 9px;font-size:10px;font-weight:700;margin-left:6px;">' + pcEsc(p.statut || 'Nouveau') + '</span>' + pcLateBadge(p) + pcQrBadge(p) + pclRefLine(p) + '</div>'
       + pclSec('Coordonnées') + coord
       + pclSec('Profil') + profil
       + (suivi ? pclSec('Suivi') + suivi : '')
@@ -10369,7 +10509,7 @@ function pcoRenderList(list) {
   }).join('');
 }
 
-window.pcoFilterList = function () { pcoRenderList(window._pcoData || []); };
+window.pcoFilterList = function () { pcoRenderList(window._pcoData || []); pcLegendMark('pco'); };
 window.pcoArchive = function (docId, flag) { return pcArchive('prospectsConsultants', docId, flag, pcoLoadList); };
 
 window.pcoDeleteProspect = async function (docId) {
@@ -12834,13 +12974,22 @@ function pcDupName(r) { return ((r.prenom ? r.prenom + ' ' : '') + (r.nom || '')
 // Avertit avant de créer une fiche qui ressemble à une fiche existante ; renvoie true si on peut créer
 async function pcDupWarnNew(coll, rec) {
   try {
-    var keys = pcDupKeys(rec);
-    if (!keys.length) return true;
-    var items = await pcDupLoad(coll, true);
-    var hit = items.find(function (x) { return pcDupKeys(x).some(function (k) { return keys.indexOf(k) >= 0; }); });
+    var keys = pcDupKeys(rec), nt = pcNameTokens(rec), ntOk = nt.split(' ').filter(Boolean).length >= 2;
+    if (!keys.length && !ntOk) return true;
+    // Un prospect client est aussi comparé aux clients existants (Gestion Clients)
+    var colls = coll === 'prospectsClients' ? ['prospectsClients', 'clients'] : [coll];
+    var hit = null, shared = [], hitColl = coll;
+    for (var i = 0; i < colls.length && !hit; i++) {
+      var items = await pcDupLoad(colls[i], true);
+      for (var j = 0; j < items.length && !hit; j++) {
+        var xk = pcDupKeys(items[j]), sh = keys.filter(function (k) { return xk.indexOf(k) >= 0; }).map(function (k) { return PC_DUP_LABELS[k.split(':')[0]]; });
+        if (ntOk && pcNameTokens(items[j]) === nt) sh.push('même nom');
+        if (sh.length) { hit = items[j]; shared = sh; hitColl = colls[i]; }
+      }
+    }
     if (!hit) return true;
-    var shared = pcDupKeys(hit).filter(function (k) { return keys.indexOf(k) >= 0; }).map(function (k) { return PC_DUP_LABELS[k.split(':')[0]]; });
-    return confirm('⚠️ Cette fiche ressemble à « ' + pcDupName(hit) + ' » déjà présente (' + shared.join(', ') + ').\n\nOK = créer quand même\nAnnuler = ne pas créer (utilise le bouton « 🔍 Doublons » pour fusionner)');
+    var where = hitColl === 'clients' ? ' (déjà dans Gestion Clients)' : '';
+    return confirm('⚠️ Cette fiche ressemble à « ' + pcDupName(hit) + ' » déjà présente' + where + ' (' + shared.join(', ') + ').\n\nOK = créer quand même\nAnnuler = ne pas créer (ouvre la fiche existante ou utilise le bouton « 🔍 Doublons » pour fusionner)');
   } catch (e) { return true; }
 }
 // Import (CSV / blocs) : retire les lignes déjà présentes (même téléphone ou email), après confirmation
