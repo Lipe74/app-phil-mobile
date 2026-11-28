@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.142 - Retour en haut et panneaux plus fluides";
+  scope.APP_VERSION = "14.143 - Un seul ascenseur dans les outils";
 })();

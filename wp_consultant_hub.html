@@ -3225,7 +3225,40 @@ function toggleFormation(id){
 function frameLoaded() {
   document.getElementById('iframe-loading').style.display = 'none';
   document.getElementById('embed-frame').style.display = 'block';
+  frameFitStart();
 }
+// Outils Phil-Mobile (wp_*.html) : le cadre prend la hauteur de son contenu, pour n'avoir qu'une seule barre de défilement (Build 14.142)
+var _frameFitRO = null, _frameFitOn = false;
+var FRAME_DEFAULT_H = 'calc(100vh - 24px)';
+function frameFit() {
+  var panel = document.getElementById('iframe-panel'), fr = document.getElementById('embed-frame');
+  if (!panel || !fr || !_frameFitOn) return;
+  if (window.innerWidth <= 600) { panel.style.height = FRAME_DEFAULT_H; return; }   // GSM : plein écran, défilement dans le cadre
+  try {
+    var d = fr.contentDocument;
+    if (!d || !d.body) return;
+    var h = Math.ceil(Math.max(d.body.scrollHeight, d.body.offsetHeight));
+    if (h < 100) return;
+    h = Math.max(h + 2, 650);
+    var cur = parseInt(panel.style.height, 10);
+    if (isNaN(cur) || Math.abs(cur - h) > 2) panel.style.height = h + 'px';
+  } catch (e) { _frameFitOn = false; panel.style.height = FRAME_DEFAULT_H; }   // page d'un autre domaine ou PDF : on garde la hauteur écran
+}
+function frameFitStart() {
+  var fr = document.getElementById('embed-frame');
+  if (_frameFitRO) { try { _frameFitRO.disconnect(); } catch (e) {} _frameFitRO = null; }
+  if (!_frameFitOn) return;
+  frameFit();
+  try {
+    var d = fr.contentDocument;
+    if (d && d.body && window.ResizeObserver) {
+      _frameFitRO = new ResizeObserver(function () { frameFit(); });
+      _frameFitRO.observe(d.body);
+      _frameFitRO.observe(d.documentElement);
+    }
+  } catch (e) {}
+}
+window.addEventListener('resize', function () { if (_frameFitOn) frameFit(); });
 
 // Attacher frameLoaded à l'iframe
 document.getElementById('embed-frame').addEventListener('load', frameLoaded);
@@ -3237,6 +3270,8 @@ function loadFrame(url, btn) {
   document.getElementById('welcome-panel').style.display = 'none';
   document.getElementById('suivi-panel').style.display = 'none';
   const panel = document.getElementById('iframe-panel');
+  _frameFitOn = /(^|\/)wp_[a-z0-9_]+\.html/i.test(String(url).split('#')[0].split('?')[0]);
+  panel.style.height = FRAME_DEFAULT_H;
   panel.style.display = 'flex';
   document.getElementById('iframe-loading').style.display = 'flex';
   document.getElementById('embed-frame').style.display = 'none';
