@@ -1,0 +1,66 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /profiles/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /news/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /concours/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /lylou_vely_articles/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /documents/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    // Factures d'apporteur d'affaires (hub > Recommander l'application, telechargees dans admin.html)
+    // Lecture / ecriture : connectes uniquement. Ecriture limitee aux PDF de moins de 5 Mo.
+    match /factures/{sponsorId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+    }
+    // Factures des clients (hub > Gestion Clients, fiche client) - Build 14.84
+    // Lecture et suppression : connectes uniquement. Ajout / remplacement : PDF de moins de 10 Mo.
+    match /facturesClients/{consultantId}/{clientId}/{fileName} {
+      allow read, delete: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+    }
+    // Factures deposees par les visiteurs depuis le formulaire de contact (wp_contact.html) - Build 14.135
+    // Visiteur non connecte : DEPOT seulement (PDF de moins de 10 Mo), jamais de lecture ni de modification.
+    // Lecture et suppression : connectes uniquement (consultants / admin).
+    match /qrFactures/{consultantId}/{fileName} {
+      allow create: if request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow read, delete: if request.auth != null;
+    }
+    // CV des prospects consultants (hub > Prospects Consultants, fiche du prospect) - Build 14.137
+    // Lecture et suppression : connectes uniquement. Ajout / remplacement : PDF ou photo de moins de 10 Mo.
+    match /cvConsultants/{consultantId}/{fileName} {
+      allow read, delete: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType == 'application/pdf'
+            || request.resource.contentType.matches('image/(jpeg|png|webp)'));
+    }
+    // Videos tutoriels du hub (admin > Videos, hub > onglet Videos)
+    // Lecture et suppression : connectes uniquement. Ajout / remplacement : video de moins de 100 Mo.
+    match /videos/{fileName} {
+      allow read, delete: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.size < 100 * 1024 * 1024
+        && request.resource.contentType.matches('video/.*');
+    }
+  }
+}
