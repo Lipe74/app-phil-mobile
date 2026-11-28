@@ -4,5 +4,5 @@
 
 (function () {
   var scope = (typeof window !== 'undefined') ? window : self;
-  scope.APP_VERSION = "14.145 - Mes points et Mon équipe";
+  scope.APP_VERSION = "14.146 - Gifts, Expert, recrutement et rémunérations";
 })();

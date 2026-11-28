@@ -245,7 +245,7 @@
   <div class="header">
     <div>
       <h1>🧰 Admin Phil-Mobile</h1>
-      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.145 - Mes points et Mon équipe</div>
+      <div style="font-size:10px;color:#999;font-weight:600;margin-top:2px;">Admin Build 14.146 - Gifts, Expert, recrutement, rémunérations</div>
     </div>
     <button onclick="adminLogout()">🚪 Déconnexion</button>
   </div>
@@ -362,7 +362,6 @@
 
         <button onclick="showAdminPanel('panel-videos-hub', this)" class="menu-item" id="menu-videos-hub">🎬 Vidéos tutoriels <span id="vh-count"></span></button>
 
-        <button onclick="showAdminPanel('panel-smart-stats', this)" class="menu-item" id="menu-smart-stats">📊 Mes stats Smart (perso)</button>
 
       </div>
 
@@ -1665,30 +1664,6 @@ Summer Drink | 02/07/2026 | 20:00-22:00 | Événements"></textarea>
           <div id="agenda-list"><div class="empty">Chargement...</div></div>
         </div>
 
-        <!-- STATS SMART (PERSO) — visible uniquement pour Philippe (delta835) -->
-        <div class="admin-panel" id="panel-smart-stats">
-          <div class="section-title">📊 Mes stats Smart (perso)</div>
-          <div style="font-size:12px;color:#888;margin-bottom:14px;">
-            Panel personnel (delta835 uniquement). Collez ici le JSON préparé à partir du rapport
-            "Remuneration Personal vs Upline" du portail Smart SN.
-          </div>
-
-          <details open style="border:1px solid #eee;border-radius:10px;padding:10px 12px;background:#fafafa;">
-            <summary style="cursor:pointer;font-weight:700;color:#f97316;font-size:13px;">📥 Importer un ou plusieurs mois (JSON)</summary>
-            <div style="font-size:11px;color:#888;margin:8px 0;">
-              Format attendu : <code>{"months":[{"month":"2026-08","monthLabel":"août 2026","lines":[{"type":"Services","subtype":"Activations","personal":575,"upline":0,"subtotal":575}],"total":{"personal":575,"upline":0,"subtotal":575}}]}</code>.
-              Si un mois existe déjà, il sera remplacé par la nouvelle version collée (correction possible).
-            </div>
-            <textarea id="smart-stats-import-json" rows="8" placeholder='{"months":[...]}' style="width:100%;box-sizing:border-box;font-family:monospace;font-size:12px;padding:8px;border:1px solid #ddd;border-radius:8px;"></textarea>
-            <button class="btn btn-primary" style="margin-top:8px;" onclick="importSmartStats()">📥 Importer</button>
-            <div id="smart-stats-import-status" style="font-size:12px;margin-top:8px;"></div>
-          </details>
-
-          <div class="section-title" style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;">
-            <span>📅 Mois importés</span>
-          </div>
-          <div id="smart-stats-list"><div class="empty">Chargement...</div></div>
-        </div>
 
       </div>
 
@@ -2331,7 +2306,6 @@ window.showAdminPanel = function (panelId, btn) {
   if (panelId === 'panel-invoices') renderInvoices();
   if (panelId === 'panel-blogsmart-list') loadBlogSmartAdmin();
   if (panelId === 'panel-blogphil-list') loadBlogPhilAdmin();
-  if (panelId === 'panel-smart-stats') loadSmartStatsAdmin();
   document.querySelectorAll('.admin-menu .menu-item').forEach(b => b.classList.remove('active-item'));
   document.querySelectorAll('.fav-btn').forEach(b => b.classList.remove('active-item'));
   if (btn) {
@@ -2545,7 +2519,8 @@ const BN_PENDING = [
   { build: '14.142', title: "Retour en haut et panneaux plus fluides", description: "- Quand tu ouvres un outil depuis le menu, la page remonte toute seule en haut : plus besoin de remonter à la main, sur ordinateur comme sur GSM.\n- Les outils ne sont plus enfermés dans un cadre à hauteur limitée : une seule barre de défilement, plus de grand vide en bas.\n- La ligne « Build » de l'en-tête est simplifiée (numéro + « nouveau ») ; le détail se lit dans l'onglet des builds." },
   { build: '14.143', title: "Un seul ascenseur dans les outils", description: "- Les outils Phil-Mobile (simulateurs, comparatif, QR…) s'affichent maintenant sur toute leur hauteur : une seule barre de défilement au lieu de deux sur ordinateur.\n- Sur GSM, rien ne change : l'outil reste en plein écran.\n- Les documents PDF et l'admin gardent leur affichage habituel." },
   { build: '14.144', title: "Menu de gauche collant", description: "- Sur ordinateur, le menu de gauche reste visible sous l'en-tête pendant que tu fais défiler un outil : plus besoin de remonter pour changer d'outil.\n- Le menu a sa propre petite barre de défilement quand il est plus long que l'écran.\n- Sur GSM, rien ne change." },
-  { build: '14.145', title: "Mes points et Mon équipe", description: "- Tableau de bord : nouvelle carte « Mes points ». Trimestre : barre avec les paliers 10 ASP (qualification) et 75 ASP (cadeau), points restants, jours restants et rythme conseillé par semaine. Voyage : barre avec les paliers 450 (1 personne) et 850 (2 personnes) du 1er novembre au 31 août.\n- Démarrage : pour un nouveau consultant, compte à rebours de 40 jours pour réussir le PQS et gagner +50 points ; le bloc disparaît après les 40 jours.\n- Un lien « Détails » montre les points par mois, les contrats du trimestre et les derniers trimestres.\n- Sponsors : carte « Mon équipe » avec les points de tes consultants (trimestre et voyage), une liste « À relancer » (qualification en danger, PQS bientôt échu) et des boutons message et appel. Tu ne vois que leurs totaux, jamais leurs clients." }
+  { build: '14.145', title: "Mes points et Mon équipe", description: "- Tableau de bord : nouvelle carte « Mes points ». Trimestre : barre avec les paliers 10 ASP (qualification) et 75 ASP (cadeau), points restants, jours restants et rythme conseillé par semaine. Voyage : barre avec les paliers 450 (1 personne) et 850 (2 personnes) du 1er novembre au 31 août.\n- Démarrage : pour un nouveau consultant, compte à rebours de 40 jours pour réussir le PQS et gagner +50 points ; le bloc disparaît après les 40 jours.\n- Un lien « Détails » montre les points par mois, les contrats du trimestre et les derniers trimestres.\n- Sponsors : carte « Mon équipe » avec les points de tes consultants (trimestre et voyage), une liste « À relancer » (qualification en danger, PQS bientôt échu) et des boutons message et appel. Tu ne vois que leurs totaux, jamais leurs clients." },
+  { build: '14.146', title: "Gifts, Expert, recrutement et rémunérations", description: "- Mes points : les gifts du trimestre dépendent de ton statut. BC / SC / EC : Iron 75, Bronze 100, Silver 150. PC et plus : Silver 150, Gold 225, Platinum 325, Saphire 400, Diamond 500. La barre affiche tous les paliers, le gift atteint et le prochain avec les points restants. Tout repart à 0 chaque trimestre ; seul ton compteur ASP total (statut) ne se remet jamais à 0.\n- Nouveau bloc « Groupes Expert » : Sales Expert (tes ASP), SoHo Expert (SoHo + B2B saisi à la main, compté après 75 ASP SoHo) et Network Expert (ASP de ton équipe, niveaux 1 à 7). Paliers Member 75 et Master 150 pour chacun.\n- Sponsors : bloc « Recrutement » avec les recrues du trimestre, les PQS réussis sur 3 (badge « Expert en recrutement »), la liste de tes filleuls directs et l'historique des trimestres. Mon équipe affiche aussi le statut du PQS, le statut et le gift de chaque filleul.\n- Le tableau « Mes stats Smart » devient « Mes rémunérations » et est visible par tous : chaque consultant importe ses notes de rémunération MySmart (PDF, plusieurs à la fois) et le tableau se remplit par mois (Service, clawback, Fidelity…). Les anciennes données ne sont plus affichées.\n- Admin : la date de validation du PQS est enregistrée ; l'ancien panneau « Mes stats Smart (perso) » est supprimé.\n- Limite : le réseau et les dates de PQS ne tiennent compte que des consultants ayant ouvert l'app depuis cette build." }
 ];
 function bnNormBuild(b) { return String(b || '').replace(/^\s*build\s*/i, '').trim(); }
 // Notes du code pas encore publiées (comparaison avec les builds publiés dans Firestore), de la plus ancienne à la plus récente
@@ -2982,7 +2957,7 @@ window.onbAdminCancelDecl = async function (docId) {
 window.onbAdminValidatePqs = async function (docId) {
   if (!confirm('Valider le PQS de ce consultant ?')) return;
   try {
-    await updateDoc(doc(db, 'consultants', docId), { pqsValidated: true });
+    await updateDoc(doc(db, 'consultants', docId), { pqsValidated: true, pqsValidatedAt: new Date().toISOString() });
     showToast('✅ PQS validé.');
     loadOnboardingAdmin();
   } catch (err) { alert('Erreur : ' + err.message); }
@@ -6132,104 +6107,6 @@ window.importFaqJson = async function () {
   }
 };
 
-// ===== STATS SMART (PERSO) — consultants/delta835/smartStats/{month} =====
-const SMART_STATS_OWNER_ID = 'delta835';
-
-window.importSmartStats = async function () {
-  const raw = document.getElementById('smart-stats-import-json').value.trim();
-  const statusEl = document.getElementById('smart-stats-import-status');
-  const setStatus = (msg, color) => { if (statusEl) { statusEl.textContent = msg; statusEl.style.color = color || '#555'; } };
-
-  if (!raw) { setStatus('Collez d\'abord un JSON.', '#c0392b'); return; }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    setStatus('❌ JSON invalide : ' + e.message, '#c0392b');
-    return;
-  }
-
-  const months = Array.isArray(parsed) ? parsed : parsed.months;
-  if (!Array.isArray(months) || !months.length) {
-    setStatus('❌ Le JSON doit contenir un tableau "months" non vide.', '#c0392b');
-    return;
-  }
-
-  let added = 0, invalid = 0;
-  setStatus('Import en cours...', '#555');
-
-  for (const m of months) {
-    const month = (m.month || '').toString().trim();
-    if (!/^\d{4}-\d{2}$/.test(month)) { invalid++; continue; }
-    const lines = Array.isArray(m.lines) ? m.lines.map(l => ({
-      type: (l.type || '').toString().trim(),
-      subtype: (l.subtype || '').toString().trim(),
-      personal: Number(l.personal) || 0,
-      upline: Number(l.upline) || 0,
-      subtotal: Number(l.subtotal) || 0
-    })) : [];
-    const total = {
-      personal: Number(m.total && m.total.personal) || 0,
-      upline: Number(m.total && m.total.upline) || 0,
-      subtotal: Number(m.total && m.total.subtotal) || 0
-    };
-
-    try {
-      await setDoc(doc(db, 'consultants', SMART_STATS_OWNER_ID, 'smartStats', month), {
-        month,
-        monthLabel: (m.monthLabel || month).toString().trim(),
-        lines,
-        total
-      });
-      added++;
-    } catch (e) {
-      invalid++;
-    }
-  }
-
-  setStatus(`✅ ${added} mois importé(s)/mis à jour · ${invalid} invalide(s).`, '#2E7D32');
-  if (added > 0) {
-    document.getElementById('smart-stats-import-json').value = '';
-    loadSmartStatsAdmin();
-  }
-};
-
-async function loadSmartStatsAdmin() {
-  const el = document.getElementById('smart-stats-list');
-  if (!el) return;
-  el.innerHTML = '<div class="empty">Chargement...</div>';
-  try {
-    const snap = await getDocs(query(collection(db, 'consultants', SMART_STATS_OWNER_ID, 'smartStats'), orderBy('month', 'desc')));
-    if (snap.empty) { el.innerHTML = '<div class="empty">Aucun mois importé.</div>'; return; }
-    let html = '';
-    snap.forEach(d => {
-      const s = d.data();
-      const total = s.total || {};
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #eee;border-radius:8px;padding:8px 10px;margin-bottom:6px;">
-        <div>
-          <div style="font-weight:700;font-size:13px;">${s.monthLabel || s.month}</div>
-          <div style="font-size:11px;color:#888;">Personal: ${(total.personal||0).toFixed(2)} € · Upline: ${(total.upline||0).toFixed(2)} € · Total: ${(total.subtotal||0).toFixed(2)} €</div>
-        </div>
-        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="deleteSmartStatsMonth('${d.id}')">🗑</button>
-      </div>`;
-    });
-    el.innerHTML = html;
-  } catch (e) {
-    el.innerHTML = `<div class="empty">Erreur de chargement : ${e.message}</div>`;
-  }
-}
-
-window.deleteSmartStatsMonth = async function (month) {
-  if (!confirm(`Supprimer les stats de ${month} ?`)) return;
-  try {
-    await deleteDoc(doc(db, 'consultants', SMART_STATS_OWNER_ID, 'smartStats', month));
-    loadSmartStatsAdmin();
-  } catch (e) {
-    alert('Erreur pendant la suppression: ' + e.message);
-  }
-};
-
 // ===== DEMANDES EN ATTENTE DU BOT (questions inconnues) =====
 // Collection Firestore 'botPending' : { question, askedByName, status:'pending', createdAt }
 let botPendingCache = [];
@@ -7198,7 +7075,7 @@ window.confirmEdit = async function () {
       ? (existing.payStatus === 'paid' && existing.paidDate ? existing.paidDate : new Date().toLocaleDateString('fr-FR'))
       : '';
     const updatePayload = {
-      ...nmPayload(name, lastName, pseudo, existing), email, phone, startDate, aspInit, pqsValidated, fastSCValidated, fastECValidated,
+      ...nmPayload(name, lastName, pseudo, existing), email, phone, startDate, aspInit, pqsValidated, pqsValidatedAt: pqsValidated ? (existing.pqsValidated && existing.pqsValidatedAt ? existing.pqsValidatedAt : (existing.pqsValidated ? '' : new Date().toISOString())) : '', fastSCValidated, fastECValidated,
       expirationDate, isTestAccount, isTeamsAccount, isAdmin, accountType, payStatus, paidDate, lifetime, upline, uplineId, uplineTel, uplineEmail
     };
     // N'écrase la photo que si une nouvelle a été uploadée dans ce modal (sinon on garde l'existante)
@@ -10211,7 +10088,6 @@ const FAV_ITEMS = {
   'menu-liens':                { label: '🌐 Gestion des liens',            panelId: 'panel-liens' },
   'menu-scripts':              { label: '📜 Gestion des Scripts',          panelId: 'panel-scripts' },
   'menu-qr':                   { label: '📱 QR Code prospects',            panelId: 'panel-qr' },
-  'menu-smart-stats':          { label: '📊 Mes stats Smart (perso)',      panelId: 'panel-smart-stats' },
 };
 
 let favIds = [];          // ordre des favoris (IDs boutons) + séparations 'sep:<groupe>:<id>'
